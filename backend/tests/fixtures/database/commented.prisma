@@ -1,0 +1,10 @@
+// Valid for the consumer: the only nano_* schema is commented out
+datasource db {
+  provider = "postgresql"
+  // schemas = ["nano_auth"]
+}
+
+generator client {
+  provider = "prisma-client"
+  output   = "./generated/commented"
+}

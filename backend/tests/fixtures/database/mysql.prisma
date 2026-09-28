@@ -1,0 +1,13 @@
+// Valid Prisma schema for another provider: the data layer must reject its client
+datasource db {
+  provider = "mysql"
+}
+
+generator client {
+  provider = "prisma-client"
+  output   = "./generated/mysql"
+}
+
+model Row {
+  id Int @id
+}

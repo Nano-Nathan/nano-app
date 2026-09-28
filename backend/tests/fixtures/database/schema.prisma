@@ -1,0 +1,19 @@
+// Consumer schema used by the database tests: its models live in "app_data".
+// The suite applies it with the Prisma CLI, as the consumer would.
+datasource db {
+  provider = "postgresql"
+  schemas  = ["public", "app_data"]
+}
+
+generator client {
+  provider = "prisma-client"
+  output   = "./generated/client"
+}
+
+model Note {
+  id    Int    @id @default(autoincrement())
+  title String
+
+  @@map("notes")
+  @@schema("app_data")
+}

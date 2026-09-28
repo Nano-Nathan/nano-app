@@ -1,0 +1,16 @@
+// Schema of a plugin with its own Prisma client, mounted under the name "nano_plugin"
+datasource db {
+  provider = "postgresql"
+  schemas  = ["nano_test"]
+}
+
+generator client {
+  provider = "prisma-client"
+  output   = "./generated/plugin"
+}
+
+model Item {
+  id Int @id
+
+  @@schema("nano_test")
+}

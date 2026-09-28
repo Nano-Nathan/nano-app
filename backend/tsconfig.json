@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "declaration": true,
+    "outDir": "build",
+    "rootDir": "..",
+    "strict": true,
+    "moduleResolution": "Bundler",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@nano-app/core": ["../core/index.ts"],
+      "@nano-app/core/*": ["../core/*"]
+    }
+  },
+  "include": ["const.ts", "src", "plugins", "bin", "tests", "../core"]
+}

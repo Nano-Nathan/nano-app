@@ -1,0 +1,41 @@
+# Filename must stay publish.yml. npm Trusted Publisher matches this name exactly.
+# https://docs.npmjs.com/trusted-publishers/
+name: Publish
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      # Full history and tags: semantic-release reads the commits since the last tag
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.34.4
+
+      # No registry-url: setup-node writes an empty _authToken and npm skips OIDC.
+      # https://github.com/npm/documentation/issues/1960
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          package-manager-cache: false
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @nano-app/backend test
+      - run: pnpm --filter @nano-app/backend build
+
+      # Releases only for fix/feat commits since the last tag; see .releaserc.json
+      - run: npx semantic-release@25
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

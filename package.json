@@ -1,0 +1,13 @@
+{
+  "name": "nano-app-monorepo",
+  "private": true,
+  "packageManager": "pnpm@10.34.4",
+  "scripts": {
+    "build": "pnpm --filter @nano-app/backend build",
+    "test": "pnpm --filter @nano-app/backend test",
+    "dev": "pnpm --filter @nano-app/backend dev"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

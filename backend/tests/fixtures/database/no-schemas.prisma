@@ -1,0 +1,9 @@
+// Valid: the datasource declares no `schemas`, every model uses the default schema
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client"
+  output   = "./generated/no-schemas"
+}

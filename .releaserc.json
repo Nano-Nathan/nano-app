@@ -1,0 +1,13 @@
+{
+  "branches": ["main"],
+  "tagFormat": "v${version}",
+  "plugins": [
+    ["@semantic-release/commit-analyzer", {
+      "preset": "angular",
+      "releaseRules": [{ "breaking": true, "release": "minor" }]
+    }],
+    "@semantic-release/release-notes-generator",
+    ["@semantic-release/npm", { "pkgRoot": "backend" }],
+    ["@semantic-release/github", { "successComment": false, "failComment": false, "releasedLabels": false }]
+  ]
+}
