@@ -1,6 +1,5 @@
 # nano-app
 
-[![CI](https://github.com/Nano-Nathan/nano-app/actions/workflows/ci.yml/badge.svg)](https://github.com/Nano-Nathan/nano-app/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@nano-app/backend)](https://www.npmjs.com/package/@nano-app/backend)
 [![license](https://img.shields.io/npm/l/@nano-app/backend)](./LICENSE)
 
