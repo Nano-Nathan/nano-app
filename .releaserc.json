@@ -8,6 +8,6 @@
     }],
     "@semantic-release/release-notes-generator",
     ["@semantic-release/npm", { "pkgRoot": "backend" }],
-    ["@semantic-release/github", { "successComment": false, "failComment": false, "releasedLabels": false }]
+    ["@semantic-release/github", { "successCommentCondition": false, "failCommentCondition": false, "releasedLabels": false }]
   ]
 }
