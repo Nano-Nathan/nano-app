@@ -47,6 +47,8 @@ createNanoApp({ plugins: [hello()] });
 
 `stage` is `"before"` (default) or `"after"` the app's own routes. Mount order: base middlewares, `before` plugins, your routes, `after` plugins, 404, error handler.
 
+Set `options` in the returned config to pass values to the plugin's routes: every handler and callback receives them in `params`, next to `db`. Callbacks: `callbacks.onMount(app, params)` on the plugin, once, before its endpoints (app-level middlewares go here); `onInit(params)` and `onBefore(req, method, params)` on each route. See the [backend README](backend/README.md#callbacks).
+
 `routesDir` must be a real directory of `*.route.ts` files when you run the app from source (`tsx`). `jiti` loads them. There is no compile step for your routes.
 
 ## A plugin other people can install
@@ -74,7 +76,7 @@ Optional. Set `database: { enabled: true, schemaPath }` on the plugin config. Th
 
 `npx nano-app generate` and `npx nano-app push` read `plugins/<name>/schema.prisma` from the installed `@nano-app/backend` package. That path is for a plugin that lives inside this package. A plugin in your app, or in another npm package, points `schemaPath` at its own file and generates the client with Prisma (or with `nano-app generate app --schema <path>` for the app schema).
 
-The handler receives that client as the second argument. Annotate it with your generated `PrismaClient`.
+Handlers and callbacks receive that client as `params.db`. Type it with `createRoute<PrismaClient>`, passing your generated `PrismaClient`.
 
 ## What belongs in this repository
 
