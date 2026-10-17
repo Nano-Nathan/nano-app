@@ -46,17 +46,17 @@ export default createRoute({
 
 ## Routes
 
-Each `*.route.ts` under `mainPlugin.routesDir` default-exports an object with the HTTP methods it implements. **The file path is the URL** (`index.route.ts` → `/`, `api/users.route.ts` → `/api/users`). `expression` adds parameters:
+Each `*.route.ts` under `mainPlugin.routesDir` default-exports an object with the HTTP methods it implements. **The file path is the URL** (`index.route.ts` → `/`, `api/users.route.ts` → `/api/users`). `expression` is appended to that path as is, in Express syntax (`/:id`, `{/:id}` for optional):
 
 ```ts
 export default createRoute({
-  expression: ":id",                                   // → /users/:id
+  expression: "/:id",                                  // → /users/:id
   GET:    async req => ({ success: true, result: { id: req.params.id } }),
   DELETE: async req => ({ success: true, message: "Deleted" }),
 });
 ```
 
-Each handler receives `(req, db)` — `db` is the Prisma client when a database is enabled ([Database](#database)) — and returns an `ApiResponse`:
+Each handler receives `(req, params)` and returns an `ApiResponse`. `params` holds the plugin's `options`, `db` (the Prisma client when a database is enabled, see [Database](#database)) and `onBeforeResult` (see [Callbacks](#callbacks)):
 
 ```ts
 type ApiResponse<T> = {
@@ -80,7 +80,7 @@ Every option is optional.
 | `listener` | `() => {}` | Callback once the server is listening. |
 | `settings` | `{}` | Values for `app.set()` (e.g. `{ "trust proxy": 1 }`). |
 | `packages` | see below | Framework base middlewares. |
-| `mainPlugin` | `{ routesDir: "src/routes", basePath: "/" }` | Your routes (`routesDir`, relative to `cwd`), `basePath`, `init` and database: see [Database](#database). |
+| `mainPlugin` | `{ routesDir: "src/routes" }` | Your routes (`routesDir`, relative to `cwd`), `basePath` (e.g. `/api`, no trailing slash) and database: see [Database](#database). |
 | `plugins` | `[]` | Plugins mounted around your routes, in order: see [Plugins](#plugins). |
 
 `packages` accepts `morgan`, `cors`, `helmet`, `compression`, `rateLimit`, `express` (`express.json` options) and `urlencoded`. The merge is **per section**: passing one key keeps the others; pass `false`/`undefined` to disable one.
@@ -137,8 +137,8 @@ createNanoApp({ mainPlugin: { database: { enabled: true } } });
 import { createRoute } from "@nano-app/backend";
 import type { PrismaClient } from "../../.nano-app/prisma-clients/app/generated/client";
 
-export default createRoute({
-  GET: async (_req, db: PrismaClient) => ({ success: true, result: await db.user.findMany() }),
+export default createRoute<PrismaClient>({
+  GET: async (_req, { db }) => ({ success: true, result: await db!.user.findMany() }),
 });
 ```
 
@@ -150,7 +150,7 @@ export default createRoute({
 - Each key falls back to its default, so `{ enabled: true }` is enough with the default layout. The client is always read from `.nano-app/prisma-clients/app/`, where `nano-app generate` writes it.
 - Startup fails if `DATABASE_URL` is missing or the client cannot be loaded or is not a valid PostgreSQL Prisma client. The connection opens on the first query.
 - The `nano_` prefix is reserved for the framework's plugins: a datasource schema starting with it fails the startup.
-- Annotate `db` with your generated `PrismaClient` to type it; otherwise it is `any`, and without an enabled database `undefined`.
+- Pass your generated `PrismaClient` to `createRoute<PrismaClient>` to type `db`; otherwise it is `any`, and without an enabled database `undefined`.
 - For several PostgreSQL schemas, declare `schemas = ["public", "billing"]` in the datasource and `@@schema("billing")` on each model; one client covers them all.
 
 ## Plugins
@@ -187,7 +187,32 @@ import hello from "./plugins/hello";
 createNanoApp({ plugins: [hello()] });
 ```
 
-`createPlugin` types the options of that plugin. Each plugin chooses its base path and whether it mounts `before` (default) or `after` your routes.
+`createPlugin` types the options of that plugin. Each plugin chooses its base path and whether it mounts `before` (default) or `after` your routes. What the plugin puts in `options` reaches every callback and handler of its routes in `params`.
+
+### Callbacks
+
+Two levels. Only the plugin's receives the Express app, so nothing app-wide depends on the order of the route files.
+
+| Level | Callback | Runs | Receives | Use |
+|---|---|---|---|---|
+| Plugin (`callbacks` in its config) | `onMount` | Once, after its database and before its endpoints | `(app, params)` | App-level middlewares (a guard), shared setup |
+| Endpoint (`callbacks` in `createRoute`) | `onInit` | Once, when the endpoint is mounted | `(params)` | Setup of that route |
+| Endpoint | `onBefore` | Before every request the endpoint handles | `(req, method, params)` | Validate or load; its return value reaches the handler as `params.onBeforeResult` |
+
+```ts
+export default createPlugin((options?: { publicPaths?: string[] }) => ({
+  name: "guard",
+  routesDir: resolve(dirname(fileURLToPath(import.meta.url)), "routes"),
+  options: { publicPaths: options?.publicPaths ?? [] },
+  callbacks: {
+    onMount: async (app, { publicPaths }) => {
+      app.use((req, _res, next) => next(publicPaths.includes(req.path) ? undefined : { status: 401, message: "Unauthorized" }));
+    },
+  },
+}));
+```
+
+The endpoints of one plugin have no guaranteed order: one route's `onInit` must not depend on another's. `mainPlugin` takes `callbacks` too.
 
 Everything is mounted on one Express application, in this order: base middlewares → `before` plugins → your routes → `after` plugins → 404 → error handler.
 
@@ -216,8 +241,9 @@ GET /unknown                                        // → 404 { success: false,
 | `createNanoApp(config?)` | Creates and starts the app. |
 | `createRoute(route)` | Types a route file. |
 | `createPlugin(creator)` | Types a plugin factory and its options. |
+| `createPluginCallbacks(callbacks)` | Types the callbacks of a plugin (`createPluginCallbacks<PrismaClient>` types `db`), e.g. to keep them in their own file. |
 
-Also exported: the configuration types (`NanoAppConfig`, `PackagesConfig`, `PluginConfig`, `PluginStage`, `MainPluginConfig`, `DatabaseConfig`), the Express `Request` type and the HTTP contract (`ApiResponse`, `ApiPromise`, `QueryParams`, `RouteEntry`, `Handler`, `Handlers`, `NanoObject`).
+Also exported: the configuration types (`NanoAppConfig`, `PackagesConfig`, `PluginConfig`, `PluginStage`, `MainPluginConfig`, `DatabaseConfig`), the Express `Request` type and the HTTP contract (`ApiResponse`, `ApiPromise`, `QueryParams`, `RouteEntry`, `Handler`, `Handlers`, `NanoObject`) and the callback types (`Params`, `Callbacks`, `PluginCallbacks`).
 
 ## Development
 

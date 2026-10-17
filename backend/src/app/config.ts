@@ -39,7 +39,7 @@ export const INITIAL_CONFIG = {
   /** Main plugin to mount */
   mainPlugin: {
     routesDir: "src/routes",
-    basePath: '/',
+    basePath: '',
     database: {
       enabled: false,
       schemaPath: "src/prisma/schema.prisma",

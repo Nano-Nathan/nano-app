@@ -3,9 +3,11 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { startApp, request, mountedPaths, boot } from "./helpers";
 import { Plugin } from "../src/routes/Plugin";
+import { createPluginCallbacks } from "../src/app/creators";
 import type { Express } from "express";
 
 const PLUGIN_ROUTES = "tests/fixtures/plugin-routes";
+const CALLBACK_ROUTES = "tests/fixtures/callback-routes";
 
 describe("plugins", () => {
   test("mounts the routes discovered in its routesDir", async () => {
@@ -43,22 +45,33 @@ describe("plugins", () => {
     assert.deepEqual(await mountedPaths({ routesDir: "tests/fixtures/built-routes" }), ["/hello"]);
   });
 
-  test("init runs once with the app and the client, before the endpoints", async () => {
-    let calls = 0;
+  test("plugin onMount runs once with the app before its endpoints; endpoint onInit once, onBefore per request", async () => {
+    const calls: string[] = [];
     const server = await startApp([{
-      routesDir: PLUGIN_ROUTES,
-      init: (app, db) => {
-        calls++;
-        assert.equal(db, undefined, "no database: no client");
-        app.use((_req, res, next) => { res.set("x-init", "yes"); next(); });
-      },
+      routesDir: CALLBACK_ROUTES,
+      options: { calls, greeting: "hi" },
+      callbacks: createPluginCallbacks({
+        onMount: async (app, params) => {
+          params.calls.push("mount");
+          app.use((_req, res, next) => { res.set("x-mounted", "yes"); next(); });
+        },
+      }),
     }]);
 
     try {
-      const { status, headers } = await request(server.url, "/ping");
+      assert.deepEqual(calls, ["mount", "init"]);
+
+      const { status, body, headers } = await request(server.url, "/hook");
       assert.equal(status, 200);
-      assert.equal(headers.get("x-init"), "yes");
-      assert.equal(calls, 1);
+      assert.deepEqual(body.result, { greeting: "hi", before: "hello" });
+      assert.equal(headers.get("x-mounted"), "yes");
+
+      // The plugin's middleware precedes every endpoint, whatever their order
+      assert.equal((await request(server.url, "/plain")).headers.get("x-mounted"), "yes");
+
+      const denied = await request(server.url, "/hook?deny=1");
+      assert.equal(denied.status, 403);
+      assert.deepEqual(calls, ["mount", "init", "before GET", "before GET"]);
     } finally {
       await server.close();
     }

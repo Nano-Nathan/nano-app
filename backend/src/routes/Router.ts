@@ -8,7 +8,7 @@ export class Router {
 
   constructor(routesDir?: string, basePath?: string) {
     this.routesDir = routesDir;
-    this.basePath = basePath ?? "/";
+    this.basePath = basePath ?? "";
   }
 
   async mount(): Promise<{ path: string, endpoint: Endpoint }[]> {
@@ -22,32 +22,18 @@ export class Router {
 
     // Create the endpoints
     return Object.entries(this.routes)
-    .map(([filePath, { expression, ...methods }]) => {
+    .map(([filePath, { expression, callbacks, ...methods }]) => {
       // Create the path of endpoints
       const path = this.createPath(filePath, expression);
       console.log(`[nano-app] [INFO] ${path}`);
 
       // Create the endpoint
-      return { path, endpoint: new Endpoint(methods) };
+      return { path, endpoint: new Endpoint(methods, callbacks) };
     })
   }
 
-  private createPath (endpoint: string, expression?: string): string {
-    // A endpoint of /index becomes /
-    const isIndex = endpoint === '/index'
-    let path = isIndex ? '/' : endpoint;
-
-    // With an expression, appends it
-    if (!!expression) {
-      path = `${isIndex ? '' : endpoint.replace(/\/+$/, "")}/${expression.replace(/^\/+/, "")}`
-    }
-
-    // If has basePath, append it
-    const basePath = this.basePath.replace(/\/+$/, "")
-    if (basePath) {
-      path = path === "/" ? basePath : `${basePath}${path}`;
-    }
-
-    return path;
+  /** `basePath` + file path (`/index` is the folder itself) + `expression`, as Express reads them */
+  private createPath(endpoint: string, expression: string = ""): string {
+    return `${this.basePath}${endpoint.replace(/\/index$/, "")}${expression}` || "/";
   }
 }
