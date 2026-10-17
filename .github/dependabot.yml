@@ -7,6 +7,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+      day: monday
+      time: "03:00"
+      timezone: America/Argentina/Mendoza
     groups:
       # One PR for every minor/patch dev update, instead of one each
       dev-dependencies:
@@ -20,5 +23,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+      day: monday
+      time: "03:00"
+      timezone: America/Argentina/Mendoza
     commit-message:
       prefix: ci
