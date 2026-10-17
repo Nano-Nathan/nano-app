@@ -25,14 +25,19 @@ Public API, comments, and these files are English: `README.md`, `PLUGINS.md`, `b
 
 ## Pull requests
 
-1. Branch from `main`.
+`main` is protected: every change reaches it through a pull request.
+
+1. Branch from `main`: `feat/<topic>`, `fix/<topic>`, `docs/<topic>`.
 2. Keep the change focused.
 3. Run `pnpm --filter @nano-app/backend test`. If you touch the build, run `pnpm --filter @nano-app/backend build`.
-4. Describe why the change exists. A linked issue helps.
+4. Open the pull request to `main`. Its title must be a [Conventional Commit](https://www.conventionalcommits.org/) (`feat: add X`, `fix: Y`): the merge squashes the branch into one commit with that title, and the title decides the release (see [Releases](#releases)).
+5. Describe why the change exists. A linked issue helps.
+
+The publish workflow runs the tests and the build on every pull request. The PostgreSQL suite runs on a Neon branch created for the run; pull requests from forks and Dependabot skip it.
 
 ## Releases
 
-Every push to `main` runs the publish workflow. [semantic-release](https://github.com/semantic-release/semantic-release) reads the commits since the last `vX.Y.Z` tag and publishes `@nano-app/backend` only when one of them is a [Conventional Commit](https://www.conventionalcommits.org/) that asks for it:
+Every merge to `main` runs the publish workflow. [semantic-release](https://github.com/semantic-release/semantic-release) reads the commits since the last `vX.Y.Z` tag and publishes `@nano-app/backend` only when one of them is a [Conventional Commit](https://www.conventionalcommits.org/) that asks for it:
 
 | Commit | Release |
 |---|---|

@@ -1,0 +1,24 @@
+# Weekly dependency updates. The titles are Conventional Commits so they pass the
+# PR title check: a runtime dependency is a fix (patch release, consumers get it),
+# a dev dependency or an action is not released.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      # One PR for every minor/patch dev update, instead of one each
+      dev-dependencies:
+        dependency-type: development
+        update-types: [minor, patch]
+    commit-message:
+      prefix: fix(deps)
+      prefix-development: chore(deps)
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci

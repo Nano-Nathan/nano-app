@@ -1,18 +1,83 @@
 # Filename must stay publish.yml. npm Trusted Publisher matches this name exactly.
 # https://docs.npmjs.com/trusted-publishers/
+#
+# One workflow for the whole flow:
+# - pull request to main: `test`, required to merge (the ruleset blocks the merge if it fails).
+# - push to main (a squash merge): `test` again, then `release` only if it passed.
+#   semantic-release publishes only when the commit (the pull request title) is fix/feat.
 name: Publish
 
 on:
+  pull_request:
+    branches: [main]
   push:
     branches: [main]
 
 permissions:
-  id-token: write
-  contents: write
+  contents: read
+
+# A new push to a pull request cancels its run in progress; a release never
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  NEON_PROJECT_ID: morning-heart-02625696
 
 jobs:
-  publish:
+  # The PostgreSQL suite runs on a Neon branch created for the run and deleted at the end.
+  # Without the Neon secret (pull requests from forks or Dependabot) DATABASE_URL is empty
+  # and that suite is skipped.
+  test:
     runs-on: ubuntu-latest
+    env:
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.34.4
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          package-manager-cache: false
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Create Neon branch
+        id: neon
+        if: env.NEON_API_KEY != ''
+        uses: neondatabase/create-branch-action@v6
+        with:
+          project_id: ${{ env.NEON_PROJECT_ID }}
+          api_key: ${{ env.NEON_API_KEY }}
+          branch_name: ci/${{ github.event.pull_request.number || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+
+      # Direct URL, not the pooled one: the suite runs `prisma db push`
+      - run: pnpm --filter @nano-app/backend test
+        env:
+          DATABASE_URL: ${{ steps.neon.outputs.db_url }}
+
+      - run: pnpm --filter @nano-app/backend build
+
+      - name: Delete Neon branch
+        if: always() && steps.neon.outputs.branch_id != ''
+        uses: neondatabase/delete-branch-action@v3
+        with:
+          project_id: ${{ env.NEON_PROJECT_ID }}
+          branch: ${{ steps.neon.outputs.branch_id }}
+          api_key: ${{ env.NEON_API_KEY }}
+
+  release:
+    if: github.event_name == 'push'
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
     steps:
       # Full history and tags: semantic-release reads the commits since the last tag
       - uses: actions/checkout@v6
@@ -32,7 +97,6 @@ jobs:
           package-manager-cache: false
 
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @nano-app/backend test
       - run: pnpm --filter @nano-app/backend build
 
       # Releases only for fix/feat commits since the last tag; see .releaserc.json
