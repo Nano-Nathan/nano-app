@@ -1,17 +1,24 @@
-# Filename must stay publish.yml. npm Trusted Publisher matches this name exactly.
+# Filename must stay publish-backend.yml. npm Trusted Publisher of @nano-app/backend matches this name exactly.
 # https://docs.npmjs.com/trusted-publishers/
 #
-# One workflow for the whole flow:
-# - pull request to main: `test`, required to merge (the ruleset blocks the merge if it fails).
-# - push to main (a squash merge): `test` again, then `release` only if it passed.
-#   semantic-release publishes only when the commit (the pull request title) is fix/feat.
-name: Publish
+# One workflow for the whole flow of @nano-app/backend (backend/ and core/, inlined into it):
+# - pull request to main: `test-backend`, required to merge (the ruleset blocks the merge if it fails).
+#   It runs on every pull request, so the required check always reports; without changes in backend/
+#   or core/ it passes without testing.
+# - push to main (a squash merge) that touches the backend: `test-backend` again, then `release` only
+#   if it passed. semantic-release publishes only when the commits since the last `backend-v*` tag ask
+#   for it (fix/feat). It reads every commit since that tag, also the ones that only touched another
+#   package: they can show up in the release notes and in the bump.
+name: Publish backend
 
 on:
   pull_request:
     branches: [main]
   push:
     branches: [main]
+    paths:
+      - backend/**
+      - core/**
 
 permissions:
   contents: read
@@ -28,28 +35,46 @@ jobs:
   # The PostgreSQL suite runs on a Neon branch created for the run and deleted at the end.
   # Without the Neon secret (pull requests from forks or Dependabot) DATABASE_URL is empty
   # and that suite is skipped.
-  test:
+  test-backend:
     runs-on: ubuntu-latest
     env:
       NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
     steps:
+      # Full history: a pull request is tested only if its diff against the base touches the backend
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
-      - uses: pnpm/action-setup@v6
+      - name: Touches the backend
+        id: changes
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ] || git diff --name-only "origin/$BASE_REF...HEAD" | grep -qE '^(backend|core)/'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "No changes in backend/ or core/: nothing to test"
+          fi
+
+      - if: steps.changes.outputs.run == 'true'
+        uses: pnpm/action-setup@v6
         with:
           version: 10.34.4
 
-      - uses: actions/setup-node@v7
+      - if: steps.changes.outputs.run == 'true'
+        uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: pnpm
           package-manager-cache: false
 
-      - run: pnpm install --frozen-lockfile
+      - if: steps.changes.outputs.run == 'true'
+        run: pnpm install --frozen-lockfile
 
       - name: Create Neon branch
         id: neon
-        if: env.NEON_API_KEY != ''
+        if: steps.changes.outputs.run == 'true' && env.NEON_API_KEY != ''
         uses: neondatabase/create-branch-action@v6
         with:
           project_id: ${{ env.NEON_PROJECT_ID }}
@@ -57,11 +82,13 @@ jobs:
           branch_name: ci/${{ github.event.pull_request.number || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       # Direct URL, not the pooled one: the suite runs `prisma db push`
-      - run: pnpm --filter @nano-app/backend test
+      - if: steps.changes.outputs.run == 'true'
+        run: pnpm --filter @nano-app/backend test
         env:
           DATABASE_URL: ${{ steps.neon.outputs.db_url }}
 
-      - run: pnpm --filter @nano-app/backend build
+      - if: steps.changes.outputs.run == 'true'
+        run: pnpm --filter @nano-app/backend build
 
       - name: Delete Neon branch
         if: always() && steps.neon.outputs.branch_id != ''
@@ -73,11 +100,14 @@ jobs:
 
   release:
     if: github.event_name == 'push'
-    needs: test
+    needs: test-backend
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: write
+    defaults:
+      run:
+        working-directory: backend
     steps:
       # Full history and tags: semantic-release reads the commits since the last tag
       - uses: actions/checkout@v7
@@ -97,9 +127,9 @@ jobs:
           package-manager-cache: false
 
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @nano-app/backend build
+      - run: pnpm build
 
-      # Releases only for fix/feat commits since the last tag; see .releaserc.json
+      # Releases only for fix/feat commits since the last tag; see backend/.releaserc.json
       - run: npx semantic-release@25
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

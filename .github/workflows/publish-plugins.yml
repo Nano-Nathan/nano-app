@@ -1,0 +1,106 @@
+# Filename must stay publish-plugins.yml. npm Trusted Publisher of @nano-app/plugins matches this name exactly.
+# https://docs.npmjs.com/trusted-publishers/
+#
+# One workflow for the whole flow of @nano-app/plugins (plugins/):
+# - pull request to main: `test-plugins`, required to merge (the ruleset blocks the merge if it fails).
+#   It runs on every pull request, so the required check always reports; without changes in plugins/
+#   it passes without testing.
+# - push to main (a squash merge) that touches the plugins: `test-plugins` again, then `release` only
+#   if it passed. semantic-release publishes only when the commits since the last `plugins-v*` tag ask
+#   for it (fix/feat). It reads every commit since that tag, also the ones that only touched another
+#   package: they can show up in the release notes and in the bump.
+name: Publish plugins
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - plugins/**
+
+permissions:
+  contents: read
+
+# A new push to a pull request cancels its run in progress; a release never
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test-plugins:
+    runs-on: ubuntu-latest
+    steps:
+      # Full history: a pull request is tested only if its diff against the base touches the plugins
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Touches the plugins
+        id: changes
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ] || git diff --name-only "origin/$BASE_REF...HEAD" | grep -qE '^plugins/'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "No changes in plugins/: nothing to test"
+          fi
+
+      - if: steps.changes.outputs.run == 'true'
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10.34.4
+
+      - if: steps.changes.outputs.run == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          package-manager-cache: false
+
+      - if: steps.changes.outputs.run == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - if: steps.changes.outputs.run == 'true'
+        run: pnpm --filter @nano-app/plugins test
+
+      - if: steps.changes.outputs.run == 'true'
+        run: pnpm --filter @nano-app/plugins build
+
+  release:
+    if: github.event_name == 'push'
+    needs: test-plugins
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+    defaults:
+      run:
+        working-directory: plugins
+    steps:
+      # Full history and tags: semantic-release reads the commits since the last tag
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.34.4
+
+      # No registry-url: setup-node writes an empty _authToken and npm skips OIDC.
+      # https://github.com/npm/documentation/issues/1960
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          package-manager-cache: false
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      # Releases only for fix/feat commits since the last tag; see plugins/.releaserc.json
+      - run: npx semantic-release@25
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

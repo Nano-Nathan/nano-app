@@ -155,7 +155,7 @@ export default createRoute<PrismaClient>({
 
 ## Plugins
 
-A plugin is a group of endpoints mounted under a base path. Your routes are mounted as one (named `app`). This package ships no official plugin. You write one with `createPlugin` and list it in `plugins`. Nothing is mounted unless you list it.
+A plugin is a group of endpoints mounted under a base path. Your routes are mounted as one (named `app`). The official plugins are in [`@nano-app/plugins`](https://github.com/Nano-Nathan/nano-app/blob/main/plugins/README.md). You write one with `createPlugin` and list it in `plugins`. Nothing is mounted unless you list it.
 
 ```ts
 // src/plugins/hello/index.ts

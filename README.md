@@ -5,7 +5,7 @@
 
 File-convention backend for Node.js. You write `*.route.ts` files. `@nano-app/backend` discovers them, mounts an Express 5 server, and turns every `ApiResponse` into HTTP.
 
-This repository publishes **`@nano-app/backend`**. It does not ship official plugins. You add your own with `createPlugin`, or publish them as separate packages.
+This repository publishes **`@nano-app/backend`** and **`@nano-app/plugins`**, the official plugins. You add your own with `createPlugin`, or publish them as separate packages.
 
 While the version is `0.x`, the public API can change.
 
@@ -50,21 +50,22 @@ The file path is the URL. Full API, database, and plugin contract: [`backend/REA
 |---|---|---|---|
 | `@nano-app/backend` | `backend/` | published | Express server, convention routes, optional PostgreSQL |
 | `@nano-app/core` | `core/` | private | Convention loader, inlined into the backend build |
+| `@nano-app/plugins` | `plugins/` | published | Official plugins: `import { <name> } from "@nano-app/plugins/<name>"` |
 
-Tests are `backend/tests`.
+Tests are `backend/tests` and `plugins/tests`. Each published package has its own version.
 
 ## Plugins
 
 A plugin is a directory of `*.route.ts` files plus a `createPlugin` factory. List it in `createNanoApp({ plugins })`. Nothing is mounted by default.
 
-How to write one, and how to publish it for other people: [PLUGINS.md](PLUGINS.md).
+The official ones: [`plugins/`](plugins/README.md). How to write one, and how to publish it for other people: [PLUGINS.md](PLUGINS.md).
 
 ## Develop
 
 ```bash
 pnpm install
-pnpm --filter @nano-app/backend test
-pnpm --filter @nano-app/backend build
+pnpm test
+pnpm build
 ```
 
 PostgreSQL tests run only when `DATABASE_URL` is set. See [CONTRIBUTING.md](CONTRIBUTING.md).

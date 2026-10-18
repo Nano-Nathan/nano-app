@@ -104,6 +104,27 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  plugins:
+    devDependencies:
+      '@nano-app/backend':
+        specifier: workspace:*
+        version: link:../backend
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.0
+      glob:
+        specifier: ^13.0.6
+        version: 13.0.6
+      tsup:
+        specifier: ^9.0.0
+        version: 9.0.0(jiti@2.7.0)(postcss@8.5.16)(tsx@4.23.15)(typescript@5.9.3)
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
 packages:
 
   '@electric-sql/pglite-socket@0.1.3':
