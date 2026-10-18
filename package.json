@@ -3,8 +3,8 @@
   "private": true,
   "packageManager": "pnpm@10.34.4",
   "scripts": {
-    "build": "pnpm --filter @nano-app/backend build",
-    "test": "pnpm --filter @nano-app/backend test",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
     "dev": "pnpm --filter @nano-app/backend dev"
   },
   "devDependencies": {

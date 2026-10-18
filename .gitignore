@@ -1,6 +1,7 @@
 node_modules
 backend/build
 core/build
+plugins/build
 .env
 .env.*
 !.env.example

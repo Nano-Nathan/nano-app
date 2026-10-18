@@ -1,6 +1,6 @@
 # Plugins
 
-`@nano-app/backend` ships the plugin contract and no official plugin. A plugin is a `createPlugin` factory: options in, `PluginConfig` out. The app mounts only the plugins you list.
+`@nano-app/backend` ships the plugin contract. The official plugins are in [`@nano-app/plugins`](plugins/README.md). A plugin is a `createPlugin` factory: options in, `PluginConfig` out. The app mounts only the plugins you list.
 
 ## A plugin in your app
 
@@ -80,4 +80,4 @@ Handlers and callbacks receive that client as `params.db`. Type it with `createR
 
 ## What belongs in this repository
 
-Pull requests to `backend/` and `core/` are welcome. A pull request that adds `backend/plugins/<name>` is not, until the maintainers ask for that plugin. Official plugins, when they exist, will be versioned with the backend and exported on purpose. This release has no `./plugins` export.
+Pull requests to `backend/`, `core/` and `plugins/` are welcome. A pull request that adds `plugins/<name>` is not, until the maintainers ask for that plugin. Official plugins live in `plugins/<name>/`, are exported as `import { <name> } from "@nano-app/plugins/<name>"`, and `@nano-app/plugins` has its own version.
