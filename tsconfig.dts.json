@@ -1,0 +1,21 @@
+{
+  // Declarations of the published packages, read only by the dts step of tsdown (rolldown-plugin-dts).
+  // That step takes the folder of its tsconfig as rootDir: from here, core/ (inlined into the backend)
+  // is inside it. Each package keeps its own tsconfig.json for tsx, tests and the editor.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "declaration": true,
+    "strict": true,
+    "moduleResolution": "Bundler",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@nano-app/backend": ["./backend/src/index.ts"],
+      "@nano-app/core": ["./core/index.ts"],
+      "@nano-app/core/*": ["./core/*"]
+    }
+  },
+  "include": ["backend/const.ts", "backend/src", "backend/bin", "backend/plugins", "core", "plugins/*/**/*.ts"],
+  "exclude": ["**/node_modules", "**/build", "plugins/tests"]
+}

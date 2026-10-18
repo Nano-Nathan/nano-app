@@ -248,8 +248,8 @@ Also exported: the configuration types (`NanoAppConfig`, `PackagesConfig`, `Plug
 ## Development
 
 ```bash
-pnpm build     # tsup → build/ (ESM + .d.ts)
-pnpm dev       # tsup --watch
+pnpm build     # tsdown → build/ (ESM + .d.ts)
+pnpm dev       # tsdown --watch
 pnpm test      # node:test against the real server (tsx --test)
 DATABASE_URL=postgres://… pnpm test   # also runs the PostgreSQL suite
 ```
