@@ -11,6 +11,39 @@ pnpm monorepo: `core/` (private, inlined into the backend), `backend/` (`@nano-a
 - Agents do not commit or push. Stage only the files you changed; the maintainer commits.
 - No Claude attribution in commits or pull requests.
 
+## Business logic: ask first
+
+How the framework behaves (what it does with a request, a config, an error, a plugin, the database; what it accepts, rejects, stores or returns) is the maintainer's decision. Code style is not: follow this file without asking.
+
+Before implementing or changing any behavior, stop and ask. Do not write the code until the maintainer picks an option. The question has:
+
+1. **What needs deciding**, in one or two plain sentences, without jargon.
+2. **Two or three options.** For each one:
+   - The flow, step by step in plain words: what comes in, what happens to it, what goes out (`request arrives → token is read → user is looked up → handler runs with the user`).
+   - What changes for the consumer: config, API, errors they see, migrations.
+   - Cost: code added, what it rules out later, risks.
+3. **A recommendation** and why, marked as such. Other approaches are always possible: mention one if it is reasonable but not proposed.
+
+If a task hides a behavior decision that was not asked about (a default, an edge case, an error), stop at it and ask the same way.
+
+## Principles
+
+Industry practices this repository follows. The concrete rules below win when they are more specific.
+
+- **KISS and YAGNI**: the simplest solution for today's need. No code for a future that has not arrived.
+- **DRY**: one source of truth for each piece of knowledge (a rule, a message, a constant), not only for repeated lines.
+- **Single responsibility**: a function does one thing, a file has one job, a module one reason to change.
+- **Separation of concerns**: I/O (files, network, database, `console`) at the edges; the logic in between receives values and returns values, so it can be tested and read alone.
+- **Fail fast**: invalid configuration fails at startup with a clear message, not on the first request.
+- **Validate at the boundaries**: data from outside (requests, consumer files, env) is checked once where it enters; inside, types are trusted.
+- **Immutability**: `const` by default, `let` only when a value changes. Do not mutate parameters; return a new value.
+- **Least surprise**: names say what a thing does and nothing more; a function named `get` has no side effects.
+- **Least privilege**: routes private by default, workflow permissions minimal, no secrets in logs.
+- **HTTP semantics**: `GET` reads and never changes state; status codes mean what the standard says (400 bad input, 401 not authenticated, 403 not allowed, 404 not found, 5xx server fault).
+- **Semantic Versioning and Conventional Commits**: a change to the public API is `feat!:`; fixes are `fix:`.
+- **Tests describe behavior**, not implementation: they call the public API and check what a consumer sees.
+- **Boy Scout rule**: code you touch for a task follows this file when you leave it; code you do not touch stays as is.
+
 ## Code style
 
 Match `core/` and `backend/src/`. The simplest code that works wins.
