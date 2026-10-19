@@ -1,33 +1,11 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
 import pg from 'pg';
 import { request, startApp } from '../../backend/tests/helpers';
 import auth from '../auth';
 import health from '../health';
 
 const ROUTES = 'tests/fixtures/routes';
-const CLIENT_DIR = '.nano-app/prisma-clients/auth';
-
-/**
- * Creates the table and the client of the plugin, as `nano-app push auth` does.
- * The command reads the built package; the tests run on the sources
- */
-function push(): void {
-  // A copy of the schema whose client lands next to it
-  mkdirSync(CLIENT_DIR, { recursive: true });
-  writeFileSync(`${CLIENT_DIR}/schema.prisma`, readFileSync('auth/schema.prisma', 'utf-8'));
-
-  // Generates the client and pushes the table
-  const sPrisma = createRequire(import.meta.url).resolve('prisma/build/index.js');
-  for (const aArgs of [['generate'], ['db', 'push', '--url', process.env.DATABASE_URL!]]) {
-    execFileSync(process.execPath, [sPrisma, ...aArgs, '--schema', `${CLIENT_DIR}/schema.prisma`], {
-      stdio: 'ignore',
-    });
-  }
-}
 
 describe(
   'auth',
@@ -50,13 +28,11 @@ describe(
       });
 
     before(async () => {
-      // Starts from an empty schema, with the table pushed
+      // Starts from an empty schema: the startup migrates it
       const oClient = new pg.Client({ connectionString: process.env.DATABASE_URL });
       await oClient.connect();
       await oClient.query('DROP SCHEMA IF EXISTS nano_auth CASCADE');
       await oClient.end();
-      rmSync(CLIENT_DIR, { recursive: true, force: true });
-      push();
     });
 
     after(async () => {

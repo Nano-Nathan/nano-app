@@ -19,8 +19,11 @@ export default defineConfig({
   // The root tsconfig.dts.json keeps the backend and core sources inside the dts rootDir
   dts: { entry: ['*/index.ts'], tsconfig: '../tsconfig.dts.json' },
   outDir: 'build',
-  // A plugin's Prisma schema sits next to its index.js, where `nano-app push <name>` looks for it
-  copy: globSync('*/schema.prisma').map(file => ({ from: file, to: `build/${dirname(file)}` })),
+  // A plugin's Prisma schema and its migrations sit next to its index.js, where nano-app looks for them
+  copy: globSync(['*/schema.prisma', '*/migrations']).map(file => ({
+    from: file,
+    to: `build/${dirname(file)}`,
+  })),
   clean: true,
   // The backend is a peer: the consumer's copy, never a bundled one
   deps: {

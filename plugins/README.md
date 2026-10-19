@@ -40,11 +40,7 @@ createNanoApp({ plugins: [health(), auth({ publicPaths: ["/webhooks/telegram"] }
 
 ### Table
 
-The keys live in `nano_auth.api_key`, through the app's Prisma (`DATABASE_URL`). Only the SHA-256 of each key is stored. Create the table before the first startup:
-
-```bash
-npx nano-app push auth
-```
+The keys live in `nano_auth.api_key`, through the app's Prisma (`DATABASE_URL`). Only the SHA-256 of each key is stored. nano-app creates and migrates the table at startup: there is nothing to run.
 
 ### Master key
 
@@ -76,7 +72,8 @@ Only the master key reaches them (403 with any other key).
 plugins/
 └── <name>/
     ├── index.ts        default-exports the plugin factory: the import path
-    ├── schema.prisma   its tables, when it has any (`npx nano-app push <name>`)
+    ├── schema.prisma   its tables, when it has any
+    ├── migrations/     their migrations, applied at startup
     └── routes/         *.route.ts, mounted under the plugin's basePath
 ```
 
