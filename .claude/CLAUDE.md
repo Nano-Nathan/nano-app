@@ -100,7 +100,7 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 - `for...of` to iterate when nothing is returned, never `.forEach` (it does not wait for `await`). `.map`, `.filter` and `.some` when they return something.
 - `async`/`await` in general. Express handlers and middlewares chain `.then()` and end in `.catch(fnNext)`.
 - Errors: invalid consumer files are warned about and skipped (one bad route does not discard the rest). Startup problems throw `new Error('[nano-app] [ERROR] …')`, no error classes. Handlers throw a string (400) or `{ status, message, warning }`.
-- Messages: `[nano-app] [ERROR]`, `[nano-app] [WARNING]` or `[nano-app] [INFO]`, then the file or thing, what is wrong, and the command that fixes it (``Run `nano-app-auth migrate` first.``).
+- Messages: `[nano-app] [ERROR]`, `[nano-app] [WARNING]` or `[nano-app] [INFO]`, then the file or thing, what is wrong, and the command that fixes it (``Run `pnpm add prisma`.``).
 
 ### Comments and format
 
@@ -121,7 +121,7 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 - Untrusted input (`req.body`, `req.params`, `req.query`, headers) is validated before use. SQL uses parameters (`$1`); identifiers (schema, table) come only from constants.
 - Routes are private by default. A plugin that exposes something public says so in its README; with `auth`, only `publicPaths` and what is mounted before it are public.
 - The error handler answers with the message of what was thrown, also on 5xx: it is the consumer's job not to throw internal data. Framework messages never include secrets or connection strings.
-- No DDL at startup: migrations are a manual command (`nano-app-auth migrate`, `nano-app push`). The startup may only check them.
+- No DDL at startup: the consumer migrates their schemas with Prisma; the startup only generates clients and checks tables. The one exception is an official plugin's reviewed, additive migrations (`migrations/` next to its schema), applied with `prisma migrate deploy` (see PLUGINS.md).
 - A new dependency needs a reason a built-in cannot cover. No dependencies with install scripts.
 - Workflows: `permissions: contents: read` by default; `id-token: write` and `contents: write` only on release jobs. Packages are published only by CI (npm trusted publishing).
 - Report vulnerabilities as in [SECURITY.md](../SECURITY.md).
