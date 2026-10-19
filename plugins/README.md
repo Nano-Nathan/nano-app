@@ -66,6 +66,14 @@ Only the master key reaches them (403 with any other key).
 | No key, or a key that does not exist | 401 |
 | Any valid key, the master included | passes |
 
+### Users and sessions
+
+The plugin covers API keys only: it has no users, login or sessions. If your app needs them, we recommend integrating [Better Auth](https://www.better-auth.com) yourself:
+
+- Wrap its handler in a plugin of your own and list it **before** `auth()`, so its endpoints (sign-in, sign-up, ...) stay public.
+- Give its tables their own PostgreSQL schema, outside `nano_*`, and apply its migrations with its CLI: nano-app does not migrate them.
+- To protect your routes with a session instead of a key, check it in your handlers or in an `onBefore` of your own.
+
 ## Layout
 
 ```

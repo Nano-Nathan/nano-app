@@ -37,7 +37,7 @@
     "node": ">=22"
   },
   "peerDependencies": {
-    "@nano-app/backend": ">=0.8.0"
+    "@nano-app/backend": ">=0.9.0"
   },
   "devDependencies": {
     "@nano-app/backend": "workspace:*",
