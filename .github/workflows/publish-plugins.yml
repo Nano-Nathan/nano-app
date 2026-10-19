@@ -27,9 +27,17 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+env:
+  NEON_PROJECT_ID: morning-heart-02625696
+
 jobs:
+  # The PostgreSQL suite (the auth plugin) runs on a Neon branch created for the run and deleted
+  # at the end. Without the Neon secret (pull requests from forks or Dependabot) DATABASE_URL is
+  # empty and that suite is skipped.
   test-plugins:
     runs-on: ubuntu-latest
+    env:
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
     steps:
       # Full history: a pull request is tested only if its diff against the base touches the plugins
       - uses: actions/checkout@v7
@@ -67,11 +75,30 @@ jobs:
       - if: steps.changes.outputs.run == 'true'
         run: pnpm format:check
 
+      - name: Create Neon branch
+        id: neon
+        if: steps.changes.outputs.run == 'true' && env.NEON_API_KEY != ''
+        uses: neondatabase/create-branch-action@v6
+        with:
+          project_id: ${{ env.NEON_PROJECT_ID }}
+          api_key: ${{ env.NEON_API_KEY }}
+          branch_name: ci/plugins-${{ github.event.pull_request.number || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+
       - if: steps.changes.outputs.run == 'true'
         run: pnpm --filter @nano-app/plugins test
+        env:
+          DATABASE_URL: ${{ steps.neon.outputs.db_url }}
 
       - if: steps.changes.outputs.run == 'true'
         run: pnpm --filter @nano-app/plugins build
+
+      - name: Delete Neon branch
+        if: always() && steps.neon.outputs.branch_id != ''
+        uses: neondatabase/delete-branch-action@v3
+        with:
+          project_id: ${{ env.NEON_PROJECT_ID }}
+          branch: ${{ steps.neon.outputs.branch_id }}
+          api_key: ${{ env.NEON_API_KEY }}
 
   release:
     if: github.event_name == 'push'

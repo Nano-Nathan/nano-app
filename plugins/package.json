@@ -37,12 +37,17 @@
     "node": ">=22"
   },
   "peerDependencies": {
-    "@nano-app/backend": ">=0.7.1"
+    "@nano-app/backend": ">=0.8.0"
   },
   "devDependencies": {
     "@nano-app/backend": "workspace:*",
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
     "@types/node": "^26.6.5",
+    "@types/pg": "^8.23.1",
     "glob": "^13.0.6",
+    "pg": "^8.23.1",
+    "prisma": "^7.10.1",
     "tsdown": "^0.23.1",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"

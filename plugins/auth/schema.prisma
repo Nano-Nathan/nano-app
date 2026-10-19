@@ -1,0 +1,23 @@
+// API keys of the auth plugin, in the nano_auth schema
+datasource db {
+  provider = "postgresql"
+  schemas  = ["nano_auth"]
+}
+
+generator client {
+  provider = "prisma-client"
+  output   = "./generated"
+}
+
+model ApiKey {
+  id        String   @id @default(uuid())
+  name      String
+  /// SHA-256 of the key: the key itself is never stored
+  hash      String   @unique
+  /// true on the master key, null on the rest: the unique index allows a single master
+  isMaster  Boolean? @unique
+  createdAt DateTime @default(now())
+
+  @@map("api_key")
+  @@schema("nano_auth")
+}
