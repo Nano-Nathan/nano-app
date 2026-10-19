@@ -9,9 +9,6 @@
       "import": "./build/*/index.js"
     }
   },
-  "bin": {
-    "nano-app-auth": "build/auth/cli.js"
-  },
   "files": [
     "build",
     "LICENSE"
@@ -44,17 +41,15 @@
   },
   "devDependencies": {
     "@nano-app/backend": "workspace:*",
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
     "@types/node": "^26.6.5",
     "@types/pg": "^8.23.1",
     "glob": "^13.0.6",
+    "pg": "^8.23.1",
+    "prisma": "^7.10.1",
     "tsdown": "^0.23.1",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
-  },
-  "dependencies": {
-    "@better-auth/api-key": "^1.7.10",
-    "better-auth": "^1.7.10",
-    "jiti": "^2.7.0",
-    "pg": "^8.23.1"
   }
 }

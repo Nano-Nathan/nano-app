@@ -1,10 +1,11 @@
+import { dirname } from 'node:path';
 import { defineConfig } from 'tsdown';
 import { globSync } from 'glob';
 
 export default defineConfig({
-  // One folder per plugin: `<name>/index.ts` is its import path (`@nano-app/plugins/<name>`),
-  // `<name>/cli.ts` its command when it has one. Routes are loaded from `routesDir` at runtime, so each one is its own file
-  entry: globSync(['*/index.ts', '*/cli.ts', '*/routes/**/*.route.ts'], {
+  // One folder per plugin: `<name>/index.ts` is its import path (`@nano-app/plugins/<name>`).
+  // Routes are loaded from `routesDir` at runtime, so each one is its own file
+  entry: globSync(['*/index.ts', '*/routes/**/*.route.ts'], {
     ignore: ['node_modules/**', 'build/**', 'tests/**'],
   }),
   // One output file per source file, under its plugin folder: `import.meta.url` of each plugin stays next to its routes/
@@ -18,6 +19,8 @@ export default defineConfig({
   // The root tsconfig.dts.json keeps the backend and core sources inside the dts rootDir
   dts: { entry: ['*/index.ts'], tsconfig: '../tsconfig.dts.json' },
   outDir: 'build',
+  // A plugin's Prisma schema sits next to its index.js, where `nano-app push <name>` looks for it
+  copy: globSync('*/schema.prisma').map(file => ({ from: file, to: `build/${dirname(file)}` })),
   clean: true,
   // The backend is a peer: the consumer's copy, never a bundled one
   deps: {

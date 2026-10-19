@@ -1,69 +1,43 @@
-import { APIError } from 'better-auth/api';
-import { fromNodeHeaders, toNodeHandler } from 'better-auth/node';
-import { createPluginCallbacks } from '@nano-app/backend';
-import { CHANGE_PASSWORD_MESSAGE, ensureAdmin } from './admin';
-import { createAuth } from './instance';
-import { pendingMigrations } from './migrate';
-import type { PluginConfig } from '@nano-app/backend';
-import type { Auth, AuthOptions } from '../types/auth';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { createPlugin, createPluginCallbacks } from '@nano-app/backend';
+import { ensureMaster, findKey } from './keys';
+import type { AuthOptions } from '../types/auth';
+
+/** Folder of this file, from the sources and from the build */
+const DIR = dirname(fileURLToPath(import.meta.url));
 
 /**
- * Better Auth on `basePath`, and a guard in front of everything mounted after this plugin.
- * Not a `createPlugin` factory: its config carries the Better Auth instance, not the options it receives
+ * API keys: every route mounted after this plugin needs a valid `x-api-key`.
+ * The master key, created on the first startup, manages the rest under `basePath`
  */
-export default function auth(oOptions: AuthOptions = {}): PluginConfig<{ auth: Auth }> {
-  // Better Auth instance, created with the plugin so the migration command can read it
-  const { basePath = '/auth', publicPaths = [], betterAuth } = oOptions;
-  const oAuth = createAuth(basePath, betterAuth);
+export default createPlugin((options?: AuthOptions) => {
+  const { basePath = '/api-keys', publicPaths = [] } = options ?? {};
 
   return {
     name: 'auth',
     basePath,
     stage: 'before',
-    // No routes of its own: Better Auth answers every path under basePath
-    routesDir: '',
-    options: { auth: oAuth },
+    routesDir: resolve(DIR, 'routes'),
+    database: { enabled: true, schemaPath: resolve(DIR, 'schema.prisma') },
     callbacks: createPluginCallbacks({
-      onMount: async oApp => {
-        // Migrations are manual: the startup only checks them
-        const sPending = await pendingMigrations(oAuth);
-        if (sPending) {
-          throw new Error(
-            `[nano-app] [ERROR] auth: ${sPending}. Run \`nano-app-auth migrate\` first.`,
-          );
-        }
+      onMount: async (oApp, { db }) => {
+        // Creates the master key on the first startup
+        await ensureMaster(db);
 
-        // Creates the admin on the first startup
-        await ensureAdmin(oAuth);
-
-        // Better Auth endpoints, before the guard
-        oApp.all(`${basePath}/*splat`, toNodeHandler(oAuth));
-
-        // Guard: a session or an API key of a user that changed the default password
+        // Guard: a valid key, on this plugin's endpoints and on everything mounted after it
         oApp.use((oReq, _oRes, fnNext) => {
           // Public paths pass as they are
           if (publicPaths.includes(oReq.path)) return fnNext();
 
-          // Reads the session from the cookie or the API key
-          oAuth.api
-            .getSession({ headers: fromNodeHeaders(oReq.headers) })
-            .then(oSession => {
-              if (!oSession) return fnNext({ status: 401, message: 'Unauthorized' });
-              if ((oSession.user as { mustChangePassword?: boolean }).mustChangePassword) {
-                return fnNext({ status: 403, message: CHANGE_PASSWORD_MESSAGE });
-              }
-              fnNext();
-            })
-            // Better Auth errors (e.g. an invalid API key) carry their HTTP status in statusCode
-            .catch(oError =>
-              fnNext(
-                oError instanceof APIError
-                  ? { status: oError.statusCode, message: oError.message }
-                  : oError,
-              ),
-            );
+          // Looks up the key of the request
+          findKey(db, oReq.get('x-api-key'))
+            .then(oKey =>
+              fnNext(oKey ? undefined : { status: 401, message: 'Invalid or missing API key' }),
+            )
+            .catch(fnNext);
         });
       },
     }),
   };
-}
+});

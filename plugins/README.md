@@ -18,78 +18,57 @@ createNanoApp({ plugins: [health()] });
 | Plugin | Import | Endpoints | Options |
 |---|---|---|---|
 | `health` | `import health from "@nano-app/plugins/health"` | `GET /health` → `{ status: "ok" }` | `basePath` (default `"/health"`) |
-| `auth` | `import auth from "@nano-app/plugins/auth"` | [Better Auth](https://www.better-auth.com/docs) under `/auth/*`, and a guard on every route after it | see [auth](#auth) |
+| `auth` | `import auth from "@nano-app/plugins/auth"` | `/api-keys`, and an API key guard on every route after it | see [auth](#auth) |
 
 ## auth
 
-[Better Auth](https://www.better-auth.com/docs) with a database, an admin user and a guard. Its client is Better Auth's own (`better-auth/react`).
+API keys. Every route mounted after the plugin needs a valid key in the `x-api-key` header; the routes of the plugins listed before it and `publicPaths` stay public. The keys are managed with the master key, created on the first startup.
 
 ```ts
-// src/auth.ts: the migration command reads the plugin from here
-import auth from "@nano-app/plugins/auth";
-
-export default auth({
-  publicPaths: ["/webhooks/telegram"],
-  betterAuth: { socialProviders: { github: { clientId: "…", clientSecret: "…" } } },
-});
-```
-
-```ts
-// src/app.ts
 import { createNanoApp } from "@nano-app/backend";
 import health from "@nano-app/plugins/health";
-import authPlugin from "./auth";
+import auth from "@nano-app/plugins/auth";
 
 // health is listed before auth: it stays public
-createNanoApp({ plugins: [health(), authPlugin] });
+createNanoApp({ plugins: [health(), auth({ publicPaths: ["/webhooks/telegram"] })] });
 ```
 
 | Option | Default | |
 |---|---|---|
-| `basePath` | `"/auth"` | Base path of the Better Auth endpoints |
-| `publicPaths` | `[]` | Exact paths the guard lets through |
-| `betterAuth` | `{}` | [Better Auth options](https://www.better-auth.com/docs/reference/options), except `database`, `basePath`, `emailAndPassword` and `plugins`: the plugin sets them |
+| `basePath` | `"/api-keys"` | Base path of the endpoints that manage the keys |
+| `publicPaths` | `[]` | Exact paths that need no key |
 
-### Environment
+### Table
 
-| Variable | |
-|---|---|
-| `DATABASE_URL` | PostgreSQL, direct connection. The tables live in its `nano_auth` schema |
-| `BETTER_AUTH_SECRET` | Signs sessions and cookies. Required in production |
-| `BETTER_AUTH_URL` | Public URL of the app, as the browser sees it (cookies, redirects, origin check) |
-
-### Migrations
-
-Manual, never at startup. The startup only checks them: if the schema or a table is missing, the app does not start and says what to run.
+The keys live in `nano_auth.api_key`, through the app's Prisma (`DATABASE_URL`). Only the SHA-256 of each key is stored. Create the table before the first startup:
 
 ```bash
-pnpm exec nano-app-auth migrate [file]   # file default-exports auth({ … }); defaults to src/auth.ts
+npx nano-app push auth
 ```
 
-It creates the `nano_auth` schema and the tables Better Auth needs. It never drops anything.
+### Master key
 
-### What the plugin sets
+The first startup creates it and prints it **once** in the console: keep it. A unique index allows a single master, also when several instances start together. It cannot be deleted. If it is lost, delete its row (`isMaster = true`) and restart: a new one is created and printed.
 
-- `database`: a `pg` pool on `DATABASE_URL` with `search_path=nano_auth`.
-- `emailAndPassword`: enabled, sign-up disabled. The admin creates the users.
-- Better Auth plugins `admin` (roles, user management), `username` (sign in with a username) and `apiKey` with `enableSessionForAPIKeys`.
-- A user field `mustChangePassword`.
+### Endpoints
 
-### Admin user
-
-The first startup creates the user `admin` (role `admin`) with the password `admin1234` and `mustChangePassword: true`. Its first sign-in (`POST /auth/sign-in/username`) has to change it (`POST /auth/change-password`). Until then every other request of that session answers 403, Better Auth's endpoints included, and every startup warns.
-
-### Guard
-
-Mounted after the Better Auth handler. It covers every route mounted after the plugin: the app routes and the plugins listed after it. It accepts a session cookie or an API key in `x-api-key`.
+Only the master key reaches them (403 with any other key).
 
 | Request | Answer |
 |---|---|
-| Path in `publicPaths`, or served before the guard | passes |
-| No session and no API key | 401 |
-| Session of a user with `mustChangePassword` | 403 |
-| Invalid API key | Better Auth's status (403) |
-| Valid session or API key | passes |
+| `GET /api-keys` | The keys: `id`, `name`, `isMaster`, `createdAt`. Never the key |
+| `POST /api-keys` `{ name }` | A new key, with its `key` only in this response |
+| `DELETE /api-keys/:id` | Deletes it; it stops working at once. 403 on the master |
+| `POST /api-keys/:id/renew` | Same id, a new `key`; the old one stops working at once |
+| `POST /api-keys/master/renew` | Renews the master |
+
+### Guard
+
+| Request | Answer |
+|---|---|
+| Path in `publicPaths`, or served before the plugin | passes |
+| No key, or a key that does not exist | 401 |
+| Any valid key, the master included | passes |
 
 ## Layout
 
@@ -97,7 +76,7 @@ Mounted after the Better Auth handler. It covers every route mounted after the p
 plugins/
 └── <name>/
     ├── index.ts        default-exports the plugin factory: the import path
-    ├── cli.ts          its command, when it has one (`nano-app-<name>`)
+    ├── schema.prisma   its tables, when it has any (`npx nano-app push <name>`)
     └── routes/         *.route.ts, mounted under the plugin's basePath
 ```
 

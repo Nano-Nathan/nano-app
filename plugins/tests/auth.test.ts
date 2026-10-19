@@ -1,155 +1,170 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import pg from 'pg';
-import { startApp, request } from '../../backend/tests/helpers';
-import health from '../health';
+import { request, startApp } from '../../backend/tests/helpers';
 import auth from '../auth';
-import { DEFAULT_ADMIN_PASSWORD } from '../auth/admin';
-import { migrate, SCHEMA } from '../auth/migrate';
+import health from '../health';
 
 const ROUTES = 'tests/fixtures/routes';
+const CLIENT_DIR = '.nano-app/prisma-clients/auth';
+
+/**
+ * Creates the table and the client of the plugin, as `nano-app push auth` does.
+ * TODO: run `nano-app push auth` once the backend resolves the schemas of @nano-app/plugins
+ */
+function push(): void {
+  // A copy of the schema whose client lands next to it
+  mkdirSync(CLIENT_DIR, { recursive: true });
+  writeFileSync(`${CLIENT_DIR}/schema.prisma`, readFileSync('auth/schema.prisma', 'utf-8'));
+
+  // Generates the client and pushes the table
+  const sPrisma = createRequire(import.meta.url).resolve('prisma/build/index.js');
+  for (const aArgs of [['generate'], ['db', 'push', '--url', process.env.DATABASE_URL!]]) {
+    execFileSync(process.execPath, [sPrisma, ...aArgs, '--schema', `${CLIENT_DIR}/schema.prisma`], {
+      stdio: 'ignore',
+    });
+  }
+}
 
 describe(
   'auth',
   { concurrency: 1, skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' },
   () => {
-    process.env.BETTER_AUTH_SECRET ??= 'nano-app-tests-secret-with-enough-entropy-0123456789';
-
-    const oPlugin = auth({ publicPaths: ['/public'] });
-    const oAuth = oPlugin.options!.auth;
     let oServer: Awaited<ReturnType<typeof startApp>>;
-    let sCookie = '';
+    let sMaster = '';
+    let sKey = '';
+    let sId = '';
 
-    /** JSON request as a browser sends it: same origin, the session cookie when there is one */
+    /** Request with a key, and a JSON body when there is one */
     const call = (
       sPath: string,
-      { body, cookie, apiKey }: { body?: object; cookie?: string; apiKey?: string } = {},
+      { method = 'GET', key, body }: { method?: string; key?: string; body?: object } = {},
     ) =>
       request(oServer.url, sPath, {
-        method: body ? 'POST' : 'GET',
-        headers: {
-          origin: oServer.url,
-          ...(body ? { 'content-type': 'application/json' } : {}),
-          ...(cookie ? { cookie } : {}),
-          ...(apiKey ? { 'x-api-key': apiKey } : {}),
-        },
-        ...(body ? { body: JSON.stringify(body) } : {}),
+        method,
+        headers: { 'content-type': 'application/json', ...(key && { 'x-api-key': key }) },
+        body: body && JSON.stringify(body),
       });
 
-    /** `name=value` pairs of every Set-Cookie, ready for a Cookie header */
-    const cookieOf = (oHeaders: Headers) =>
-      oHeaders
-        .getSetCookie()
-        .map(sCookie => sCookie.split(';')[0])
-        .join('; ');
-
     before(async () => {
-      // Starts from an empty schema
+      // Starts from an empty schema, with the table pushed
       const oClient = new pg.Client({ connectionString: process.env.DATABASE_URL });
       await oClient.connect();
-      await oClient.query(`DROP SCHEMA IF EXISTS "${SCHEMA}" CASCADE`);
+      await oClient.query('DROP SCHEMA IF EXISTS nano_auth CASCADE');
       await oClient.end();
+      rmSync(CLIENT_DIR, { recursive: true, force: true });
+      push();
     });
 
     after(async () => {
-      // Stops the server and closes the pool
+      // Stops the server
       await oServer?.close();
-      await (oAuth.options.database as unknown as pg.Pool).end();
     });
 
-    test('the startup fails until the tables are migrated', async () => {
-      await assert.rejects(
-        startApp([oPlugin]),
-        /nano_auth" schema does not exist.*nano-app-auth migrate/,
-      );
+    test('the first startup creates the master key and prints it once', async () => {
+      // Captures the console while the app starts
+      const aWarnings: string[] = [];
+      const fnWarn = console.warn;
+      console.warn = (sMessage: string) => aWarnings.push(sMessage);
+      try {
+        oServer = await startApp([
+          health(),
+          auth({ publicPaths: ['/public'] }),
+          { routesDir: ROUTES },
+        ]);
+      } finally {
+        console.warn = fnWarn;
+      }
+
+      // The key is the last line of the only warning
+      assert.equal(aWarnings.length, 1);
+      assert.match(aWarnings[0], /master API key created/);
+      sMaster = aWarnings[0].split('\n').pop()!;
     });
 
-    test('migrate creates the schema and the tables, and a second run changes nothing', async () => {
-      // Creates everything
-      const aChanges = await migrate(oAuth);
-      assert.ok(aChanges.includes(`created ${SCHEMA}.user`), aChanges.join('\n'));
-
-      // Nothing left to do
-      assert.deepEqual(await migrate(oAuth), []);
-    });
-
-    test('starts, creating the admin user', async () => {
-      oServer = await startApp([health(), oPlugin, { routesDir: ROUTES }]);
-    });
-
-    test('plugins listed before auth and publicPaths skip the guard', async () => {
+    test('routes before the plugin and publicPaths need no key', async () => {
       assert.equal((await call('/health')).status, 200);
       assert.equal((await call('/public')).status, 200);
     });
 
-    test('a route behind the guard rejects a request without a session', async () => {
-      const { status, body } = await call('/private');
-      assert.equal(status, 401);
-      assert.equal(body.success, false);
+    test('the routes after the plugin need a valid key', async () => {
+      // Without a key and with a wrong one
+      assert.equal((await call('/private')).status, 401);
+      assert.equal((await call('/private', { key: 'not-a-key' })).status, 401);
+
+      // With the master key
+      const { status, body } = await call('/private', { key: sMaster });
+      assert.equal(status, 200, JSON.stringify(body));
     });
 
-    test('sign-up is closed', async () => {
-      const { status } = await call('/auth/sign-up/email', {
-        body: { email: 'someone@example.com', password: 'password123', name: 'someone' },
-      });
-      assert.notEqual(status, 200);
-    });
+    test('the master creates a key, returned only once', async () => {
+      // A key needs a name
+      assert.equal(
+        (await call('/api-keys', { method: 'POST', key: sMaster, body: {} })).status,
+        400,
+      );
 
-    test('with the default password the admin can only change it', async () => {
-      // Signs in with the default password
-      const oSignIn = await call('/auth/sign-in/username', {
-        body: { username: 'admin', password: DEFAULT_ADMIN_PASSWORD },
-      });
-      assert.equal(oSignIn.status, 200, JSON.stringify(oSignIn.body));
-      assert.equal(oSignIn.body.user.mustChangePassword, true);
-      sCookie = cookieOf(oSignIn.headers);
-
-      // The routes behind the guard answer 403
-      const { status, body } = await call('/private', { cookie: sCookie });
-      assert.equal(status, 403);
-      assert.match(body.message, /change-password/);
-
-      // And so do the Better Auth endpoints
-      assert.equal((await call('/auth/admin/list-users', { cookie: sCookie })).status, 403);
-      const oCreated = await call('/auth/api-key/create', {
-        cookie: sCookie,
+      // Creates it
+      const { status, body } = await call('/api-keys', {
+        method: 'POST',
+        key: sMaster,
         body: { name: 'n8n' },
       });
-      assert.equal(oCreated.status, 403);
+      assert.equal(status, 200, JSON.stringify(body));
+      ({ id: sId, key: sKey } = body.result);
+
+      // The list never returns the key nor its hash
+      const { body: oList } = await call('/api-keys', { key: sMaster });
+      assert.deepEqual(oList.result.map(({ name }: { name: string }) => name).sort(), [
+        'master',
+        'n8n',
+      ]);
+      assert.ok(oList.result.every((oKey: object) => !('key' in oKey) && !('hash' in oKey)));
     });
 
-    test('after changing the password the session reaches the routes', async () => {
-      // Changes the password
-      const oChanged = await call('/auth/change-password', {
-        cookie: sCookie,
-        body: { currentPassword: DEFAULT_ADMIN_PASSWORD, newPassword: 'a-new-password-123' },
-      });
-      assert.equal(oChanged.status, 200, JSON.stringify(oChanged.body));
-      sCookie = cookieOf(oChanged.headers) || sCookie;
-
-      // The route and the admin endpoints answer
-      const { status, body } = await call('/private', { cookie: sCookie });
-      assert.equal(status, 200, JSON.stringify(body));
-      assert.equal(body.result, 'private');
-      assert.equal((await call('/auth/admin/list-users', { cookie: sCookie })).status, 200);
+    test('any key reaches the routes; only the master manages the keys', async () => {
+      assert.equal((await call('/private', { key: sKey })).status, 200);
+      assert.equal((await call('/api-keys', { key: sKey })).status, 403);
     });
 
-    test('an API key created from the session reaches the routes on its own', async () => {
-      // Creates a key
-      const oCreated = await call('/auth/api-key/create', {
-        cookie: sCookie,
-        body: { name: 'n8n' },
+    test('renewing keeps the id and invalidates the old key', async () => {
+      // Renews the key
+      const { body } = await call(`/api-keys/${sId}/renew`, { method: 'POST', key: sMaster });
+      assert.equal(body.result.id, sId);
+      assert.equal((await call('/private', { key: sKey })).status, 401);
+      sKey = body.result.key;
+      assert.equal((await call('/private', { key: sKey })).status, 200);
+
+      // Renews the master
+      const { body: oMaster } = await call('/api-keys/master/renew', {
+        method: 'POST',
+        key: sMaster,
       });
-      assert.equal(oCreated.status, 200, JSON.stringify(oCreated.body));
+      assert.equal((await call('/private', { key: sMaster })).status, 401);
+      sMaster = oMaster.result.key;
+      assert.equal((await call('/api-keys', { key: sMaster })).status, 200);
+    });
 
-      // The key reaches the route
-      const { status, body } = await call('/private', { apiKey: oCreated.body.key });
-      assert.equal(status, 200, JSON.stringify(body));
+    test('deletes a key, but never the master', async () => {
+      // The master cannot be deleted
+      const { body: oList } = await call('/api-keys', { key: sMaster });
+      const sMasterId = oList.result.find((oKey: { isMaster: boolean }) => oKey.isMaster).id;
+      const oDenied = await call(`/api-keys/${sMasterId}`, { method: 'DELETE', key: sMaster });
+      assert.equal(oDenied.status, 403);
 
-      // An invalid key does not
-      const oInvalid = await call('/private', { apiKey: 'not-a-key' });
-      assert.equal(oInvalid.status, 403, JSON.stringify(oInvalid.body));
-      assert.equal(oInvalid.body.success, false);
+      // Another key can, and stops working
+      assert.equal(
+        (await call(`/api-keys/${sId}`, { method: 'DELETE', key: sMaster })).status,
+        200,
+      );
+      assert.equal((await call('/private', { key: sKey })).status, 401);
+      assert.equal(
+        (await call(`/api-keys/${sId}`, { method: 'DELETE', key: sMaster })).status,
+        404,
+      );
     });
   },
 );
