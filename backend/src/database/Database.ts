@@ -1,8 +1,8 @@
-import { existsSync } from 'fs';
-import { FileLoader, FileReader, NanoObject } from '@nano-app/core';
-import type { DatabaseConfig } from '../types/database';
-import type { PrismaPg } from '@prisma/adapter-pg';
+import { existsSync } from 'node:fs';
+import { FileLoader, FileReader, Formatter, type NanoObject } from '@nano-app/core';
 import { getDir } from '../../const';
+import type { PrismaPg } from '@prisma/adapter-pg';
+import type { DatabaseConfig } from '../types/database';
 
 export default abstract class Database {
   private static oAdapter?: PrismaPg;
@@ -53,16 +53,13 @@ export default abstract class Database {
 
     // Plugins' schemas (in the framework's plugins/) use only nano_*; the consumer's never do
     const bIsPlugin = schemaPath.startsWith(getDir('plugins'));
+    const sSchema = FileReader.loadFile(schemaPath).replace(/\/\/.*$/gm, '');
     const sDeclared =
-      FileReader.loadFile(schemaPath)
-        .replace(/\/\/.*$/gm, '')
-        .match(/datasource\s+\w+\s*\{[^}]*schemas\s*=\s*\[([^\]]*)\]/s)?.[1] ?? '';
-    const aSchemas = [...sDeclared.matchAll(/["']([^"']+)["']/g)].map(([, sSchema]) => sSchema);
-    if (
-      bIsPlugin
-        ? !aSchemas.length || aSchemas.some(sSchema => !sSchema.startsWith('nano_'))
-        : aSchemas.some(sSchema => sSchema.startsWith('nano_'))
-    ) {
+      sSchema.match(/datasource\s+\w+\s*\{[^}]*schemas\s*=\s*\[([^\]]*)\]/s)?.[1] ?? '';
+    const aSchemas = [...sDeclared.matchAll(/["']([^"']+)["']/g)].map(([, sItem]) => sItem);
+    const bPluginInvalid = !aSchemas.length || aSchemas.some(sItem => !sItem.startsWith('nano_'));
+    const bConsumerInvalid = aSchemas.some(sItem => sItem.startsWith('nano_'));
+    if (bIsPlugin ? bPluginInvalid : bConsumerInvalid) {
       throw new Error(
         `[nano-app] [ERROR] ${schemaPath}: ${bIsPlugin ? 'a plugin declares only nano_* schemas' : 'the nano_* schemas are reserved for plugins'}.`,
       );
@@ -72,25 +69,20 @@ export default abstract class Database {
     try {
       // Instantiates it with the pg adapter
       oClient = new PrismaClient({ adapter: this.oAdapter });
-    } catch (oError: any) {
-      // any: anything can be thrown
+    } catch (oError) {
       throw new Error(
-        `[nano-app] [ERROR] Cannot instantiate the database "${sName}" from ${sClientPath}: ${oError?.message ?? oError}`,
+        `[nano-app] [ERROR] Cannot instantiate the database "${sName}" from ${sClientPath}: ${Formatter.error(oError)}`,
       );
     }
 
     // A plugin's tables are pushed in development: checks each model can be read
     if (bIsPlugin) {
-      for (const [, sModel] of FileReader.loadFile(schemaPath).matchAll(/^\s*model\s+(\w+)/gm)) {
-        await oClient[sModel[0].toLowerCase() + sModel.slice(1)]
+      for (const [, sModel] of sSchema.matchAll(/^\s*model\s+(\w+)/gm)) {
+        await oClient[`${sModel[0].toLowerCase()}${sModel.slice(1)}`]
           .findFirst()
-          // any: anything can be thrown
-          .catch((oError: any) => {
+          .catch((oError: unknown) => {
             // Last line of Prisma's message: the table that is missing
-            const sReason = String(oError?.message ?? oError)
-              .trim()
-              .split('\n')
-              .pop();
+            const sReason = Formatter.error(oError).trim().split('\n').pop();
             throw new Error(
               `[nano-app] [ERROR] The database "${sName}" is not ready: ${sReason} Run \`npx nano-app push ${sName}\`.`,
             );

@@ -10,37 +10,40 @@ export default abstract class Validator {
     prisma: () => this.isPrisma,
   };
 
+  /** Warns about an invalid file and returns `false`, to discard it */
+  private static warn(sFilePath: string, sMessage: string): false {
+    console.warn(`[nano-app] [WARNING] ${sFilePath}: ${sMessage}`);
+    return false;
+  }
+
+  /** Checks that the default export is an object */
+  private static isObject(oEntry: unknown, sFilePath: string): oEntry is object {
+    if (oEntry && typeof oEntry === 'object') return true;
+    return Validator.warn(sFilePath, 'the default export is not an object.');
+  }
+
   /**
    * Type guard for a `*.route.ts` entry.
    */
   private static isRoute(oEntry: unknown, sFilePath: string): oEntry is RouteEntry {
     // Checks that the default export is an object
-    if (!oEntry || typeof oEntry !== 'object') {
-      console.warn(`[nano-app] [WARNING] ${sFilePath}: the default export is not an object.`);
-      return false;
-    }
+    if (!Validator.isObject(oEntry, sFilePath)) return false;
 
     const oRoute = oEntry as RouteEntry;
 
     // Checks that the expression field is a string
-    if (oRoute.expression && typeof oRoute.expression !== 'string') {
-      console.warn(`[nano-app] [WARNING] ${sFilePath}: "expression" must be a string.`);
-      return false;
-    }
+    if (oRoute.expression && typeof oRoute.expression !== 'string')
+      return Validator.warn(sFilePath, '"expression" must be a string.');
 
     // Checks that each HTTP method is a function
     for (const sMethod of HTTP_METHODS) {
-      if (oRoute[sMethod] && typeof oRoute[sMethod] !== 'function') {
-        console.warn(`[nano-app] [WARNING] ${sFilePath}: "${String(sMethod)}" must be a function.`);
-        return false;
-      }
+      if (oRoute[sMethod] && typeof oRoute[sMethod] !== 'function')
+        return Validator.warn(sFilePath, `"${String(sMethod)}" must be a function.`);
     }
 
     // Checks that the entry defines at least one HTTP method
-    if (!HTTP_METHODS.some(sMethod => oRoute[sMethod])) {
-      console.warn(`[nano-app] [WARNING] ${sFilePath}: no defines any HTTP method.`);
-      return false;
-    }
+    if (!HTTP_METHODS.some(sMethod => oRoute[sMethod]))
+      return Validator.warn(sFilePath, 'defines no HTTP method.');
 
     return true;
   }
@@ -50,24 +53,17 @@ export default abstract class Validator {
    */
   private static isStore(oEntry: unknown, sFilePath: string): oEntry is StoreEntry {
     // Checks that the default export is an object
-    if (!oEntry || typeof oEntry !== 'object') {
-      console.warn(`[nano-app] [WARNING] ${sFilePath}: the default export is not an object.`);
-      return false;
-    }
+    if (!Validator.isObject(oEntry, sFilePath)) return false;
 
     const oStore = oEntry as StoreEntry;
 
     // Checks that the type field is "app" or "api"
-    if (oStore.type !== 'app' && oStore.type !== 'api') {
-      console.warn(`[nano-app] [WARNING] ${sFilePath}: "type" must be "app" or "api".`);
-      return false;
-    }
+    if (oStore.type !== 'app' && oStore.type !== 'api')
+      return Validator.warn(sFilePath, '"type" must be "app" or "api".');
 
     // Checks that the path field is a string when the type is "api"
-    if (oStore.type === 'api' && !oStore.path) {
-      console.warn(`[nano-app] [WARNING] ${sFilePath}: "path" is required for type "api".`);
-      return false;
-    }
+    if (oStore.type === 'api' && !oStore.path)
+      return Validator.warn(sFilePath, '"path" is required for type "api".');
 
     return true;
   }
@@ -77,20 +73,18 @@ export default abstract class Validator {
    */
   private static isPrisma(oEntry: unknown, sFilePath: string): oEntry is string {
     // Checks that the entry is the file contents
-    if (typeof oEntry !== 'string') {
-      console.warn(`[nano-app] [WARNING] ${sFilePath}: the contents are not a string.`);
-      return false;
-    }
+    if (typeof oEntry !== 'string')
+      return Validator.warn(sFilePath, 'the contents are not a string.');
 
     // Checks that the datasource is PostgreSQL
     const sProvider = oEntry.match(
       /datasource\s+\w+\s*\{[^}]*provider\s*=\s*["']([^"']+)["']/s,
     )?.[1];
     if (sProvider !== 'postgresql') {
-      console.warn(
-        `[nano-app] [WARNING] ${sFilePath}: the datasource provider must be "postgresql"${sProvider ? `, not "${sProvider}"` : ''}.`,
+      return Validator.warn(
+        sFilePath,
+        `the datasource provider must be "postgresql"${sProvider ? `, not "${sProvider}"` : ''}.`,
       );
-      return false;
     }
 
     return true;

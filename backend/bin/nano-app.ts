@@ -1,8 +1,8 @@
 #!/usr/bin/env node
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import 'dotenv/config';
-import { execFileSync } from 'child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { createRequire } from 'module';
 import { getDir } from '../const';
 
 /**

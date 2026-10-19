@@ -1,6 +1,6 @@
-import { createJiti, JitiResolveOptions } from 'jiti';
-import { isAbsolute, resolve } from 'path';
-import { readFileSync, existsSync } from 'fs';
+import { isAbsolute, resolve } from 'node:path';
+import { readFileSync, existsSync } from 'node:fs';
+import { createJiti, type JitiResolveOptions } from 'jiti';
 
 export default abstract class FileReader {
   // The Prisma runtime is loaded natively: through jiti its interop breaks the error messages

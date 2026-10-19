@@ -1,5 +1,5 @@
 import type { Express, Request } from 'express';
-import { ApiPromise } from './api';
+import type { ApiPromise } from './api';
 
 // any: `DB` and `T` default to the consumer's Prisma client and data, unknown to the framework
 
@@ -51,5 +51,5 @@ export type StoreEntry<T = any> = {
 /** Entry of a Prisma client file (`client.ts` or `client.js`)*/
 export type PrismaEntry = new (options: { adapter: unknown }) => any;
 
-/* Generic object */
+/** Generic object */
 export type NanoObject<T = any> = Record<string, T>;

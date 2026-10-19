@@ -1,10 +1,10 @@
-import express, { type Express } from 'express';
 import { spawn, type ChildProcess } from 'node:child_process';
-import type { Server } from 'node:http';
 import { createServer } from 'node:net';
-import type { AddressInfo } from 'node:net';
+import express, { type Express } from 'express';
 import Plugin from '../src/routes/Plugin';
 import { errorHandler, notFoundHandler } from '../src/app/errors';
+import type { Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import type { PluginConfig } from '../src/types/plugin';
 
 const FIXTURES_ROUTES = 'tests/fixtures/routes';
@@ -87,7 +87,7 @@ export async function request(sUrl: string, sPath: string, oInit: RequestInit = 
   try {
     oBody = JSON.parse(sText);
   } catch {
-    /* non-JSON response */
+    // Keeps the text: the response is not JSON
   }
 
   return { status: oResponse.status, body: oBody, headers: oResponse.headers };

@@ -1,5 +1,5 @@
+import { cpSync, existsSync } from 'node:fs';
 import { defineConfig } from 'tsdown';
-import { cpSync, existsSync } from 'fs';
 import { globSync } from 'glob';
 import pkg from './package.json' with { type: 'json' };
 

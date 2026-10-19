@@ -1,20 +1,16 @@
 import express, { type Express } from 'express';
-import Plugin from '../routes/Plugin';
-
-// Middlewares
 import morgan from 'morgan';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
-
-// Config
 import 'dotenv/config';
-import type { NanoAppConfig, PackagesConfig } from '../types/app';
-import type { PluginConfig } from '../types/plugin';
+import Plugin from '../routes/Plugin';
 import { mergeConfig } from './config';
 import { errorHandler, notFoundHandler } from './errors';
-import { NanoObject } from '@nano-app/core';
+import type { NanoObject } from '@nano-app/core';
+import type { NanoAppConfig, PackagesConfig } from '../types/app';
+import type { PluginConfig } from '../types/plugin';
 
 /** Main NanoApp class */
 export default class NanoApp {
@@ -80,9 +76,9 @@ export default class NanoApp {
     this.oApp.use(errorHandler);
   }
 
-  /* Adds the packages according to the configuration */
+  /** Adds the packages according to the configuration */
   private setPackages(oConfig: PackagesConfig = {}): void {
-    /** Morgan */
+    // Morgan
     if (oConfig.morgan) {
       for (const [sKey, fnToken] of Object.entries(oConfig.morgan.tokens ?? {})) {
         morgan.token(sKey, fnToken);
@@ -90,32 +86,32 @@ export default class NanoApp {
       this.oApp.use(morgan(oConfig.morgan.format));
     }
 
-    /** CORS */
+    // CORS
     if (oConfig.cors) {
       this.oApp.use(cors(oConfig.cors));
     }
 
-    /** Helmet */
+    // Helmet
     if (oConfig.helmet) {
       this.oApp.use(helmet());
     }
 
-    /** Compression */
+    // Compression
     if (oConfig.compression) {
       this.oApp.use(compression());
     }
 
-    /** Rate Limit */
+    // Rate Limit
     if (oConfig.rateLimit) {
       this.oApp.use(rateLimit(oConfig.rateLimit));
     }
 
-    /** JSON */
+    // JSON
     if (oConfig.express) {
       this.oApp.use(express.json(oConfig.express));
     }
 
-    /** URLencoded */
+    // URLencoded
     if (oConfig.urlencoded) {
       this.oApp.use(express.urlencoded(oConfig.urlencoded));
     }

@@ -17,7 +17,9 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 ### Structure
 
 - Small files with one job. A file over ~120 lines, or a function you cannot read in one screen, is a sign to split or simplify.
-- No abstraction until there are two real uses. No option, parameter or config nobody asked for.
+- Code that repeats is extracted the second time it appears (`Validator.warn`, `Formatter.error`); no abstraction for a single use. No option, parameter or config nobody asked for.
+- Exported functions stay even when nothing in the repo uses them: consumers may.
+- Up to 3 positional parameters; with more, one object (`FindOptions`).
 - A class when there is state (`Database`, `Plugin`); `abstract class` with `static` methods for stateless utilities grouped by area (`FileReader`, `Validator`). Public API is plain functions (`createRoute`, `createPlugin`).
 - `public`, `protected` or `private` on every class method and field; constructors go without.
 - Declared functions and methods state their return type (`: Promise<void>`); inline callbacks infer it.
@@ -25,7 +27,7 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 - Types in a `types/` folder of the package, one file per area (`types/app.ts`, `types/plugin.ts`). `type`, not `interface`. `import type` for types.
 - Files: PascalCase when they export a class (`FileLoader.ts`), lowercase otherwise (`creators.ts`, `config.ts`).
 - `export default` when a file exports one thing, also the official plugins (`import health from '@nano-app/plugins/health'`). Named exports for files that export several.
-- Node built-ins before a dependency. Optional dependencies are imported when needed (`await import('@prisma/adapter-pg')`), never at the top.
+- Imports in groups: Node built-ins with `node:` (`node:fs`), dependencies, `@nano-app/*`, relative files, then every `import type` in the same order. Optional dependencies are imported when needed (`await import('@prisma/adapter-pg')`), never at the top.
 
 ### Names
 
@@ -57,6 +59,7 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 ### Flow
 
 - Guard clauses and early returns, not nested `if`/`else`.
+- One ternary at most, never nested nor inside an `if` condition: name the parts (`if (bIsPlugin ? bPluginInvalid : bConsumerInvalid)`).
 - `??` for defaults. `||` only when `0`, `''` or `NaN` must also take the default (`message || 'Internal server error'`).
 - `for...of` to iterate when nothing is returned, never `.forEach` (it does not wait for `await`). `.map`, `.filter` and `.some` when they return something.
 - `async`/`await` in general. Express handlers and middlewares chain `.then()` and end in `.catch(fnNext)`.
@@ -65,9 +68,9 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 
 ### Comments and format
 
-- A one-line JSDoc on everything exported, and a short comment before each step of a function, even an obvious one (`// Checks that the default export is an object`). English.
+- `/** */` above declarations, `//` inside bodies, never `/* */`. A one-line JSDoc on everything exported, and a short comment before each step of a function, even an obvious one (`// Checks that the default export is an object`). English.
 - One line when it reads easily (`if (!oUser) return fnNext({ status: 401 });`). Vertical when it does not: nested objects, calls with several arguments, destructuring.
-- Prettier (`.prettierrc.json`): single quotes (backticks only to interpolate), semicolons, 2 spaces, 100 columns, arrow functions without parentheses on one parameter (`oRoute => oRoute.path`). `pnpm format` writes, CI checks.
+- Prettier (`.prettierrc.json`): single quotes (backticks only to interpolate; never `+` to join strings, `.join('\n')` for lines), semicolons, 2 spaces, 100 columns, arrow functions without parentheses on one parameter (`oRoute => oRoute.path`). `pnpm format` writes, CI checks.
 
 - No commented-out code, unless a `// TODO:` above it says when it comes back or goes away.
 

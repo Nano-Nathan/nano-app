@@ -1,7 +1,7 @@
 import Router from './Router';
 import Database from '../database/Database';
-import type { PluginConfig } from '../types/plugin';
 import type { Express } from 'express';
+import type { PluginConfig } from '../types/plugin';
 
 export default class Plugin {
   private oConfig: PluginConfig;

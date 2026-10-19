@@ -1,5 +1,5 @@
-import type { PluginCallbacks, RouteEntry } from '@nano-app/core';
 import NanoApp from './NanoApp';
+import type { PluginCallbacks, RouteEntry } from '@nano-app/core';
 import type { NanoAppConfig } from '../types/app';
 import type { PluginConfig } from '../types/plugin';
 

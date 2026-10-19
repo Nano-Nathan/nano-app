@@ -6,6 +6,11 @@ export default abstract class Formatter {
     return `$${new Intl.NumberFormat('de-DE', { maximumFractionDigits: 0 }).format(iValue || 0)}`;
   }
 
+  /** Message of anything thrown: its `message` when it has one, else the value itself */
+  public static error(oError: unknown): string {
+    return String((oError as { message?: unknown } | undefined)?.message ?? oError);
+  }
+
   /** Formats a date for the request log: `dd/mm/yy, hh:mm:ss` */
   public static logDate(oDate: Date = new Date()): string {
     return new Intl.DateTimeFormat('es-ES', {

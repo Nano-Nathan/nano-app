@@ -10,12 +10,8 @@ export type ApiResponse<T = any> = {
   warning?: boolean;
 };
 
-export type ApiPromise<T = any> = Promise<{
-  success?: boolean;
-  result?: T;
-  message?: string;
-  warning?: boolean;
-}>;
+/** Promise of an API response, what a handler returns */
+export type ApiPromise<T = any> = Promise<ApiResponse<T>>;
 
 /** Query parameters sent in the `query` header (JSON). */
 export type QueryParams = {

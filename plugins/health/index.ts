@@ -1,6 +1,6 @@
-import { createPlugin } from '@nano-app/backend';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createPlugin } from '@nano-app/backend';
 
 /** Health check: `GET /health` answers `{ status: "ok" }` while the server is up. */
 export default createPlugin((options?: { basePath?: string }) => ({
