@@ -19,7 +19,7 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 - Small files with one job. A file over ~120 lines, or a function you cannot read in one screen, is a sign to split or simplify.
 - No abstraction until there are two real uses. No option, parameter or config nobody asked for.
 - A class when there is state (`Database`, `Plugin`); `abstract class` with `static` methods for stateless utilities grouped by area (`FileReader`, `Validator`). Public API is plain functions (`createRoute`, `createPlugin`).
-- `public` or `private` on every class method and field; constructors go without.
+- `public`, `protected` or `private` on every class method and field; constructors go without.
 - Declared functions and methods state their return type (`: Promise<void>`); inline callbacks infer it.
 - No `any` without a comment saying why (`// any: anything can be thrown`). Prefer `unknown` and validate.
 - Types in a `types/` folder of the package, one file per area (`types/app.ts`, `types/plugin.ts`). `type`, not `interface`. `import type` for types.
