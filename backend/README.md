@@ -152,7 +152,7 @@ export default createRoute<PrismaClient>({
 
 ## Plugins
 
-A plugin is a group of endpoints mounted under a base path. Your routes are mounted as one (named `app`). The official plugins are in [`@nano-app/plugins`](https://github.com/Nano-Nathan/nano-app/blob/main/plugins/README.md). You write one with `createPlugin` and list it in `plugins`. Nothing is mounted unless you list it.
+A plugin is a group of endpoints mounted under a base path. Your routes are mounted as one (named `app`). The official plugins are in [`@nano-app/plugins`](https://github.com/Nano-Nathan/nano-app/blob/main/plugins/README.md). You write one with `createPlugin` and list it in `plugins`. Nothing is mounted unless you list it. Official plugins that have tables (like `auth`) ship their own migrations: nano-app applies them at startup, each in its `nano_*` schema. That is the only change it makes to your database.
 
 ```ts
 // src/plugins/hello/index.ts
