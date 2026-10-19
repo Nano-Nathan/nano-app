@@ -13,7 +13,7 @@ const CLIENT_DIR = '.nano-app/prisma-clients/auth';
 
 /**
  * Creates the table and the client of the plugin, as `nano-app push auth` does.
- * TODO: run `nano-app push auth` once the backend resolves the schemas of @nano-app/plugins
+ * The command reads the built package; the tests run on the sources
  */
 function push(): void {
   // A copy of the schema whose client lands next to it
