@@ -98,7 +98,7 @@ export default abstract class Prisma {
     } catch {
       // Not resolvable: the package is not installed
       throw new Error(
-        `[nano-app] [ERROR] The database "${sName}" needs Prisma. Run \`pnpm add prisma\`.`,
+        `[nano-app] [ERROR] The database "${sName}" needs Prisma: install the prisma package.`,
       );
     }
 

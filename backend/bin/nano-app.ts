@@ -52,9 +52,9 @@ try {
   // The name and its schema
   const iSchemaFlag = aArgs.indexOf('--schema');
   const sSchemaFlag = iSchemaFlag >= 0 ? aArgs[iSchemaFlag + 1] : undefined;
-  const isFlagPart = (iIndex: number): boolean =>
+  const fnIsFlagPart = (iIndex: number): boolean =>
     iSchemaFlag >= 0 && (iIndex === iSchemaFlag || iIndex === iSchemaFlag + 1);
-  const sName = aArgs.find((_sArg, iIndex) => !isFlagPart(iIndex));
+  const sName = aArgs.find((_sArg, iIndex) => !fnIsFlagPart(iIndex));
   const sDefault = sName ? pluginSchema(sName) : 'src/prisma/schema.prisma';
   const sSchema = sSchemaFlag ?? sDefault;
 
