@@ -49,8 +49,9 @@ function pluginSchema(sName: string): string {
   const sPackage = officialPackage();
   if (!sPackage) return `${OFFICIAL_PLUGINS} is not installed`;
 
-  // Its entries are ESM only: the import target of "./*", with the plugin's name
-  const sTarget = JSON.parse(readFileSync(sPackage, 'utf-8')).exports['./*'].import;
+  // The target of "./*" (its "import" or "default" condition), with the plugin's name
+  const oExport = JSON.parse(readFileSync(sPackage, 'utf-8')).exports['./*'];
+  const sTarget = oExport.import ?? oExport.default;
   return join(dirname(sPackage), dirname(sTarget.replace('*', sName)), 'schema.prisma');
 }
 
