@@ -32,7 +32,7 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 
 ### Names
 
-Prefix by type on every internal name: local variables, parameters, class fields, loop and callback variables, `catch`, and Express's `oReq`, `oRes`, `fnNext`. No prefix on: public API (exported types and their fields, plugin options, responses), names destructured from it (`const { name, routesDir } = oConfig`), declared functions and methods, module constants (`HTTP_METHODS`) and type parameters (`T`, `DB`).
+Prefix by type on every internal name: local variables, parameters, class fields, loop and callback variables, `catch`, and Express's `oReq`, `oRes`, `fnNext`. No prefix on: public API (exported types and their fields, plugin options, responses), names destructured from it (`const { name, routesDir } = oConfig`), declared functions and methods, module constants (`HTTP_METHODS`), type parameters (`T`, `DB`) and tool configs (`tsdown.config.ts`).
 
 | Prefix | Type | Example |
 |---|---|---|
