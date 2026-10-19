@@ -1,4 +1,4 @@
-import type { RouteEntry, StoreEntry, NanoObject } from '../types/objects';
+import type { RouteEntry, NanoObject } from '../types/objects';
 import type { FindableExtension } from '../types/loader';
 
 const HTTP_METHODS: (keyof RouteEntry)[] = ['GET', 'POST', 'PUT', 'DELETE'];
@@ -7,7 +7,6 @@ const HTTP_METHODS: (keyof RouteEntry)[] = ['GET', 'POST', 'PUT', 'DELETE'];
 export default abstract class Validator {
   private static oValidators = {
     route: () => this.isRoute,
-    store: () => this.isStore,
     prisma: () => this.isPrisma,
   };
 
@@ -46,27 +45,6 @@ export default abstract class Validator {
     // Checks that the entry defines at least one HTTP method
     if (!HTTP_METHODS.some(sMethod => oRoute[sMethod]))
       return Validator.warn(sFilePath, 'defines no HTTP method.');
-
-    return true;
-  }
-
-  /**
-   * Type guard for a `*.store.ts` entry.
-   */
-  private static isStore(oEntry: unknown, sFilePath: string): oEntry is StoreEntry {
-    // Checks that the default export is an object
-    if (!Validator.isObject(oEntry, sFilePath)) return false;
-
-    // Reads it as a store
-    const oStore = oEntry as StoreEntry;
-
-    // Checks that the type field is "app" or "api"
-    if (oStore.type !== 'app' && oStore.type !== 'api')
-      return Validator.warn(sFilePath, '"type" must be "app" or "api".');
-
-    // Checks that the path field is a string when the type is "api"
-    if (oStore.type === 'api' && !oStore.path)
-      return Validator.warn(sFilePath, '"path" is required for type "api".');
 
     return true;
   }

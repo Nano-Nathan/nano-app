@@ -45,13 +45,6 @@ export type RouteEntry<DB = any> = {
   callbacks?: Callbacks<DB>;
 } & Handlers<DB>;
 
-/** Entry of a store file (`*.store.ts`) */
-export type StoreEntry<T = any> = {
-  type: 'app' | 'api';
-  path?: string;
-  data?: NanoObject<T>;
-};
-
 /** Entry of a Prisma client file (`client.ts` or `client.js`)*/
 export type PrismaEntry = new (options: { adapter: unknown }) => any;
 

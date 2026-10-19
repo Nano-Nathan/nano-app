@@ -29,10 +29,7 @@ export default class Endpoint {
       const fnMethod = this.oMethods[sMethod];
 
       // Checks whether the method is defined
-      if (!fnMethod) {
-        oRes.status(405).json({ success: false, message: `Method ${sMethod} not implemented` });
-        return;
-      }
+      if (!fnMethod) return fnNext({ status: 405, message: `Method ${sMethod} not implemented` });
 
       // Runs the onBefore callback
       (this.oCallbacks.onBefore?.(oReq, sMethod, oParams) ?? Promise.resolve({}))

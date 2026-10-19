@@ -54,7 +54,7 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 
 - Small files with one job. A file over ~120 lines, or a function you cannot read in one screen, is a sign to split or simplify.
 - Code that repeats is extracted the second time it appears (`Validator.warn`, `Formatter.error`); no abstraction for a single use. No option, parameter or config nobody asked for.
-- Exported functions stay even when nothing in the repo uses them: consumers may.
+- Exported functions of `backend` and `plugins` stay even when nothing in the repo uses them: consumers may. `core` is private: what nothing uses there is deleted.
 - Up to 3 positional parameters; with more, one object (`FindOptions`).
 - A class when there is state (`Database`, `Plugin`); `abstract class` with `static` methods for stateless utilities grouped by area (`FileReader`, `Validator`). Public API is plain functions (`createRoute`, `createPlugin`).
 - `public`, `protected` or `private` on every class method and field; constructors go without.

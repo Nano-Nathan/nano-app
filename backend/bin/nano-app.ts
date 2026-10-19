@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import 'dotenv/config';
-import { getDir } from '../const';
+import { getDir, MISSING_DATABASE_URL } from '../const';
 
 /**
  * Prisma wrapper: clients are generated in .nano-app/prisma-clients/<name> ("app" is the project's schema).
@@ -33,6 +33,13 @@ try {
     const aNames = aArgs.filter(sArg => !sArg.startsWith('-'));
     const aFlags = aArgs.filter(sArg => sArg.startsWith('-'));
 
+    // Checks that push has a database to push to
+    const sUrl = process.env.DATABASE_URL;
+    if (sCommand === 'push' && !sUrl) {
+      console.error(MISSING_DATABASE_URL);
+      process.exit(1);
+    }
+
     for (const sName of aNames.length ? aNames : ['app']) {
       // Checks that the schema exists
       const sSource = sName === 'app' ? sAppSchema : getDir('plugins', sName, 'schema.prisma');
@@ -58,7 +65,7 @@ try {
           '--schema',
           `${sDir}/schema.prisma`,
           '--url',
-          process.env.DATABASE_URL ?? '',
+          sUrl!, // Checked above for push
           ...aFlags,
         );
       }

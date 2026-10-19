@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { FileLoader, FileReader, Formatter, type NanoObject } from '@nano-app/core';
-import { getDir } from '../../const';
+import { getDir, MISSING_DATABASE_URL } from '../../const';
 import type { PrismaPg } from '@prisma/adapter-pg';
 import type { DatabaseConfig } from '../types/database';
 
@@ -16,7 +16,7 @@ export default abstract class Database {
     // Checks the DATABASE_URL is defined
     const sUrl = process.env.DATABASE_URL;
     if (!sUrl) {
-      throw new Error('[nano-app] [ERROR] The DATABASE_URL environment variable is not defined.');
+      throw new Error(MISSING_DATABASE_URL);
     }
 
     // Create the adapter (imported only when needed)
