@@ -17,15 +17,17 @@ describe(
     let sId = '';
 
     /** Request with a key, and a JSON body when there is one */
-    const call = (
+    function call(
       sPath: string,
-      { method = 'GET', key, body }: { method?: string; key?: string; body?: object } = {},
-    ) =>
-      request(oServer.url, sPath, {
-        method,
-        headers: { 'content-type': 'application/json', ...(key && { 'x-api-key': key }) },
-        body: body && JSON.stringify(body),
+      oOptions: { method?: string; key?: string; body?: object } = {},
+    ): ReturnType<typeof request> {
+      const { method: sMethod = 'GET', key: sApiKey, body: oBody } = oOptions;
+      return request(oServer.url, sPath, {
+        method: sMethod,
+        headers: { 'content-type': 'application/json', ...(sApiKey && { 'x-api-key': sApiKey }) },
+        body: oBody && JSON.stringify(oBody),
       });
+    }
 
     before(async () => {
       // Starts from an empty schema: the startup migrates it
@@ -94,7 +96,7 @@ describe(
 
       // The list never returns the key nor its hash
       const { body: oList } = await call('/api-keys', { key: sMaster });
-      assert.deepEqual(oList.result.map(({ name }: { name: string }) => name).sort(), [
+      assert.deepEqual(oList.result.map((oKey: { name: string }) => oKey.name).sort(), [
         'master',
         'n8n',
       ]);

@@ -6,7 +6,9 @@ import type { Request } from '@nano-app/backend';
 const SELECT = { id: true, name: true, isMaster: true, createdAt: true };
 
 /** 404 of an id or an action that does not exist */
-const notFound = (oReq: Request) => ({ status: 404, message: `${oReq.path} not found` });
+function notFound(oReq: Request): { status: number; message: string } {
+  return { status: 404, message: `${oReq.path} not found` };
+}
 
 /**
  * API keys, managed only with the master key:
