@@ -74,7 +74,16 @@ Use MIT or Apache-2.0 if you want the plugin listed from this repo later. Open a
 
 Optional. Set `database: { enabled: true, schemaPath }` on the plugin config. The schema must be PostgreSQL. Schemas starting with `nano_` are reserved for the official plugins: a schema inside the `@nano-app/plugins` package declares only `nano_*` schemas, and every other schema declares none.
 
-`npx nano-app generate <name>` and `npx nano-app push <name>` read `schema.prisma` next to the entry of `@nano-app/plugins/<name>` in the consumer's project, so an official plugin ships it in `build/<name>/`. At startup its tables are only checked: the consumer pushes them first. A plugin in your app, or in another npm package, points `schemaPath` at its own file and generates the client with Prisma (or with `nano-app generate app --schema <path>` for the app schema).
+At startup nano-app generates the plugin's client in `.nano-app/prisma-clients/<name>` (again only when the schema changed) and checks that every model can be read.
+
+- **A plugin of yours, or from another package:** its tables are applied with Prisma by whoever installs it, like the app's schema. `npx nano-app generate <name> --schema <path>` generates its client without starting.
+- **An official plugin:** nano-app also migrates it, so the consumer runs nothing. Its schema ships in `build/<name>/schema.prisma` with a `migrations/` folder next to it. At startup `prisma migrate deploy` applies the pending ones to the plugin's first `nano_*` schema, where its history (`_prisma_migrations`) lives apart from the app's. Each migration runs once, in a transaction, one instance at a time.
+
+### Migrations of an official plugin
+
+- Every schema change ships its own `migrations/<timestamp>_<name>/migration.sql`, reviewed like code. A published migration is never edited.
+- Migrations only add: tables, nullable columns or columns with a default, indexes. Dropping or renaming takes two releases: stop using it first, remove it later.
+- The database user of the consumer needs to create tables in the plugin's `nano_*` schema.
 
 Handlers and callbacks receive that client as `params.db`. Type it with `createRoute<PrismaClient>`, passing your generated `PrismaClient`.
 

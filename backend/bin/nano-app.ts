@@ -1,28 +1,16 @@
 #!/usr/bin/env node
-import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import 'dotenv/config';
-import { MISSING_DATABASE_URL, OFFICIAL_PLUGINS } from '../const';
+import { OFFICIAL_PLUGINS } from '../const';
+import Prisma from '../src/database/Prisma';
 
 /**
- * Prisma wrapper: clients are generated in .nano-app/prisma-clients/<name>. "app" is the project's
- * schema; any other name is an official plugin's, read from the installed @nano-app/plugins.
- *   nano-app generate [name...] [--schema <path>]
- *   nano-app push [name...] [--schema <path>] [prisma flags, e.g. --accept-data-loss]
- *   nano-app <any other Prisma command>
+ * Generates a Prisma client where nano-app reads it, as the startup does: for the build or the editor.
+ *   nano-app generate                     the app's schema (src/prisma/schema.prisma)
+ *   nano-app generate <name>              an official plugin's, from the installed @nano-app/plugins
+ *   nano-app generate <name> --schema <path>
  */
 const [sCommand, ...aArgs] = process.argv.slice(2);
-
-/** Resolves packages from the consumer's project */
-const oRequire = createRequire(`${process.cwd()}/`);
-
-// Runs the consumer's Prisma CLI
-const fnPrisma = (...aPrismaArgs: string[]): Buffer =>
-  execFileSync(process.execPath, [oRequire.resolve('prisma/build/index.js'), ...aPrismaArgs], {
-    stdio: 'inherit',
-  });
 
 /** package.json of @nano-app/plugins: the project itself (its tests) or one in a node_modules */
 function officialPackage(): string | undefined {
@@ -56,56 +44,28 @@ function pluginSchema(sName: string): string {
 }
 
 try {
-  // Any other command goes straight to Prisma
-  if (sCommand !== 'generate' && sCommand !== 'push') {
-    fnPrisma(...process.argv.slice(2));
-  } else {
-    // Splits the app schema, the plugin names and the Prisma flags
-    const iSchemaFlag = aArgs.indexOf('--schema');
-    const sAppSchema =
-      iSchemaFlag >= 0 ? aArgs.splice(iSchemaFlag, 2)[1] : 'src/prisma/schema.prisma';
-    const aNames = aArgs.filter(sArg => !sArg.startsWith('-'));
-    const aFlags = aArgs.filter(sArg => sArg.startsWith('-'));
-
-    // Checks that push has a database to push to
-    const sUrl = process.env.DATABASE_URL;
-    if (sCommand === 'push' && !sUrl) {
-      console.error(MISSING_DATABASE_URL);
-      process.exit(1);
-    }
-
-    for (const sName of aNames.length ? aNames : ['app']) {
-      // Checks that the schema exists
-      const sSource = sName === 'app' ? sAppSchema : pluginSchema(sName);
-      if (!existsSync(sSource)) {
-        console.error(`[nano-app] [ERROR] "${sName}" has no schema: ${sSource}`);
-        process.exit(1);
-      }
-
-      // A copy whose client lands next to it
-      const sDir = `${process.cwd()}/.nano-app/prisma-clients/${sName}`;
-      mkdirSync(sDir, { recursive: true });
-      writeFileSync(
-        `${sDir}/schema.prisma`,
-        readFileSync(sSource, 'utf-8').replace(/output\s*=\s*"[^"]*"/, 'output = "./generated"'),
-      );
-
-      // Generates the client, and pushes the tables on push
-      fnPrisma('generate', '--schema', `${sDir}/schema.prisma`);
-      if (sCommand === 'push') {
-        fnPrisma(
-          'db',
-          'push',
-          '--schema',
-          `${sDir}/schema.prisma`,
-          '--url',
-          sUrl!, // Checked above for push
-          ...aFlags,
-        );
-      }
-    }
+  // Only generate: migrations are Prisma's
+  if (sCommand !== 'generate') {
+    throw new Error('[nano-app] [ERROR] Usage: nano-app generate [name] [--schema <path>]');
   }
-} catch (oError: any) {
-  // any: anything can be thrown, also execFileSync's error with its status
-  process.exit(oError?.status ?? 1);
+
+  // The name and its schema
+  const iSchemaFlag = aArgs.indexOf('--schema');
+  const sSchemaFlag = iSchemaFlag >= 0 ? aArgs[iSchemaFlag + 1] : undefined;
+  const isFlagPart = (iIndex: number): boolean =>
+    iSchemaFlag >= 0 && (iIndex === iSchemaFlag || iIndex === iSchemaFlag + 1);
+  const sName = aArgs.find((_sArg, iIndex) => !isFlagPart(iIndex));
+  const sDefault = sName ? pluginSchema(sName) : 'src/prisma/schema.prisma';
+  const sSchema = sSchemaFlag ?? sDefault;
+
+  // Checks that the schema exists
+  if (!existsSync(sSchema)) {
+    throw new Error(`[nano-app] [ERROR] "${sName ?? 'app'}" has no schema: ${sSchema}`);
+  }
+
+  // Generates it
+  Prisma.generate(sName ?? 'app', sSchema);
+} catch (oError) {
+  console.error((oError as Error).message);
+  process.exit(1);
 }

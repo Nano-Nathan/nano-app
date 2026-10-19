@@ -117,35 +117,30 @@ describe('plugins', () => {
     }
   });
 
-  test("a named plugin's database needs its client generated first", async () => {
-    // A plugin with a database whose client was never generated
+  test("a plugin's database needs its schema", async () => {
+    // A plugin whose schema does not exist
     const oPlugin = new Plugin({
       name: 'missing',
       routesDir: '',
-      database: { enabled: true, schemaPath: '' },
+      database: { enabled: true, schemaPath: 'tests/fixtures/missing.prisma' },
     });
 
-    // Checks that mounting it fails with the command to run
+    // Checks that mounting it fails saying which
     await assert.rejects(
       oPlugin.mount({ all: () => {} } as unknown as Express),
-      /prisma client of "missing" does not exist. Run `npx nano-app generate missing`/,
+      /tests\/fixtures\/missing.prisma not found/,
     );
   });
 
-  test('nano-app forwards other commands to Prisma and requires a schema to generate', () => {
+  test('nano-app only generates, and requires a schema', () => {
     // Runs the CLI from the sources
     const fnRun = (...aArgs: string[]) =>
       spawnSync(process.execPath, ['--import', 'tsx', 'bin/nano-app.ts', ...aArgs], {
         encoding: 'utf-8',
       });
 
-    // Checks that an unknown command reaches Prisma
-    const oPassthrough = fnRun('--version');
-    assert.match(
-      oPassthrough.stdout + oPassthrough.stderr,
-      /prisma/i,
-      'any other command goes to Prisma',
-    );
+    // Checks that any other command is rejected
+    assert.match(fnRun('push').stderr, /Usage: nano-app generate/);
 
     // Checks that generate needs an existing schema
     assert.match(fnRun('generate', 'missing').stderr, /"missing" has no schema/);
