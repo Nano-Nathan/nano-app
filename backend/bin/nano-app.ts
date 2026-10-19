@@ -37,10 +37,10 @@ function pluginSchema(sName: string): string {
   const sPackage = officialPackage();
   if (!sPackage) return `${OFFICIAL_PLUGINS} is not installed`;
 
-  // The target of "./*" (its "import" or "default" condition), with the plugin's name
+  // The target of "./*" ("import" or "default"), with the name in every *, as Node does
   const oExport = JSON.parse(readFileSync(sPackage, 'utf-8')).exports['./*'];
   const sTarget = oExport.import ?? oExport.default;
-  return join(dirname(sPackage), dirname(sTarget.replace('*', sName)), 'schema.prisma');
+  return join(dirname(sPackage), dirname(sTarget.replaceAll('*', sName)), 'schema.prisma');
 }
 
 try {
