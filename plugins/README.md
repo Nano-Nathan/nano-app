@@ -8,7 +8,7 @@ npm install @nano-app/backend @nano-app/plugins
 
 ```ts
 import { createNanoApp } from "@nano-app/backend";
-import { health } from "@nano-app/plugins/health";
+import health from "@nano-app/plugins/health";
 
 createNanoApp({ plugins: [health()] });
 ```
@@ -17,14 +17,14 @@ createNanoApp({ plugins: [health()] });
 
 | Plugin | Import | Endpoints | Options |
 |---|---|---|---|
-| `health` | `import { health } from "@nano-app/plugins/health"` | `GET /health` → `{ status: "ok" }` | `basePath` (default `"/health"`) |
+| `health` | `import health from "@nano-app/plugins/health"` | `GET /health` → `{ status: "ok" }` | `basePath` (default `"/health"`) |
 
 ## Layout
 
 ```
 plugins/
 └── <name>/
-    ├── index.ts        exports the createPlugin factory as `<name>`: the import path
+    ├── index.ts        default-exports the createPlugin factory: the import path
     └── routes/         *.route.ts, mounted under the plugin's basePath
 ```
 

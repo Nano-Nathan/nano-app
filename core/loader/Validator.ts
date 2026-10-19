@@ -1,73 +1,50 @@
-import type { RouteEntry, StoreEntry, NanoObject } from "../types/objects";
-import type { FindableExtension } from "../types/loader";
+import type { RouteEntry, NanoObject } from '../types/objects';
+import type { FindableExtension } from '../types/loader';
 
-const HTTP_METHODS: (keyof RouteEntry)[] = ["GET", "POST", "PUT", "DELETE"];
+const HTTP_METHODS: (keyof RouteEntry)[] = ['GET', 'POST', 'PUT', 'DELETE', 'QUERY'];
 
-export abstract class Validator {
-  private static validators = {
-    'route': () => this.isRoute,
-    'store': () => this.isStore,
-    'prisma': () => this.isPrisma,
+/** Checks the consumer's files: invalid ones are warned about and discarded */
+export default abstract class Validator {
+  private static oValidators = {
+    route: () => this.isRoute,
+    prisma: () => this.isPrisma,
   };
+
+  /** Warns about an invalid file and returns `false`, to discard it */
+  private static warn(sFilePath: string, sMessage: string): false {
+    console.warn(`[nano-app] [WARNING] ${sFilePath}: ${sMessage}`);
+    return false;
+  }
+
+  /** Checks that the default export is an object */
+  private static isObject(oEntry: unknown, sFilePath: string): oEntry is object {
+    if (oEntry && typeof oEntry === 'object') return true;
+    return Validator.warn(sFilePath, 'the default export is not an object.');
+  }
 
   /**
    * Type guard for a `*.route.ts` entry.
    */
-  private static isRoute(entry: unknown, filePath: string): entry is RouteEntry {
+  private static isRoute(oEntry: unknown, sFilePath: string): oEntry is RouteEntry {
     // Checks that the default export is an object
-    if (!entry || typeof entry !== "object") {
-      console.warn(`[nano-app] [WARNING] ${filePath}: the default export is not an object.`);
-      return false;
-    }
+    if (!Validator.isObject(oEntry, sFilePath)) return false;
 
-    const route = entry as RouteEntry;
+    // Reads it as a route
+    const oRoute = oEntry as RouteEntry;
 
     // Checks that the expression field is a string
-    if (route.expression && typeof route.expression !== "string") {
-      console.warn(`[nano-app] [WARNING] ${filePath}: "expression" must be a string.`);
-      return false;
-    }
+    if (oRoute.expression && typeof oRoute.expression !== 'string')
+      return Validator.warn(sFilePath, '"expression" must be a string.');
 
     // Checks that each HTTP method is a function
-    for (const method of HTTP_METHODS) {
-      if (route[method] && typeof route[method] !== "function") {
-        console.warn(`[nano-app] [WARNING] ${filePath}: "${String(method)}" must be a function.`);
-        return false;
-      }
+    for (const sMethod of HTTP_METHODS) {
+      if (oRoute[sMethod] && typeof oRoute[sMethod] !== 'function')
+        return Validator.warn(sFilePath, `"${String(sMethod)}" must be a function.`);
     }
 
     // Checks that the entry defines at least one HTTP method
-    if (!HTTP_METHODS.some(method => route[method])) {
-      console.warn(`[nano-app] [WARNING] ${filePath}: no defines any HTTP method.`);
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
-   * Type guard for a `*.store.ts` entry.
-   */
-  private static isStore(entry: unknown, filePath: string): entry is StoreEntry {
-    // Checks that the default export is an object
-    if (!entry || typeof entry !== "object") {
-      console.warn(`[nano-app] [WARNING] ${filePath}: the default export is not an object.`);
-      return false;
-    }
-
-    const store = entry as StoreEntry;
-
-    // Checks that the type field is "app" or "api"
-    if (store.type !== "app" && store.type !== "api") {
-      console.warn(`[nano-app] [WARNING] ${filePath}: "type" must be "app" or "api".`);
-      return false;
-    }
-
-    // Checks that the path field is a string when the type is "api"
-    if (store.type === "api" && !store.path) {
-      console.warn(`[nano-app] [WARNING] ${filePath}: "path" is required for type "api".`);
-      return false;
-    }
+    if (!HTTP_METHODS.some(sMethod => oRoute[sMethod]))
+      return Validator.warn(sFilePath, 'defines no HTTP method.');
 
     return true;
   }
@@ -75,37 +52,43 @@ export abstract class Validator {
   /**
    * Type guard for a `.prisma` entry: the contents of the file, without comments.
    */
-  private static isPrisma(entry: unknown, filePath: string): entry is string {
+  private static isPrisma(oEntry: unknown, sFilePath: string): oEntry is string {
     // Checks that the entry is the file contents
-    if (typeof entry !== "string") {
-      console.warn(`[nano-app] [WARNING] ${filePath}: the contents are not a string.`);
-      return false;
-    }
+    if (typeof oEntry !== 'string')
+      return Validator.warn(sFilePath, 'the contents are not a string.');
 
     // Checks that the datasource is PostgreSQL
-    const provider = entry.match(/datasource\s+\w+\s*\{[^}]*provider\s*=\s*["']([^"']+)["']/s)?.[1];
-    if (provider !== "postgresql") {
-      console.warn(`[nano-app] [WARNING] ${filePath}: the datasource provider must be "postgresql"${provider ? `, not "${provider}"` : ""}.`);
-      return false;
+    const sProvider = oEntry.match(
+      /datasource\s+\w+\s*\{[^}]*provider\s*=\s*["']([^"']+)["']/s,
+    )?.[1];
+    if (sProvider !== 'postgresql') {
+      return Validator.warn(
+        sFilePath,
+        `the datasource provider must be "postgresql"${sProvider ? `, not "${sProvider}"` : ''}.`,
+      );
     }
 
     return true;
   }
 
   /** Validates a full map of entries and returns only the valid ones */
-  public static validate<T>(entries: NanoObject, extension: FindableExtension): NanoObject<T> {
-    const valid: NanoObject<T> = {};
-
-    for (const [filePath, entry] of Object.entries(entries)) {
-      const validated = this.validateUnique<T>(entry, extension, filePath);
-      if (validated !== undefined) valid[filePath] = validated;
+  public static validate<T>(oEntries: NanoObject, sExtension: FindableExtension): NanoObject<T> {
+    // Keeps each entry that passes its validator
+    const oValid: NanoObject<T> = {};
+    for (const [sFilePath, oEntry] of Object.entries(oEntries)) {
+      const oValidated = this.validateUnique<T>(oEntry, sExtension, sFilePath);
+      if (oValidated !== undefined) oValid[sFilePath] = oValidated;
     }
 
-    return valid;
+    return oValid;
   }
 
   /** Validates one entry: returns it when valid, `undefined` otherwise */
-  public static validateUnique<T>(entry: T, extension: FindableExtension, filePath: string = ""): T | undefined {
-    return this.validators[extension]?.()(entry, filePath) ? entry : undefined;
+  public static validateUnique<T>(
+    oEntry: T,
+    sExtension: FindableExtension,
+    sFilePath: string = '',
+  ): T | undefined {
+    return this.oValidators[sExtension]?.()(oEntry, sFilePath) ? oEntry : undefined;
   }
 }

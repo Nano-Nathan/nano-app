@@ -1,46 +1,46 @@
-import type { RequestHandler } from "express";
-import type { Callbacks, Handlers, Params } from "@nano-app/core";
+import type { RequestHandler } from 'express';
+import type { Callbacks, Handlers, Params } from '@nano-app/core';
 
 /** Base class for all endpoints */
-export class Endpoint {
-  private methods: Handlers;
-  private callbacks: Callbacks;
+export default class Endpoint {
+  private oMethods: Handlers;
+  private oCallbacks: Callbacks;
 
   /** Allowed methods */
-  constructor(methods: Handlers, callbacks: Callbacks = {}) {
-    this.methods = methods;
-    this.callbacks = callbacks;
+  constructor(oMethods: Handlers, oCallbacks: Callbacks = {}) {
+    this.oMethods = oMethods;
+    this.oCallbacks = oCallbacks;
   }
 
   /** Handler for all methods */
-  async mount(params: Params): Promise<RequestHandler> {
+  public async mount(oParams: Params): Promise<RequestHandler> {
     // Runs the onInit callback
-    await this.callbacks.onInit?.(params);
+    await this.oCallbacks.onInit?.(oParams);
 
     // Returns the request handler
-    return this.createHandler(params);
+    return this.createHandler(oParams);
   }
 
-  private createHandler: (params: Params) => RequestHandler = (params) => (req, res, next) => {
-    const method = req.method.toUpperCase() as keyof Handlers;
-    const fnMethod = this.methods[method];
+  /** Express handler: onBefore, then the method of the request */
+  private createHandler(oParams: Params): RequestHandler {
+    return (oReq, oRes, fnNext) => {
+      // Finds the handler of the request method
+      const sMethod = oReq.method.toUpperCase() as keyof Handlers;
+      const fnMethod = this.oMethods[sMethod];
 
-    // Checks whether the method is defined
-    if (fnMethod) {
+      // Checks whether the method is defined
+      if (!fnMethod) return fnNext({ status: 405, message: `Method ${sMethod} not implemented` });
+
       // Runs the onBefore callback
-      (this.callbacks.onBefore?.(req, method, params) ?? Promise.resolve({}))
-      .then((onBeforeResult) => (
+      (this.oCallbacks.onBefore?.(oReq, sMethod, oParams) ?? Promise.resolve({}))
         // Runs the method
-        fnMethod(req, { ...params, onBeforeResult })
-          // Handles the response
-          .then((response) => {
-            res.status(response.success ? 200 : 400).json(response);
-          })
-      ))
-      // Forwards the error to the next error middleware
-      .catch(next);
-    } else {
-      res.status(405).json({ success: false, message: `Method ${method} not implemented` });
-    }
+        .then(onBeforeResult => fnMethod(oReq, { ...oParams, onBeforeResult }))
+        // Handles the response
+        .then(oResponse => {
+          oRes.status(oResponse.success ? 200 : 400).json(oResponse);
+        })
+        // Forwards the error to the next error middleware
+        .catch(fnNext);
+    };
   }
 }

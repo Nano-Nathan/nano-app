@@ -63,6 +63,10 @@ jobs:
       - if: steps.changes.outputs.run == 'true'
         run: pnpm install --frozen-lockfile
 
+      # Code style: .prettierrc.json
+      - if: steps.changes.outputs.run == 'true'
+        run: pnpm format:check
+
       - if: steps.changes.outputs.run == 'true'
         run: pnpm --filter @nano-app/plugins test
 

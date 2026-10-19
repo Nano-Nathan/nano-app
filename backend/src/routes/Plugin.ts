@@ -1,32 +1,34 @@
-import { Router } from "./Router";
-import { Database } from "../database/Database";
-import type { PluginConfig } from "../types/plugin";
-import type { Express } from "express";
+import Router from './Router';
+import Database from '../database/Database';
+import type { Express } from 'express';
+import type { PluginConfig } from '../types/plugin';
 
-export class Plugin {
-  private config: PluginConfig;
+/** A group of routes, with its options, callbacks and database */
+export default class Plugin {
+  private oConfig: PluginConfig;
 
   /** Creates a new Plugin instance */
-  constructor(config: PluginConfig) {
-    this.config = config;
+  constructor(oConfig: PluginConfig) {
+    this.oConfig = oConfig;
   }
 
   /** Mounts its endpoints on express app */
-  async mount(app: Express): Promise<void> {
-    const { name, routesDir, basePath, database, options, callbacks } = this.config;
+  public async mount(oApp: Express): Promise<void> {
+    const { name, routesDir, basePath, database, options, callbacks } = this.oConfig;
 
-    const router = new Router(routesDir, basePath);
-
-    // Mount the Prisma client, named as the plugin
-    const db = database?.enabled ? await Database.mount(name, database) : undefined
+    // Mounts the Prisma client, named as the plugin
+    const oDb = database?.enabled ? await Database.mount(name, database) : undefined;
 
     // Every callback and handler receives the plugin's options and client
-    const params = { ...options, db };
+    const oParams = { ...options, db: oDb };
 
     // Plugin setup with the app, before any of its endpoints
-    await callbacks?.onMount?.(app, params);
+    await callbacks?.onMount?.(oApp, oParams);
 
     // Append the handlers
-    for (const { path, endpoint } of await router.mount()) app.all(path, await endpoint.mount(params));
+    const oRouter = new Router(routesDir, basePath);
+    for (const { path, endpoint } of await oRouter.mount()) {
+      oApp.all(path, await endpoint.mount(oParams));
+    }
   }
 }

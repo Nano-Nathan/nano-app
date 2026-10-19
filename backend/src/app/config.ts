@@ -1,6 +1,7 @@
-import { Formatter } from "@nano-app/core";
-import type { NanoAppConfig } from "../types/app";
-import type { PluginConfig } from "../types/plugin";
+import { Formatter } from '@nano-app/core';
+import type { NanoObject } from '@nano-app/core';
+import type { NanoAppConfig } from '../types/app';
+import type { PluginConfig } from '../types/plugin';
 
 /** Initial application configuration */
 export const INITIAL_CONFIG = {
@@ -19,65 +20,65 @@ export const INITIAL_CONFIG = {
       tokens: {
         timestamp: () => Formatter.logDate(),
       },
-      format: ":timestamp | :method :url :status",
+      format: ':timestamp | :method :url :status',
     },
-    cors: {},
+    cors: {
+      methods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE', 'QUERY'],
+    },
     helmet: true,
     compression: true,
     rateLimit: {
       max: 1000,
-      message: "Too many requests, please try again later.",
+      message: 'Too many requests, please try again later.',
     },
     express: {
-      limit: "10kb",
+      limit: '10kb',
     },
     urlencoded: {
       extended: false,
     },
   },
-  
+
   /** Main plugin to mount */
   mainPlugin: {
-    routesDir: "src/routes",
+    routesDir: 'src/routes',
     basePath: '',
     database: {
       enabled: false,
-      schemaPath: "src/prisma/schema.prisma",
+      schemaPath: 'src/prisma/schema.prisma',
     },
   },
 
   /** Plugins around the consumer routes */
-  plugins: []
+  plugins: [],
 } satisfies NanoAppConfig;
 
-/**
- * Merges the consumer configuration with the initial one.
- */
-export function mergeConfig(config: NanoAppConfig = {}): NanoAppConfig & { mainPlugin: PluginConfig } {
-  return {
-    ...INITIAL_CONFIG,
-    ...config,
-    settings: config.settings ?? INITIAL_CONFIG.settings,
-    packages: {
-      ...INITIAL_CONFIG.packages,
-      ...(config.packages || {}),
-      morgan: config.packages?.morgan ?? INITIAL_CONFIG.packages.morgan,
-      cors: config.packages?.cors ?? INITIAL_CONFIG.packages.cors,
-      helmet: config.packages?.helmet ?? INITIAL_CONFIG.packages.helmet,
-      compression: config.packages?.compression ?? INITIAL_CONFIG.packages.compression,
-      rateLimit: config.packages?.rateLimit ?? INITIAL_CONFIG.packages.rateLimit,
-      express: config.packages?.express ?? INITIAL_CONFIG.packages.express,
-      urlencoded: config.packages?.urlencoded ?? INITIAL_CONFIG.packages.urlencoded,
-    },
-    mainPlugin: {
-      ...INITIAL_CONFIG.mainPlugin,
-      ...config.mainPlugin,
-      name: 'app',
-      database: {
-        ...INITIAL_CONFIG.mainPlugin.database,
-        ...config.mainPlugin?.database,
-      },
-    },
-    plugins: config.plugins ?? INITIAL_CONFIG.plugins,
-  };
+/** Whether a value is a plain object (`{}`), the only kind merged field by field */
+function isPlainObject(oValue: unknown): oValue is NanoObject {
+  return Object.prototype.toString.call(oValue) === '[object Object]';
+}
+
+/** Merges a value over its default: plain objects key by key at every level; anything else replaces it */
+function deepMerge(oDefault: unknown, oValue: unknown): unknown {
+  // Not set: the default
+  if (oValue === undefined) return oDefault;
+
+  // Not two plain objects (`false`, arrays, functions, primitives): the value wins
+  if (!isPlainObject(oDefault) || !isPlainObject(oValue)) return oValue;
+
+  // Two plain objects: each key merged with its default
+  const aKeys = Object.keys({ ...oDefault, ...oValue });
+  return Object.fromEntries(aKeys.map(sKey => [sKey, deepMerge(oDefault[sKey], oValue[sKey])]));
+}
+
+/** Merges the consumer configuration over the initial one; the main plugin is always named "app" */
+export function mergeConfig(oConfig: NanoAppConfig = {}): NanoAppConfig &
+  Required<Pick<NanoAppConfig, 'settings' | 'plugins' | 'packages'>> & {
+    mainPlugin: PluginConfig;
+  } {
+  // Every level keeps its default where the consumer set nothing
+  const oMerged = deepMerge(INITIAL_CONFIG, oConfig) as typeof INITIAL_CONFIG;
+
+  // Names the main plugin
+  return { ...oMerged, mainPlugin: { ...oMerged.mainPlugin, name: 'app' } };
 }

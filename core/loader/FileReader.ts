@@ -1,43 +1,49 @@
-import { createJiti, JitiResolveOptions } from "jiti";
-import { isAbsolute, resolve } from "path";
-import { readFileSync, existsSync } from "fs";
+import { isAbsolute, resolve } from 'node:path';
+import { readFileSync, existsSync } from 'node:fs';
+import { createJiti, type JitiResolveOptions } from 'jiti';
 
-export abstract class FileReader {
+/** Reads and loads files from disk, resolved from `cwd` */
+export default abstract class FileReader {
   // The Prisma runtime is loaded natively: through jiti its interop breaks the error messages
-  private static jiti = createJiti(import.meta.url, { nativeModules: ["@prisma/client"] });
+  private static oJiti = createJiti(import.meta.url, { nativeModules: ['@prisma/client'] });
 
   /** Loads a module via jiti */
-  public static async loadModule<T = unknown>(filePath: string, options: JitiResolveOptions & { default?: true } = {}): Promise<T> {
-    return await this.jiti.import<T>(
-      this.getAbsolutePath(filePath),
-      options
-    );
+  public static async loadModule<T = unknown>(
+    sFilePath: string,
+    oOptions: JitiResolveOptions & { default?: true } = {},
+  ): Promise<T> {
+    return await this.oJiti.import<T>(this.getAbsolutePath(sFilePath), oOptions);
   }
 
   /** Reads the contents of a file */
-  public static loadFile(filePath: string): string {
-    const content = readFileSync(this.getAbsolutePath(filePath), "utf-8");
+  public static loadFile(sFilePath: string): string {
+    const sContent = readFileSync(this.getAbsolutePath(sFilePath), 'utf-8');
 
     // Checks that the contents are valid
-    if (!content) {
-      throw new Error(`[nano-app] [ERROR] The file ${filePath} does not have valid content.`);
+    if (!sContent) {
+      throw new Error(`[nano-app] [ERROR] The file ${sFilePath} does not have valid content.`);
     }
 
     // Returns the contents
-    return content;
+    return sContent;
+  }
+
+  /** Reads a Prisma schema without its `//` comments */
+  public static loadSchema(sFilePath: string): string {
+    return this.loadFile(sFilePath).replace(/\/\/.*$/gm, '');
   }
 
   /** Resolves the absolute path of a file */
-  public static getAbsolutePath(filePath: string): string {
+  public static getAbsolutePath(sFilePath: string): string {
     // Resolves the absolute path
-    const absolutePath = isAbsolute(filePath) ? filePath : resolve(process.cwd(), filePath);
+    const sAbsolutePath = isAbsolute(sFilePath) ? sFilePath : resolve(process.cwd(), sFilePath);
 
     // Checks that the file exists
-    if (!existsSync(absolutePath)) {
-      throw new Error(`[nano-app] [ERROR] ${filePath} not found.`);
+    if (!existsSync(sAbsolutePath)) {
+      throw new Error(`[nano-app] [ERROR] ${sFilePath} not found.`);
     }
 
     // Returns the absolute path
-    return absolutePath;
+    return sAbsolutePath;
   }
 }

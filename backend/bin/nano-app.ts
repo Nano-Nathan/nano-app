@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-import "dotenv/config";
-import { execFileSync } from "child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
-import { createRequire } from "module";
-import { getDir } from "../const";
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import 'dotenv/config';
+import { getDir, MISSING_DATABASE_URL } from '../const';
 
 /**
  * Prisma wrapper: clients are generated in .nano-app/prisma-clients/<name> ("app" is the project's schema).
@@ -11,36 +11,67 @@ import { getDir } from "../const";
  *   nano-app push [name...] [--schema <path>] [prisma flags, e.g. --accept-data-loss]
  *   nano-app <any other Prisma command>
  */
-const [command, ...args] = process.argv.slice(2);
+const [sCommand, ...aArgs] = process.argv.slice(2);
 
-const prisma = (...prismaArgs: string[]) =>
-  execFileSync(process.execPath, [createRequire(`${process.cwd()}/`).resolve("prisma/build/index.js"), ...prismaArgs], { stdio: "inherit" });
+// Runs the consumer's Prisma CLI
+const fnPrisma = (...aPrismaArgs: string[]): Buffer =>
+  execFileSync(
+    process.execPath,
+    [createRequire(`${process.cwd()}/`).resolve('prisma/build/index.js'), ...aPrismaArgs],
+    { stdio: 'inherit' },
+  );
 
 try {
-  if (command !== "generate" && command !== "push") {
-    prisma(...process.argv.slice(2));
+  // Any other command goes straight to Prisma
+  if (sCommand !== 'generate' && sCommand !== 'push') {
+    fnPrisma(...process.argv.slice(2));
   } else {
-    const schemaFlag = args.indexOf("--schema");
-    const appSchema = schemaFlag >= 0 ? args.splice(schemaFlag, 2)[1] : "src/prisma/schema.prisma";
-    const names = args.filter(arg => !arg.startsWith("-"));
-    const flags = args.filter(arg => arg.startsWith("-"));
+    // Splits the app schema, the plugin names and the Prisma flags
+    const iSchemaFlag = aArgs.indexOf('--schema');
+    const sAppSchema =
+      iSchemaFlag >= 0 ? aArgs.splice(iSchemaFlag, 2)[1] : 'src/prisma/schema.prisma';
+    const aNames = aArgs.filter(sArg => !sArg.startsWith('-'));
+    const aFlags = aArgs.filter(sArg => sArg.startsWith('-'));
 
-    for (const name of names.length ? names : ["app"]) {
-      const source = name === "app" ? appSchema : getDir("plugins", name, "schema.prisma");
-      if (!existsSync(source)) {
-        console.error(`[nano-app] [ERROR] "${name}" has no schema: ${source}`);
+    // Checks that push has a database to push to
+    const sUrl = process.env.DATABASE_URL;
+    if (sCommand === 'push' && !sUrl) {
+      console.error(MISSING_DATABASE_URL);
+      process.exit(1);
+    }
+
+    for (const sName of aNames.length ? aNames : ['app']) {
+      // Checks that the schema exists
+      const sSource = sName === 'app' ? sAppSchema : getDir('plugins', sName, 'schema.prisma');
+      if (!existsSync(sSource)) {
+        console.error(`[nano-app] [ERROR] "${sName}" has no schema: ${sSource}`);
         process.exit(1);
       }
 
       // A copy whose client lands next to it
-      const dir = `${process.cwd()}/.nano-app/prisma-clients/${name}`;
-      mkdirSync(dir, { recursive: true });
-      writeFileSync(`${dir}/schema.prisma`, readFileSync(source, "utf-8").replace(/output\s*=\s*"[^"]*"/, 'output = "./generated"'));
+      const sDir = `${process.cwd()}/.nano-app/prisma-clients/${sName}`;
+      mkdirSync(sDir, { recursive: true });
+      writeFileSync(
+        `${sDir}/schema.prisma`,
+        readFileSync(sSource, 'utf-8').replace(/output\s*=\s*"[^"]*"/, 'output = "./generated"'),
+      );
 
-      prisma("generate", "--schema", `${dir}/schema.prisma`);
-      if (command === "push") prisma("db", "push", "--schema", `${dir}/schema.prisma`, "--url", process.env.DATABASE_URL ?? "", ...flags);
+      // Generates the client, and pushes the tables on push
+      fnPrisma('generate', '--schema', `${sDir}/schema.prisma`);
+      if (sCommand === 'push') {
+        fnPrisma(
+          'db',
+          'push',
+          '--schema',
+          `${sDir}/schema.prisma`,
+          '--url',
+          sUrl!, // Checked above for push
+          ...aFlags,
+        );
+      }
     }
   }
-} catch (error: any) {
-  process.exit(error?.status ?? 1);
+} catch (oError: any) {
+  // any: anything can be thrown, also execFileSync's error with its status
+  process.exit(oError?.status ?? 1);
 }
