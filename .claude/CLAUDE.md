@@ -9,7 +9,7 @@ pnpm monorepo: `core/` (private, inlined into the backend), `backend/` (`@nano-a
 - Branches have a descriptive name of what they do (`feat/<topic>`, `fix/<topic>`, `refactor/<topic>`, `docs/<topic>`), never ids or generated names. Work on the existing branch of the topic when there is one.
 - Every change reaches `main` through a pull request. Its title is a Conventional Commit: it decides the release of each touched package.
 - Agents do not commit or push. Stage only the files you changed; the maintainer commits.
-- No Claude attribution in commits or pull requests.
+- Agents never add a `Co-authored-by` trailer (for themselves or another agent) to commits or pull requests: co-authorship is added by hand by the maintainer.
 
 ## Business logic: ask first
 
