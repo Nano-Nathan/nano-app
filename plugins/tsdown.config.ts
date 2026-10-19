@@ -2,9 +2,9 @@ import { defineConfig } from 'tsdown';
 import { globSync } from 'glob';
 
 export default defineConfig({
-  // One folder per plugin: `<name>/index.ts` is its import path (`@nano-app/plugins/<name>`).
-  // Routes are loaded from `routesDir` at runtime, so each one is its own file
-  entry: globSync(['*/index.ts', '*/routes/**/*.route.ts'], {
+  // One folder per plugin: `<name>/index.ts` is its import path (`@nano-app/plugins/<name>`),
+  // `<name>/cli.ts` its command when it has one. Routes are loaded from `routesDir` at runtime, so each one is its own file
+  entry: globSync(['*/index.ts', '*/cli.ts', '*/routes/**/*.route.ts'], {
     ignore: ['node_modules/**', 'build/**', 'tests/**'],
   }),
   // One output file per source file, under its plugin folder: `import.meta.url` of each plugin stays next to its routes/

@@ -9,6 +9,9 @@
       "import": "./build/*/index.js"
     }
   },
+  "bin": {
+    "nano-app-auth": "build/auth/cli.js"
+  },
   "files": [
     "build",
     "LICENSE"
@@ -37,14 +40,21 @@
     "node": ">=22"
   },
   "peerDependencies": {
-    "@nano-app/backend": ">=0.7.1"
+    "@nano-app/backend": ">=0.8.0"
   },
   "devDependencies": {
     "@nano-app/backend": "workspace:*",
     "@types/node": "^26.6.5",
+    "@types/pg": "^8.23.1",
     "glob": "^13.0.6",
     "tsdown": "^0.23.1",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@better-auth/api-key": "^1.7.10",
+    "better-auth": "^1.7.10",
+    "jiti": "^2.7.0",
+    "pg": "^8.23.1"
   }
 }
