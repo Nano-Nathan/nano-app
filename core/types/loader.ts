@@ -9,4 +9,4 @@ export type FindOptions = {
   save?: boolean;
   /** Output directory */
   savePath?: string;
-}
+};

@@ -1,114 +1,144 @@
-import { mkdirSync, writeFileSync } from "fs";
-import { dirname, resolve } from "path";
-import { glob } from "glob";
-import { Validator } from "./Validator";
-import type { NanoObject, StoreEntry, RouteEntry, PrismaEntry } from "../types/objects";
-import type { FindOptions } from "../types/loader";
-import { FileReader } from "./FileReader";
+import { mkdirSync, writeFileSync } from 'fs';
+import { dirname, resolve } from 'path';
+import { glob } from 'glob';
+import Validator from './Validator';
+import type { NanoObject, StoreEntry, RouteEntry, PrismaEntry } from '../types/objects';
+import type { FindOptions } from '../types/loader';
+import FileReader from './FileReader';
 
-export abstract class FileLoader {
-
+export default abstract class FileLoader {
   /**
    * 1. Validates a `.prisma` file.
    * 2. Loads a generated Prisma client module (`client.ts`, or `client.js`)
    */
-  public static async findPrismaClient(clientPath: string, schemaPath: string): Promise<PrismaEntry> {
+  public static async findPrismaClient(
+    sClientPath: string,
+    sSchemaPath: string,
+  ): Promise<PrismaEntry> {
     // Reads the schema
-    const content = FileReader.loadFile(schemaPath).replace(/\/\/.*$/gm, "");
+    const sContent = FileReader.loadFile(sSchemaPath).replace(/\/\/.*$/gm, '');
 
     // Validates it
-    if (!Validator.validateUnique(content, "prisma", schemaPath)) {
-      throw new Error(`[nano-app] [ERROR] ${schemaPath} is not a valid Prisma schema.`);
+    if (!Validator.validateUnique(sContent, 'prisma', sSchemaPath)) {
+      throw new Error(`[nano-app] [ERROR] ${sSchemaPath} is not a valid Prisma schema.`);
     }
 
     // Loads the client
     try {
-      return (await FileReader.loadModule<{ PrismaClient: PrismaEntry }>(clientPath))?.PrismaClient;
-    } catch (error: any) {
-      throw new Error(`[nano-app] [ERROR] The Prisma client ${clientPath} could not be loaded: ${error?.message ?? error}`);
+      return (await FileReader.loadModule<{ PrismaClient: PrismaEntry }>(sClientPath))
+        ?.PrismaClient;
+    } catch (oError: any) {
+      throw new Error(
+        `[nano-app] [ERROR] The Prisma client ${sClientPath} could not be loaded: ${oError?.message ?? oError}`,
+      );
     }
   }
 
-
-
   /** Finds `*.<extension>.ts` (or built `.js`) files and returns `{ [subPath]: defaultExport }` */
-  public static async findMany<T extends RouteEntry | StoreEntry>({ extension, savePath, sourceDir, save = false }: FindOptions): Promise<NanoObject<T>> {
+  public static async findMany<T extends RouteEntry | StoreEntry>({
+    extension,
+    savePath,
+    sourceDir,
+    save = false,
+  }: FindOptions): Promise<NanoObject<T>> {
     // Resolves the paths
-    const srcDir = (sourceDir || `src/${extension}s`).replace(/^\.\//, "").replace(/\/$/, "");
-    const filePaths = await glob(`${srcDir}/**/*.${extension}.{ts,js}`, { posix: true, ignore: "**/*.d.ts" });
+    const sSrcDir = (sourceDir || `src/${extension}s`).replace(/^\.\//, '').replace(/\/$/, '');
+    const aFilePaths = await glob(`${sSrcDir}/**/*.${extension}.{ts,js}`, {
+      posix: true,
+      ignore: '**/*.d.ts',
+    });
 
     // Builds the entries object
-    const entries: NanoObject<T> = {};
+    const oEntries: NanoObject<T> = {};
 
-    for (const filePath of filePaths) {
-      const fileSubPath = filePath
-        .slice(srcDir.length)
-        .replace(new RegExp(`\\.${extension}\\.(ts|js)$`), "");
-      entries[fileSubPath] = await FileReader.loadModule<T>(filePath, { default: true });
+    // Loads each file, keyed by its path without the extension
+    for (const sFilePath of aFilePaths) {
+      const sFileSubPath = sFilePath
+        .slice(sSrcDir.length)
+        .replace(new RegExp(`\\.${extension}\\.(ts|js)$`), '');
+      oEntries[sFileSubPath] = await FileReader.loadModule<T>(sFilePath, { default: true });
     }
 
     // Drops invalid entries (one invalid file does not discard the rest)
-    const valid = Validator.validate<T>(entries, extension);
+    const oValid = Validator.validate<T>(oEntries, extension);
 
     // Persists the entries object when requested. Used savePath or default path.
     if (save) {
-      this.save<T>(valid, savePath || resolve(process.cwd(), "node_modules", "@nano-app", "data", `${extension}s.cjs`));
+      this.save<T>(
+        oValid,
+        savePath ||
+          resolve(process.cwd(), 'node_modules', '@nano-app', 'data', `${extension}s.cjs`),
+      );
     }
 
     // Always returns the entries object
-    return valid;
+    return oValid;
   }
 
-
   /** Writes a `{ [filePath]: fileDefaultExport }` map to the given path. */
-  private static save<T extends RouteEntry | StoreEntry>(data: NanoObject<T>, outPath: string): void {
-    const SERIALIZE = (value: unknown, indent = 0): string => {
-      const pad = "  ".repeat(indent);
-      const padInner = "  ".repeat(indent + 1);
+  private static save<T extends RouteEntry | StoreEntry>(
+    oData: NanoObject<T>,
+    sOutPath: string,
+  ): void {
+    // Serializes a value as JavaScript source, functions included
+    const fnSerialize = (oValue: unknown, iIndent = 0): string => {
+      const sPad = '  '.repeat(iIndent);
+      const sPadInner = '  '.repeat(iIndent + 1);
 
-      if (value === null) return "null";
-      if (value === undefined) return "undefined";
-      if (typeof value === "function") return value.toString();
-      if (typeof value === "string") return JSON.stringify(value);
-      if (typeof value === "number" || typeof value === "boolean") return String(value);
+      // Primitives and functions
+      if (oValue === null) return 'null';
+      if (oValue === undefined) return 'undefined';
+      if (typeof oValue === 'function') return oValue.toString();
+      if (typeof oValue === 'string') return JSON.stringify(oValue);
+      if (typeof oValue === 'number' || typeof oValue === 'boolean') return String(oValue);
 
-      if (Array.isArray(value)) {
-        if (value.length === 0) return "[]";
-        const items = value
-          .map((v) => `${padInner}${SERIALIZE(v, indent + 1)}`)
-          .join(",\n");
-        return `[\n${items}\n${pad}]`;
+      // Arrays, one item per line
+      if (Array.isArray(oValue)) {
+        if (oValue.length === 0) return '[]';
+        const sItems = oValue
+          .map(oItem => `${sPadInner}${fnSerialize(oItem, iIndent + 1)}`)
+          .join(',\n');
+        return `[\n${sItems}\n${sPad}]`;
       }
 
-      if (typeof value === "object") {
-        const entries = Object.entries(value as Record<string, unknown>);
-        if (entries.length === 0) return "{}";
-        const lines = entries
-          .map(([k, v]) => `${padInner}${JSON.stringify(k)}: ${SERIALIZE(v, indent + 1)}`)
-          .join(",\n");
-        return `{\n${lines}\n${pad}}`;
+      // Objects, one key per line
+      if (typeof oValue === 'object') {
+        const aEntries = Object.entries(oValue as Record<string, unknown>);
+        if (aEntries.length === 0) return '{}';
+        const sLines = aEntries
+          .map(
+            ([sKey, oItem]) =>
+              `${sPadInner}${JSON.stringify(sKey)}: ${fnSerialize(oItem, iIndent + 1)}`,
+          )
+          .join(',\n');
+        return `{\n${sLines}\n${sPad}}`;
       }
 
-      return String(value);
-    }
+      return String(oValue);
+    };
 
-    const GENERATE_EXPORT = (content: string) => `${'// Auto-generated by @nano-app.\n' +
-      '// Do not edit manually.\n' +
-      '"use strict";\n' +
-      'module.exports = {\n' + content + '\n};'
+    // Wraps the serialized entries in a CommonJS module
+    const fnGenerateExport = (sContent: string) =>
+      `${
+        '// Auto-generated by @nano-app.\n' +
+        '// Do not edit manually.\n' +
+        '"use strict";\n' +
+        'module.exports = {\n' +
+        sContent +
+        '\n};'
       }`;
 
     // Builds the file contents
-    const output = GENERATE_EXPORT(
-      Object.entries(data)
-        .map(([filePath, value]) => `  ${JSON.stringify(filePath)}: ${SERIALIZE(value, 1)}`)
-        .join(",\n")
+    const sOutput = fnGenerateExport(
+      Object.entries(oData)
+        .map(([sFilePath, oValue]) => `  ${JSON.stringify(sFilePath)}: ${fnSerialize(oValue, 1)}`)
+        .join(',\n'),
     );
 
     // Creates the destination directory if missing and writes the file
-    mkdirSync(dirname(outPath), { recursive: true });
-    writeFileSync(outPath, output, "utf-8");
+    mkdirSync(dirname(sOutPath), { recursive: true });
+    writeFileSync(sOutPath, sOutput, 'utf-8');
 
-    console.log(`[nano-app] File generated: ${outPath}`);
+    console.log(`[nano-app] File generated: ${sOutPath}`);
   }
 }

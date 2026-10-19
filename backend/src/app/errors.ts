@@ -1,5 +1,5 @@
-import type { ErrorRequestHandler, RequestHandler } from "express";
-import type { ApiResponse } from "@nano-app/core";
+import type { ErrorRequestHandler, RequestHandler } from 'express';
+import type { ApiResponse } from '@nano-app/core';
 
 /** Error shape thrown by the consumer handlers */
 type HandlerError = {
@@ -9,35 +9,37 @@ type HandlerError = {
 };
 
 /** Normalizes anything thrown by a handler into an ApiResponse plus its status */
-function normalize(error: unknown): { status: number; body: ApiResponse } {
+function normalize(oError: unknown): { status: number; body: ApiResponse } {
   // Strings are thrown as a shortcut for a bad request
-  if (typeof error === "string") {
-    return { status: 400, body: { success: false, message: error } };
+  if (typeof oError === 'string') {
+    return { status: 400, body: { success: false, message: oError } };
   }
 
-  const { status, message, warning } = (error ?? {}) as HandlerError;
+  // Anything else is read as { status, message, warning }
+  const { status, message, warning } = (oError ?? {}) as HandlerError;
 
   return {
     status: status ?? 500,
     body: {
       success: false,
       warning: warning ?? false,
-      message: message || "Internal server error",
+      message: message || 'Internal server error',
     },
   };
 }
 /** Turns every unmatched request into a 404 for the error handler */
-export const notFoundHandler: RequestHandler = (req, _res, next) => {
-  next({ status: 404, message: `${req.path} not found` });
+export const notFoundHandler: RequestHandler = (oReq, _oRes, fnNext) => {
+  fnNext({ status: 404, message: `${oReq.path} not found` });
 };
 
 /** Turns any error raised by a handler into an ApiResponse */
-export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
-  const { status, body } = normalize(error);
+export const errorHandler: ErrorRequestHandler = (oError, _oReq, oRes, _fnNext) => {
+  const { status, body } = normalize(oError);
 
+  // Server errors are logged in full; the response carries only the message
   if (status >= 500) {
-    console.error("[nano-app] [ERROR]", error);
+    console.error('[nano-app] [ERROR]', oError);
   }
 
-  res.status(status).json(body);
+  oRes.status(status).json(body);
 };

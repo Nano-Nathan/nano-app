@@ -1,8 +1,8 @@
-import type { DatabaseConfig } from "./database";
-import type { NanoObject, PluginCallbacks } from "@nano-app/core";
+import type { DatabaseConfig } from './database';
+import type { NanoObject, PluginCallbacks } from '@nano-app/core';
 
 /** When a plugin is mounted, relative to the consumer routes */
-export type PluginStage = "before" | "after";
+export type PluginStage = 'before' | 'after';
 
 /** Plugin configuration: a group of endpoints */
 export type PluginConfig<Options = NanoObject> = {
@@ -20,7 +20,7 @@ export type PluginConfig<Options = NanoObject> = {
   options?: Options;
   /** Plugin callbacks */
   callbacks?: PluginCallbacks;
-}
+};
 
 /** The project's plugin: nano-app names it "app" and mounts it between the "before" and "after" plugins */
 export type MainPluginConfig<Options = NanoObject> = {
@@ -39,4 +39,4 @@ export type MainPluginConfig<Options = NanoObject> = {
   options?: Options;
   /** Plugin callbacks */
   callbacks?: PluginCallbacks;
-}
+};

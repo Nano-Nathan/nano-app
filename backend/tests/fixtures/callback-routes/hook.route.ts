@@ -1,15 +1,25 @@
-import { createRoute } from "../../../src/app/creators";
+import { createRoute } from '../../../src/app/creators';
 
 /** Route of a fixture plugin with every endpoint callback: records them in `options.calls` */
 export default createRoute({
   callbacks: {
-    onInit: async ({ calls }) => { calls.push("init"); },
-    onBefore: async (req, method, { calls }) => {
-      calls.push(`before ${method}`);
-      if (req.query.deny) throw { status: 403, message: "denied" };
-      return { greeting: "hello" };
+    onInit: async ({ calls }) => {
+      calls.push('init');
+    },
+    onBefore: async (oReq, sMethod, { calls }) => {
+      // Records the call
+      calls.push(`before ${sMethod}`);
+
+      // Rejects when asked to
+      if (oReq.query.deny) throw { status: 403, message: 'denied' };
+
+      // Passes a value to the handler
+      return { greeting: 'hello' };
     },
   },
 
-  GET: async (_req, { greeting, onBeforeResult }) => ({ success: true, result: { greeting, before: onBeforeResult?.greeting } }),
+  GET: async (_oReq, { greeting, onBeforeResult }) => ({
+    success: true,
+    result: { greeting, before: onBeforeResult?.greeting },
+  }),
 });

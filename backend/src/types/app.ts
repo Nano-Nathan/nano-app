@@ -1,7 +1,7 @@
-import express from "express";
-import type { Options } from "express-rate-limit";
-import type { CorsOptions } from "cors";
-import type { MainPluginConfig, PluginConfig } from "./plugin";
+import express from 'express';
+import type { Options } from 'express-rate-limit';
+import type { CorsOptions } from 'cors';
+import type { MainPluginConfig, PluginConfig } from './plugin';
 
 /** Configuration of the framework's built-in packages */
 export type PackagesConfig = {
@@ -40,4 +40,4 @@ export type NanoAppConfig = {
   plugins?: PluginConfig[];
   /** Main plugin to mount. */
   mainPlugin?: MainPluginConfig;
-}
+};

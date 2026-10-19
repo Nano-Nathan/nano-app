@@ -1,4 +1,4 @@
-import { createRoute } from "../../../src/app/creators";
+import { createRoute } from '../../../src/app/creators';
 
 /** Route without callbacks, next to hook.route.ts */
 export default createRoute({

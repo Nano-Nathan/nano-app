@@ -1,19 +1,21 @@
-import type { ApiResponse } from "../types/api";
+import type { ApiResponse } from '../types/api';
 
-export class Formatter {
-  static price(value: number): string {
-    return `$${new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 }).format(value || 0)}`;
+export default abstract class Formatter {
+  /** Formats a price as `$1.234`, without decimals */
+  static price(iValue: number): string {
+    return `$${new Intl.NumberFormat('de-DE', { maximumFractionDigits: 0 }).format(iValue || 0)}`;
   }
 
-  static logDate(date: Date = new Date()): string {
-    return new Intl.DateTimeFormat("es-ES", {
-      year: "2-digit",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    }).format(date);
+  /** Formats a date for the request log: `dd/mm/yy, hh:mm:ss` */
+  static logDate(oDate: Date = new Date()): string {
+    return new Intl.DateTimeFormat('es-ES', {
+      year: '2-digit',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }).format(oDate);
   }
 
   // public static sanitizeAndParse(result: ApiResponse): ApiResponse {

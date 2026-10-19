@@ -1,30 +1,29 @@
-import express, { type Express } from "express";
-import { Plugin } from "../routes/Plugin";
-import { Database } from "../database/Database";
+import express, { type Express } from 'express';
+import Plugin from '../routes/Plugin';
 
 // Middlewares
-import morgan from "morgan";
-import cors from "cors";
-import helmet from "helmet";
-import compression from "compression";
-import rateLimit from "express-rate-limit";
+import morgan from 'morgan';
+import cors from 'cors';
+import helmet from 'helmet';
+import compression from 'compression';
+import rateLimit from 'express-rate-limit';
 
 // Config
-import "dotenv/config";
-import type { NanoAppConfig, PackagesConfig } from "../types/app";
-import type { PluginConfig } from "../types/plugin";
-import { mergeConfig } from "./config";
-import { errorHandler, notFoundHandler } from "./errors";
-import { NanoObject } from "@nano-app/core";
+import 'dotenv/config';
+import type { NanoAppConfig, PackagesConfig } from '../types/app';
+import type { PluginConfig } from '../types/plugin';
+import { mergeConfig } from './config';
+import { errorHandler, notFoundHandler } from './errors';
+import { NanoObject } from '@nano-app/core';
 
 /** Main NanoApp class */
-export class NanoApp {
-  protected app: Express;
-  protected config: ReturnType<typeof mergeConfig>;
+export default class NanoApp {
+  protected oApp: Express;
+  protected oConfig: ReturnType<typeof mergeConfig>;
 
-  constructor(config: NanoAppConfig = {}) {
-    this.app = express();
-    this.config = mergeConfig(config);
+  constructor(oConfig: NanoAppConfig = {}) {
+    this.oApp = express();
+    this.oConfig = mergeConfig(oConfig);
     this.start();
   }
 
@@ -34,17 +33,17 @@ export class NanoApp {
       await this.initialize();
 
       // Init server
-      this.app.listen(Number(this.config.port), () => {
+      this.oApp.listen(Number(this.oConfig.port), () => {
         // Runs the consumer listener
-        this.config.listener?.();
+        this.oConfig.listener?.();
 
         // Startup log
-        console.log(`\n[nano-app] [INFO] Nano App running on port ${this.config.port}\n`);
+        console.log(`\n[nano-app] [INFO] Nano App running on port ${this.oConfig.port}\n`);
       });
 
       return this;
-    } catch (error) {
-      console.error("[nano-app] [ERROR] Error trying to start the server.", error);
+    } catch (oError) {
+      console.error('[nano-app] [ERROR] Error trying to start the server.', oError);
       process.exit(1);
     }
   }
@@ -52,70 +51,73 @@ export class NanoApp {
   /** Initializes the application in the right order */
   private async initialize() {
     // Express settings
-    Object.entries(this.config.settings ?? {}).forEach(([key, value]) => this.app.set(key, value));
+    Object.entries(this.oConfig.settings ?? {}).forEach(([sKey, oValue]) =>
+      this.oApp.set(sKey, oValue),
+    );
 
     // Packages (body parsers included: they go first)
-    this.setPackages(this.config.packages);
+    this.setPackages(this.oConfig.packages);
 
     // Plugins separated by stage
     const oPlugins: NanoObject<PluginConfig[]> = { before: [], after: [] };
-    this.config.plugins?.forEach((plugin) => {
-      oPlugins[plugin.stage ?? "before"].push(plugin);
+    this.oConfig.plugins?.forEach(oPlugin => {
+      oPlugins[oPlugin.stage ?? 'before'].push(oPlugin);
     });
 
     // Create plugins before, in order
-    for (const plugin of oPlugins.before) await new Plugin(plugin).mount(this.app);
+    for (const oPlugin of oPlugins.before) await new Plugin(oPlugin).mount(this.oApp);
 
     // Create consumer plugin
-    await new Plugin(this.config.mainPlugin).mount(this.app);
+    await new Plugin(this.oConfig.mainPlugin).mount(this.oApp);
 
     // Create plugins after, in order
-    for (const plugin of oPlugins.after) await new Plugin(plugin).mount(this.app);
+    for (const oPlugin of oPlugins.after) await new Plugin(oPlugin).mount(this.oApp);
 
     // Unmatched requests become a 404 for the error handler
-    this.app.use(notFoundHandler);
+    this.oApp.use(notFoundHandler);
 
     // Error handler: always last, so it covers every package above
-    this.app.use(errorHandler);
+    this.oApp.use(errorHandler);
   }
 
   /* Adds the packages according to the configuration */
-  private setPackages(config: PackagesConfig = {}): void {
+  private setPackages(oConfig: PackagesConfig = {}): void {
     /** Morgan */
-    if (config.morgan) {
-      Object.entries(config.morgan.tokens ?? {})
-        .forEach(([key, value]) => morgan.token(key, value));
-      this.app.use(morgan(config.morgan.format));
+    if (oConfig.morgan) {
+      Object.entries(oConfig.morgan.tokens ?? {}).forEach(([sKey, fnToken]) =>
+        morgan.token(sKey, fnToken),
+      );
+      this.oApp.use(morgan(oConfig.morgan.format));
     }
 
     /** CORS */
-    if (config.cors) {
-      this.app.use(cors(config.cors));
+    if (oConfig.cors) {
+      this.oApp.use(cors(oConfig.cors));
     }
 
     /** Helmet */
-    if (config.helmet) {
-      this.app.use(helmet());
+    if (oConfig.helmet) {
+      this.oApp.use(helmet());
     }
 
     /** Compression */
-    if (config.compression) {
-      this.app.use(compression());
+    if (oConfig.compression) {
+      this.oApp.use(compression());
     }
 
     /** Rate Limit */
-    if (config.rateLimit) {
-      this.app.use(rateLimit(config.rateLimit));
+    if (oConfig.rateLimit) {
+      this.oApp.use(rateLimit(oConfig.rateLimit));
     }
 
     /** JSON */
-    if (config.express) {
-      this.app.use(express.json(config.express));
+    if (oConfig.express) {
+      this.oApp.use(express.json(oConfig.express));
     }
 
     /** URLencoded */
-    if (config.urlencoded) {
-      this.app.use(express.urlencoded(config.urlencoded));
+    if (oConfig.urlencoded) {
+      this.oApp.use(express.urlencoded(oConfig.urlencoded));
     }
   }
 }
