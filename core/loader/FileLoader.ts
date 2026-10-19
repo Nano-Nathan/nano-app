@@ -28,6 +28,7 @@ export default abstract class FileLoader {
       return (await FileReader.loadModule<{ PrismaClient: PrismaEntry }>(sClientPath))
         ?.PrismaClient;
     } catch (oError: any) {
+      // any: anything can be thrown
       throw new Error(
         `[nano-app] [ERROR] The Prisma client ${sClientPath} could not be loaded: ${oError?.message ?? oError}`,
       );

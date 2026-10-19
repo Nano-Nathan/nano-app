@@ -11,7 +11,7 @@ export default class Router {
     this.sBasePath = sBasePath ?? '';
   }
 
-  async mount(): Promise<{ path: string; endpoint: Endpoint }[]> {
+  public async mount(): Promise<{ path: string; endpoint: Endpoint }[]> {
     // Load ther routes from the directory if needed
     if (!!this.sRoutesDir) {
       this.oRoutes = await FileLoader.findMany<RouteEntry>({

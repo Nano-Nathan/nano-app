@@ -12,7 +12,7 @@ export default class Plugin {
   }
 
   /** Mounts its endpoints on express app */
-  async mount(oApp: Express): Promise<void> {
+  public async mount(oApp: Express): Promise<void> {
     const { name, routesDir, basePath, database, options, callbacks } = this.oConfig;
 
     const oRouter = new Router(routesDir, basePath);

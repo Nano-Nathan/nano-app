@@ -8,6 +8,7 @@ export type PackagesConfig = {
   /** Morgan configuration */
   morgan?: {
     /** Morgan tokens */
+    // any: morgan types each token callback with its own request and response
     tokens?: Record<string, any>;
     /** Morgan format */
     format: string;

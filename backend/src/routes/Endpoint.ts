@@ -13,7 +13,7 @@ export default class Endpoint {
   }
 
   /** Handler for all methods */
-  async mount(oParams: Params): Promise<RequestHandler> {
+  public async mount(oParams: Params): Promise<RequestHandler> {
     // Runs the onInit callback
     await this.oCallbacks.onInit?.(oParams);
 

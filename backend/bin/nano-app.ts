@@ -65,5 +65,6 @@ try {
     }
   }
 } catch (oError: any) {
+  // any: anything can be thrown, also execFileSync's error with its status
   process.exit(oError?.status ?? 1);
 }

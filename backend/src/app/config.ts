@@ -63,7 +63,7 @@ export function mergeConfig(
     settings: oConfig.settings ?? INITIAL_CONFIG.settings,
     packages: {
       ...INITIAL_CONFIG.packages,
-      ...(oConfig.packages || {}),
+      ...(oConfig.packages ?? {}),
       morgan: oConfig.packages?.morgan ?? INITIAL_CONFIG.packages.morgan,
       cors: oConfig.packages?.cors ?? INITIAL_CONFIG.packages.cors,
       helmet: oConfig.packages?.helmet ?? INITIAL_CONFIG.packages.helmet,

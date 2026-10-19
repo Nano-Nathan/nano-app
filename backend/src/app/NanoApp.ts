@@ -49,20 +49,20 @@ export default class NanoApp {
   }
 
   /** Initializes the application in the right order */
-  private async initialize() {
+  private async initialize(): Promise<void> {
     // Express settings
-    Object.entries(this.oConfig.settings ?? {}).forEach(([sKey, oValue]) =>
-      this.oApp.set(sKey, oValue),
-    );
+    for (const [sKey, oValue] of Object.entries(this.oConfig.settings ?? {})) {
+      this.oApp.set(sKey, oValue);
+    }
 
     // Packages (body parsers included: they go first)
     this.setPackages(this.oConfig.packages);
 
     // Plugins separated by stage
     const oPlugins: NanoObject<PluginConfig[]> = { before: [], after: [] };
-    this.oConfig.plugins?.forEach(oPlugin => {
+    for (const oPlugin of this.oConfig.plugins ?? []) {
       oPlugins[oPlugin.stage ?? 'before'].push(oPlugin);
-    });
+    }
 
     // Create plugins before, in order
     for (const oPlugin of oPlugins.before) await new Plugin(oPlugin).mount(this.oApp);
@@ -84,9 +84,9 @@ export default class NanoApp {
   private setPackages(oConfig: PackagesConfig = {}): void {
     /** Morgan */
     if (oConfig.morgan) {
-      Object.entries(oConfig.morgan.tokens ?? {}).forEach(([sKey, fnToken]) =>
-        morgan.token(sKey, fnToken),
-      );
+      for (const [sKey, fnToken] of Object.entries(oConfig.morgan.tokens ?? {})) {
+        morgan.token(sKey, fnToken);
+      }
       this.oApp.use(morgan(oConfig.morgan.format));
     }
 

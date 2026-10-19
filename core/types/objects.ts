@@ -1,6 +1,8 @@
 import type { Express, Request } from 'express';
 import { ApiPromise } from './api';
 
+// any: `DB` and `T` default to the consumer's Prisma client and data, unknown to the framework
+
 /** Extra params of handlers and callbacks */
 export type Params<DB = any> = Partial<NanoObject & { db?: DB; onBeforeResult?: NanoObject }>;
 

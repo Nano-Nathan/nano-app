@@ -11,7 +11,7 @@ export default abstract class Database {
   private static oClients: NanoObject = {};
 
   /** Initializes the Database client */
-  static async init(): Promise<void> {
+  public static async init(): Promise<void> {
     // Checks the DATABASE_URL is defined
     const sUrl = process.env.DATABASE_URL;
     if (!sUrl) {
@@ -24,12 +24,14 @@ export default abstract class Database {
   }
 
   /** Gets a client by name */
-  static get(sName: string): any {
+  // any: the Prisma client is generated per plugin, unknown to the framework
+  public static get(sName: string): any {
     return this.oClients[sName];
   }
 
   /** Mounts a generated Prisma client */
-  static async mount(sName: string, { schemaPath }: DatabaseConfig): Promise<any> {
+  // any: the Prisma client is generated per plugin, unknown to the framework
+  public static async mount(sName: string, { schemaPath }: DatabaseConfig): Promise<any> {
     // Fail if trying to mount a client that already exists
     if (this.get(sName)) {
       throw new Error(`[nano-app] [ERROR] The database "${sName}" is already mounted.`);
@@ -71,6 +73,7 @@ export default abstract class Database {
       // Instantiates it with the pg adapter
       oClient = new PrismaClient({ adapter: this.oAdapter });
     } catch (oError: any) {
+      // any: anything can be thrown
       throw new Error(
         `[nano-app] [ERROR] Cannot instantiate the database "${sName}" from ${sClientPath}: ${oError?.message ?? oError}`,
       );
@@ -81,6 +84,7 @@ export default abstract class Database {
       for (const [, sModel] of FileReader.loadFile(schemaPath).matchAll(/^\s*model\s+(\w+)/gm)) {
         await oClient[sModel[0].toLowerCase() + sModel.slice(1)]
           .findFirst()
+          // any: anything can be thrown
           .catch((oError: any) => {
             // Last line of Prisma's message: the table that is missing
             const sReason = String(oError?.message ?? oError)

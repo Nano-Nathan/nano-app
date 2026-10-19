@@ -2,12 +2,12 @@ import type { ApiResponse } from '../types/api';
 
 export default abstract class Formatter {
   /** Formats a price as `$1.234`, without decimals */
-  static price(iValue: number): string {
+  public static price(iValue: number): string {
     return `$${new Intl.NumberFormat('de-DE', { maximumFractionDigits: 0 }).format(iValue || 0)}`;
   }
 
   /** Formats a date for the request log: `dd/mm/yy, hh:mm:ss` */
-  static logDate(oDate: Date = new Date()): string {
+  public static logDate(oDate: Date = new Date()): string {
     return new Intl.DateTimeFormat('es-ES', {
       year: '2-digit',
       month: '2-digit',
@@ -18,6 +18,7 @@ export default abstract class Formatter {
     }).format(oDate);
   }
 
+  // TODO: restore if responses must hide passwords; delete it otherwise
   // public static sanitizeAndParse(result: ApiResponse): ApiResponse {
   //   const jsonString = JSON.stringify(result);
   //   // The regular expression matches the key "password": "any_value"
