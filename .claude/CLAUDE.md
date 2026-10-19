@@ -6,6 +6,7 @@ pnpm monorepo: `core/` (private, inlined into the backend), `backend/` (`@nano-a
 
 - pnpm only: `pnpm install`, `pnpm test`, `pnpm build`, `pnpm --filter <package> <script>`. Never npm or npx.
 - Tests: `node:test` run with tsx. `DATABASE_URL` comes from the root `.env` (a disposable Neon database; the suites drop schemas).
+- Branches have a descriptive name of what they do (`feat/<topic>`, `fix/<topic>`, `refactor/<topic>`, `docs/<topic>`), never ids or generated names. Work on the existing branch of the topic when there is one.
 - Every change reaches `main` through a pull request. Its title is a Conventional Commit: it decides the release of each touched package.
 - Agents do not commit or push. Stage only the files you changed; the maintainer commits.
 - No Claude attribution in commits or pull requests.
