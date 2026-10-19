@@ -59,7 +59,7 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 ### Flow
 
 - Guard clauses and early returns, not nested `if`/`else`.
-- One ternary at most, never nested nor inside an `if` condition: name the parts (`if (bIsPlugin ? bPluginInvalid : bConsumerInvalid)`).
+- One ternary at most, never nested nor inside an `if` condition: give it a name first (`const bInvalid = bIsPlugin ? bPluginInvalid : bConsumerInvalid;`).
 - `??` for defaults. `||` only when `0`, `''` or `NaN` must also take the default (`message || 'Internal server error'`).
 - `for...of` to iterate when nothing is returned, never `.forEach` (it does not wait for `await`). `.map`, `.filter` and `.some` when they return something.
 - `async`/`await` in general. Express handlers and middlewares chain `.then()` and end in `.catch(fnNext)`.

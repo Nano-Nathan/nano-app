@@ -59,7 +59,8 @@ export default abstract class Database {
     const aSchemas = [...sDeclared.matchAll(/["']([^"']+)["']/g)].map(([, sItem]) => sItem);
     const bPluginInvalid = !aSchemas.length || aSchemas.some(sItem => !sItem.startsWith('nano_'));
     const bConsumerInvalid = aSchemas.some(sItem => sItem.startsWith('nano_'));
-    if (bIsPlugin ? bPluginInvalid : bConsumerInvalid) {
+    const bInvalid = bIsPlugin ? bPluginInvalid : bConsumerInvalid;
+    if (bInvalid) {
       throw new Error(
         `[nano-app] [ERROR] ${schemaPath}: ${bIsPlugin ? 'a plugin declares only nano_* schemas' : 'the nano_* schemas are reserved for plugins'}.`,
       );
