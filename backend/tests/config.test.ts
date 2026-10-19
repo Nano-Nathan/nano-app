@@ -36,6 +36,25 @@ describe('config merge', () => {
     });
   });
 
+  test('nested objects are merged at every level', () => {
+    // Sets only the morgan format and the main database flag
+    const oConfig = mergeConfig({
+      packages: { morgan: { format: ':method' } },
+      mainPlugin: { database: { enabled: true } },
+    });
+
+    // Checks that the nested defaults stay
+    assert.deepEqual(oConfig.packages.morgan, {
+      ...INITIAL_CONFIG.packages.morgan,
+      format: ':method',
+    });
+    assert.deepEqual(oConfig.mainPlugin.database, {
+      enabled: true,
+      schemaPath: INITIAL_CONFIG.mainPlugin.database.schemaPath,
+    });
+    assert.equal(oConfig.mainPlugin.name, 'app');
+  });
+
   test('the defaults are not mutated', () => {
     // Merges a config that changes packages and settings
     mergeConfig({ packages: { helmet: false }, settings: { 'trust proxy': 1 } });

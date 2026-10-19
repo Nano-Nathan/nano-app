@@ -1,5 +1,6 @@
 import { Formatter } from '@nano-app/core';
-import type { NanoAppConfig, PackagesConfig } from '../types/app';
+import type { NanoObject } from '@nano-app/core';
+import type { NanoAppConfig } from '../types/app';
 import type { PluginConfig } from '../types/plugin';
 
 /** Initial application configuration */
@@ -52,45 +53,32 @@ export const INITIAL_CONFIG = {
   plugins: [],
 } satisfies NanoAppConfig;
 
-/** Merges one package with its default: `false` turns it off, an object is merged field by field */
-function mergePackage(oDefault: unknown, oValue: unknown): unknown {
+/** Whether a value is a plain object (`{}`), the only kind merged field by field */
+function isPlainObject(oValue: unknown): oValue is NanoObject {
+  return Object.prototype.toString.call(oValue) === '[object Object]';
+}
+
+/** Merges a value over its default: plain objects key by key at every level; anything else replaces it */
+function deepMerge(oDefault: unknown, oValue: unknown): unknown {
   // Not set: the default
   if (oValue === undefined) return oDefault;
 
-  // Turned off, or a value that is not an object (e.g. `helmet: true`)
-  if (oValue === false || typeof oValue !== 'object' || typeof oDefault !== 'object') return oValue;
+  // Not two plain objects (`false`, arrays, functions, primitives): the value wins
+  if (!isPlainObject(oDefault) || !isPlainObject(oValue)) return oValue;
 
-  // An object: the consumer's fields over the default ones
-  return { ...oDefault, ...oValue };
+  // Two plain objects: each key merged with its default
+  const aKeys = Object.keys({ ...oDefault, ...oValue });
+  return Object.fromEntries(aKeys.map(sKey => [sKey, deepMerge(oDefault[sKey], oValue[sKey])]));
 }
 
-/**
- * Merges the consumer configuration with the initial one.
- */
+/** Merges the consumer configuration over the initial one; the main plugin is always named "app" */
 export function mergeConfig(oConfig: NanoAppConfig = {}): NanoAppConfig &
-  Required<Pick<NanoAppConfig, 'settings' | 'plugins'>> & {
+  Required<Pick<NanoAppConfig, 'settings' | 'plugins' | 'packages'>> & {
     mainPlugin: PluginConfig;
   } {
-  // Each package is merged with its default; mainPlugin is always named "app"
-  return {
-    ...INITIAL_CONFIG,
-    ...oConfig,
-    settings: oConfig.settings ?? INITIAL_CONFIG.settings,
-    packages: Object.fromEntries(
-      Object.entries(INITIAL_CONFIG.packages).map(([sKey, oDefault]) => [
-        sKey,
-        mergePackage(oDefault, oConfig.packages?.[sKey as keyof PackagesConfig]),
-      ]),
-    ),
-    mainPlugin: {
-      ...INITIAL_CONFIG.mainPlugin,
-      ...oConfig.mainPlugin,
-      name: 'app',
-      database: {
-        ...INITIAL_CONFIG.mainPlugin.database,
-        ...oConfig.mainPlugin?.database,
-      },
-    },
-    plugins: oConfig.plugins ?? INITIAL_CONFIG.plugins,
-  };
+  // Every level keeps its default where the consumer set nothing
+  const oMerged = deepMerge(INITIAL_CONFIG, oConfig) as typeof INITIAL_CONFIG;
+
+  // Names the main plugin
+  return { ...oMerged, mainPlugin: { ...oMerged.mainPlugin, name: 'app' } };
 }

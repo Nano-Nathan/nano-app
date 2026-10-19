@@ -53,17 +53,17 @@ export default abstract class Database {
     const PrismaClient = await FileLoader.findPrismaClient(sClientPath, schemaPath);
 
     // Plugins' schemas (in the framework's plugins/) use only nano_*; the consumer's never do
-    const bIsPlugin = schemaPath.startsWith(getDir('plugins'));
+    const isPlugin = schemaPath.startsWith(getDir('plugins'));
     const sSchema = FileReader.loadSchema(schemaPath);
     const sDeclared =
       sSchema.match(/datasource\s+\w+\s*\{[^}]*schemas\s*=\s*\[([^\]]*)\]/s)?.[1] ?? '';
     const aSchemas = [...sDeclared.matchAll(/["']([^"']+)["']/g)].map(([, sItem]) => sItem);
-    const bPluginInvalid = !aSchemas.length || aSchemas.some(sItem => !sItem.startsWith('nano_'));
-    const bConsumerInvalid = aSchemas.some(sItem => sItem.startsWith('nano_'));
-    const bInvalid = bIsPlugin ? bPluginInvalid : bConsumerInvalid;
-    if (bInvalid) {
+    const isPluginInvalid = !aSchemas.length || aSchemas.some(sItem => !sItem.startsWith('nano_'));
+    const isConsumerInvalid = aSchemas.some(sItem => sItem.startsWith('nano_'));
+    const isInvalid = isPlugin ? isPluginInvalid : isConsumerInvalid;
+    if (isInvalid) {
       throw new Error(
-        `[nano-app] [ERROR] ${schemaPath}: ${bIsPlugin ? 'a plugin declares only nano_* schemas' : 'the nano_* schemas are reserved for plugins'}.`,
+        `[nano-app] [ERROR] ${schemaPath}: ${isPlugin ? 'a plugin declares only nano_* schemas' : 'the nano_* schemas are reserved for plugins'}.`,
       );
     }
 
@@ -79,7 +79,7 @@ export default abstract class Database {
     }
 
     // A plugin's tables are pushed in development: checks each model can be read
-    if (bIsPlugin) {
+    if (isPlugin) {
       for (const [, sModel] of sSchema.matchAll(/^\s*model\s+(\w+)/gm)) {
         await oClient[`${sModel[0].toLowerCase()}${sModel.slice(1)}`]
           .findFirst()

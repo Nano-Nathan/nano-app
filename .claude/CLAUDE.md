@@ -76,7 +76,7 @@ Prefix by type on every internal name: local variables, parameters, class fields
 | `fn` | function | `fnMethod` |
 | `s` | string | `sPath` |
 | `i` | number, integer or not | `iPort`, `iValue` |
-| `b` | boolean | `bEnabled` |
+| `is` | boolean | `isEnabled`, `isPlugin` |
 
 A union with `null` or `undefined` takes the prefix of the other type (`sName?: string`). An unused parameter starts with `_` before its prefix (`_oRes`). A class kept in a variable stays PascalCase (`const PrismaClient = …`), as `new` expects. A callback parameter whose name is passed as is to a public field has no prefix (`.then(onBeforeResult => fnMethod(oReq, { ...oParams, onBeforeResult }))`).
 
@@ -95,7 +95,7 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 ### Flow
 
 - Guard clauses and early returns, not nested `if`/`else`.
-- One ternary at most, never nested nor inside an `if` condition: give it a name first (`const bInvalid = bIsPlugin ? bPluginInvalid : bConsumerInvalid;`).
+- One ternary at most, never nested nor inside an `if` condition: give it a name first (`const isInvalid = isPlugin ? isPluginInvalid : isConsumerInvalid;`).
 - `??` for defaults. `||` only when `0`, `''` or `NaN` must also take the default (`message || 'Internal server error'`).
 - `for...of` to iterate when nothing is returned, never `.forEach` (it does not wait for `await`). `.map`, `.filter` and `.some` when they return something.
 - `async`/`await` in general. Express handlers and middlewares chain `.then()` and end in `.catch(fnNext)`.
