@@ -30,6 +30,8 @@ If a task hides a behavior decision that was not asked about (a default, an edge
 
 Industry practices this repository follows. The concrete rules below win when they are more specific.
 
+- **A framework for others**: every feature is general, never shaped for one app or one plugin. The consumer gets a small, easy layer (`createRoute`, `createPlugin`, one config object) and the framework does the work behind it. Convention over configuration: a file in the right folder works without registering it.
+- **Only what is needed**: add exactly what the task requires. No option, default, fallback, retry or `try`/`catch` nobody asked for; when something is missing, fail with a clear message instead of guessing. General does not mean speculative: generalize what exists, do not build for cases nobody has.
 - **KISS and YAGNI**: the simplest solution for today's need. No code for a future that has not arrived.
 - **DRY**: one source of truth for each piece of knowledge (a rule, a message, a constant), not only for repeated lines.
 - **Single responsibility**: a function does one thing, a file has one job, a module one reason to change.
