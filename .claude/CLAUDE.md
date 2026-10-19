@@ -78,7 +78,7 @@ Prefix by type on every internal name: local variables, parameters, class fields
 | `i` | number, integer or not | `iPort`, `iValue` |
 | `b` | boolean | `bEnabled` |
 
-A union with `null` or `undefined` takes the prefix of the other type (`sName?: string`). A callback parameter whose name is passed as is to a public field has no prefix (`.then(onBeforeResult => fnMethod(oReq, { ...oParams, onBeforeResult }))`).
+A union with `null` or `undefined` takes the prefix of the other type (`sName?: string`). An unused parameter starts with `_` before its prefix (`_oRes`). A class kept in a variable stays PascalCase (`const PrismaClient = …`), as `new` expects. A callback parameter whose name is passed as is to a public field has no prefix (`.then(onBeforeResult => fnMethod(oReq, { ...oParams, onBeforeResult }))`).
 
 ```ts
 private static oClients: NanoObject = {};

@@ -5,4 +5,4 @@ import { fileURLToPath } from 'node:url';
 export const BASE_DIR = dirname(fileURLToPath(import.meta.url));
 
 /** Gets a directory relative to the base directory */
-export const getDir = (...aParts: string[]) => resolve(BASE_DIR, ...aParts);
+export const getDir = (...aParts: string[]): string => resolve(BASE_DIR, ...aParts);

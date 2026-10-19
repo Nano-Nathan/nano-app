@@ -27,6 +27,7 @@ function normalize(oError: unknown): { status: number; body: ApiResponse } {
     },
   };
 }
+
 /** Turns every unmatched request into a 404 for the error handler */
 export const notFoundHandler: RequestHandler = (oReq, _oRes, fnNext) => {
   fnNext({ status: 404, message: `${oReq.path} not found` });
@@ -34,6 +35,7 @@ export const notFoundHandler: RequestHandler = (oReq, _oRes, fnNext) => {
 
 /** Turns any error raised by a handler into an ApiResponse */
 export const errorHandler: ErrorRequestHandler = (oError, _oReq, oRes, _fnNext) => {
+  // Normalizes what was thrown
   const { status, body } = normalize(oError);
 
   // Server errors are logged in full; the response carries only the message
@@ -41,5 +43,6 @@ export const errorHandler: ErrorRequestHandler = (oError, _oReq, oRes, _fnNext) 
     console.error('[nano-app] [ERROR]', oError);
   }
 
+  // Answers with the status and the body
   oRes.status(status).json(body);
 };

@@ -1,4 +1,4 @@
-import express from 'express';
+import type express from 'express';
 import type { Options } from 'express-rate-limit';
 import type { CorsOptions } from 'cors';
 import type { MainPluginConfig, PluginConfig } from './plugin';

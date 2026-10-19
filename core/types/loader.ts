@@ -1,5 +1,7 @@
+/** Kinds of file nano-app finds and validates */
 export type FindableExtension = 'store' | 'route' | 'prisma';
 
+/** Options of `FileLoader.findMany` */
 export type FindOptions = {
   /** Extension of the files to find */
   extension: FindableExtension;

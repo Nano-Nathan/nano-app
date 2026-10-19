@@ -2,6 +2,7 @@ import { isAbsolute, resolve } from 'node:path';
 import { readFileSync, existsSync } from 'node:fs';
 import { createJiti, type JitiResolveOptions } from 'jiti';
 
+/** Reads and loads files from disk, resolved from `cwd` */
 export default abstract class FileReader {
   // The Prisma runtime is loaded natively: through jiti its interop breaks the error messages
   private static oJiti = createJiti(import.meta.url, { nativeModules: ['@prisma/client'] });
@@ -25,6 +26,11 @@ export default abstract class FileReader {
 
     // Returns the contents
     return sContent;
+  }
+
+  /** Reads a Prisma schema without its `//` comments */
+  public static loadSchema(sFilePath: string): string {
+    return this.loadFile(sFilePath).replace(/\/\/.*$/gm, '');
   }
 
   /** Resolves the absolute path of a file */

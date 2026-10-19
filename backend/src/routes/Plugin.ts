@@ -3,6 +3,7 @@ import Database from '../database/Database';
 import type { Express } from 'express';
 import type { PluginConfig } from '../types/plugin';
 
+/** A group of routes, with its options, callbacks and database */
 export default class Plugin {
   private oConfig: PluginConfig;
 
@@ -15,9 +16,7 @@ export default class Plugin {
   public async mount(oApp: Express): Promise<void> {
     const { name, routesDir, basePath, database, options, callbacks } = this.oConfig;
 
-    const oRouter = new Router(routesDir, basePath);
-
-    // Mount the Prisma client, named as the plugin
+    // Mounts the Prisma client, named as the plugin
     const oDb = database?.enabled ? await Database.mount(name, database) : undefined;
 
     // Every callback and handler receives the plugin's options and client
@@ -27,6 +26,7 @@ export default class Plugin {
     await callbacks?.onMount?.(oApp, oParams);
 
     // Append the handlers
+    const oRouter = new Router(routesDir, basePath);
     for (const { path, endpoint } of await oRouter.mount()) {
       oApp.all(path, await endpoint.mount(oParams));
     }

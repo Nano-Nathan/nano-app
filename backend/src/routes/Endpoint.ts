@@ -24,6 +24,7 @@ export default class Endpoint {
   /** Express handler: onBefore, then the method of the request */
   private createHandler(oParams: Params): RequestHandler {
     return (oReq, oRes, fnNext) => {
+      // Finds the handler of the request method
       const sMethod = oReq.method.toUpperCase() as keyof Handlers;
       const fnMethod = this.oMethods[sMethod];
 

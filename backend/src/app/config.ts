@@ -53,9 +53,10 @@ export const INITIAL_CONFIG = {
 /**
  * Merges the consumer configuration with the initial one.
  */
-export function mergeConfig(
-  oConfig: NanoAppConfig = {},
-): NanoAppConfig & { mainPlugin: PluginConfig } {
+export function mergeConfig(oConfig: NanoAppConfig = {}): NanoAppConfig &
+  Required<Pick<NanoAppConfig, 'settings' | 'plugins'>> & {
+    mainPlugin: PluginConfig;
+  } {
   // Each package keeps its default unless the consumer sets it; mainPlugin is always named "app"
   return {
     ...INITIAL_CONFIG,

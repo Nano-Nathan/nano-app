@@ -3,6 +3,7 @@ import type { FindableExtension } from '../types/loader';
 
 const HTTP_METHODS: (keyof RouteEntry)[] = ['GET', 'POST', 'PUT', 'DELETE'];
 
+/** Checks the consumer's files: invalid ones are warned about and discarded */
 export default abstract class Validator {
   private static oValidators = {
     route: () => this.isRoute,
@@ -29,6 +30,7 @@ export default abstract class Validator {
     // Checks that the default export is an object
     if (!Validator.isObject(oEntry, sFilePath)) return false;
 
+    // Reads it as a route
     const oRoute = oEntry as RouteEntry;
 
     // Checks that the expression field is a string
@@ -55,6 +57,7 @@ export default abstract class Validator {
     // Checks that the default export is an object
     if (!Validator.isObject(oEntry, sFilePath)) return false;
 
+    // Reads it as a store
     const oStore = oEntry as StoreEntry;
 
     // Checks that the type field is "app" or "api"
@@ -92,9 +95,8 @@ export default abstract class Validator {
 
   /** Validates a full map of entries and returns only the valid ones */
   public static validate<T>(oEntries: NanoObject, sExtension: FindableExtension): NanoObject<T> {
-    const oValid: NanoObject<T> = {};
-
     // Keeps each entry that passes its validator
+    const oValid: NanoObject<T> = {};
     for (const [sFilePath, oEntry] of Object.entries(oEntries)) {
       const oValidated = this.validateUnique<T>(oEntry, sExtension, sFilePath);
       if (oValidated !== undefined) oValid[sFilePath] = oValidated;

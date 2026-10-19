@@ -14,7 +14,7 @@ import { getDir } from '../const';
 const [sCommand, ...aArgs] = process.argv.slice(2);
 
 // Runs the consumer's Prisma CLI
-const fnPrisma = (...aPrismaArgs: string[]) =>
+const fnPrisma = (...aPrismaArgs: string[]): Buffer =>
   execFileSync(
     process.execPath,
     [createRequire(`${process.cwd()}/`).resolve('prisma/build/index.js'), ...aPrismaArgs],

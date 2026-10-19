@@ -1,5 +1,6 @@
 import type { ApiResponse } from '../types/api';
 
+/** Formats values for logs and messages */
 export default abstract class Formatter {
   /** Formats a price as `$1.234`, without decimals */
   public static price(iValue: number): string {

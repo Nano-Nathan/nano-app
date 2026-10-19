@@ -47,7 +47,7 @@ export default class NanoApp {
   /** Initializes the application in the right order */
   private async initialize(): Promise<void> {
     // Express settings
-    for (const [sKey, oValue] of Object.entries(this.oConfig.settings ?? {})) {
+    for (const [sKey, oValue] of Object.entries(this.oConfig.settings)) {
       this.oApp.set(sKey, oValue);
     }
 
@@ -56,7 +56,7 @@ export default class NanoApp {
 
     // Plugins separated by stage
     const oPlugins: NanoObject<PluginConfig[]> = { before: [], after: [] };
-    for (const oPlugin of this.oConfig.plugins ?? []) {
+    for (const oPlugin of this.oConfig.plugins) {
       oPlugins[oPlugin.stage ?? 'before'].push(oPlugin);
     }
 

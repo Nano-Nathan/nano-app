@@ -4,6 +4,7 @@ import { getDir } from '../../const';
 import type { PrismaPg } from '@prisma/adapter-pg';
 import type { DatabaseConfig } from '../types/database';
 
+/** Prisma clients of the app and its plugins, one per name */
 export default abstract class Database {
   private static oAdapter?: PrismaPg;
 
@@ -53,7 +54,7 @@ export default abstract class Database {
 
     // Plugins' schemas (in the framework's plugins/) use only nano_*; the consumer's never do
     const bIsPlugin = schemaPath.startsWith(getDir('plugins'));
-    const sSchema = FileReader.loadFile(schemaPath).replace(/\/\/.*$/gm, '');
+    const sSchema = FileReader.loadSchema(schemaPath);
     const sDeclared =
       sSchema.match(/datasource\s+\w+\s*\{[^}]*schemas\s*=\s*\[([^\]]*)\]/s)?.[1] ?? '';
     const aSchemas = [...sDeclared.matchAll(/["']([^"']+)["']/g)].map(([, sItem]) => sItem);
@@ -66,6 +67,7 @@ export default abstract class Database {
       );
     }
 
+    // Instantiates the client
     let oClient;
     try {
       // Instantiates it with the pg adapter

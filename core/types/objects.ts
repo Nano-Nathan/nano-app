@@ -26,18 +26,22 @@ export type CallbackMount<DB> = (app: Express, params: Params<DB>) => Promise<vo
 
 /** Callbacks of an endpoint. They never receive the app: what affects the whole app goes in the plugin's onMount */
 export type Callbacks<DB = any> = {
-  onInit?: Callback<DB>; // Run once, when the endpoint is mounted
-  onBefore?: CallbackMethod<DB>; // Run before the endpoint is executed
+  /** Run once, when the endpoint is mounted */
+  onInit?: Callback<DB>;
+  /** Run before the endpoint is executed */
+  onBefore?: CallbackMethod<DB>;
 };
 
 /** Callbacks of a plugin */
 export type PluginCallbacks<DB = any> = {
-  onMount?: CallbackMount<DB>; // Run once with the Express app, after its database and before its endpoints (e.g. app-level middlewares)
+  /** Run once with the Express app, after its database and before its endpoints (e.g. app-level middlewares) */
+  onMount?: CallbackMount<DB>;
 };
 
 /** Entry of a route file (`*.route.ts`) */
 export type RouteEntry<DB = any> = {
-  expression?: string; // Support express route expressions
+  /** Express route expression appended to the path (e.g. `/:id`) */
+  expression?: string;
   callbacks?: Callbacks<DB>;
 } & Handlers<DB>;
 

@@ -7,6 +7,7 @@ import Formatter from '../utils/Formatter';
 import type { NanoObject, StoreEntry, RouteEntry, PrismaEntry } from '../types/objects';
 import type { FindOptions } from '../types/loader';
 
+/** Finds, loads and validates the consumer's files */
 export default abstract class FileLoader {
   /**
    * 1. Validates a `.prisma` file.
@@ -17,7 +18,7 @@ export default abstract class FileLoader {
     sSchemaPath: string,
   ): Promise<PrismaEntry> {
     // Reads the schema
-    const sContent = FileReader.loadFile(sSchemaPath).replace(/\/\/.*$/gm, '');
+    const sContent = FileReader.loadSchema(sSchemaPath);
 
     // Validates it
     if (!Validator.validateUnique(sContent, 'prisma', sSchemaPath)) {
@@ -43,7 +44,7 @@ export default abstract class FileLoader {
     save = false,
   }: FindOptions): Promise<NanoObject<T>> {
     // Resolves the paths
-    const sSrcDir = (sourceDir || `src/${extension}s`).replace(/^\.\//, '').replace(/\/$/, '');
+    const sSrcDir = (sourceDir ?? `src/${extension}s`).replace(/^\.\//, '').replace(/\/$/, '');
     const aFilePaths = await glob(`${sSrcDir}/**/*.${extension}.{ts,js}`, {
       posix: true,
       ignore: '**/*.d.ts',
@@ -67,7 +68,7 @@ export default abstract class FileLoader {
     if (save) {
       this.save<T>(
         oValid,
-        savePath ||
+        savePath ??
           resolve(process.cwd(), 'node_modules', '@nano-app', 'data', `${extension}s.cjs`),
       );
     }
