@@ -1,6 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { startApp, request, mountedPaths, boot } from './helpers';
 import Plugin from '../src/routes/Plugin';
 import { createPluginCallbacks } from '../src/app/creators';
@@ -148,5 +149,36 @@ describe('plugins', () => {
 
     // Checks that generate needs an existing schema
     assert.match(fnRun('generate', 'missing').stderr, /"missing" has no schema/);
+  });
+
+  test("nano-app generates an official plugin's client from the installed @nano-app/plugins", () => {
+    // A consumer project, inside the backend so it resolves Prisma, with a plugin installed
+    const sProject = 'tests/.consumer';
+    const sPackage = `${sProject}/node_modules/@nano-app/plugins`;
+    mkdirSync(`${sPackage}/sample`, { recursive: true });
+    writeFileSync(
+      `${sPackage}/package.json`,
+      JSON.stringify({
+        name: '@nano-app/plugins',
+        exports: { './*': { types: './*/index.d.ts', import: './*/index.js' } },
+      }),
+    );
+    cpSync('tests/fixtures/database/official/schema.prisma', `${sPackage}/sample/schema.prisma`);
+
+    try {
+      // Runs the CLI from the consumer project
+      const oResult = spawnSync(
+        process.execPath,
+        ['--import', 'tsx', '../../bin/nano-app.ts', 'generate', 'sample'],
+        { cwd: sProject, encoding: 'utf-8' },
+      );
+
+      // Checks that the plugin's client landed in the project
+      assert.equal(oResult.status, 0, oResult.stderr);
+      assert.ok(existsSync(`${sProject}/.nano-app/prisma-clients/sample/generated/client.ts`));
+    } finally {
+      // Removes the consumer project
+      rmSync(sProject, { recursive: true, force: true });
+    }
   });
 });

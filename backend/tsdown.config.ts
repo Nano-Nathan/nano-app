@@ -1,4 +1,4 @@
-import { cpSync, existsSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { defineConfig } from 'tsdown';
 import { globSync } from 'glob';
 import pkg from './package.json' with { type: 'json' };
@@ -7,7 +7,6 @@ import pkg from './package.json' with { type: 'json' };
 const pluginEntry = existsSync('plugins/index.ts') ? { plugins: 'plugins/index.ts' } : {};
 
 export default defineConfig({
-  // Entries using BASE_DIR sit at the build root, like const.ts at the package root
   entry: {
     index: 'src/index.ts',
     'nano-app': 'bin/nano-app.ts',
@@ -30,9 +29,5 @@ export default defineConfig({
       ...Object.keys(pkg.dependencies ?? {}),
       ...Object.keys(pkg.peerDependencies ?? {}),
     ],
-  },
-  // Plugins' schemas travel with the build: `nano-app generate` and `push` read them from there
-  onSuccess: async () => {
-    for (const schema of globSync('plugins/*/schema.prisma')) cpSync(schema, `build/${schema}`);
   },
 });

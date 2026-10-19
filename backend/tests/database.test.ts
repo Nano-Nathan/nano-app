@@ -11,6 +11,7 @@ const FIXTURES = 'tests/fixtures/database';
 const SCHEMA = `${FIXTURES}/schema.prisma`;
 const PLUGIN_SCHEMA = `${FIXTURES}/plugin.prisma`;
 const MYSQL_SCHEMA = `${FIXTURES}/mysql.prisma`;
+const OFFICIAL_SCHEMA = `${FIXTURES}/official/schema.prisma`;
 
 /** Generated clients (the generator `output` of each fixture schema) */
 const CLIENT = `${FIXTURES}/generated/client/client.ts`;
@@ -130,6 +131,17 @@ describe('client validation', () => {
       /the nano_\* schemas are reserved for plugins/,
     );
   });
+
+  test('a schema of @nano-app/plugins may declare nano_* and needs its tables pushed', async () => {
+    // An official plugin's schema, with no table behind it
+    fnUseClient('official', 'plugin');
+
+    // Checks that it passes the nano_* rule and stops at the missing table
+    await assert.rejects(
+      Database.mount('official', { schemaPath: OFFICIAL_SCHEMA }),
+      /The database "official" is not ready: .* Run `npx nano-app push official`/,
+    );
+  });
 });
 
 describe('startup without a database', () => {
@@ -232,6 +244,19 @@ describe('PostgreSQL', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not
 
   after(() => {
     oApp?.child.kill('SIGKILL');
+  });
+
+  test("an official plugin's client mounts once its tables are pushed", async () => {
+    // What the consumer does with `nano-app push`: apply the plugin's schema
+    fnPrisma('db', 'push', '--schema', OFFICIAL_SCHEMA, '--url', process.env.DATABASE_URL!);
+
+    // Mounts it on the real database
+    fnUseClient('pushed', 'plugin');
+    await Database.init();
+    const oClient = await Database.mount('pushed', { schemaPath: OFFICIAL_SCHEMA });
+
+    // Checks that its tables answer
+    assert.equal(await oClient.item.count(), 0);
   });
 
   test("the consumer's routes receive its client", async () => {

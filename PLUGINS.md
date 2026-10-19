@@ -72,9 +72,9 @@ Use MIT or Apache-2.0 if you want the plugin listed from this repo later. Open a
 
 ## Database
 
-Optional. Set `database: { enabled: true, schemaPath }` on the plugin config. The schema must be PostgreSQL. Schemas starting with `nano_` are reserved for plugins that ship with the framework.
+Optional. Set `database: { enabled: true, schemaPath }` on the plugin config. The schema must be PostgreSQL. Schemas starting with `nano_` are reserved for the official plugins: a schema inside the `@nano-app/plugins` package declares only `nano_*` schemas, and every other schema declares none.
 
-`npx nano-app generate` and `npx nano-app push` read `plugins/<name>/schema.prisma` from the installed `@nano-app/backend` package. That path is for a plugin that lives inside this package. A plugin in your app, or in another npm package, points `schemaPath` at its own file and generates the client with Prisma (or with `nano-app generate app --schema <path>` for the app schema).
+`npx nano-app generate <name>` and `npx nano-app push <name>` read `schema.prisma` next to the entry of `@nano-app/plugins/<name>` in the consumer's project, so an official plugin ships it in `build/<name>/`. At startup its tables are only checked: the consumer pushes them first. A plugin in your app, or in another npm package, points `schemaPath` at its own file and generates the client with Prisma (or with `nano-app generate app --schema <path>` for the app schema).
 
 Handlers and callbacks receive that client as `params.db`. Type it with `createRoute<PrismaClient>`, passing your generated `PrismaClient`.
 

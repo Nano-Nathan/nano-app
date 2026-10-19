@@ -1,0 +1,16 @@
+// Schema of an official plugin: its nearest package.json is @nano-app/plugins
+datasource db {
+  provider = "postgresql"
+  schemas  = ["nano_test"]
+}
+
+generator client {
+  provider = "prisma-client"
+  output   = "./generated"
+}
+
+model Item {
+  id Int @id
+
+  @@schema("nano_test")
+}

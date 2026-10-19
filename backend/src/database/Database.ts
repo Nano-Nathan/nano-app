@@ -1,6 +1,7 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { FileLoader, FileReader, Formatter, type NanoObject } from '@nano-app/core';
-import { getDir, MISSING_DATABASE_URL } from '../../const';
+import { MISSING_DATABASE_URL, OFFICIAL_PLUGINS } from '../../const';
 import type { PrismaPg } from '@prisma/adapter-pg';
 import type { DatabaseConfig } from '../types/database';
 
@@ -52,8 +53,8 @@ export default abstract class Database {
     // Loads the client and validates the schema
     const PrismaClient = await FileLoader.findPrismaClient(sClientPath, schemaPath);
 
-    // Plugins' schemas (in the framework's plugins/) use only nano_*; the consumer's never do
-    const isPlugin = schemaPath.startsWith(getDir('plugins'));
+    // Official plugins' schemas use only nano_*; the others never do
+    const isPlugin = this.isOfficial(schemaPath);
     const sSchema = FileReader.loadSchema(schemaPath);
     const sDeclared =
       sSchema.match(/datasource\s+\w+\s*\{[^}]*schemas\s*=\s*\[([^\]]*)\]/s)?.[1] ?? '';
@@ -78,7 +79,7 @@ export default abstract class Database {
       );
     }
 
-    // A plugin's tables are pushed in development: checks each model can be read
+    // An official plugin's tables are pushed by the consumer: checks each model can be read
     if (isPlugin) {
       for (const [, sModel] of sSchema.matchAll(/^\s*model\s+(\w+)/gm)) {
         await oClient[`${sModel[0].toLowerCase()}${sModel.slice(1)}`]
@@ -98,5 +99,19 @@ export default abstract class Database {
     console.log(`[nano-app] [INFO] Database "${sName}" mounted`);
 
     return oClient;
+  }
+
+  /** Whether a schema ships with the official plugins: its nearest package.json is theirs */
+  private static isOfficial(sSchemaPath: string): boolean {
+    // Walks up from the schema's folder to the filesystem root
+    let sDir = dirname(FileReader.getAbsolutePath(sSchemaPath));
+    while (!existsSync(join(sDir, 'package.json'))) {
+      if (dirname(sDir) === sDir) return false;
+      sDir = dirname(sDir);
+    }
+
+    // Checks the name of the package it belongs to
+    const { name } = JSON.parse(readFileSync(join(sDir, 'package.json'), 'utf-8'));
+    return name === OFFICIAL_PLUGINS;
   }
 }
