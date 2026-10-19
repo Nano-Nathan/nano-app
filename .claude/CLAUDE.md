@@ -30,12 +30,14 @@ Prefix by type on every internal name: local variables, parameters, class fields
 
 | Prefix | Type | Example |
 |---|---|---|
-| `o` | object, class instance, Map, Date, Promise, RegExp | `oPlugins`, `oConfig` |
+| `o` | object, class instance, Map, Set, Date, Promise, RegExp, `unknown` | `oPlugins`, `oConfig`, `oEntry` |
 | `a` | array | `aRoutes` |
 | `fn` | function | `fnMethod` |
 | `s` | string | `sPath` |
-| `i` | number | `iPort` |
+| `i` | number, integer or not | `iPort`, `iValue` |
 | `b` | boolean | `bEnabled` |
+
+A union with `null` or `undefined` takes the prefix of the other type (`sName?: string`). A callback parameter whose name is passed as is to a public field has no prefix (`.then(onBeforeResult => fnMethod(oReq, { ...oParams, onBeforeResult }))`).
 
 ```ts
 private static oClients: NanoObject = {};
