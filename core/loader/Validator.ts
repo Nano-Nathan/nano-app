@@ -1,7 +1,7 @@
 import type { RouteEntry, NanoObject } from '../types/objects';
 import type { FindableExtension } from '../types/loader';
 
-const HTTP_METHODS: (keyof RouteEntry)[] = ['GET', 'POST', 'PUT', 'DELETE'];
+const HTTP_METHODS: (keyof RouteEntry)[] = ['GET', 'POST', 'PUT', 'DELETE', 'QUERY'];
 
 /** Checks the consumer's files: invalid ones are warned about and discarded */
 export default abstract class Validator {

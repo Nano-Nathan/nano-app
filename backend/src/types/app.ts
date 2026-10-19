@@ -6,25 +6,27 @@ import type { MainPluginConfig, PluginConfig } from './plugin';
 /** Configuration of the framework's built-in packages */
 export type PackagesConfig = {
   /** Morgan configuration */
-  morgan?: {
-    /** Morgan tokens */
-    // any: morgan types each token callback with its own request and response
-    tokens?: Record<string, any>;
-    /** Morgan format */
-    format: string;
-  };
+  morgan?:
+    | false
+    | {
+        /** Morgan tokens */
+        // any: morgan types each token callback with its own request and response
+        tokens?: Record<string, any>;
+        /** Morgan format */
+        format: string;
+      };
   /** CORS configuration */
-  cors?: CorsOptions;
+  cors?: CorsOptions | false;
   /** Helmet configuration */
   helmet?: boolean;
   /** Compression configuration */
   compression?: boolean;
   /** Rate-limit configuration */
-  rateLimit?: Partial<Options>;
+  rateLimit?: Partial<Options> | false;
   /** express.json configuration */
-  express?: Partial<Parameters<typeof express.json>[0]>;
+  express?: Partial<Parameters<typeof express.json>[0]> | false;
   /** urlencoded configuration */
-  urlencoded?: Partial<Parameters<typeof express.urlencoded>[0]>;
+  urlencoded?: Partial<Parameters<typeof express.urlencoded>[0]> | false;
 };
 
 /** Application configuration */

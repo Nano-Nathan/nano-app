@@ -34,7 +34,7 @@
     "access": "public"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "peerDependencies": {
     "@nano-app/backend": ">=0.7.1"

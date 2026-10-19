@@ -13,6 +13,7 @@ export type Handlers<DB = any> = {
   POST?: Handler<DB>;
   PUT?: Handler<DB>;
   DELETE?: Handler<DB>;
+  QUERY?: Handler<DB>;
 };
 
 /** Callbacks */

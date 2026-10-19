@@ -15,7 +15,7 @@ While the version is `0.x`, the public API can change.
 npm install @nano-app/backend
 ```
 
-Node.js 20 or newer. ESM only.
+Node.js 22 or newer. ESM only.
 
 ## Quick start
 

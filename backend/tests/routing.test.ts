@@ -75,6 +75,19 @@ describe('routes by file convention', () => {
     assert.equal(body.success, false);
   });
 
+  test('QUERY reaches the handler with its body', async () => {
+    // Sends a QUERY with a JSON body
+    const { status, body } = await request(oServer.url, '/service/test/42', {
+      method: 'QUERY',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: 'nano' }),
+    });
+
+    // Checks that the handler read the param and the body
+    assert.equal(status, 200);
+    assert.deepEqual(body.result, { id: '42', query: { name: 'nano' } });
+  });
+
   test('an undeclared method answers 405', async () => {
     // Calls a method the route does not define
     const { status, body } = await request(oServer.url, '/health', { method: 'PUT' });

@@ -1,5 +1,5 @@
 import { Formatter } from '@nano-app/core';
-import type { NanoAppConfig } from '../types/app';
+import type { NanoAppConfig, PackagesConfig } from '../types/app';
 import type { PluginConfig } from '../types/plugin';
 
 /** Initial application configuration */
@@ -21,7 +21,9 @@ export const INITIAL_CONFIG = {
       },
       format: ':timestamp | :method :url :status',
     },
-    cors: {},
+    cors: {
+      methods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE', 'QUERY'],
+    },
     helmet: true,
     compression: true,
     rateLimit: {
@@ -50,6 +52,18 @@ export const INITIAL_CONFIG = {
   plugins: [],
 } satisfies NanoAppConfig;
 
+/** Merges one package with its default: `false` turns it off, an object is merged field by field */
+function mergePackage(oDefault: unknown, oValue: unknown): unknown {
+  // Not set: the default
+  if (oValue === undefined) return oDefault;
+
+  // Turned off, or a value that is not an object (e.g. `helmet: true`)
+  if (oValue === false || typeof oValue !== 'object' || typeof oDefault !== 'object') return oValue;
+
+  // An object: the consumer's fields over the default ones
+  return { ...oDefault, ...oValue };
+}
+
 /**
  * Merges the consumer configuration with the initial one.
  */
@@ -57,22 +71,17 @@ export function mergeConfig(oConfig: NanoAppConfig = {}): NanoAppConfig &
   Required<Pick<NanoAppConfig, 'settings' | 'plugins'>> & {
     mainPlugin: PluginConfig;
   } {
-  // Each package keeps its default unless the consumer sets it; mainPlugin is always named "app"
+  // Each package is merged with its default; mainPlugin is always named "app"
   return {
     ...INITIAL_CONFIG,
     ...oConfig,
     settings: oConfig.settings ?? INITIAL_CONFIG.settings,
-    packages: {
-      ...INITIAL_CONFIG.packages,
-      ...(oConfig.packages ?? {}),
-      morgan: oConfig.packages?.morgan ?? INITIAL_CONFIG.packages.morgan,
-      cors: oConfig.packages?.cors ?? INITIAL_CONFIG.packages.cors,
-      helmet: oConfig.packages?.helmet ?? INITIAL_CONFIG.packages.helmet,
-      compression: oConfig.packages?.compression ?? INITIAL_CONFIG.packages.compression,
-      rateLimit: oConfig.packages?.rateLimit ?? INITIAL_CONFIG.packages.rateLimit,
-      express: oConfig.packages?.express ?? INITIAL_CONFIG.packages.express,
-      urlencoded: oConfig.packages?.urlencoded ?? INITIAL_CONFIG.packages.urlencoded,
-    },
+    packages: Object.fromEntries(
+      Object.entries(INITIAL_CONFIG.packages).map(([sKey, oDefault]) => [
+        sKey,
+        mergePackage(oDefault, oConfig.packages?.[sKey as keyof PackagesConfig]),
+      ]),
+    ),
     mainPlugin: {
       ...INITIAL_CONFIG.mainPlugin,
       ...oConfig.mainPlugin,
