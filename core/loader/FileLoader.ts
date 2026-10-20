@@ -1,6 +1,5 @@
 import { glob } from 'glob';
 import Validator from './Validator';
-import Modules from './Modules';
 import FileReader from './FileReader';
 import Formatter from '../utils/Formatter';
 import type { NanoObject, RouteEntry, PrismaEntry } from '../types/objects';
@@ -47,13 +46,19 @@ export default abstract class FileLoader {
       ignore: '**/*.d.ts',
     });
 
-    // Loads each file
-    const oModules: NanoObject = {};
+    // Loads each file, keyed by its path without the extension (`src/routes/a/b.route.ts` → `/a/b`)
+    const oEntries: NanoObject = {};
     for (const sFilePath of aFilePaths) {
-      oModules[sFilePath] = await FileReader.loadModule(sFilePath, { default: true });
+      const sFileSubPath = sFilePath
+        .slice(sSrcDir.length)
+        .replace(new RegExp(`\\.${extension}\\.(ts|js)$`), '');
+      // Stores use `_` for `/` (`src/stores/admin/users.store.ts` → `admin_users`)
+      const sKey =
+        extension === 'store' ? sFileSubPath.slice(1).replaceAll('/', '_') : sFileSubPath;
+      oEntries[sKey] = await FileReader.loadModule<T>(sFilePath, { default: true });
     }
 
-    // Keys them by their path without the extension and drops the invalid ones
-    return Modules.validate<T>(oModules, extension, sSrcDir);
+    // Drops invalid entries (one invalid file does not discard the rest)
+    return Validator.validate<T>(oEntries, extension);
   }
 }

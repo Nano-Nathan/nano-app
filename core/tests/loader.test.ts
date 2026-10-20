@@ -1,20 +1,29 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import Modules from '../loader/Modules';
+import { fileURLToPath } from 'node:url';
+import FileLoader from '../loader/FileLoader';
+import Validator from '../loader/Validator';
+
+const sStoresDir = fileURLToPath(new URL('./fixtures/stores', import.meta.url));
 
 describe('store files', () => {
-  test('an invalid store is discarded and the rest are kept', () => {
-    // Validates one valid store and four broken ones
-    const oFiles = Modules.validate(
+  test('stores are found in subfolders, named with _ for / and the invalid ones dropped', async () => {
+    const oFiles = await FileLoader.findMany({ extension: 'store', sourceDir: sStoresDir });
+
+    assert.deepEqual(Object.keys(oFiles).sort(), ['admin_users', 'app']);
+    assert.deepEqual(oFiles.admin_users, { type: 'app', data: { aUsers: [] } });
+  });
+
+  test('a store must be an app store with object data', () => {
+    const oFiles = Validator.validate(
       {
-        '/src/stores/app.store.ts': { type: 'app', data: { counter: 1 } },
-        '/src/stores/text.store.ts': 'not an object',
-        '/src/stores/kind.store.ts': { type: 'other' },
-        '/src/stores/api.store.ts': { type: 'api', path: '/api' },
-        '/src/stores/data.store.ts': { type: 'app', data: 'not an object' },
+        none: 'not an object',
+        kind: { type: 'other' },
+        api: { type: 'api', path: '/api' },
+        data: { type: 'app', data: 'not an object' },
+        app: { type: 'app', data: { iCount: 0 } },
       },
       'store',
-      '/src/stores/',
     );
 
     assert.deepEqual(Object.keys(oFiles), ['app']);

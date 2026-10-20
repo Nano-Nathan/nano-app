@@ -7,8 +7,6 @@ export default defineConfig({
   // per module, and a bundle would merge (and drop) them
   unbundle: true,
   root: 'src',
-  // `import.meta.glob` stays as written: Turbopack resolves it in the app, against the app's files
-  globImport: false,
   format: ['esm'],
   platform: 'neutral',
   // `.js`, not `.mjs`: package.json exports read `.js`
@@ -24,7 +22,6 @@ export default defineConfig({
       ...Object.keys(pkg.peerDependencies ?? {}),
       /^react\//,
       /^next\//,
-      /^valtio\//,
     ],
   },
 });

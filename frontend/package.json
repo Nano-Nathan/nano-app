@@ -1,7 +1,7 @@
 {
   "name": "@nano-app/frontend",
   "version": "0.0.0-semantic-release",
-  "description": "Stores for Next.js apps on top of @nano-app/backend",
+  "description": "React provider for Next.js apps on top of @nano-app/backend",
   "type": "module",
   "exports": {
     ".": {
@@ -16,7 +16,7 @@
   "scripts": {
     "build": "tsdown",
     "prepublishOnly": "pnpm run build",
-    "test": "tsx --test tests/*.test.ts ../core/tests/*.test.ts"
+    "test": "tsx --test ../core/tests/*.test.ts"
   },
   "keywords": [
     "nano-app",
@@ -36,9 +36,6 @@
   },
   "engines": {
     "node": ">=22"
-  },
-  "dependencies": {
-    "valtio": "^2.3.2"
   },
   "peerDependencies": {
     "next": ">=16.3.0",
