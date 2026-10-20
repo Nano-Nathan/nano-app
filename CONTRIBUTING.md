@@ -4,7 +4,7 @@ Issues and pull requests are welcome on [Nano-Nathan/nano-app](https://github.co
 
 ## Setup
 
-Node.js 22 or newer, pnpm 10 (the version in the root `packageManager` field).
+Node.js 22 or newer, pnpm 12 (the version in the root `packageManager` field).
 
 ```bash
 git clone https://github.com/Nano-Nathan/nano-app.git
