@@ -6,8 +6,8 @@
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "dev": "pnpm --filter @nano-app/backend dev",
-    "format": "prettier --write \"{core,backend,plugins}/**/*.ts\"",
-    "format:check": "prettier --check \"{core,backend,plugins}/**/*.ts\""
+    "format": "prettier --write \"{core,backend,plugins,frontend}/**/*.{ts,tsx}\"",
+    "format:check": "prettier --check \"{core,backend,plugins,frontend}/**/*.{ts,tsx}\""
   },
   "devDependencies": {
     "prettier": "^3.9.10",
