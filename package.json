@@ -1,7 +1,7 @@
 {
   "name": "nano-app-monorepo",
   "private": true,
-  "packageManager": "pnpm@10.34.4",
+  "packageManager": "pnpm@12.11.2",
   "scripts": {
     "build": "pnpm -r build",
     "test": "pnpm -r test",
