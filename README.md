@@ -1,6 +1,7 @@
 # nano-app
 
-[![npm](https://img.shields.io/npm/v/@nano-app/backend)](https://www.npmjs.com/package/@nano-app/backend)
+[![backend](https://img.shields.io/npm/v/@nano-app/backend?label=backend)](https://www.npmjs.com/package/@nano-app/backend)
+[![plugins](https://img.shields.io/npm/v/@nano-app/plugins?label=plugins)](https://www.npmjs.com/package/@nano-app/plugins)
 [![license](https://img.shields.io/npm/l/@nano-app/backend)](./LICENSE)
 
 File-convention backend for Node.js. You write `*.route.ts` files. `@nano-app/backend` discovers them, mounts an Express 5 server, and turns every `ApiResponse` into HTTP.
