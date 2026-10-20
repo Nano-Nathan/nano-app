@@ -11,20 +11,18 @@ pnpm monorepo: `core/` (private, inlined into the backend), `backend/` (`@nano-a
 - Agents do not commit or push. Stage only the files you changed; the maintainer commits.
 - Agents never add a `Co-authored-by` trailer (for themselves or another agent) to commits or pull requests: co-authorship is added by hand by the maintainer.
 
-## Business logic: ask first
+## New development: plan per module, implement after approval
 
 How the framework behaves (what it does with a request, a config, an error, a plugin, the database; what it accepts, rejects, stores or returns) is the maintainer's decision. Code style is not: follow this file without asking.
 
-Before implementing or changing any behavior, stop and ask. Do not write the code until the maintainer picks an option. The question has:
+New work is split into modules that are reviewed one at a time (for stores: loading the files, creating the stores, reading and writing them, using them in React).
 
-1. **What needs deciding**, in one or two plain sentences, without jargon.
-2. **Two or three options.** For each one:
-   - The flow, step by step in plain words: what comes in, what happens to it, what goes out (`request arrives → token is read → user is looked up → handler runs with the user`).
-   - What changes for the consumer: config, API, errors they see, migrations.
-   - Cost: code added, what it rules out later, risks.
-3. **A recommendation** and why, marked as such. Other approaches are always possible: mention one if it is reasonable but not proposed.
+1. Before writing any code of a module, list what it will do, point by point. Each point says what and how, in plain words: what comes in, what happens to it, what goes out, and what it reuses from `core/` or existing code.
+2. When a point hides a decision (a default, an edge case, an error, where the code lives), give two or three options with their cost and mark one as the recommendation.
+3. The maintainer answers point by point. Adjust the points and list again only what changed.
+4. Implement the module only when every point has the maintainer's OK. Then show the diff and move on to the next module.
 
-If a task hides a behavior decision that was not asked about (a default, an edge case, an error), stop at it and ask the same way.
+Reuse and extend what exists (`core/` loaders, validators, utils) before writing new code, and keep each module to the smallest code that does the job.
 
 ## Principles
 
