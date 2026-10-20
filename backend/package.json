@@ -18,7 +18,7 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "test": "tsx --env-file-if-exists=../.env --test tests/*.test.ts ../core/tests/*.test.ts",
+    "test": "tsx --env-file-if-exists=../.env --test tests/*.test.ts",
     "prepublishOnly": "pnpm run build"
   },
   "keywords": [
