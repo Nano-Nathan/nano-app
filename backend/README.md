@@ -1,5 +1,7 @@
 # @nano-app/backend
 
+[![backend](https://img.shields.io/npm/v/@nano-app/backend?label=backend)](https://www.npmjs.com/package/@nano-app/backend)
+
 Preconfigured Express server with **file-convention routes** and **plugins**: it mounts the base middlewares, discovers your routes, formats every error as JSON, and groups extra endpoints in plugins.
 
 - Node ≥ 20, ESM.
