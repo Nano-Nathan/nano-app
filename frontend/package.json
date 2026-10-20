@@ -16,7 +16,7 @@
   "scripts": {
     "build": "tsdown",
     "prepublishOnly": "pnpm run build",
-    "test": "tsx --test tests/*.test.ts"
+    "test": "tsx --test tests/*.test.ts ../core/tests/*.test.ts"
   },
   "keywords": [
     "nano-app",

@@ -16,26 +16,23 @@ describe('store files', () => {
     assert.equal(oFiles.ui.type, 'app');
   });
 
-  test('an invalid file is skipped and the rest are kept', () => {
-    // Validates one valid file and three broken ones
+  test('a store in a subfolder is named after its path', () => {
+    // Validates a store under src/stores/admin
     const oFiles = StoreLoader.validate({
-      '/src/stores/app.store.ts': { type: 'app' },
-      '/src/stores/text.store.ts': 'not an object',
-      '/src/stores/kind.store.ts': { type: 'other' },
-      '/src/stores/api.store.ts': { type: 'api', path: '/api' },
+      '/src/stores/admin/users.store.ts': { type: 'app', data: { aUsers: [] } },
     });
 
-    assert.deepEqual(Object.keys(oFiles), ['app']);
+    assert.deepEqual(Object.keys(oFiles), ['admin_users']);
   });
 
   test('a second file with a taken name is skipped', () => {
-    // Validates two files named app
+    // admin/users and admin_users share a name
     const oFiles = StoreLoader.validate({
-      '/src/stores/app.store.ts': { type: 'app', data: { iFirst: 1 } },
-      '/src/other/app.store.ts': { type: 'app', data: { iSecond: 2 } },
+      '/src/stores/admin/users.store.ts': { type: 'app', data: { iFirst: 1 } },
+      '/src/stores/admin_users.store.ts': { type: 'app', data: { iSecond: 2 } },
     });
 
-    assert.deepEqual(oFiles.app, { type: 'app', data: { iFirst: 1 } });
+    assert.deepEqual(oFiles.admin_users, { type: 'app', data: { iFirst: 1 } });
   });
 });
 

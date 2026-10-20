@@ -1,5 +1,6 @@
 import { glob } from 'glob';
 import Validator from './Validator';
+import Modules from './Modules';
 import FileReader from './FileReader';
 import Formatter from '../utils/Formatter';
 import type { NanoObject, RouteEntry, PrismaEntry } from '../types/objects';
@@ -46,16 +47,13 @@ export default abstract class FileLoader {
       ignore: '**/*.d.ts',
     });
 
-    // Loads each file, keyed by its path without the extension
-    const oEntries: NanoObject<T> = {};
+    // Loads each file
+    const oModules: NanoObject = {};
     for (const sFilePath of aFilePaths) {
-      const sFileSubPath = sFilePath
-        .slice(sSrcDir.length)
-        .replace(new RegExp(`\\.${extension}\\.(ts|js)$`), '');
-      oEntries[sFileSubPath] = await FileReader.loadModule<T>(sFilePath, { default: true });
+      oModules[sFilePath] = await FileReader.loadModule(sFilePath, { default: true });
     }
 
-    // Drops invalid entries (one invalid file does not discard the rest)
-    return Validator.validate<T>(oEntries, extension);
+    // Keys them by their path without the extension and drops the invalid ones
+    return Modules.validate<T>(oModules, extension, sSrcDir);
   }
 }

@@ -8,6 +8,7 @@ export default abstract class Validator {
   private static oValidators = {
     route: () => this.isRoute,
     prisma: () => this.isPrisma,
+    store: () => this.isStore,
   };
 
   /** Warns about an invalid file and returns `false`, to discard it */
@@ -45,6 +46,27 @@ export default abstract class Validator {
     // Checks that the entry defines at least one HTTP method
     if (!HTTP_METHODS.some(sMethod => oRoute[sMethod]))
       return Validator.warn(sFilePath, 'defines no HTTP method.');
+
+    return true;
+  }
+
+  /** Type guard for a `*.store.ts` entry */
+  private static isStore(
+    oEntry: unknown,
+    sFilePath: string,
+  ): oEntry is { type: 'app'; data?: object } {
+    // Checks that the default export is an object
+    if (!Validator.isObject(oEntry, sFilePath)) return false;
+
+    // Reads it as a store
+    const oStore = oEntry as { type?: unknown; data?: unknown };
+
+    // Checks that the type is a known one
+    if (oStore.type !== 'app') return Validator.warn(sFilePath, 'its type must be "app".');
+
+    // Checks that the initial state is an object
+    if (oStore.data !== undefined && (!oStore.data || typeof oStore.data !== 'object'))
+      return Validator.warn(sFilePath, '"data" must be an object.');
 
     return true;
   }
