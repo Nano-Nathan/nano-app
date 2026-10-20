@@ -46,13 +46,16 @@ export default abstract class FileLoader {
       ignore: '**/*.d.ts',
     });
 
-    // Loads each file, keyed by its path without the extension
-    const oEntries: NanoObject<T> = {};
+    // Loads each file, keyed by its path without the extension (`src/routes/a/b.route.ts` → `/a/b`)
+    const oEntries: NanoObject = {};
     for (const sFilePath of aFilePaths) {
       const sFileSubPath = sFilePath
         .slice(sSrcDir.length)
         .replace(new RegExp(`\\.${extension}\\.(ts|js)$`), '');
-      oEntries[sFileSubPath] = await FileReader.loadModule<T>(sFilePath, { default: true });
+      // Stores use `_` for `/` (`src/stores/admin/users.store.ts` → `admin_users`)
+      const sKey =
+        extension === 'store' ? sFileSubPath.slice(1).replaceAll('/', '_') : sFileSubPath;
+      oEntries[sKey] = await FileReader.loadModule<T>(sFilePath, { default: true });
     }
 
     // Drops invalid entries (one invalid file does not discard the rest)
