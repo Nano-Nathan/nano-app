@@ -1,6 +1,7 @@
 import type express from 'express';
 import type { Options } from 'express-rate-limit';
 import type { CorsOptions } from 'cors';
+import type { NanoObject } from '@nano-app/core/types/objects';
 import type { MainPluginConfig, PluginConfig } from './plugin';
 
 /** Configuration of the framework's built-in packages */
@@ -11,7 +12,7 @@ export type PackagesConfig = {
     | {
         /** Morgan tokens */
         // any: morgan types each token callback with its own request and response
-        tokens?: Record<string, any>;
+        tokens?: NanoObject<any>;
         /** Morgan format */
         format: string;
       };
@@ -36,7 +37,7 @@ export type NanoAppConfig = {
   /** Application port. Defaults to 3000 */
   port?: number;
   /** Values applied with Express `app.set()` (e.g. `{ "trust proxy": 1 }`) */
-  settings?: Record<string, unknown>;
+  settings?: NanoObject<unknown>;
   /** Default middlewares configuration */
   packages?: PackagesConfig;
   /** Plugins to mount. Defaults to [] */

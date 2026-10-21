@@ -1,15 +1,13 @@
-import type { APP_STORE_TYPE } from '@nano-app/core/const';
+import type { APP_NAME, APP_STORE_TYPE } from '@nano-app/core/const';
 import type { NanoObject } from '@nano-app/core/types/objects';
+import type Store from '../stores/Store';
 
-/** `*.store.ts` of UI state */
-export type AppStoreFile = {
+/** Stores of the app by name (`src/stores/app.store.ts` → `app`), as their files export them */
+export type StoreFiles = NanoObject<{
   type: typeof APP_STORE_TYPE;
   /** Initial state */
   data?: NanoObject;
-};
+}>;
 
-/** Default export of a `*.store.ts` */
-export type StoreFile = AppStoreFile;
-
-/** Stores of the app by name (`src/stores/app.store.ts` → `app`) */
-export type StoreFiles = Record<string, StoreFile>;
+/** Stores of one React tree by name; `app` is always there */
+export type Stores = NanoObject<Store> & { [APP_NAME]: Store };

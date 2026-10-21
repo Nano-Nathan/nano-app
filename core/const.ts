@@ -19,3 +19,7 @@ export const MISSING_DATABASE_URL =
 
 /** Env var that carries the stores to the bundle. Read as `process.env.NANO_APP_STORES`, literal */
 export const STORES_ENV = 'NANO_APP_STORES';
+
+/** Error of a component outside the provider */
+export const MISSING_PROVIDER =
+  '[nano-app] [ERROR] A component has no stores. Wrap the root layout with NanoAppProvider.';
