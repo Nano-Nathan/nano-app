@@ -8,6 +8,8 @@ pnpm monorepo: `core/` (private, inlined into the backend), `backend/` (`@nano-a
 - Tests: `node:test` run with tsx. `DATABASE_URL` comes from the root `.env` (a disposable Neon database; the suites drop schemas).
 - Branches have a descriptive name of what they do (`feat/<topic>`, `fix/<topic>`, `refactor/<topic>`, `docs/<topic>`), never ids or generated names. Work on the existing branch of the topic when there is one.
 - Every change reaches `main` through a pull request. Its title is a Conventional Commit: it decides the release of each touched package.
+- A feature built in modules (see below) lives on a feature branch from `main` (`feat/<feature>`), linked to an issue when there is one. Each module gets its own branch from the up-to-date feature branch (`feat/<feature>--<module>`, `--` because a branch cannot also be a folder of branches) and a pull request to the feature branch. The next module starts only after that pull request is merged. When the feature is done, one pull request takes the feature branch to `main`, and its title decides the release.
+- When `main` moves during a feature, merge `main` into the feature branch; never rebase it, module branches start from it.
 - Agents do not commit or push. Stage only the files you changed; the maintainer commits.
 - Agents never add a `Co-authored-by` trailer (for themselves or another agent) to commits or pull requests: co-authorship is added by hand by the maintainer.
 
@@ -20,7 +22,7 @@ New work is split into modules that are reviewed one at a time (for stores: load
 1. Before writing any code of a module, list what it will do, point by point. Each point says what and how, in plain words: what comes in, what happens to it, what goes out, and what it reuses from `core/` or existing code.
 2. When a point hides a decision (a default, an edge case, an error, where the code lives), give two or three options with their cost and mark one as the recommendation.
 3. The maintainer answers point by point. Adjust the points and list again only what changed.
-4. Implement the module only when every point has the maintainer's OK. Then show the diff and move on to the next module.
+4. Implement the module only when every point has the maintainer's OK. Then show the diff; the module's pull request goes to the feature branch, and the next module starts after it is merged.
 
 Reuse and extend what exists (`core/` loaders, validators, utils) before writing new code, and keep each module to the smallest code that does the job.
 

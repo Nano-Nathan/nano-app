@@ -2,7 +2,8 @@
 # https://docs.npmjs.com/trusted-publishers/
 #
 # One workflow for the whole flow of @nano-app/backend (backend/ and core/, inlined into it):
-# - pull request to main: `test-backend`, required to merge (the ruleset blocks the merge if it fails).
+# - pull request to main or to a feature branch: `test-backend`, required to merge into main (the
+#   ruleset blocks the merge if it fails).
 #   It runs on every pull request, so the required check always reports; without changes in backend/
 #   or core/ it passes without testing.
 # - push to main (a squash merge) that touches the backend: `test-backend` again, then `release` only
@@ -13,7 +14,7 @@ name: Publish backend
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, 'feat/**']
   push:
     branches: [main]
     paths:
