@@ -19,7 +19,7 @@ export default abstract class Validator {
   }
 
   /** Checks that the default export is an object */
-  private static isObject(oEntry: unknown, sFilePath: string): oEntry is object {
+  private static isObject(oEntry: unknown, sFilePath: string): oEntry is NanoObject {
     if (oEntry && typeof oEntry === 'object') return true;
     return Validator.warn(sFilePath, 'the default export is not an object.');
   }
@@ -55,7 +55,7 @@ export default abstract class Validator {
   private static isStore(
     oEntry: unknown,
     sFilePath: string,
-  ): oEntry is { type: typeof APP_STORE_TYPE; data?: object } {
+  ): oEntry is { type: typeof APP_STORE_TYPE; data?: NanoObject } {
     // Checks that the default export is an object
     if (!Validator.isObject(oEntry, sFilePath)) return false;
 

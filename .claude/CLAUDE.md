@@ -60,7 +60,9 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 - `public`, `protected` or `private` on every class method and field; constructors go without.
 - Declared functions and methods state their return type (`: Promise<void>`); inline callbacks infer it.
 - No `any` without a comment saying why (`// any: anything can be thrown`). Prefer `unknown` and validate.
+- No type assertions (`as`): types are declared where values are born and inferred from there. Data from outside (JSON, env) gets a typed variable where it enters (`const oFiles: StoreFiles = JSON.parse(…)`). Only `as const` is allowed.
 - Types in a `types/` folder of the package, one file per area (`types/app.ts`, `types/plugin.ts`). `type`, not `interface`. `import type` for types.
+- Generic objects are `NanoObject` (`core/types/objects.ts`), with the value type when it is known (`NanoObject<Store>`), never `object` or `Record<string, …>`.
 - Files: PascalCase when they export a class (`FileLoader.ts`), lowercase otherwise (`creators.ts`, `config.ts`).
 - `export default` when a file exports one thing, also the official plugins (`import health from '@nano-app/plugins/health'`). Named exports for files that export several.
 - Imports in groups: Node built-ins with `node:` (`node:fs`), dependencies, `@nano-app/*`, relative files, then every `import type` in the same order. Optional dependencies are imported when needed (`await import('@prisma/adapter-pg')`), never at the top.

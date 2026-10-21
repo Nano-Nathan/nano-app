@@ -18,6 +18,6 @@ export type QueryParams = {
   skip?: number;
   top?: number;
   filter?: NanoObject;
-  orderby?: Record<string, 'asc' | 'desc'>;
+  orderby?: NanoObject<'asc' | 'desc'>;
   select?: string;
 };

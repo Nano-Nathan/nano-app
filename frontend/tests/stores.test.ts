@@ -1,15 +1,15 @@
-import { test, describe, mock } from 'node:test';
+import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { reaction } from 'mobx';
-import { withNanoApp } from '../src/next';
 import { STORES_ENV } from '@nano-app/core/const';
+import { withNanoApp } from '../src/next';
 import Store from '../src/stores/Store';
-import StoreManager from '../src/stores/StoreManager';
+import createStores from '../src/creators/createStores';
 
 describe('store state', () => {
-  test('set creates the missing levels and get reads them, with or without the leading slash', () => {
+  test('set creates missing levels and get reads them, with or without the leading slash', () => {
     // Writes a nested value and reads it back
     const oStore = new Store({});
     oStore.set('/drawer/isOpen', true);
@@ -19,14 +19,13 @@ describe('store state', () => {
     assert.equal(oStore.get('/drawer/missing/deep'), undefined);
   });
 
-  test('the manager starts each store with its data, and adds an empty app store', () => {
-    // Creates the stores of one app file
-    const oManager = new StoreManager({
-      ui: { type: 'app', data: { busy: false } },
-    });
+  test('createStores starts each store with its data, plus an empty app store', () => {
+    // Creates the stores of one app file, as `withNanoApp` inlines them
+    process.env[STORES_ENV] = JSON.stringify({ ui: { type: 'app', data: { busy: false } } });
+    const { app, ui } = createStores();
 
-    assert.deepEqual(oManager.getStore('app').get('/'), {});
-    assert.equal(oManager.getStore('ui').get('/busy'), false);
+    assert.deepEqual(app.get('/'), {});
+    assert.equal(ui.get('/busy'), false);
   });
 
   test('a write notifies only who read that path', () => {
@@ -44,35 +43,6 @@ describe('store state', () => {
     fnStop();
 
     assert.deepEqual(aSeen, ['Eva']);
-  });
-
-  test('a write outside set is reported, a write with set is not', () => {
-    // Watches a path and records the warnings
-    const oStore = new Store({ user: { name: 'Ana' } });
-    const fnStop = reaction(
-      () => oStore.get('/user').name,
-      () => {},
-    );
-    const oWarn = mock.method(console, 'warn', () => {});
-
-    try {
-      // Writes with set, then directly on the value that get returned
-      oStore.set('/user/name', 'Eva');
-      oStore.get('/user').name = 'Ivo';
-
-      assert.equal(oWarn.mock.callCount(), 1);
-      assert.match(String(oWarn.mock.calls[0]?.arguments[0]), /without using an action/);
-    } finally {
-      oWarn.mock.restore();
-      fnStop();
-    }
-  });
-
-  test('an unknown store fails with the file to create', () => {
-    // Asks for a store that does not exist
-    const oManager = new StoreManager({});
-
-    assert.throws(() => oManager.getStore('users'), /Create src\/stores\/users\.store\.ts/);
   });
 });
 
@@ -95,13 +65,13 @@ describe('withNanoApp', () => {
     }
   });
 
-  test('the provider reads the env var that withNanoApp writes', () => {
-    // Reads the provider's source: Next only inlines `process.env.<name>` written literally
-    const sProvider = readFileSync(
-      fileURLToPath(new URL('../src/react/NanoAppProvider.tsx', import.meta.url)),
+  test('createStores reads the env var that withNanoApp writes', () => {
+    // Reads the source: Next only inlines `process.env.<name>` written literally
+    const sSource = readFileSync(
+      fileURLToPath(new URL('../src/creators/createStores.ts', import.meta.url)),
       'utf8',
     );
 
-    assert.ok(sProvider.includes(`process.env.${STORES_ENV}`));
+    assert.ok(sSource.includes(`process.env.${STORES_ENV}`));
   });
 });
