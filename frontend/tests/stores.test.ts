@@ -1,7 +1,8 @@
-import { test, describe } from 'node:test';
+import { test, describe, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { reaction } from 'mobx';
 import { withNanoApp } from '../src/next';
 import { STORES_ENV } from '@nano-app/core/const';
 import Store from '../src/stores/Store';
@@ -24,8 +25,47 @@ describe('store state', () => {
       ui: { type: 'app', data: { busy: false } },
     });
 
-    assert.deepEqual(oManager.oRoot, { app: {}, ui: { busy: false } });
+    assert.deepEqual(oManager.getStore('app').get('/'), {});
     assert.equal(oManager.getStore('ui').get('/busy'), false);
+  });
+
+  test('a write notifies only who read that path', () => {
+    // Watches one path of the store
+    const oStore = new Store({ user: { name: 'Ana', email: 'ana@nano.app' } });
+    const aSeen: string[] = [];
+    const fnStop = reaction(
+      () => oStore.get('/user').name,
+      sName => aSeen.push(sName),
+    );
+
+    // Writes another path, then the watched one
+    oStore.set('/user/email', 'ana@other.app');
+    oStore.set('/user/name', 'Eva');
+    fnStop();
+
+    assert.deepEqual(aSeen, ['Eva']);
+  });
+
+  test('a write outside set is reported, a write with set is not', () => {
+    // Watches a path and records the warnings
+    const oStore = new Store({ user: { name: 'Ana' } });
+    const fnStop = reaction(
+      () => oStore.get('/user').name,
+      () => {},
+    );
+    const oWarn = mock.method(console, 'warn', () => {});
+
+    try {
+      // Writes with set, then directly on the value that get returned
+      oStore.set('/user/name', 'Eva');
+      oStore.get('/user').name = 'Ivo';
+
+      assert.equal(oWarn.mock.callCount(), 1);
+      assert.match(String(oWarn.mock.calls[0]?.arguments[0]), /without using an action/);
+    } finally {
+      oWarn.mock.restore();
+      fnStop();
+    }
   });
 
   test('an unknown store fails with the file to create', () => {
