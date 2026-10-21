@@ -7,6 +7,11 @@
     ".": {
       "types": "./build/index.d.ts",
       "import": "./build/index.js"
+    },
+    "./next": {
+      "types": "./build/next.d.ts",
+      "import": "./build/next.js",
+      "default": "./build/next.js"
     }
   },
   "files": [
@@ -15,7 +20,8 @@
   ],
   "scripts": {
     "build": "tsdown",
-    "prepublishOnly": "pnpm run build"
+    "prepublishOnly": "pnpm run build",
+    "test": "tsx --test tests/*.test.ts ../core/tests/*.test.ts"
   },
   "keywords": [
     "nano-app",
@@ -40,12 +46,18 @@
     "next": ">=16.3.0",
     "react": ">=19.0.0"
   },
+  "dependencies": {
+    "glob": "^13.0.6",
+    "jiti": "^2.7.0",
+    "valtio": "^2.3.2"
+  },
   "devDependencies": {
     "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",
     "next": "^16.4.2",
     "react": "^19.3.1",
     "tsdown": "^0.23.1",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }
 }
