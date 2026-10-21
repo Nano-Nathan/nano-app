@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { FileReader, Formatter } from '@nano-app/core';
-import { MISSING_DATABASE_URL } from '../../const';
+import { MISSING_DATABASE_URL } from '@nano-app/core/const';
 
 /** What `generate` remembers of a client: the schema it came from and its hash */
 type ClientSource = { schemaPath: string; hash: string };

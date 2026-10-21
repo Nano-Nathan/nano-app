@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { OFFICIAL_PLUGINS } from '../const';
+import { APP_NAME, OFFICIAL_PLUGINS } from '@nano-app/core/const';
 import Prisma from '../src/database/Prisma';
 
 /**
@@ -60,11 +60,11 @@ try {
 
   // Checks that the schema exists
   if (!existsSync(sSchema)) {
-    throw new Error(`[nano-app] [ERROR] "${sName ?? 'app'}" has no schema: ${sSchema}`);
+    throw new Error(`[nano-app] [ERROR] "${sName ?? APP_NAME}" has no schema: ${sSchema}`);
   }
 
   // Generates it
-  Prisma.generate(sName ?? 'app', sSchema);
+  Prisma.generate(sName ?? APP_NAME, sSchema);
 } catch (oError) {
   console.error((oError as Error).message);
   process.exit(1);

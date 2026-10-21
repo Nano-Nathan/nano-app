@@ -1,4 +1,5 @@
 import { Formatter } from '@nano-app/core';
+import { APP_NAME } from '@nano-app/core/const';
 import type { NanoObject } from '@nano-app/core';
 import type { NanoAppConfig } from '../types/app';
 import type { PluginConfig } from '../types/plugin';
@@ -80,5 +81,5 @@ export function mergeConfig(oConfig: NanoAppConfig = {}): NanoAppConfig &
   const oMerged = deepMerge(INITIAL_CONFIG, oConfig) as typeof INITIAL_CONFIG;
 
   // Names the main plugin
-  return { ...oMerged, mainPlugin: { ...oMerged.mainPlugin, name: 'app' } };
+  return { ...oMerged, mainPlugin: { ...oMerged.mainPlugin, name: APP_NAME } };
 }
