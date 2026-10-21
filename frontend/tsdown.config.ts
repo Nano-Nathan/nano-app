@@ -2,7 +2,7 @@ import { defineConfig } from 'tsdown';
 import pkg from './package.json' with { type: 'json' };
 
 export default defineConfig({
-  entry: ['src/index.ts'],
+  entry: ['src/index.ts', 'src/next.ts'],
   // One output file per source file: Next reads the `'use client'` and `'use server'` directives
   // per module, and a bundle would merge (and drop) them
   unbundle: true,
