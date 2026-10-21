@@ -1,5 +1,5 @@
 import FileLoader from '@nano-app/core/loader/FileLoader';
-import { STORES_ENV } from './const';
+import { STORES_ENV } from '@nano-app/core/const';
 import type { NextConfig } from 'next';
 
 /**

@@ -1,6 +1,6 @@
 import { proxy } from 'valtio/vanilla';
+import { APP_NAME, APP_STORE_TYPE } from '@nano-app/core/const';
 import Store from './Store';
-import { DEFAULT_APP_STORE } from '../const';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { StoreFiles } from '../types/store';
 
@@ -14,12 +14,12 @@ export default class StoreManager {
   /** Creates a store per file, plus an empty `app` store when the app has none */
   constructor(oFiles: StoreFiles) {
     // Adds the default app store
-    this.oFiles = { [DEFAULT_APP_STORE]: { type: 'app' }, ...oFiles };
+    this.oFiles = { [APP_NAME]: { type: APP_STORE_TYPE }, ...oFiles };
 
     // Creates each store over its branch of the shared state
     for (const [sName, oFile] of Object.entries(this.oFiles)) {
       this.oRoot[sName] = oFile.data ?? {};
-      this.oStores.set(sName, new Store(sName, this.oRoot[sName]));
+      this.oStores.set(sName, new Store(this.oRoot[sName]));
     }
   }
 

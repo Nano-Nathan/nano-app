@@ -1,3 +1,4 @@
+import { APP_STORE_TYPE } from '../const';
 import type { RouteEntry, NanoObject } from '../types/objects';
 import type { FindableExtension } from '../types/loader';
 
@@ -54,7 +55,7 @@ export default abstract class Validator {
   private static isStore(
     oEntry: unknown,
     sFilePath: string,
-  ): oEntry is { type: 'app'; data?: object } {
+  ): oEntry is { type: typeof APP_STORE_TYPE; data?: object } {
     // Checks that the default export is an object
     if (!Validator.isObject(oEntry, sFilePath)) return false;
 
@@ -62,7 +63,8 @@ export default abstract class Validator {
     const oStore = oEntry as { type?: unknown; data?: unknown };
 
     // Checks that the type is a known one
-    if (oStore.type !== 'app') return Validator.warn(sFilePath, 'its type must be "app".');
+    if (oStore.type !== APP_STORE_TYPE)
+      return Validator.warn(sFilePath, `its type must be "${APP_STORE_TYPE}".`);
 
     // Checks that the initial state is an object
     if (oStore.data !== undefined && (!oStore.data || typeof oStore.data !== 'object'))

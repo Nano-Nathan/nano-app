@@ -14,5 +14,5 @@
       "@nano-app/core/*": ["../core/*"]
     }
   },
-  "include": ["const.ts", "src", "plugins", "bin", "tests", "../core"]
+  "include": ["src", "plugins", "bin", "tests", "../core"]
 }

@@ -1,28 +1,21 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { withNanoApp } from '../src/next';
-import { STORES_ENV } from '../src/const';
+import { STORES_ENV } from '@nano-app/core/const';
 import Store from '../src/stores/Store';
 import StoreManager from '../src/stores/StoreManager';
 
 describe('store state', () => {
   test('set creates the missing levels and get reads them, with or without the leading slash', () => {
     // Writes a nested value and reads it back
-    const oStore = new Store('app', {});
+    const oStore = new Store({});
     oStore.set('/drawer/isOpen', true);
 
     assert.equal(oStore.get('/drawer/isOpen'), true);
     assert.equal(oStore.get('drawer/isOpen'), true);
     assert.equal(oStore.get('/drawer/missing/deep'), undefined);
-  });
-
-  test('get reads the snapshot when there is one', () => {
-    // Reads the same path from the live state and from a snapshot
-    const oStore = new Store('app', { sValue: 'live' });
-
-    assert.equal(oStore.get('/sValue'), 'live');
-    assert.equal(oStore.get('/sValue', { app: { sValue: 'snapshot' } }), 'snapshot');
   });
 
   test('the manager starts each store with its data, and adds an empty app store', () => {
@@ -60,5 +53,15 @@ describe('withNanoApp', () => {
     } finally {
       process.chdir(sCwd);
     }
+  });
+
+  test('the provider reads the env var that withNanoApp writes', () => {
+    // Reads the provider's source: Next only inlines `process.env.<name>` written literally
+    const sProvider = readFileSync(
+      fileURLToPath(new URL('../src/react/NanoAppProvider.tsx', import.meta.url)),
+      'utf8',
+    );
+
+    assert.ok(sProvider.includes(`process.env.${STORES_ENV}`));
   });
 });

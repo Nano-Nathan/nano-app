@@ -2,23 +2,18 @@ import type { NanoObject } from '@nano-app/core/types/objects';
 
 /** State of one store, read and written by path (`/drawer/isOpen`) */
 export default class Store {
-  private sName: string;
   private oState: NanoObject;
 
   /** `oState` is the store's branch of the shared state, so writes stay reactive */
-  constructor(sName: string, oState: NanoObject) {
-    this.sName = sName;
+  constructor(oState: NanoObject) {
     this.oState = oState;
   }
 
-  /** Value at a path, from a snapshot of the whole state when there is one (that binds the render) */
+  /** Value at a path */
   // any: the value is the consumer's, unknown to the framework
-  public get(sPath: string, oSnapshot?: NanoObject): any {
-    // Reads the store's branch: the snapshot's, or the live state
-    const oBranch = oSnapshot?.[this.sName] ?? this.oState;
-
+  public get(sPath: string): any {
     // Walks down the path
-    return Store.keys(sPath).reduce((oValue, sKey) => oValue?.[sKey], oBranch);
+    return Store.keys(sPath).reduce((oValue, sKey) => oValue?.[sKey], this.oState);
   }
 
   /** Writes a value at a path, creating the levels that are missing */

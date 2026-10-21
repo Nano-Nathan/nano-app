@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { FileLoader, FileReader, Formatter, type NanoObject } from '@nano-app/core';
-import { MISSING_DATABASE_URL, OFFICIAL_PLUGINS } from '../../const';
+import { MISSING_DATABASE_URL, OFFICIAL_PLUGINS } from '@nano-app/core/const';
 import Prisma from './Prisma';
 import type { PrismaPg } from '@prisma/adapter-pg';
 import type { DatabaseConfig } from '../types/database';

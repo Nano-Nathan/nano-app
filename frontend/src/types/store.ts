@@ -1,8 +1,9 @@
+import type { APP_STORE_TYPE } from '@nano-app/core/const';
 import type { NanoObject } from '@nano-app/core/types/objects';
 
 /** `*.store.ts` of UI state */
 export type AppStoreFile = {
-  type: 'app';
+  type: typeof APP_STORE_TYPE;
   /** Initial state */
   data?: NanoObject;
 };
