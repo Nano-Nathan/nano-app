@@ -38,7 +38,6 @@ export default class Plugin {
       const { sPath, oHandler, fnGuard } = await BetterAuth.create(this.oAuthOptions, oDb);
       oApp.all(sPath, oHandler);
       oApp.use(fnGuard);
-      console.log(`[nano-app] [INFO] ${sPath}`);
     }
 
     // Plugin setup with the app, before any of its endpoints
