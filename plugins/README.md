@@ -20,61 +20,6 @@ createNanoApp({ plugins: [health()] });
 | Plugin | Import | Endpoints | Options |
 |---|---|---|---|
 | `health` | `import health from "@nano-app/plugins/health"` | `GET /health` → `{ status: "ok" }` | `basePath` (default `"/health"`) |
-| `auth` | `import auth from "@nano-app/plugins/auth"` | `/api-keys`, and an API key guard on every route after it | see [auth](#auth) |
-
-## auth
-
-API keys. Every route mounted after the plugin needs a valid key in the `x-api-key` header; the routes of the plugins listed before it and `publicPaths` stay public. The keys are managed with the master key, created on the first startup.
-
-```ts
-import { createNanoApp } from "@nano-app/backend";
-import health from "@nano-app/plugins/health";
-import auth from "@nano-app/plugins/auth";
-
-// health is listed before auth: it stays public
-createNanoApp({ plugins: [health(), auth({ publicPaths: ["/webhooks/telegram"] })] });
-```
-
-| Option | Default | |
-|---|---|---|
-| `basePath` | `"/api-keys"` | Base path of the endpoints that manage the keys |
-| `publicPaths` | `[]` | Exact paths that need no key |
-
-### Table
-
-The keys live in `nano_auth.api_key`, through the app's Prisma (`DATABASE_URL`). Only the SHA-256 of each key is stored. nano-app creates and migrates the table at startup: there is nothing to run.
-
-### Master key
-
-The first startup creates it and prints it **once** in the console: keep it. A unique index allows a single master, also when several instances start together. It cannot be deleted. If it is lost, delete its row (`isMaster = true`) and restart: a new one is created and printed.
-
-### Endpoints
-
-Only the master key reaches them (403 with any other key).
-
-| Request | Answer |
-|---|---|
-| `GET /api-keys` | The keys: `id`, `name`, `isMaster`, `createdAt`. Never the key |
-| `POST /api-keys` `{ name }` | A new key, with its `key` only in this response |
-| `DELETE /api-keys/:id` | Deletes it; it stops working at once. 403 on the master |
-| `POST /api-keys/:id/renew` | Same id, a new `key`; the old one stops working at once |
-| `POST /api-keys/master/renew` | Renews the master |
-
-### Guard
-
-| Request | Answer |
-|---|---|
-| Path in `publicPaths`, or served before the plugin | passes |
-| No key, or a key that does not exist | 401 |
-| Any valid key, the master included | passes |
-
-### Users and sessions
-
-The plugin covers API keys only: it has no users, login or sessions. If your app needs them, we recommend integrating [Better Auth](https://www.better-auth.com) yourself:
-
-- Wrap its handler in a plugin of your own and list it **before** `auth()`, so its endpoints (sign-in, sign-up, ...) stay public.
-- Give its tables their own PostgreSQL schema, outside `nano_*`, and apply its migrations with its CLI: nano-app does not migrate them.
-- To protect your routes with a session instead of a key, check it in your handlers or in an `onBefore` of your own.
 
 ## Layout
 

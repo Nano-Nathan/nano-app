@@ -31,10 +31,13 @@ export default class Endpoint {
       // Checks whether the method is defined
       if (!fnMethod) return fnNext({ status: 405, message: `Method ${sMethod} not implemented` });
 
+      // The session of the request, when Better Auth's guard found one
+      const oRequestParams = { ...oParams, session: oRes.locals.session };
+
       // Runs the onBefore callback
-      (this.oCallbacks.onBefore?.(oReq, sMethod, oParams) ?? Promise.resolve({}))
+      (this.oCallbacks.onBefore?.(oReq, sMethod, oRequestParams) ?? Promise.resolve({}))
         // Runs the method
-        .then(onBeforeResult => fnMethod(oReq, { ...oParams, onBeforeResult }))
+        .then(onBeforeResult => fnMethod(oReq, { ...oRequestParams, onBeforeResult }))
         // Handles the response
         .then(oResponse => {
           oRes.status(oResponse.success ? 200 : 400).json(oResponse);
