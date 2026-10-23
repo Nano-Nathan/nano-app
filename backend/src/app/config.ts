@@ -38,6 +38,7 @@ export const INITIAL_CONFIG = {
     urlencoded: {
       extended: false,
     },
+    betterAuth: false,
   },
 
   /** Main plugin to mount */

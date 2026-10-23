@@ -118,9 +118,9 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 
 ## Security
 
-- Never commit secrets, and never print them: no `cat .env`, no `source .env`, no logging `process.env`. The only exception is the master API key of `auth`, printed once when it is created: the database keeps only its hash. To use the root `.env` elsewhere, copy the file.
+- Never commit secrets, and never print them: no `cat .env`, no `source .env`, no logging `process.env`. To use the root `.env` elsewhere, copy the file.
 - Untrusted input (`req.body`, `req.params`, `req.query`, headers) is validated before use. SQL uses parameters (`$1`); identifiers (schema, table) come only from constants.
-- Routes are private by default. A plugin that exposes something public says so in its README; with `auth`, only `publicPaths` and what is mounted before it are public.
+- Routes are private by default. A plugin that exposes something public says so in its README; with `packages.betterAuth`, only its endpoints and the plugins mounted before the app are public.
 - The error handler answers with the message of what was thrown, also on 5xx: it is the consumer's job not to throw internal data. Framework messages never include secrets or connection strings.
 - No DDL at startup: the consumer migrates their schemas with Prisma; the startup only generates clients and checks tables. The one exception is an official plugin's reviewed, additive migrations (`migrations/` next to its schema), applied with `prisma migrate deploy` (see PLUGINS.md).
 - A new dependency needs a reason a built-in cannot cover. No dependencies with install scripts.
