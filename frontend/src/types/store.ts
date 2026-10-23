@@ -11,5 +11,13 @@ export type StoreFiles = NanoObject<{
   headers?: NanoObject<string>;
 }>;
 
-/** Stores of one React tree by name; `app` is always there */
-export type Stores = NanoObject<Store> & { [APP_NAME]: Store };
+/** Stores of one React tree by name: a `Store` per `app` file, an `ApiStore` per `api` file; `app` is always there */
+// any: each store is a `Store` or an `ApiStore` by its file, typed per name in typed-paths
+export type Stores = NanoObject<any> & { [APP_NAME]: Store };
+
+/** State of an `ApiStore`: requests in progress, results per path and query, and versions per entity */
+export type ApiState = {
+  iBusy: number;
+  oResults: NanoObject<{ iVersion: number; result: unknown }>;
+  oVersions: NanoObject<number>;
+};

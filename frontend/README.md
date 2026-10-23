@@ -89,6 +89,51 @@ The backend URL is read at runtime from `API_<STORE>_URL` (`backend` → `API_BA
 - The request keeps its method, headers, cookies and body, and the backend's answer comes back as is, `Set-Cookie` and redirects included.
 - Every `/api/<name>/...` goes to `API_<NAME>_URL`, and one without its variable answers 500 with the name of the variable to define. A request outside `/api/<name>` goes on to the app's own routes.
 
+### Reading and writing
+
+An `api` store has no `get` or `set`: it reads and writes its backend, and keeps what it read.
+
+```ts
+// src/controllers/users.controller.ts
+export default createController(({ stores: { backend } }) => ({
+  add: (sName: string) => backend.create('/users', { name: sName }),
+  rename: (iId: number, sName: string) => backend.update('/users', iId, { name: sName }),
+  remove: (iId: number) => backend.delete('/users', iId),
+}));
+```
+
+```tsx
+// src/components/Users.tsx
+export default usersController.bindView(({ stores: { backend }, rename }) => (
+  <ul>
+    {(backend.read('/users') ?? []).map(oUser => (
+      <li key={oUser.id} onClick={() => rename(oUser.id, 'Bruno')}>{oUser.name}</li>
+    ))}
+  </ul>
+));
+```
+
+- `read(path, query?)` returns the `result` it keeps for that path and query, `undefined` until it arrives. It works in the render: the first read, or a read after its entity changed, asks the backend (`GET`, or `QUERY` with the query as JSON body), and the view renders again when the answer comes. A read already in progress is not asked twice.
+- The entity is the first segment of the path (`/users/7` → `/users`). `create` (`POST <path>`), `update` (`PUT <path>/<id>`) and `delete` (`DELETE <path>/<id>`) return the `ApiResponse`, and when it comes back every read of the entity asks again the next time it renders, whatever its query. Other entities keep what they have.
+- `busy` counts the requests in progress (`backend.busy ? 'Loading…' : …`).
+- A read that fails (`success: false`) keeps what there was and is not asked again until a write on its entity. An answer that is not JSON makes a write throw.
+- What another user changes is seen after a write on the same entity.
+- Every path and query read stays kept while the page is open.
+
+To ask only when the user stops typing, keep the text in the `app` store and copy it to the query after a pause:
+
+```ts
+let oTimer: ReturnType<typeof setTimeout>;
+export default createController(({ stores: { app } }) => ({
+  type: (sText: string) => {
+    app.set('/search/text', sText);
+    clearTimeout(oTimer);
+    oTimer = setTimeout(() => app.set('/search/applied', sText), 300);
+  },
+}));
+// The view reads backend.read('/users', { filter: { name: { contains: app.get('/search/applied') } } })
+```
+
 ### Headers per backend
 
 A backend that asks for a key (`x-api-key`) gets it from the proxy. The store names the header and the variable that holds its value, never the value itself, since store files reach the browser:
@@ -132,4 +177,10 @@ export const config = { matcher: ['/api/:path*', '/dashboard/:path*'] };
 pnpm --filter @nano-app/frontend build
 pnpm --filter nano-frontend-test-app build
 pnpm --filter nano-frontend-test-app start   # http://localhost:3100
+```
+
+The `Users` component reads and writes `/users` of the `backend` store: point it at any backend that answers `GET`, `POST`, `PUT` and `DELETE` on `/users` with an `ApiResponse`, and give it the key its store declares:
+
+```bash
+API_BACKEND_URL=http://localhost:3000 API_BACKEND_KEY_HEADER=dev pnpm --filter nano-frontend-test-app start
 ```
