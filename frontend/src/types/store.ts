@@ -7,6 +7,8 @@ export type StoreFiles = NanoObject<{
   type: typeof APP_STORE_TYPE | typeof API_STORE_TYPE;
   /** Initial state */
   data?: NanoObject;
+  /** Headers the proxy adds, by name: each value names its env var (`STRIPE_KEY` → `API_STRIPE_KEY_HEADER`) */
+  headers?: NanoObject<string>;
 }>;
 
 /** Stores of one React tree by name; `app` is always there */

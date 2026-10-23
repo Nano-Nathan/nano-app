@@ -56,7 +56,11 @@ export default abstract class Validator {
   private static isStore(
     oEntry: unknown,
     sFilePath: string,
-  ): oEntry is { type: typeof APP_STORE_TYPE | typeof API_STORE_TYPE; data?: NanoObject } {
+  ): oEntry is {
+    type: typeof APP_STORE_TYPE | typeof API_STORE_TYPE;
+    data?: NanoObject;
+    headers?: NanoObject<string>;
+  } {
     // Checks that the default export is an object
     if (!Validator.isObject(oEntry, sFilePath)) return false;
 
@@ -70,6 +74,14 @@ export default abstract class Validator {
     // Checks that the initial state is an object
     if (oEntry.data !== undefined && (!oEntry.data || typeof oEntry.data !== 'object'))
       return Validator.warn(sFilePath, '"data" must be an object.');
+
+    // Checks that the headers name a string (the env var of each value) per header
+    const isHeadersInvalid =
+      oEntry.headers !== undefined &&
+      (!Validator.isObject(oEntry.headers, sFilePath) ||
+        Object.values(oEntry.headers).some(sValue => typeof sValue !== 'string'));
+    if (isHeadersInvalid)
+      return Validator.warn(sFilePath, '"headers" must be an object of strings.');
 
     return true;
   }
