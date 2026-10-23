@@ -85,7 +85,7 @@ Every option is optional.
 | `mainPlugin` | `{ routesDir: "src/routes" }` | Your routes (`routesDir`, relative to `cwd`), `basePath` (e.g. `/api`, no trailing slash) and database: see [Database](#database). |
 | `plugins` | `[]` | Plugins mounted around your routes, in order: see [Plugins](#plugins). |
 
-`packages` accepts `morgan`, `cors`, `helmet`, `compression`, `rateLimit`, `express` (`express.json` options) and `urlencoded`. The merge is **per section**: passing one key keeps the others; pass `false`/`undefined` to disable one.
+`packages` accepts `morgan`, `cors`, `helmet`, `compression`, `rateLimit`, `express` (`express.json` options), `urlencoded` and `betterAuth` (off by default: see [Better Auth](#better-auth)). The merge is **per section**: passing one key keeps the others; pass `false`/`undefined` to disable one.
 
 ```ts
 createNanoApp({
@@ -152,9 +152,54 @@ export default createRoute<PrismaClient>({
 - For several PostgreSQL schemas, declare `schemas = ["public", "billing"]` in the datasource and `@@schema("billing")` on each model; one client covers them all.
 - Prisma is loaded only when your database or a mounted plugin's is enabled.
 
+## Better Auth
+
+Users, sign-in and sessions with [Better Auth](https://www.better-auth.com), on your database. Off until `packages.betterAuth` gets its options (everything but `database`: nano-app passes your Prisma client).
+
+```bash
+npm install better-auth
+```
+
+```ts
+// src/auth.ts: the options, and an instance only for the Better Auth CLI
+import { betterAuth, type BetterAuthOptions } from "better-auth";
+
+export const authOptions = { emailAndPassword: { enabled: true } } satisfies BetterAuthOptions;
+export const auth = betterAuth(authOptions);
+```
+
+```ts
+// src/app.ts
+import { createNanoApp } from "@nano-app/backend";
+import { authOptions } from "./auth";
+
+createNanoApp({
+  packages: { betterAuth: authOptions },
+  mainPlugin: { database: { enabled: true } },
+});
+```
+
+Its tables are yours, like the rest of your schema. Add its models with its CLI, then apply them with Prisma; run both again when you change the options:
+
+```bash
+npx auth generate --config src/auth.ts --adapter prisma --dialect postgresql --output src/prisma/schema.prisma
+npx prisma migrate dev
+```
+
+- It needs the database: `packages.betterAuth` without `mainPlugin.database.enabled` fails at startup.
+- Startup also fails if your schema lacks a model the options need (`user`, `session`, ...), naming them.
+- Its endpoints are mounted with your routes, at its `basePath` (default `/api/auth`), and stay public.
+- Every route of yours and of the `after` plugins needs a session: without one, 401. The `before` plugins stay public (a landing, an about page).
+- Handlers and `onBefore` receive the session in `params.session` (`{ user, session }`).
+- Sign-up works as Better Auth sets it: with `emailAndPassword` anyone can sign up and reach your routes. Close it with `disableSignUp: true`, or check roles in your handlers.
+- Relate your models to `User` in the same schema, as any Prisma relation. Extra user fields go in its `user.additionalFields`.
+- With several PostgreSQL schemas, add `@@schema(...)` to the generated models.
+- Set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` in the environment, as Better Auth asks.
+- Better Auth is loaded only when it is on.
+
 ## Plugins
 
-A plugin is a group of endpoints mounted under a base path. Your routes are mounted as one (named `app`). The official plugins are in [`@nano-app/plugins`](https://github.com/Nano-Nathan/nano-app/blob/main/plugins/README.md). You write one with `createPlugin` and list it in `plugins`. Nothing is mounted unless you list it. Official plugins that have tables (like `auth`) ship their own migrations: nano-app applies them at startup, each in its `nano_*` schema. That is the only change it makes to your database.
+A plugin is a group of endpoints mounted under a base path. Your routes are mounted as one (named `app`). The official plugins are in [`@nano-app/plugins`](https://github.com/Nano-Nathan/nano-app/blob/main/plugins/README.md). You write one with `createPlugin` and list it in `plugins`. Nothing is mounted unless you list it. Official plugins that have tables ship their own migrations: nano-app applies them at startup, each in its `nano_*` schema. That is the only change it makes to your database.
 
 ```ts
 // src/plugins/hello/index.ts
