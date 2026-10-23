@@ -28,11 +28,11 @@ export default class Plugin {
 
     // Better Auth: its endpoints stay public, its guard covers everything mounted after them
     if (this.oAuthOptions) {
-      // Do not create if db doesn't exists
+      // Checks that the database is mounted: Better Auth keeps its tables there
       if (!oDb) {
-           throw new Error(
-        '[nano-app] [ERROR] packages.betterAuth needs the database of the app: set mainPlugin.database.enabled to true.',
-      );
+        throw new Error(
+          '[nano-app] [ERROR] packages.betterAuth needs the database of the app: set mainPlugin.database.enabled to true.',
+        );
       }
 
       const { sPath, oHandler, fnGuard } = await BetterAuth.create(this.oAuthOptions, oDb);
