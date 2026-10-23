@@ -34,7 +34,7 @@ One module per point, in this order: 1, 1b, 2, 3, 4. Each one is listed point by
 ## Design rules
 
 - The browser never talks to the backend directly: only the Next server does, and the backend URL never reaches the client bundle.
-- The frontend has no credential of its own and does not depend on any backend plugin (`auth` is optional). What the backend exposes and how it is protected is the consumer's decision, in the backend.
+- The frontend has no credential of its own and does not depend on any backend plugin, nor on Better Auth (`packages.betterAuth` is optional). What the backend exposes and how it is protected is the consumer's decision, in the backend.
 - No `glob` or `jiti` in the client bundle. No generated files in `node_modules`: build data goes through Next's `env`.
 
 ## Out of scope

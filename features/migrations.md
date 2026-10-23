@@ -18,7 +18,7 @@ An app on nano-app migrates its database with history, by hand, without `db push
 ## Scope
 
 - A `migrate` command in the `@nano-app/backend` CLI (`prisma migrate deploy`), which today only has `generate` and `push`.
-- It covers the app's schema and its plugins' (for example `nano_auth` of `auth`). The official plugins' migrations already exist (`migrations/` next to the schema, see `PLUGINS.md`) and are applied at startup.
+- It covers the app's schema (with the Better Auth models when `packages.betterAuth` is on) and its plugins'. The official plugins' migrations already exist (`migrations/` next to the schema, see `PLUGINS.md`) and are applied at startup.
 - To decide with the maintainer: where the migrations of a non-official plugin live, and how several histories live in the same database (Prisma keeps one per connection schema, in `_prisma_migrations`).
 
 ## Out of scope
