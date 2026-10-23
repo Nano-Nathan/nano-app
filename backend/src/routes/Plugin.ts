@@ -20,13 +20,6 @@ export default class Plugin {
   public async mount(oApp: Express): Promise<void> {
     const { name, routesDir, basePath, database, options, callbacks } = this.oConfig;
 
-    // Better Auth keeps its tables in this plugin's database
-    if (this.oAuthOptions && !database?.enabled) {
-      throw new Error(
-        '[nano-app] [ERROR] packages.betterAuth needs the database of the app: set mainPlugin.database.enabled to true.',
-      );
-    }
-
     // Mounts the Prisma client, named as the plugin
     const oDb = database?.enabled ? await Database.mount(name, database) : undefined;
 
@@ -35,6 +28,13 @@ export default class Plugin {
 
     // Better Auth: its endpoints stay public, its guard covers everything mounted after them
     if (this.oAuthOptions) {
+      // Do not create if db doesn't exists
+      if (!oDb) {
+           throw new Error(
+        '[nano-app] [ERROR] packages.betterAuth needs the database of the app: set mainPlugin.database.enabled to true.',
+      );
+      }
+
       const { sPath, oHandler, fnGuard } = await BetterAuth.create(this.oAuthOptions, oDb);
       oApp.all(sPath, oHandler);
       oApp.use(fnGuard);
