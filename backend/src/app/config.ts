@@ -38,6 +38,7 @@ export const INITIAL_CONFIG = {
     urlencoded: {
       extended: false,
     },
+    betterAuth: false,
   },
 
   /** Main plugin to mount */
@@ -79,6 +80,14 @@ export function mergeConfig(oConfig: NanoAppConfig = {}): NanoAppConfig &
   } {
   // Every level keeps its default where the consumer set nothing
   const oMerged = deepMerge(INITIAL_CONFIG, oConfig) as typeof INITIAL_CONFIG;
+
+  // Better Auth keeps its tables in the app's database
+  const isAuthWithoutDb = oMerged.packages.betterAuth && !oMerged.mainPlugin.database.enabled;
+  if (isAuthWithoutDb) {
+    throw new Error(
+      '[nano-app] [ERROR] packages.betterAuth needs the database of the app: set mainPlugin.database.enabled to true.',
+    );
+  }
 
   // Names the main plugin
   return { ...oMerged, mainPlugin: { ...oMerged.mainPlugin, name: APP_NAME } };

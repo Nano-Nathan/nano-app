@@ -4,7 +4,14 @@ import type { ApiPromise } from './api';
 // any: `DB` and `T` default to the consumer's Prisma client and data, unknown to the framework
 
 /** Extra params of handlers and callbacks */
-export type Params<DB = any> = Partial<NanoObject & { db?: DB; onBeforeResult?: NanoObject }>;
+export type Params<DB = any> = Partial<
+  NanoObject & {
+    db?: DB;
+    onBeforeResult?: NanoObject;
+    /** `{ user, session }` of Better Auth, on the routes behind its guard */
+    session?: NanoObject;
+  }
+>;
 
 /** Endpoint handlers */
 export type Handler<DB> = (req: Request, params: Params<DB>) => ApiPromise;

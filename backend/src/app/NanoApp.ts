@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import 'dotenv/config';
+import BetterAuth from '../auth/BetterAuth';
 import Plugin from '../routes/Plugin';
 import { mergeConfig } from './config';
 import { errorHandler, notFoundHandler } from './errors';
@@ -63,8 +64,12 @@ export default class NanoApp {
     // Create plugins before, in order
     for (const oPlugin of oPlugins.before) await new Plugin(oPlugin).mount(this.oApp);
 
-    // Create consumer plugin
-    await new Plugin(this.oConfig.mainPlugin).mount(this.oApp);
+    // Create consumer plugin, with Better Auth when it is on
+    const { mainPlugin, packages } = this.oConfig;
+    const oMain = packages.betterAuth
+      ? BetterAuth.withAuth(mainPlugin, packages.betterAuth)
+      : mainPlugin;
+    await new Plugin(oMain).mount(this.oApp);
 
     // Create plugins after, in order
     for (const oPlugin of oPlugins.after) await new Plugin(oPlugin).mount(this.oApp);
