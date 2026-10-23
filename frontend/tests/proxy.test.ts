@@ -2,7 +2,6 @@ import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { NextRequest } from 'next/server';
-import { STORES_ENV } from '@nano-app/core/const';
 import { proxy } from '../src/proxy';
 
 const PORT = 4100;
@@ -32,11 +31,7 @@ describe('proxy', () => {
     // Starts the backend
     await new Promise<void>(fnResolve => oBackend.listen(PORT, fnResolve));
 
-    // Inlines an api store and an app store, as `withNanoApp` does, and the backend URL
-    process.env[STORES_ENV] = JSON.stringify({
-      admin_users: { type: 'api' },
-      ui: { type: 'app', data: {} },
-    });
+    // Sets the backend URL of the store
     process.env.API_ADMIN_USERS_URL = `http://localhost:${PORT}/api`;
   });
 
@@ -58,9 +53,8 @@ describe('proxy', () => {
     });
   });
 
-  test('any other request goes on to the app routes', async () => {
-    // An app store, an unknown name and a path outside /api
-    for (const sPath of ['/api/ui/open', '/api/missing/users', '/admin_users/users']) {
+  test('a request outside /api/<store> goes on to the app routes', async () => {
+    for (const sPath of ['/admin_users/users', '/api']) {
       const oRes = await send(sPath);
       assert.equal(oRes.headers.get('x-middleware-next'), '1', sPath);
     }

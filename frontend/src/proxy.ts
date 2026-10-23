@@ -1,16 +1,13 @@
 import { NextResponse } from 'next/server';
-import { API_STORE_TYPE } from '@nano-app/core/const';
-import readStoreFiles from './stores/readStoreFiles';
 import type { NextRequest } from 'next/server';
 
 /** Sends `/api/<store>/<path>` to the backend of the `api` store `<store>`, in `API_<STORE>_URL` */
 export async function proxy(oReq: NextRequest): Promise<Response> {
   // Reads the store named after `/api` (`/api/backend/users/7` → `backend`, `users/7`)
   const [, sPrefix, sName, ...aPath] = oReq.nextUrl.pathname.split('/');
-  const isApiStore = sPrefix === 'api' && readStoreFiles()[sName]?.type === API_STORE_TYPE;
 
-  // Any other request goes on to the app's own routes
-  if (!isApiStore) return NextResponse.next();
+  // A request outside `/api/<store>` goes on to the app's own routes
+  if (sPrefix !== 'api' || !sName) return NextResponse.next();
 
   // Reads the backend URL at runtime, on the server: it never reaches the browser
   const sEnvName = `API_${sName.toUpperCase()}_URL`;
