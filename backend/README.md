@@ -145,7 +145,7 @@ export default createRoute<PrismaClient>({
 
 - Each key falls back to its default, so `{ enabled: true }` is enough with the default layout.
 - The client lives in `.nano-app/prisma-clients/app/` (add `.nano-app/` to `.gitignore`). It is generated again only when the schema changes. Do not run `prisma generate`: a second client would be out of sync.
-- `npx nano-app generate` does what the startup does, without starting: for your editor's types, or for the build when the filesystem is read-only in production.
+- The client exists after the first startup: start the app once before your editor or `tsc` can import its types. In a container, `.nano-app/` must be writable.
 - Startup fails if `DATABASE_URL` is missing, the schema is not a valid PostgreSQL schema, or a table or column of a model cannot be read. The message says which: apply your schema with Prisma and start again.
 - The `nano_` prefix is reserved for the official plugins (`@nano-app/plugins`): a datasource schema of yours starting with it fails the startup.
 - Pass your generated `PrismaClient` to `createRoute<PrismaClient>` to type `db`; otherwise it is `any`, and without an enabled database `undefined`.
