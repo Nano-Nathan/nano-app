@@ -88,6 +88,21 @@ The backend URL is read at runtime from `API_<STORE>_URL` (`backend` → `API_BA
 
 - The request keeps its method, headers, cookies and body, and the backend's answer comes back as is, `Set-Cookie` and redirects included.
 - Every `/api/<name>/...` goes to `API_<NAME>_URL`, and one without its variable answers 500 with the name of the variable to define. A request outside `/api/<name>` goes on to the app's own routes.
+- The proxy reads these variables on its first request and keeps them: changing one takes a restart.
+
+### Headers per backend
+
+A backend that asks for a key (`x-api-key`) gets it from the proxy. The store names the header and the variable that holds its value, never the value itself, since store files reach the browser:
+
+```ts
+// src/stores/payments.store.ts
+export default { type: 'api', headers: { 'x-api-key': 'STRIPE_KEY' } };
+```
+
+The proxy sends `x-api-key` with the value of `API_STRIPE_KEY_HEADER` (the name in upper case) on every request to that store; a missing variable answers 500 with its name.
+
+- A store header wins over a browser header with the same name: the browser cannot replace or guess the key.
+- The user's own credentials (the session cookie, `Authorization`) still go as the browser sends them. Do not declare a header the user needs in the store, or every user goes with the store's value.
 - Without a `matcher`, Next runs the proxy on every request; to skip the rest, add `export const config = { matcher: '/api/:path*' };` to `proxy.ts` (Next reads it only when it is written there).
 
 ### With a proxy of your own
