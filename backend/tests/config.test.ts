@@ -63,15 +63,4 @@ describe('config merge', () => {
     assert.equal(INITIAL_CONFIG.packages.helmet, true);
     assert.deepEqual(INITIAL_CONFIG.settings, {});
   });
-
-  test('Better Auth needs the database of the app', () => {
-    // Turns Better Auth on without the database
-    const fnMerge = () => mergeConfig({ packages: { betterAuth: {} } });
-
-    // Checks that it fails before starting
-    assert.throws(fnMerge, /packages.betterAuth needs the database of the app/);
-    assert.ok(
-      mergeConfig({ packages: { betterAuth: {} }, mainPlugin: { database: { enabled: true } } }),
-    );
-  });
 });

@@ -42,6 +42,17 @@ const fnBoot = (sSchemaPath: string) => {
   );
 };
 
+describe('Better Auth without a database', () => {
+  test('fails the startup', async () => {
+    // Boots with Better Auth and the database off
+    const oApp = await boot({ packages: { betterAuth: AUTH_OPTIONS } }, { env: ENV });
+
+    // Checks that it exits saying what to enable
+    assert.equal(await oApp.exited, 1);
+    assert.match(oApp.output(), /packages.betterAuth needs the database of the app/);
+  });
+});
+
 describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' }, () => {
   let oApp: Booted;
   let sCookie: string;

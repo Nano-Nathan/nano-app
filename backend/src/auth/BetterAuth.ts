@@ -1,34 +1,11 @@
 import type { RequestHandler } from 'express';
 import type { BetterAuthOptions } from 'better-auth';
-import type { PluginConfig } from '../types/plugin';
 
-/** Better Auth inside the app's plugin: its endpoints, then a session guard before the routes */
+/** Better Auth on the app's Prisma client: the instance, its handler and a session guard */
 export default abstract class BetterAuth {
-  /** The app's plugin with Better Auth mounted first in its onMount */
-  public static withAuth(oPlugin: PluginConfig, oOptions: BetterAuthOptions): PluginConfig {
-    const { callbacks } = oPlugin;
-
-    return {
-      ...oPlugin,
-      callbacks: {
-        ...callbacks,
-        onMount: async (oApp, oParams) => {
-          // Endpoints and guard, after the app's database and before the consumer's onMount
-          const { oHandler, fnGuard, sPath } = await this.create(oOptions, oParams.db);
-          oApp.all(sPath, oHandler);
-          oApp.use(fnGuard);
-          console.log(`[nano-app] [INFO] ${sPath}`);
-
-          // The consumer's own setup
-          await callbacks?.onMount?.(oApp, oParams);
-        },
-      },
-    };
-  }
-
   /** Creates the instance on the app's client, its handler and the guard */
   // any: the Prisma client is generated per app, unknown to the framework
-  private static async create(
+  public static async create(
     oOptions: BetterAuthOptions,
     oDb: any,
   ): Promise<{ oHandler: RequestHandler; fnGuard: RequestHandler; sPath: string }> {
