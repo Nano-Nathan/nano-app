@@ -32,9 +32,9 @@ env:
   NEON_PROJECT_ID: morning-heart-02625696
 
 jobs:
-  # The PostgreSQL suite (the auth plugin) runs on a Neon branch created for the run and deleted
+  # The PostgreSQL suites (official plugins with a database) run on a Neon branch created for the run and deleted
   # at the end. Without the Neon secret (pull requests from forks or Dependabot) DATABASE_URL is
-  # empty and that suite is skipped.
+  # empty and those suites are skipped.
   test-plugins:
     runs-on: ubuntu-latest
     env:

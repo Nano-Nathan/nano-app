@@ -7,6 +7,7 @@ import pg from 'pg';
 import { FileLoader } from '@nano-app/core';
 import Database from '../src/database/Database';
 import { boot, request, type Booted } from './helpers';
+import './database/better-auth';
 
 const FIXTURES = 'tests/fixtures/database';
 const SCHEMA = `${FIXTURES}/schema.prisma`;
