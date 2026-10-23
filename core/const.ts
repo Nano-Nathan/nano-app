@@ -6,6 +6,9 @@ export const APP_NAME = 'app';
 /** Type of a `*.store.ts` of UI state */
 export const APP_STORE_TYPE = 'app';
 
+/** Type of a `*.store.ts` that reads and writes a backend, through the frontend proxy */
+export const API_STORE_TYPE = 'api';
+
 // Backend
 
 /** Package of the official plugins: only its schemas may declare nano_* */

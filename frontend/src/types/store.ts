@@ -1,10 +1,10 @@
-import type { APP_NAME, APP_STORE_TYPE } from '@nano-app/core/const';
+import type { API_STORE_TYPE, APP_NAME, APP_STORE_TYPE } from '@nano-app/core/const';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type Store from '../stores/Store';
 
 /** Stores of the app by name (`src/stores/app.store.ts` → `app`), as their files export them */
 export type StoreFiles = NanoObject<{
-  type: typeof APP_STORE_TYPE;
+  type: typeof APP_STORE_TYPE | typeof API_STORE_TYPE;
   /** Initial state */
   data?: NanoObject;
 }>;

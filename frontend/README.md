@@ -70,6 +70,46 @@ export default counterController.bindView(({ stores: { app }, increment }) => (
 - The view re-renders only when a store path it read changes.
 - A method named `props` or `stores` is hidden by the context of the same name.
 
+## Backend
+
+A store of type `api` connects the app to a backend. The browser never talks to the backend: it calls `/api/<store>/...` on the Next server, and the proxy sends the request there.
+
+```ts
+// src/stores/backend.store.ts
+export default { type: 'api' };
+```
+
+```ts
+// proxy.ts, next to app/
+export { proxy } from '@nano-app/frontend/proxy';
+```
+
+The backend URL is read at runtime from `API_<STORE>_URL` (`backend` → `API_BACKEND_URL`, `admin/users.store.ts` → `API_ADMIN_USERS_URL`), on the server only: it never reaches the browser. The prefix goes away (`/api/backend/users/7?top=1` → `$API_BACKEND_URL/users/7?top=1`); a backend with a `basePath` puts it in the URL (`API_BACKEND_URL=http://backend:3000/api`).
+
+- The request keeps its method, headers, cookies and body, and the backend's answer comes back as is, `Set-Cookie` and redirects included.
+- Every `/api/<name>/...` goes to `API_<NAME>_URL`, and one without its variable answers 500 with the name of the variable to define. A request outside `/api/<name>` goes on to the app's own routes.
+- Without a `matcher`, Next runs the proxy on every request; to skip the rest, add `export const config = { matcher: '/api/:path*' };` to `proxy.ts` (Next reads it only when it is written there).
+
+### With a proxy of your own
+
+Next takes one `proxy.ts`. To keep yours, call nano-app's from it for `/api` and include `/api/:path*` in your `matcher`:
+
+```ts
+// proxy.ts
+import { NextResponse } from 'next/server';
+import { proxy as nanoProxy } from '@nano-app/frontend/proxy';
+import type { NextRequest } from 'next/server';
+
+export function proxy(oReq: NextRequest) {
+  if (oReq.nextUrl.pathname.startsWith('/api/')) return nanoProxy(oReq);
+
+  // Your own logic
+  return NextResponse.next();
+}
+
+export const config = { matcher: ['/api/:path*', '/dashboard/:path*'] };
+```
+
 ## Test app
 
 `tests/app` is a Next app that uses the package from the workspace:
