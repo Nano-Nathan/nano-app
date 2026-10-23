@@ -46,7 +46,7 @@ describe('proxy', () => {
       orders: { type: 'api', headers: { 'x-api-key': 'ORDERS_KEY' } },
     });
 
-    // Sets their env before the first request, when the proxy reads it; orders has no key
+    // Sets their env; orders has no key
     process.env.API_ADMIN_USERS_URL = `http://localhost:${PORT}/api`;
     process.env.API_USERS_KEY_HEADER = 'secret';
     process.env.API_ORDERS_URL = `http://localhost:${PORT}`;

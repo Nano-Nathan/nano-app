@@ -88,7 +88,6 @@ The backend URL is read at runtime from `API_<STORE>_URL` (`backend` → `API_BA
 
 - The request keeps its method, headers, cookies and body, and the backend's answer comes back as is, `Set-Cookie` and redirects included.
 - Every `/api/<name>/...` goes to `API_<NAME>_URL`, and one without its variable answers 500 with the name of the variable to define. A request outside `/api/<name>` goes on to the app's own routes.
-- The proxy reads these variables on its first request and keeps them: changing one takes a restart.
 
 ### Headers per backend
 
