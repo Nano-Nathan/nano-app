@@ -65,10 +65,10 @@ describe('withNanoApp', () => {
     }
   });
 
-  test('createStores reads the env var that withNanoApp writes', () => {
+  test('the stores are read from the env var that withNanoApp writes', () => {
     // Reads the source: Next only inlines `process.env.<name>` written literally
     const sSource = readFileSync(
-      fileURLToPath(new URL('../src/creators/createStores.ts', import.meta.url)),
+      fileURLToPath(new URL('../src/stores/readStoreFiles.ts', import.meta.url)),
       'utf8',
     );
 

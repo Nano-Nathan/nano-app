@@ -12,6 +12,10 @@
       "types": "./build/next.d.ts",
       "import": "./build/next.js",
       "default": "./build/next.js"
+    },
+    "./proxy": {
+      "types": "./build/proxy.d.ts",
+      "import": "./build/proxy.js"
     }
   },
   "files": [

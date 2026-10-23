@@ -14,18 +14,18 @@ describe('store files', () => {
     assert.deepEqual(oFiles.admin_users, { type: 'app', data: { aUsers: [] } });
   });
 
-  test('a store must be an app store with object data', () => {
+  test('a store must be an app or api store with object data', () => {
     const oFiles = Validator.validate(
       {
         none: 'not an object',
         kind: { type: 'other' },
-        api: { type: 'api', path: '/api' },
+        api: { type: 'api' },
         data: { type: 'app', data: 'not an object' },
         app: { type: 'app', data: { iCount: 0 } },
       },
       'store',
     );
 
-    assert.deepEqual(Object.keys(oFiles), ['app']);
+    assert.deepEqual(Object.keys(oFiles), ['api', 'app']);
   });
 });
