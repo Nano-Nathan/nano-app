@@ -9,6 +9,7 @@ pnpm monorepo: `core/` (private, inlined into the backend), `backend/` (`@nano-a
 - Branches have a descriptive name of what they do (`feat/<topic>`, `fix/<topic>`, `refactor/<topic>`, `docs/<topic>`), never ids or generated names. Work on the existing branch of the topic when there is one.
 - Every change reaches `main` through a pull request. Its title is a Conventional Commit: it decides the release of each touched package.
 - A feature built in modules (see below) lives on a feature branch from `main` (`feat/<feature>`), linked to an issue when there is one. Each module gets its own branch from the up-to-date feature branch (`feat/<feature>--<module>`, `--` because a branch cannot also be a folder of branches) and a pull request to the feature branch. The next module starts only after that pull request is merged. When the feature is done, one pull request takes the feature branch to `main`, and its title decides the release.
+- Planned features live in `features/`, one file per feature, with its scope, status and log. Read `features/README.md` before taking one.
 - When `main` moves during a feature, merge `main` into the feature branch; never rebase it, module branches start from it.
 - Agents do not commit or push. Stage only the files you changed; the maintainer commits.
 - Agents never add a `Co-authored-by` trailer (for themselves or another agent) to commits or pull requests: co-authorship is added by hand by the maintainer.
