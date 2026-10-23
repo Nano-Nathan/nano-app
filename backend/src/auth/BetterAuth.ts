@@ -44,7 +44,7 @@ export default abstract class BetterAuth {
     return {
       oHandler: toNodeHandler(oAuth),
       fnGuard,
-      sPath: `${oAuth.options.basePath ?? '/api/auth'}/{*path}`,
+      sPath: `${oOptions.basePath ?? '/api/auth'}/{*path}`,
     };
   }
 }
