@@ -18,6 +18,6 @@ export type Stores = NanoObject<any> & { [APP_NAME]: Store };
 /** State of an `ApiStore`: requests in progress, results per path and query, and versions per entity */
 export type ApiState = {
   iBusy: number;
-  oResults: NanoObject<{ iVersion: number; result: unknown }>;
+  oResults: NanoObject<unknown>;
   oVersions: NanoObject<number>;
 };

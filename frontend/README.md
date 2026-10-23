@@ -97,8 +97,8 @@ An `api` store has no `get` or `set`: it reads and writes its backend, and keeps
 // src/controllers/users.controller.ts
 export default createController(({ stores: { backend } }) => ({
   add: (sName: string) => backend.create('/users', { name: sName }),
-  rename: (iId: number, sName: string) => backend.update('/users', iId, { name: sName }),
-  remove: (iId: number) => backend.delete('/users', iId),
+  rename: (iId: number, sName: string) => backend.update(`/users/${iId}`, { name: sName }),
+  remove: (iId: number) => backend.delete(`/users/${iId}`),
 }));
 ```
 
@@ -113,10 +113,10 @@ export default usersController.bindView(({ stores: { backend }, rename }) => (
 ));
 ```
 
-- `read(path, query?)` returns the `result` it keeps for that path and query, `undefined` until it arrives. It works in the render: the first read, or a read after its entity changed, asks the backend (`GET`, or `QUERY` with the query as JSON body), and the view renders again when the answer comes. A read already in progress is not asked twice.
-- The entity is the first segment of the path (`/users/7` → `/users`). `create` (`POST <path>`), `update` (`PUT <path>/<id>`) and `delete` (`DELETE <path>/<id>`) return the `ApiResponse`, and when it comes back every read of the entity asks again the next time it renders, whatever its query. Other entities keep what they have.
+- `read(path, query?)` returns the `result` it keeps for that path and query, `undefined` until it arrives. It works in the render: the first read, or a read after its entity changed, asks the backend (`GET`, or `QUERY` with the query as JSON body), and the view renders again when the answer comes. Each path and query is asked once per change of its entity.
+- The entity is the first segment of the path (`/users/7` → `/users`). `create` (`POST <path>`), `update` (`PUT <path>`) and `delete` (`DELETE <path>`) return the `ApiResponse`, and when it comes back every read of the entity asks again the next time it renders, whatever its query. Other entities keep what they have.
 - `busy` counts the requests in progress (`backend.busy ? 'Loading…' : …`).
-- A read that fails (`success: false`) keeps what there was and is not asked again until a write on its entity. An answer that is not JSON makes a write throw.
+- A read keeps the `result` of its answer, `undefined` when it failed, and is not asked again until a write on its entity. A request that fails (no answer, or not JSON) rejects: the errors module will show it.
 - What another user changes is seen after a write on the same entity.
 - Every path and query read stays kept while the page is open.
 

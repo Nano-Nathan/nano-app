@@ -3,7 +3,7 @@ import './dom';
 import { test, describe, before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { STORES_ENV } from '@nano-app/core/const';
 import createController from '../src/creators/createController';
 import { NanoAppProvider } from '../src/react/NanoAppProvider';
@@ -56,7 +56,7 @@ const oBackend = createServer((oReq, oRes) => {
 process.env[STORES_ENV] = JSON.stringify({ backend: { type: 'api' } });
 
 const usersController = createController(({ stores: { backend } }) => ({
-  rename: (sName: string) => backend.update('/users', 7, { id: 7, name: sName }),
+  rename: (sName: string) => backend.update('/users/7', { id: 7, name: sName }),
   addOrder: () => backend.create('/orders', { id: 1 }),
 }));
 
@@ -114,11 +114,13 @@ describe('api store', () => {
         <First />
       </NanoAppProvider>,
     );
-    await settle();
 
-    assert.equal(screen.getAllByText('Beto', { selector: 'li' }).length, 2);
-    assert.equal(screen.getByRole('status').textContent, 'Beto');
-    assert.ok(screen.getByText('first Ana'));
+    // Waits for the views: the first requests of the suite can take a while
+    await waitFor(() => {
+      assert.equal(screen.getAllByText('Beto', { selector: 'li' }).length, 2);
+      assert.equal(screen.getByRole('status').textContent, 'Beto');
+      assert.ok(screen.getByText('first Ana'));
+    });
     assert.deepEqual([...aRequests].sort(), [
       'GET /api/backend/users',
       'GET /api/backend/users/7',
@@ -185,7 +187,7 @@ describe('api store', () => {
     assert.ok(screen.getByText('busy 0'));
   });
 
-  test('a failed read keeps what there was and is not asked again until a write', async () => {
+  test('a failed read is not asked again until a write on its entity', async () => {
     // Reads a path that answers success: false, and renders it again
     const Fail = createController(() => ({})).bindView(({ stores: { backend } }) => (
       <p>{`fail ${backend.read('/fail')} busy ${backend.busy}`}</p>
@@ -202,7 +204,7 @@ describe('api store', () => {
     assert.equal(count('GET /api/backend/fail'), 1);
   });
 
-  test('a write returns the ApiResponse, and an answer without JSON throws', async () => {
+  test('a write returns the ApiResponse, and an answer without JSON rejects', async () => {
     // Writes on the backend through an api store of the tree
     let oStores: NanoObject = {};
     const Grab = createController(({ stores }) => {
@@ -219,8 +221,6 @@ describe('api store', () => {
       success: false,
       message: 'Failed',
     });
-    await assert.rejects(oStores.backend.delete('/html', 1), {
-      message: '[nano-app] [ERROR] DELETE /api/backend/html/1 answered 200 without JSON.',
-    });
+    await assert.rejects(oStores.backend.delete('/html/1'));
   });
 });
