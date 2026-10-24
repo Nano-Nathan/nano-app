@@ -18,6 +18,7 @@ export default class ApiStore extends Store {
   /** Value at a path, with the query of the read that kept it */
   // any: the value is the consumer's, unknown to the framework
   public get(sPath: string, oQuery?: QueryParams): any {
+    // Gets the value at the key of the path and query
     return super.get(ApiStore.key(sPath, oQuery));
   }
 
