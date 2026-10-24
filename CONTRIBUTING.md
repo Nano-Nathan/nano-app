@@ -33,7 +33,7 @@ Public API, comments, and these files are English: `README.md`, `PLUGINS.md`, `b
 4. Open the pull request to `main`. Its title must be a [Conventional Commit](https://www.conventionalcommits.org/) (`feat: add X`, `fix: Y`): the merge squashes the branch into one commit with that title, and the title decides the release (see [Releases](#releases)).
 5. Describe why the change exists. A linked issue helps.
 
-A feature too large for one review is built in modules:
+Each development (a feature, a fix, a refactor) is one branch and one pull request to `main`. Only a feature the maintainer decides to split, because it is too large for one review, is built in modules:
 
 1. Branch the feature from `main` (`feat/<feature>`) and push it. Link an issue when there is one.
 2. Branch each module from the up-to-date feature branch (`feat/<feature>--<module>`) and open its pull request to the feature branch. Start the next module after it is merged.
