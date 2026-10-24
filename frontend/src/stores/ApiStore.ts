@@ -56,11 +56,11 @@ export default class ApiStore extends Store {
     return this.write('DELETE', sPath);
   }
 
-  /** Sends a write and sets its path to version 0 */
+  /** Sends a write and sets its path and its parents to version 0 */
   private async write(sMethod: string, sPath: string, oBody?: unknown): Promise<ApiResponse> {
-    // Sends it, and sets the path to version 0 once the answer is back
+    // Sends it, and sets the path and its parents to version 0 once the answer is back
     const oResponse = await this.request(sPath, { method: sMethod, body: JSON.stringify(oBody) });
-    this.oVersions[sPath] = 0;
+    for (const sParent of ApiStore.parents(sPath)) this.oVersions[sParent] = 0;
     return oResponse;
   }
 
@@ -81,6 +81,13 @@ export default class ApiStore extends Store {
       this.iCount--;
       this.set('/busy', this.iCount > 0);
     }
+  }
+
+  /** A path and each of its parents */
+  private static parents(sPath: string): string[] {
+    // Joins the keys of the path up to each level
+    const aKeys = sPath.split('/').filter(Boolean);
+    return aKeys.map((_sKey, iIndex) => `/${aKeys.slice(0, iIndex + 1).join('/')}`);
   }
 
   /** Key of a read: its path, with its query when it has one */

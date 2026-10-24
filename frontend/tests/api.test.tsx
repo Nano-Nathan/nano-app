@@ -120,7 +120,7 @@ describe('api store', () => {
     assert.deepEqual([...aRequests].sort(), ['GET /api/backend/users', 'QUERY /api/backend/users']);
   });
 
-  test('a read answers from the store until a write on its path', async () => {
+  test('a read answers from the store until a write on its path or a child', async () => {
     // Reads the list and a user twice: each is asked once
     const { backend } = renderStores();
     await backend.read('/users');
@@ -132,7 +132,10 @@ describe('api store', () => {
     assert.equal(count('GET /api/backend/users'), 1);
     assert.equal(count('GET /api/backend/users/7'), 1);
 
-    // Writes `/users/7`: only its own read asks again
+    // Writes another path, then `/users/7`: the write on `/users/7` asks both again
+    await backend.create('/orders', { id: 1 });
+    await backend.read('/users');
+    assert.equal(count('GET /api/backend/users'), 1);
     await backend.update('/users/7', { id: 7, name: 'Bruno' });
     const oRead = await backend.read('/users/7');
     await backend.read('/users');
@@ -140,7 +143,7 @@ describe('api store', () => {
     assert.equal(oRead.result.name, 'Bruno');
     assert.equal(backend.get('/users/7').result.name, 'Bruno');
     assert.equal(count('GET /api/backend/users/7'), 2);
-    assert.equal(count('GET /api/backend/users'), 1);
+    assert.equal(count('GET /api/backend/users'), 2);
   });
 
   test('a read keeps what the store had at its path', async () => {
