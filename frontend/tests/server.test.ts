@@ -8,13 +8,12 @@ import createStores from '../src/creators/createStores';
 process.env[STORES_ENV] = JSON.stringify({ backend: { type: 'api' } });
 
 describe('api store on the server', () => {
-  test('read asks nothing and returns undefined', async () => {
-    // Reads the backend outside a browser, and lets a request start if one would
+  test('read asks nothing and returns an empty ApiResponse', async () => {
+    // Reads the backend outside a browser
     const { backend } = createStores();
-    const oResult = backend.read('/users');
-    await new Promise(fnResolve => setTimeout(fnResolve, 10));
+    const oResult = await backend.read('/users');
 
-    assert.equal(oResult, undefined);
-    assert.equal(backend.busy, 0);
+    assert.deepEqual(oResult, {});
+    assert.equal(backend.get('/busy'), undefined);
   });
 });

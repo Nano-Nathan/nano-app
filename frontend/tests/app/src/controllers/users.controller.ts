@@ -1,8 +1,23 @@
 import { createController } from '@nano-app/frontend';
 
-/** Methods of the users: they write the backend, and the views read it again */
-export default createController(({ stores: { backend } }) => ({
-  add: (sName: string) => backend.create('/users', { name: sName }),
-  rename: (iId: number, sName: string) => backend.update(`/users/${iId}`, { name: sName }),
-  remove: (iId: number) => backend.delete(`/users/${iId}`),
-}));
+/** Methods of the users: they read the backend, and read it again after each write */
+export default createController(({ stores: { backend } }) => {
+  // Reads the users into the store, where the views get them
+  const fnLoad = () => backend.read('/users');
+
+  return {
+    load: fnLoad,
+    add: async (sName: string) => {
+      await backend.create('/users', { name: sName });
+      return fnLoad();
+    },
+    rename: async (iId: number, sName: string) => {
+      await backend.update(`/users/${iId}`, { name: sName });
+      return fnLoad();
+    },
+    remove: async (iId: number) => {
+      await backend.delete(`/users/${iId}`);
+      return fnLoad();
+    },
+  };
+});

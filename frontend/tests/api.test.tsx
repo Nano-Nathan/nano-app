@@ -55,39 +55,24 @@ const oBackend = createServer((oReq, oRes) => {
 // Store of the backend, as `withNanoApp` inlines it
 process.env[STORES_ENV] = JSON.stringify({ backend: { type: 'api' } });
 
-const usersController = createController(({ stores: { backend } }) => ({
-  rename: (sName: string) => backend.update('/users/7', { id: 7, name: sName }),
-  addOrder: () => backend.create('/orders', { id: 1 }),
-}));
-
-// A list, a detail and the first user, all of `/users`
-const List = usersController.bindView(({ stores: { backend } }) => (
-  <ul>
-    {(backend.read('/users') ?? []).map((oUser: NanoObject) => (
-      <li key={oUser.id}>{oUser.name}</li>
-    ))}
-  </ul>
-));
-const Detail = usersController.bindView(({ stores: { backend }, rename, addOrder }) => (
-  <div>
-    <output>{backend.read('/users/7')?.name}</output>
-    <span>{`busy ${backend.busy}`}</span>
-    <button onClick={() => rename('Bruno')}>rename</button>
-    <button onClick={addOrder}>order</button>
-  </div>
-));
-const First = usersController.bindView(({ stores: { backend } }) => (
-  <p>{`first ${backend.read('/users', { top: 1 })?.[0]?.name}`}</p>
-));
+/** Stores of a rendered tree, to call the api store as a controller does */
+function renderStores(): NanoObject {
+  let oStores: NanoObject = {};
+  const Grab = createController(({ stores }) => {
+    oStores = stores;
+    return {};
+  }).bindView(() => null);
+  render(
+    <NanoAppProvider>
+      <Grab />
+    </NanoAppProvider>,
+  );
+  return oStores;
+}
 
 /** Requests received for one method and path */
 function count(sRequest: string): number {
   return aRequests.filter(sEntry => sEntry === sRequest).length;
-}
-
-/** Lets the pending requests answer and the views render them */
-async function settle(): Promise<void> {
-  await act(() => new Promise(fnResolve => setTimeout(fnResolve, iDelay + 50)));
 }
 
 describe('api store', () => {
@@ -104,123 +89,109 @@ describe('api store', () => {
     iDelay = 0;
   });
 
-  test('read asks the backend once per path and query, and the views render the result', async () => {
-    // Two views read `/users`, one `/users/7`, one `/users` with a query
-    render(
-      <NanoAppProvider>
-        <List />
-        <List />
-        <Detail />
-        <First />
-      </NanoAppProvider>,
-    );
-
-    // Waits for the views: the first requests of the suite can take a while
-    await waitFor(() => {
-      assert.equal(screen.getAllByText('Beto', { selector: 'li' }).length, 2);
-      assert.equal(screen.getByRole('status').textContent, 'Beto');
-      assert.ok(screen.getByText('first Ana'));
-    });
-    assert.deepEqual([...aRequests].sort(), [
-      'GET /api/backend/users',
-      'GET /api/backend/users/7',
-      'QUERY /api/backend/users',
-    ]);
-  });
-
-  test('a write marks its entity: every read of it asks again, other entities do not', async () => {
-    // Renders the list and the detail, then writes another entity
-    render(
-      <NanoAppProvider>
-        <List />
-        <Detail />
-      </NanoAppProvider>,
-    );
-    await settle();
-    fireEvent.click(screen.getByText('order'));
-    await settle();
-
-    assert.equal(count('GET /api/backend/users'), 1);
-
-    // Renames user 7: the list and the detail read again
-    fireEvent.click(screen.getByText('rename'));
-    await settle();
-
-    assert.equal(screen.getByRole('status').textContent, 'Bruno');
-    assert.ok(screen.getByText('Bruno', { selector: 'li' }));
-    assert.equal(count('PUT /api/backend/users/7'), 1);
-    assert.equal(count('GET /api/backend/users'), 2);
-    assert.equal(count('GET /api/backend/users/7'), 2);
-  });
-
-  test('a read answered after a write is asked again', async () => {
-    // Slows the backend, renders the detail and renames before its read answers
-    iDelay = 100;
-    render(
-      <NanoAppProvider>
-        <Detail />
-      </NanoAppProvider>,
-    );
-    await act(() => new Promise(fnResolve => setTimeout(fnResolve, 10)));
-    fireEvent.click(screen.getByText('rename'));
-    await settle();
-    await settle();
-
-    assert.equal(screen.getByRole('status').textContent, 'Bruno');
-    assert.equal(count('GET /api/backend/users/7'), 2);
-  });
-
-  test('busy counts the requests in progress', async () => {
-    // Slows the backend and renders the detail
-    iDelay = 100;
-    render(
-      <NanoAppProvider>
-        <Detail />
-      </NanoAppProvider>,
-    );
-    await act(() => new Promise(fnResolve => setTimeout(fnResolve, 10)));
-
-    assert.ok(screen.getByText('busy 1'));
-
-    await settle();
-
-    assert.ok(screen.getByText('busy 0'));
-  });
-
-  test('a failed read is not asked again until a write on its entity', async () => {
-    // Reads a path that answers success: false, and renders it again
-    const Fail = createController(() => ({})).bindView(({ stores: { backend } }) => (
-      <p>{`fail ${backend.read('/fail')} busy ${backend.busy}`}</p>
+  test('a read keeps its ApiResponse at its path and query, and the views get it', async () => {
+    // A controller reads the users and the first one; a view gets both
+    const usersController = createController(({ stores: { backend } }) => ({
+      load: () => Promise.all([backend.read('/users'), backend.read('/users', { top: 1 })]),
+    }));
+    const List = usersController.bindView(({ stores: { backend }, load }) => (
+      <div>
+        <ul>
+          {(backend.get('/users')?.result ?? []).map((oUser: NanoObject) => (
+            <li key={oUser.id}>{oUser.name}</li>
+          ))}
+        </ul>
+        <p>{`first ${backend.get('/users', { top: 1 })?.result?.[0]?.name}`}</p>
+        <button onClick={load}>load</button>
+      </div>
     ));
     render(
       <NanoAppProvider>
-        <Fail />
+        <List />
       </NanoAppProvider>,
     );
-    await settle();
-    await settle();
+    fireEvent.click(screen.getByText('load'));
 
-    assert.ok(screen.getByText('fail undefined busy 0'));
-    assert.equal(count('GET /api/backend/fail'), 1);
+    // Waits for the views: the first requests of the suite can take a while
+    await waitFor(() => {
+      assert.ok(screen.getByText('Beto', { selector: 'li' }));
+      assert.ok(screen.getByText('first Ana'));
+    });
+    assert.deepEqual([...aRequests].sort(), ['GET /api/backend/users', 'QUERY /api/backend/users']);
   });
 
-  test('a write returns the ApiResponse, and an answer without JSON rejects', async () => {
-    // Writes on the backend through an api store of the tree
-    let oStores: NanoObject = {};
-    const Grab = createController(({ stores }) => {
-      oStores = stores;
-      return {};
-    }).bindView(() => null);
-    render(
-      <NanoAppProvider>
-        <Grab />
-      </NanoAppProvider>,
-    );
+  test('a read answers from the store until a write on its path', async () => {
+    // Reads the list and a user twice: each is asked once
+    const { backend } = renderStores();
+    await backend.read('/users');
+    await backend.read('/users/7');
+    const oKept = await backend.read('/users');
+    await backend.read('/users/7');
 
-    assert.deepEqual(await oStores.backend.create('/fail', {}), {
-      success: false,
-      message: 'Failed',
-    });
-    await assert.rejects(oStores.backend.delete('/html/1'));
+    assert.deepEqual(oKept.result, aUsers);
+    assert.equal(count('GET /api/backend/users'), 1);
+    assert.equal(count('GET /api/backend/users/7'), 1);
+
+    // Writes `/users/7`: only its own read asks again
+    await backend.update('/users/7', { id: 7, name: 'Bruno' });
+    const oRead = await backend.read('/users/7');
+    await backend.read('/users');
+
+    assert.equal(oRead.result.name, 'Bruno');
+    assert.equal(backend.get('/users/7').result.name, 'Bruno');
+    assert.equal(count('GET /api/backend/users/7'), 2);
+    assert.equal(count('GET /api/backend/users'), 1);
+  });
+
+  test('a read keeps what the store had at its path', async () => {
+    // Sets a value at `/users`, then reads `/users/7` and `/users`
+    const { backend } = renderStores();
+    backend.set('/users/page', 2);
+    await backend.read('/users/7');
+    await backend.read('/users');
+
+    // Reads `/users/7` again from the store
+    await backend.read('/users/7');
+
+    assert.equal(backend.get('/users/page'), 2);
+    assert.equal(backend.get('/users/7').result.name, 'Beto');
+    assert.equal(count('GET /api/backend/users/7'), 1);
+  });
+
+  test('a read answered after a write is asked again', async () => {
+    // Slows the backend, and writes while the read is out
+    iDelay = 100;
+    const { backend } = renderStores();
+    const oRead = backend.read('/users/7');
+    await backend.update('/users/7', { id: 7, name: 'Bruno' });
+    await oRead;
+    await backend.read('/users/7');
+
+    assert.equal(count('GET /api/backend/users/7'), 2);
+  });
+
+  test('busy is true while a request is out', async () => {
+    // Slows the backend and reads
+    iDelay = 100;
+    const { backend } = renderStores();
+    const oRead = backend.read('/users');
+
+    assert.equal(backend.get('/busy'), true);
+
+    await oRead;
+
+    assert.equal(backend.get('/busy'), false);
+  });
+
+  test('a read and a write return the ApiResponse, and an answer without JSON rejects', async () => {
+    // Reads and writes a path that answers success: false, and one that answers HTML
+    const { backend } = renderStores();
+    const oFailed = { success: false, message: 'Failed' };
+
+    assert.deepEqual(await backend.read('/fail'), oFailed);
+    assert.deepEqual(backend.get('/fail'), oFailed);
+    assert.deepEqual(await backend.create('/fail', {}), oFailed);
+    await assert.rejects(backend.read('/html'));
+    await assert.rejects(backend.delete('/html/1'));
   });
 });

@@ -13,12 +13,11 @@ updated: 2026-10-24
 
 ## Today
 
-- A write (`create`, `update`, `delete`) returns its `ApiResponse` also when the backend fails (`success: false`, `message`), and rejects when there is no answer or it is not JSON. The controller that called it can handle both.
-- A read keeps `undefined` when it fails, and its error does not reach the view: a failed request is a rejection nobody catches.
+- A read and a write return a promise of the `ApiResponse` also when the backend fails (`success: false`, `message`), and reject when there is no answer or it is not JSON. The controller that called them handles both, and a read keeps its `ApiResponse` in the store for the views.
 
 ## Scope
 
-- Listed point by point with the maintainer before writing code: where a failed read leaves its error so a view can read it, what the component gives its view (a queue to show and dismiss, the error of one path), and whether writes also go through it.
+- Listed point by point with the maintainer before writing code: what the component gives its view (a queue to show and dismiss, the error of one path), and whether writes also go through it.
 
 ## Out of scope
 
@@ -31,3 +30,4 @@ The test app shows a failed read and a failed write with the component and its o
 ## Log
 
 - 2026-10-24 · projects-thread · Split from the frontend feature when it closed: the maintainer chose a component over a module of the frontend.
+- 2026-10-24 · projects-thread · Reads now return the `ApiResponse` like writes, and keep it in the store.
