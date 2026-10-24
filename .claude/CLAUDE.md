@@ -24,6 +24,7 @@ New work is split into modules that are reviewed one at a time (for stores: load
 2. When a point hides a decision (a default, an edge case, an error, where the code lives), give two or three options with their cost and mark one as the recommendation.
 3. The maintainer answers point by point. Adjust the points and list again only what changed.
 4. Implement the module only when every point has the maintainer's OK. Then show the diff; the module's pull request goes to the feature branch, and the next module starts after it is merged.
+5. The tests, the README of the package and the feature file in `features/` follow the final decisions, not the first proposal: when a point changes during the review, update them in the same module.
 
 Reuse and extend what exists (`core/` loaders, validators, utils) before writing new code, and keep each module to the smallest code that does the job.
 
