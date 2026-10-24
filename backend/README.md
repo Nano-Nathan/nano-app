@@ -4,11 +4,11 @@
 
 Preconfigured Express server with **file-convention routes** and **plugins**: it mounts the base middlewares, discovers your routes, formats every error as JSON, and groups extra endpoints in plugins.
 
-- Node ≥ 20, ESM.
+- Node ≥ 22, ESM.
 - Optional PostgreSQL layer through your generated Prisma client. Disabled by default: without it no database code is loaded.
 
 ```bash
-npm install @nano-app/backend
+pnpm add @nano-app/backend
 ```
 
 ## Quick start
@@ -24,17 +24,17 @@ src/
 
 ```ts
 // src/app.ts
-import { createNanoApp } from "@nano-app/backend";
+import { createNanoApp } from '@nano-app/backend';
 
 createNanoApp({ port: 3000 });
 ```
 
 ```ts
 // src/routes/health.route.ts
-import { createRoute } from "@nano-app/backend";
+import { createRoute } from '@nano-app/backend';
 
 export default createRoute({
-  GET: async () => ({ success: true, result: { status: "ok" } }),
+  GET: async () => ({ success: true, result: { status: 'ok' } }),
 });
 ```
 
@@ -52,9 +52,9 @@ Each `*.route.ts` under `mainPlugin.routesDir` default-exports an object with th
 
 ```ts
 export default createRoute({
-  expression: "/:id",                                  // → /users/:id
+  expression: '/:id',                                  // → /users/:id
   GET:    async req => ({ success: true, result: { id: req.params.id } }),
-  DELETE: async req => ({ success: true, message: "Deleted" }),
+  DELETE: async req => ({ success: true, message: 'Deleted' }),
 });
 ```
 
@@ -89,9 +89,9 @@ Every option is optional.
 
 ```ts
 createNanoApp({
-  settings: { "trust proxy": 1 },
+  settings: { 'trust proxy': 1 },
   packages: {
-    cors: { origin: "https://my-app.com" },
+    cors: { origin: 'https://my-app.com' },
     helmet: false,
     rateLimit: { windowMs: 60_000, max: 120 },
   },
@@ -103,7 +103,7 @@ createNanoApp({
 Off until enabled: at startup nano-app generates the Prisma client of your schema, checks that its tables can be read and passes it to your handlers as their second parameter. **It never modifies your database**: applying the schema (`prisma db push`, `prisma migrate dev`, `prisma migrate deploy`) is up to you, with Prisma.
 
 ```bash
-npm install prisma @prisma/client @prisma/adapter-pg pg   # prisma too: the startup generates the client
+pnpm add prisma @prisma/client @prisma/adapter-pg pg   # prisma too: the startup generates the client
 ```
 
 ```prisma
@@ -130,8 +130,8 @@ createNanoApp({ mainPlugin: { database: { enabled: true } } });
 
 ```ts
 // src/routes/users.route.ts
-import { createRoute } from "@nano-app/backend";
-import type { PrismaClient } from "../../.nano-app/prisma-clients/app/generated/client";
+import { createRoute } from '@nano-app/backend';
+import type { PrismaClient } from '../../.nano-app/prisma-clients/app/generated/client';
 
 export default createRoute<PrismaClient>({
   GET: async (_req, { db }) => ({ success: true, result: await db!.user.findMany() }),
@@ -157,12 +157,12 @@ export default createRoute<PrismaClient>({
 Users, sign-in and sessions with [Better Auth](https://www.better-auth.com), on your database. Off until `packages.betterAuth` gets its options (everything but `database`: nano-app passes your Prisma client).
 
 ```bash
-npm install better-auth
+pnpm add better-auth
 ```
 
 ```ts
 // src/auth.ts: the options, and an instance only for the Better Auth CLI
-import { betterAuth, type BetterAuthOptions } from "better-auth";
+import { betterAuth, type BetterAuthOptions } from 'better-auth';
 
 export const authOptions = { emailAndPassword: { enabled: true } } satisfies BetterAuthOptions;
 export const auth = betterAuth(authOptions);
@@ -170,8 +170,8 @@ export const auth = betterAuth(authOptions);
 
 ```ts
 // src/app.ts
-import { createNanoApp } from "@nano-app/backend";
-import { authOptions } from "./auth";
+import { createNanoApp } from '@nano-app/backend';
+import { authOptions } from './auth';
 
 createNanoApp({
   packages: { betterAuth: authOptions },
@@ -203,20 +203,20 @@ A plugin is a group of endpoints mounted under a base path. Your routes are moun
 
 ```ts
 // src/plugins/hello/index.ts
-import { createPlugin } from "@nano-app/backend";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { createPlugin } from '@nano-app/backend';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 export default createPlugin((options?: { basePath?: string }) => ({
-  name: "hello",
-  basePath: options?.basePath ?? "/hello",
-  routesDir: resolve(dirname(fileURLToPath(import.meta.url)), "routes"),
+  name: 'hello',
+  basePath: options?.basePath ?? '/hello',
+  routesDir: resolve(dirname(fileURLToPath(import.meta.url)), 'routes'),
 }));
 ```
 
 ```ts
 // src/plugins/hello/routes/index.route.ts  →  /hello
-import { createRoute } from "@nano-app/backend";
+import { createRoute } from '@nano-app/backend';
 
 export default createRoute({
   GET: async () => ({ success: true, result: { ok: true } }),
@@ -225,8 +225,8 @@ export default createRoute({
 
 ```ts
 // src/app.ts
-import { createNanoApp } from "@nano-app/backend";
-import hello from "./plugins/hello";
+import { createNanoApp } from '@nano-app/backend';
+import hello from './plugins/hello';
 
 createNanoApp({ plugins: [hello()] });
 ```
@@ -245,12 +245,12 @@ Two levels. Only the plugin's receives the Express app, so nothing app-wide depe
 
 ```ts
 export default createPlugin((options?: { publicPaths?: string[] }) => ({
-  name: "guard",
-  routesDir: resolve(dirname(fileURLToPath(import.meta.url)), "routes"),
+  name: 'guard',
+  routesDir: resolve(dirname(fileURLToPath(import.meta.url)), 'routes'),
   options: { publicPaths: options?.publicPaths ?? [] },
   callbacks: {
     onMount: async (app, { publicPaths }) => {
-      app.use((req, _res, next) => next(publicPaths.includes(req.path) ? undefined : { status: 401, message: "Unauthorized" }));
+      app.use((req, _res, next) => next(publicPaths.includes(req.path) ? undefined : { status: 401, message: 'Unauthorized' }));
     },
   },
 }));
@@ -267,9 +267,9 @@ A plugin with a database follows the same rules, with its client in `.nano-app/p
 The framework mounts the 404 and the error handler: an unmatched request becomes a `404`, and anything a handler throws becomes an `ApiResponse`.
 
 ```ts
-throw { status: 409, message: "Already exists" };   // → 409 { success: false, warning: false, message: "Already exists" }
-throw "Field name is required";                     // → 400 { success: false, message: "Field name is required" }
-throw new Error("boom");                            // → 500, logged to stderr
+throw { status: 409, message: 'Already exists' };   // → 409 { success: false, warning: false, message: "Already exists" }
+throw 'Field name is required';                     // → 400 { success: false, message: "Field name is required" }
+throw new Error('boom');                            // → 500, logged to stderr
 GET /unknown                                        // → 404 { success: false, warning: false, message: "/unknown not found" }
 ```
 
@@ -282,7 +282,7 @@ GET /unknown                                        // → 404 { success: false,
 | `createPlugin(creator)` | Types a plugin factory and its options. |
 | `createPluginCallbacks(callbacks)` | Types the callbacks of a plugin (`createPluginCallbacks<PrismaClient>` types `db`), e.g. to keep them in their own file. |
 
-Also exported: the configuration types (`NanoAppConfig`, `PackagesConfig`, `PluginConfig`, `PluginStage`, `MainPluginConfig`, `DatabaseConfig`), the Express `Request` type and the HTTP contract (`ApiResponse`, `ApiPromise`, `QueryParams`, `RouteEntry`, `Handler`, `Handlers`, `NanoObject`) and the callback types (`Params`, `Callbacks`, `PluginCallbacks`).
+Also exported: the `NanoApp` class that `createNanoApp` returns, the configuration types (`NanoAppConfig`, `PackagesConfig`, `PluginConfig`, `PluginStage`, `MainPluginConfig`, `DatabaseConfig`), the Express `Request` type and the HTTP contract (`ApiResponse`, `ApiPromise`, `QueryParams`, `RouteEntry`, `Handler`, `Handlers`, `NanoObject`) and the callback types (`Params`, `Callbacks`, `PluginCallbacks`).
 
 ## Development
 
