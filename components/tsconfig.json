@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "jsx": "react-jsx",
+    "declaration": true,
+    "outDir": "build",
+    "rootDir": "..",
+    "strict": true,
+    "moduleResolution": "Bundler",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@nano-app/frontend": ["../frontend/src/index.ts"],
+      "@nano-app/core": ["../core/index.ts"],
+      "@nano-app/core/*": ["../core/*"]
+    }
+  },
+  "include": ["*/**/*.ts", "tests/*.tsx", "../frontend/src"],
+  "exclude": ["build", "node_modules"]
+}

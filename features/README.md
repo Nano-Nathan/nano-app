@@ -5,7 +5,7 @@ Planned work on this repository, one file per feature. A file says what the feat
 | Feature | Done when | Depends on |
 |---|---|---|
 | [frontend](frontend.md) | The test app reads and writes against the backend, and the frontend is released | — |
-| [frontend-components](frontend-components.md) | A default component is released and the test app renders it with its own view | frontend |
+| [frontend-components](frontend-components.md) | A default component of `@nano-app/components` is released and the test app renders it with its own view | frontend |
 | [typed-paths](typed-paths.md) | A mistyped store path or injected resource does not compile | frontend |
 | [example-app](example-app.md) | An app built on the published packages builds its images | frontend, typed-paths |
 | [migrations](migrations.md) | `migrate` applies the app's and its plugins' migrations, with history | — |

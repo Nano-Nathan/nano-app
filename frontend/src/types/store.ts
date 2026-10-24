@@ -15,8 +15,8 @@ export type StoreFiles = NanoObject<{
 // any: each store is a `Store` or an `ApiStore` by its file, typed per name in typed-paths
 export type Stores = NanoObject<any> & { [APP_NAME]: Store };
 
-/** State of an `ApiStore`: requests in progress, results by path and query, versions by entity */
-export type ApiState = {
+/** What an `ApiStore` read: requests in progress, results by path and query, versions by entity */
+export type ApiCache = {
   iBusy: number;
   oResults: NanoObject<unknown>;
   oVersions: NanoObject<number>;

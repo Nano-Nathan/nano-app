@@ -1,6 +1,6 @@
 # nano-app
 
-pnpm monorepo: `core/` (private, inlined into the backend), `backend/` (`@nano-app/backend`), `plugins/` (`@nano-app/plugins`), `frontend/` (`@nano-app/frontend`). Read the README of the package you touch before changing it.
+pnpm monorepo: `core/` (private, inlined into the backend), `backend/` (`@nano-app/backend`), `plugins/` (`@nano-app/plugins`), `frontend/` (`@nano-app/frontend`), `components/` (`@nano-app/components`). Read the README of the package you touch before changing it.
 
 ## Workflow
 

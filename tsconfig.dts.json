@@ -12,10 +12,11 @@
     "skipLibCheck": true,
     "paths": {
       "@nano-app/backend": ["./backend/src/index.ts"],
+      "@nano-app/frontend": ["./frontend/src/index.ts"],
       "@nano-app/core": ["./core/index.ts"],
       "@nano-app/core/*": ["./core/*"]
     }
   },
-  "include": ["backend/src", "backend/bin", "backend/plugins", "core", "plugins/*/**/*.ts", "frontend/src"],
-  "exclude": ["**/node_modules", "**/build", "plugins/tests"]
+  "include": ["backend/src", "backend/bin", "backend/plugins", "core", "plugins/*/**/*.ts", "frontend/src", "components/*/**/*.ts"],
+  "exclude": ["**/node_modules", "**/build", "plugins/tests", "components/tests"]
 }

@@ -50,6 +50,8 @@ Each published package has its own version, its own tags and its own publish wor
 |---|---|---|---|
 | `@nano-app/backend` | `backend/`, `core/` | `backend-vX.Y.Z` | `publish-backend.yml` |
 | `@nano-app/plugins` | `plugins/` | `plugins-vX.Y.Z` | `publish-plugins.yml` |
+| `@nano-app/frontend` | `frontend/`, `core/` | `frontend-vX.Y.Z` | `publish-frontend.yml` |
+| `@nano-app/components` | `components/` | `components-vX.Y.Z` | `publish-components.yml` |
 
 [semantic-release](https://github.com/semantic-release/semantic-release) reads the commits since the package's last tag and publishes it only when one of them is a [Conventional Commit](https://www.conventionalcommits.org/) that asks for it. It reads every commit since that tag, also the ones that touched only another package:
 
