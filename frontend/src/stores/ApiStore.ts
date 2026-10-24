@@ -7,6 +7,7 @@ import type { NanoObject } from '@nano-app/core/types/objects';
 export default class ApiStore extends Store {
   private sName: string;
   private oVersions: NanoObject<number> = {};
+  private oKept: NanoObject<number> = {};
   private iCount = 0;
 
   /** Store of the backend `API_<NAME>_URL`, with the initial data of its file */
@@ -22,21 +23,24 @@ export default class ApiStore extends Store {
     return super.get(ApiStore.key(sPath, oQuery));
   }
 
-  /** `ApiResponse` of a path and query, from the store while its path is at version 1 */
+  /** `ApiResponse` of a path and query, from the store while it was kept at its path's version */
   public async read(sPath: string, oQuery?: QueryParams): Promise<ApiResponse> {
     // Asks nothing on the server
     if (IS_SERVER) return {};
 
-    // Returns the kept answer while its path is at version 1
-    const oKept = this.get(sPath, oQuery);
-    if (oKept && this.oVersions[sPath] === 1) return oKept;
+    // Returns the kept answer while it was kept at the current version of its path
+    const sKey = ApiStore.key(sPath, oQuery);
+    const iVersion = this.oVersions[sPath] ?? 0;
+    if (this.oKept[sKey] === iVersion) return this.get(sPath, oQuery);
 
-    // Sets the path to version 1 and asks the backend
-    this.oVersions[sPath] = 1;
+    // Asks the backend
     const oInit = oQuery ? { method: 'QUERY', body: JSON.stringify(oQuery) } : { method: 'GET' };
     const oResponse = await this.request(sPath, oInit);
 
-    // Keeps the answer at its path and query
+    // Returns the answer without keeping it when a write changed its path meanwhile
+    if ((this.oVersions[sPath] ?? 0) !== iVersion) return oResponse;
+
+    // Keeps the answer at its path and query, with the version of its path
     this.keep(oResponse, sPath, oQuery);
     return oResponse;
   }
@@ -46,7 +50,7 @@ export default class ApiStore extends Store {
     return this.write('POST', sPath, oBody);
   }
 
-  /** `PUT <path>`, keeping a successful answer at its path, which stays at version 1 */
+  /** `PUT <path>`, keeping a successful answer at its path with its new version */
   public async update(sPath: string, oBody: unknown): Promise<ApiResponse> {
     // Sends the write
     const oResponse = await this.write('PUT', sPath, oBody);
@@ -54,9 +58,8 @@ export default class ApiStore extends Store {
     // Returns a failed answer as is
     if (!oResponse.success) return oResponse;
 
-    // Keeps the answer at its path and sets the path to version 1
+    // Keeps the answer at its path
     this.keep(oResponse, sPath);
-    this.oVersions[sPath] = 1;
     return oResponse;
   }
 
@@ -65,11 +68,13 @@ export default class ApiStore extends Store {
     return this.write('DELETE', sPath);
   }
 
-  /** Sends a write and sets its path and its parents to version 0 */
+  /** Sends a write and raises the version of its path and its parents */
   private async write(sMethod: string, sPath: string, oBody?: unknown): Promise<ApiResponse> {
-    // Sends it, and sets the path and its parents to version 0 once the answer is back
+    // Sends it, and raises the versions once the answer is back
     const oResponse = await this.request(sPath, { method: sMethod, body: JSON.stringify(oBody) });
-    for (const sParent of ApiStore.parents(sPath)) this.oVersions[sParent] = 0;
+    for (const sParent of ApiStore.parents(sPath)) {
+      this.oVersions[sParent] = (this.oVersions[sParent] ?? 0) + 1;
+    }
     return oResponse;
   }
 
@@ -92,10 +97,12 @@ export default class ApiStore extends Store {
     }
   }
 
-  /** Keeps an answer at its path and query, over what the store had there */
+  /** Keeps an answer at its path and query, over what was there, with its path's version */
   private keep(oResponse: ApiResponse, sPath: string, oQuery?: QueryParams): void {
-    // Sets the answer merged over the value at its key
-    this.set(ApiStore.key(sPath, oQuery), { ...this.get(sPath, oQuery), ...oResponse });
+    // Sets the answer merged over the value at its key, and the version it was kept with
+    const sKey = ApiStore.key(sPath, oQuery);
+    this.set(sKey, { ...this.get(sPath, oQuery), ...oResponse });
+    this.oKept[sKey] = this.oVersions[sPath] ?? 0;
   }
 
   /** A path and each of its parents */

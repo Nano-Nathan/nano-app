@@ -160,6 +160,19 @@ describe('api store', () => {
     assert.equal(count('GET /api/backend/users'), 2);
   });
 
+  test('a read answered after an update does not replace its answer', async () => {
+    // Slows the backend, and renames while the read is out
+    iDelay = 100;
+    const { backend } = renderStores();
+    const oRead = backend.read('/users/7');
+    await backend.update('/users/7', { id: 7, name: 'Bruno' });
+    await oRead;
+    await backend.read('/users/7');
+
+    assert.equal(backend.get('/users/7').result.name, 'Bruno');
+    assert.equal(count('GET /api/backend/users/7'), 1);
+  });
+
   test('a failed update keeps nothing, and its path asks again', async () => {
     // Reads a path that fails, and updates it
     const { backend } = renderStores();
