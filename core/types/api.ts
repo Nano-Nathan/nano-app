@@ -13,7 +13,7 @@ export type ApiResponse<T = any> = {
 /** Promise of an API response, what a handler returns */
 export type ApiPromise<T = any> = Promise<ApiResponse<T>>;
 
-/** Query parameters sent in the `query` header (JSON). */
+/** Query parameters, sent as the JSON body of a `QUERY` request */
 export type QueryParams = {
   skip?: number;
   top?: number;
