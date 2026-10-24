@@ -1,8 +1,8 @@
 ---
 status: todo
 owner: null
-depends_on: [frontend, typed-paths]
-updated: 2026-10-23
+depends_on: [typed-paths]
+updated: 2026-10-24
 ---
 
 # Example app
@@ -19,7 +19,7 @@ An app built on the published `@nano-app/*` packages, as the reference for the a
 
 ## Out of scope
 
-The frontend release workflow ([frontend](frontend.md), module 5). The `create-nano-app` template ([create-nano-app](create-nano-app.md)).
+The frontend release workflow (`publish-frontend.yml`, already on `main`). The `create-nano-app` template ([create-nano-app](create-nano-app.md)).
 
 ## Done when
 

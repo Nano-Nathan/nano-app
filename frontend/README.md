@@ -1,6 +1,6 @@
 # @nano-app/frontend
 
-Frontend of [nano-app](https://github.com/Nano-Nathan/nano-app) for Next.js apps: UI state in stores, and controllers whose methods the views use. Work in progress.
+Frontend of [nano-app](https://github.com/Nano-Nathan/nano-app) for Next.js apps: UI state in stores, and controllers whose methods the views use.
 
 ## Quick start
 
@@ -125,7 +125,8 @@ export default usersController.bindView(({ stores: { backend }, rename }) => (
 - The entity is the first segment of the path (`/users/7` → `/users`). `create` (`POST <path>`), `update` (`PUT <path>`) and `delete` (`DELETE <path>`) return the `ApiResponse`, and when it comes back every read of the entity asks again the next time it renders, whatever its query. Other entities keep what they have.
 - On the server (the first HTML that Next renders) `read` asks nothing and returns `undefined`: the browser asks when it hydrates.
 - `busy` counts the requests in progress (`backend.busy ? 'Loading…' : …`).
-- A read keeps the `result` of its answer, `undefined` when it failed, and is not asked again until a write on its entity. A request that fails (no answer, or not JSON) rejects: the errors module will show it.
+- A read keeps the `result` of its answer, `undefined` when it failed, and is not asked again until a write on its entity. Its error does not reach the view yet.
+- A write returns the `ApiResponse` also when the backend fails (`success: false`, `message`), and rejects when there is no answer or it is not JSON: the controller that called it handles both (`backend.create(…).then(oRes => oRes.success || …)`).
 - What another user changes is seen after a write on the same entity.
 - Every path and query read stays kept while the page is open.
 
@@ -188,8 +189,16 @@ pnpm --filter nano-frontend-test-app build
 pnpm --filter nano-frontend-test-app start   # http://localhost:3100
 ```
 
-The `Users` component reads and writes `/users` of the `backend` store: point it at any backend that answers `GET`, `POST`, `PUT` and `DELETE` on `/users` with an `ApiResponse`, and give it the key its store declares:
+The `Users` component reads and writes `/users` of the `backend` store, and `UsersList` pages and sorts it with `list` of [`@nano-app/components`](../components): point it at any backend that answers `GET`, `QUERY` (`skip`, `top`, `orderby`), `POST`, `PUT` and `DELETE` on `/users` with an `ApiResponse`, and give it the key its store declares:
 
 ```bash
 API_BACKEND_URL=http://localhost:3000 API_BACKEND_KEY_HEADER=dev pnpm --filter nano-frontend-test-app start
 ```
+
+## Design
+
+- The browser never talks to the backend: only the Next server does, and the backend URL never reaches the client bundle.
+- The frontend has no credential of its own and does not depend on any backend plugin. What the backend exposes and how it is protected is decided in the backend.
+- No `glob` or `jiti` in the client bundle, and no generated files in `node_modules`: build data goes through Next's `env`.
+- Rejected, not coming back: `useStore`, `createComponent`, `StoreManager`, controllers as classes, a `set` guard during render, a static (server) mode of the creator.
+- Not yet, until real controllers ask for it: `onInit`/`onExit` in the controller, inheritance between controllers, a debounce of the framework, dropping old reads, reading what other users change, `PATCH`, the React Compiler.

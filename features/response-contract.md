@@ -1,8 +1,8 @@
 ---
 status: todo
 owner: null
-depends_on: [frontend]
-updated: 2026-10-23
+depends_on: []
+updated: 2026-10-24
 ---
 
 # Response contract

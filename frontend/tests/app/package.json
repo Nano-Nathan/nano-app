@@ -8,6 +8,7 @@
     "start": "next start -p 3100"
   },
   "dependencies": {
+    "@nano-app/components": "workspace:*",
     "@nano-app/frontend": "workspace:*",
     "next": "^16.4.2",
     "react": "^19.3.1",
