@@ -1,13 +1,9 @@
-import { runInAction } from 'mobx';
 import { IS_SERVER } from '@nano-app/core/const';
 import Store from './Store';
 import type { ApiResponse, QueryParams } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
 
-/**
- * Backend of an `api` store, through its proxy (`/api/<name>/...`). Each read keeps its
- * `ApiResponse` in the store at its path and query, so the views get it with `get`.
- */
+/** Backend of an `api` store through its proxy; each read keeps its `ApiResponse` in the store */
 export default class ApiStore extends Store {
   private sName: string;
   private oVersions: NanoObject<number> = {};
@@ -19,30 +15,28 @@ export default class ApiStore extends Store {
     this.sName = sName;
   }
 
-  /** `ApiResponse` a read kept for that path and query, or the value at a path of the state */
+  /** Value at a path, with the query of the read that kept it */
   // any: the value is the consumer's, unknown to the framework
   public get(sPath: string, oQuery?: QueryParams): any {
-    // A read is kept as one key (`/users/7`), apart from the levels of the state
-    return this.oState[ApiStore.key(sPath, oQuery)] ?? super.get(sPath);
+    return super.get(ApiStore.key(sPath, oQuery));
   }
 
-  /** `ApiResponse` of a path and query: from the store while its entity did not change */
-  public async read(sPath: string, oQuery?: QueryParams): Promise<ApiResponse | undefined> {
-    // Asks nothing on the server: the proxy is reached from the browser
-    if (IS_SERVER) return;
+  /** `ApiResponse` of a path and query, from the store while its path is at version 1 */
+  public async read(sPath: string, oQuery?: QueryParams): Promise<ApiResponse> {
+    // Asks nothing on the server
+    if (IS_SERVER) return {};
 
-    // Answers from the store when it kept this read and its entity was not written since
-    const sEntity = ApiStore.entity(sPath);
+    // Returns the kept answer while its path is at version 1
     const oKept = this.get(sPath, oQuery);
-    if (oKept && this.oVersions[sEntity] === 1) return oKept;
+    if (oKept && this.oVersions[sPath] === 1) return oKept;
 
-    // Marks the entity as read when the request leaves: a write while it is out marks it again
-    this.oVersions[sEntity] = 1;
+    // Sets the path to version 1 and asks the backend
+    this.oVersions[sPath] = 1;
     const oInit = oQuery ? { method: 'QUERY', body: JSON.stringify(oQuery) } : { method: 'GET' };
     const oResponse = await this.request(sPath, oInit);
 
-    // Keeps the answer as one key of the state: its path and query
-    runInAction(() => (this.oState[ApiStore.key(sPath, oQuery)] = oResponse));
+    // Keeps the answer at its path and query
+    this.set(ApiStore.key(sPath, oQuery), oResponse);
     return oResponse;
   }
 
@@ -61,17 +55,17 @@ export default class ApiStore extends Store {
     return this.write('DELETE', sPath);
   }
 
-  /** Sends a write and marks its entity as changed, so its next reads ask the backend */
+  /** Sends a write and sets its path to version 0 */
   private async write(sMethod: string, sPath: string, oBody?: unknown): Promise<ApiResponse> {
-    // Sends it, and marks its entity once the answer is back
+    // Sends it, and sets the path to version 0 once the answer is back
     const oResponse = await this.request(sPath, { method: sMethod, body: JSON.stringify(oBody) });
-    this.oVersions[ApiStore.entity(sPath)] = 0;
+    this.oVersions[sPath] = 0;
     return oResponse;
   }
 
   /** Sends a request to the proxy and returns its JSON answer, keeping `/busy` while it is out */
   private async request(sPath: string, oInit: RequestInit): Promise<ApiResponse> {
-    // Counts the request and marks the store busy
+    // Counts the request and sets the store busy
     this.iCount++;
     this.set('/busy', true);
     try {
@@ -82,19 +76,14 @@ export default class ApiStore extends Store {
       });
       return await oRes.json();
     } finally {
-      // Stops being busy when no request is left
+      // Sets the store not busy when no request is left
       this.iCount--;
       this.set('/busy', this.iCount > 0);
     }
   }
 
-  /** Key of a read in the store: its path, with its query when it has one */
+  /** Key of a read: its path, with its query when it has one */
   private static key(sPath: string, oQuery?: QueryParams): string {
     return oQuery ? `${sPath}?${JSON.stringify(oQuery)}` : sPath;
-  }
-
-  /** Entity of a path: its first segment (`/users/7` → `/users`) */
-  private static entity(sPath: string): string {
-    return `/${sPath.split('/').filter(Boolean)[0] ?? ''}`;
   }
 }

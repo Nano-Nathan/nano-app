@@ -109,7 +109,7 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 
 ### Comments and format
 
-- `/** */` above declarations, `//` inside bodies, never `/* */`. A one-line JSDoc on everything exported, and a short comment before each step of a function, even an obvious one (`// Checks that the default export is an object`). English.
+- `/** */` above declarations, `//` inside bodies, never `/* */`. A one-line JSDoc on everything exported, and a short comment before each step of a function, even an obvious one (`// Checks that the default export is an object`). A comment says briefly what the code does: no examples and no reasons why. English.
 - One line when it reads easily (`if (!oUser) return fnNext({ status: 401 });`). Vertical when it does not: nested objects, calls with several arguments, destructuring.
 - Prettier (`.prettierrc.json`): single quotes (backticks only to interpolate; never `+` to join strings, `.join('\n')` for lines), semicolons, 2 spaces, 100 columns, arrow functions without parentheses on one parameter (`oRoute => oRoute.path`). `pnpm format` writes, CI checks.
 

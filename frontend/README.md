@@ -105,8 +105,8 @@ An `api` store reads and writes its backend. The controllers read and write; the
 // src/controllers/users.controller.ts
 export default createController(({ stores: { backend } }) => ({
   load: () => backend.read('/users'),
-  rename: async (iId: number, sName: string) => {
-    await backend.update(`/users/${iId}`, { name: sName });
+  add: async (sName: string) => {
+    await backend.create('/users', { name: sName });
     return backend.read('/users');
   },
 }));
@@ -114,15 +114,15 @@ export default createController(({ stores: { backend } }) => ({
 
 ```tsx
 // src/components/Users.tsx
-export default usersController.bindView(({ stores: { backend }, load, rename }) => {
+export default usersController.bindView(({ stores: { backend }, load, add }) => {
   useEffect(() => {
     load();
   }, []);
 
   return (
-    <ul>
+    <ul onClick={() => add('Bruno')}>
       {(backend.get('/users')?.result ?? []).map(oUser => (
-        <li key={oUser.id} onClick={() => rename(oUser.id, 'Bruno')}>{oUser.name}</li>
+        <li key={oUser.id}>{oUser.name}</li>
       ))}
     </ul>
   );
@@ -130,12 +130,12 @@ export default usersController.bindView(({ stores: { backend }, load, rename }) 
 ```
 
 - `read(path, query?)` returns a promise of the `ApiResponse` and keeps it in the store for that path and query. The view gets it with `get(path, query?)`, and renders again when a read keeps a new one.
-- A read answers from the store while its entity was not written since; otherwise it asks the backend (`GET`, or `QUERY` with the query as JSON body). The entity is the first segment of the path (`/users/7` → `/users`).
-- `create` (`POST <path>`), `update` (`PUT <path>`) and `delete` (`DELETE <path>`) return a promise of the `ApiResponse` and mark their entity, so its next reads ask the backend, whatever their query. Other entities keep what they have.
+- A read answers from the store while its path is at version 1; otherwise it asks the backend (`GET`, or `QUERY` with the query as JSON body) and sets the path to version 1.
+- `create` (`POST <path>`), `update` (`PUT <path>`) and `delete` (`DELETE <path>`) return a promise of the `ApiResponse` and set their path to version 0, so its next reads ask the backend, whatever their query. Other paths keep what they have (`update('/users/7')` does not change `/users`).
 - A read or a write resolves with the `ApiResponse` also when the backend fails (`success: false`, `message`), and rejects when there is no answer or it is not JSON: the controller that called it handles both.
-- On the server (the first HTML that Next renders) `read` asks nothing and resolves with `undefined`.
+- On the server (the first HTML that Next renders) `read` asks nothing and resolves with an empty `ApiResponse` (`{}`).
 - `/busy` is `true` while a request of the store is out (`backend.get('/busy') ? 'Loading…' : …`).
-- What another user changes is seen after a write on the same entity.
+- What another user changes is seen after a write on the same path.
 
 To ask only when the user stops typing, keep the text in the `app` store and read after a pause:
 

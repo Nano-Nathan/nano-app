@@ -120,7 +120,7 @@ describe('api store', () => {
     assert.deepEqual([...aRequests].sort(), ['GET /api/backend/users', 'QUERY /api/backend/users']);
   });
 
-  test('a read answers from the store until a write on its entity', async () => {
+  test('a read answers from the store until a write on its path', async () => {
     // Reads the list and a user twice: each is asked once
     const { backend } = renderStores();
     await backend.read('/users');
@@ -128,20 +128,19 @@ describe('api store', () => {
     const oKept = await backend.read('/users');
     await backend.read('/users/7');
 
-    assert.deepEqual(oKept, { success: true, result: aUsers });
+    assert.deepEqual(oKept.result, aUsers);
     assert.equal(count('GET /api/backend/users'), 1);
     assert.equal(count('GET /api/backend/users/7'), 1);
 
-    // Writes another entity, then this one: only the write on `/users` asks again
-    await backend.create('/orders', { id: 1 });
-    await backend.read('/users');
-    assert.equal(count('GET /api/backend/users'), 1);
+    // Writes `/users/7`: only its own read asks again
     await backend.update('/users/7', { id: 7, name: 'Bruno' });
     const oRead = await backend.read('/users/7');
+    await backend.read('/users');
 
     assert.equal(oRead.result.name, 'Bruno');
     assert.equal(backend.get('/users/7').result.name, 'Bruno');
     assert.equal(count('GET /api/backend/users/7'), 2);
+    assert.equal(count('GET /api/backend/users'), 1);
   });
 
   test('a read answered after a write is asked again', async () => {

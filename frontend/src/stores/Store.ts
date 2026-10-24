@@ -3,7 +3,7 @@ import type { NanoObject } from '@nano-app/core/types/objects';
 
 /** State of one store, read and written by path (`/drawer/isOpen`) */
 export default class Store {
-  protected oState: NanoObject;
+  private oState: NanoObject;
 
   /** Makes the store's initial data observable, so reads are tracked and writes notify them */
   constructor(oData: NanoObject = {}) {
