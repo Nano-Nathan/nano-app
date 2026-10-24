@@ -2,7 +2,7 @@
 status: in-progress
 owner: null
 depends_on: []
-updated: 2026-10-23
+updated: 2026-10-24
 ---
 
 # Frontend
@@ -26,13 +26,13 @@ Rejected during review, do not bring back: `useStore`, `createComponent`, `Store
 
 ## Scope
 
-One module per point, in this order: errors, auth, 4, 5. Each one is listed point by point with the maintainer before writing code. The design is new: do not start from the first milestone of the old copy (`nano-app.dev`).
+One module per point, in this order: 5, errors, auth, 4. Each one is listed point by point with the maintainer before writing code. The design is new: do not start from the first milestone of the old copy (`nano-app.dev`).
 
 - **Errors of the `api` stores.** How the front shows a failed read or write (a queue for every store was discussed: `{ message, api, read }`). Listed point by point before code.
 - **Later, when real controllers ask for it:** `onInit`/`onExit` in the controller, inheritance between controllers, a framework debounce, dropping old reads, reading what other users change (by time, or with [sse](sse.md)), `PATCH`.
 - **Auth in the frontend.** With Better Auth on (#34, `packages.betterAuth` of the backend): the session in a store, a login client and protected routes; without it, nothing. Through the proxy like every request. Listed point by point after module 3.
 - **4. Image contract of the frontend.** Listens on `:80`, configured only by env at runtime, no `NEXT_PUBLIC_*` that depends on the environment. Written next to the backend's ([image-contract](image-contract.md)).
-- **5. Release.** `publish-frontend.yml` like `publish-plugins.yml`: `frontend/.releaserc.json` with `tagFormat: "frontend-v${version}"`, `paths: [frontend/**]`, a `test-frontend` job on every pull request (tests only when the diff touches `frontend/`) added as a required check, and an npm Trusted Publisher pointing to the workflow. npm already has `@nano-app/frontend` up to 0.3.6 (from `nano-app.dev`): the first release from here must be higher. Then the pull request from `feat/frontend` to `main`, whose title decides the release.
+- **5. Release** (in `feat/frontend--release`). `publish-frontend.yml` like `publish-plugins.yml`, with `paths: [frontend/**, core/**]` (core is inlined, as in the backend): a `test-frontend` job on every pull request (install, format, tests and build of the package, only when the diff touches `frontend/` or `core/`) and `release` on a push to `main`. `frontend/.releaserc.json` with `tagFormat: "frontend-v${version}"` and breaking as minor. npm already has `@nano-app/frontend` up to 0.3.6 (from `nano-app.dev`): a tag `frontend-v0.3.6` on `b1ee292` (`main`) makes the first `feat` release 0.4.0. By hand, by the maintainer: the tag, `test-frontend` as a required check of `main`, and the npm Trusted Publisher. Then the pull request from `feat/frontend` to `main`, titled `feat(frontend): …`: it also releases the backend (0.10.0), since `core/` changed. The other modules go on in this feature after the release.
 
 ## Design rules
 
@@ -63,3 +63,4 @@ The test app starts and reads and writes data against the backend, its image mee
 - 2026-10-23 · projects-thread · Review of #38: `ProxyEnv` removed, the proxy reads the env on each request.
 - 2026-10-23 · projects-thread · Module 3 approved and implemented in `feat/frontend--api-store`: versions per entity instead of reading again after a write, `read` instead of `get`, no `message` in the store (errors go to their own module), no `onInit`/`onExit` (reads work in the render). Our own code over TanStack Query: same design, no dependency, MobX-native.
 - 2026-10-23 · projects-thread · Review of #40: `ApiStore` simplified. No JSON check (a non-JSON answer rejects by itself), no "keep the old data" on a failed read, one `oRead` with the version each key left with instead of a pending Set, failed requests not caught until the errors module, `update`/`delete` take the full path. `read` asks nothing on the server (the proxy is only reachable from the browser; SSR with data would be its own module). Whole PR checked against CLAUDE.md (comments per step, 100 columns, prefixes).
+- 2026-10-24 · projects-thread · Module 5 moved first, approved with the recommendations: release 0.4.0 from a `frontend-v0.3.6` tag, the backend releases with it. `main` merged (#39). Default components proposed as their own feature ([frontend-components](frontend-components.md)).
