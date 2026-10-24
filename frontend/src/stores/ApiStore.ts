@@ -36,8 +36,8 @@ export default class ApiStore extends Store {
     const oInit = oQuery ? { method: 'QUERY', body: JSON.stringify(oQuery) } : { method: 'GET' };
     const oResponse = await this.request(sPath, oInit);
 
-    // Keeps the answer at its path and query
-    this.set(ApiStore.key(sPath, oQuery), oResponse);
+    // Keeps the answer at its path and query, over what the store had there
+    this.set(ApiStore.key(sPath, oQuery), { ...this.get(sPath, oQuery), ...oResponse });
     return oResponse;
   }
 

@@ -143,6 +143,21 @@ describe('api store', () => {
     assert.equal(count('GET /api/backend/users'), 1);
   });
 
+  test('a read keeps what the store had at its path', async () => {
+    // Sets a value at `/users`, then reads `/users/7` and `/users`
+    const { backend } = renderStores();
+    backend.set('/users/page', 2);
+    await backend.read('/users/7');
+    await backend.read('/users');
+
+    // Reads `/users/7` again from the store
+    await backend.read('/users/7');
+
+    assert.equal(backend.get('/users/page'), 2);
+    assert.equal(backend.get('/users/7').result.name, 'Beto');
+    assert.equal(count('GET /api/backend/users/7'), 1);
+  });
+
   test('a read answered after a write is asked again', async () => {
     // Slows the backend, and writes while the read is out
     iDelay = 100;
