@@ -18,10 +18,10 @@ Set `DATABASE_URL` in a `.env` at the repository root, pointing at a disposable 
 
 ## What to send
 
-- Bug fixes in `backend/`, `core/` and `plugins/`: a pull request here.
+- Bug fixes in `backend/`, `core/`, `plugins/`, `frontend/` and `components/`: a pull request here.
 - A plugin: your own repository and npm package. See [PLUGINS.md](PLUGINS.md). Do not add `plugins/<name>` unless a maintainer asked for that plugin in an issue.
 
-Public API, comments, and these files are English: `README.md`, `PLUGINS.md`, `backend/README.md`, `plugins/README.md`.
+Public API, comments, and these files are English: `README.md`, `PLUGINS.md` and the README of each package.
 
 ## Pull requests
 
@@ -40,7 +40,7 @@ Each development (a feature, a fix, a refactor) is one branch and one pull reque
 3. If `main` moves, merge `main` into the feature branch (no rebase: module branches start from it).
 4. When the feature is done, open one pull request from the feature branch to `main`. Its title decides the release.
 
-Each package's publish workflow runs its tests and build on every pull request that touches the package, to `main` or to a feature branch. Their jobs (`test-backend`, `test-plugins`) are the checks required to merge. The PostgreSQL suite runs on a Neon branch created for the run; pull requests from forks and Dependabot skip it.
+Each package's publish workflow runs its tests and build on every pull request that touches the package, to `main` or to a feature branch. Their jobs (`test-backend`, `test-plugins`, `test-frontend`, `test-components`) are the checks required to merge. The PostgreSQL suite runs on a Neon branch created for the run; pull requests from forks and Dependabot skip it.
 
 ## Releases
 

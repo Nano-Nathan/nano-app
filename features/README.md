@@ -38,7 +38,7 @@ updated: 2026-10-23
 ## Before reporting a module
 
 - Review the whole diff against `.claude/CLAUDE.md`: green checks do not cover the style.
-- Run the tests of the touched package, `tsc` of core, frontend and backend, `pnpm format:check` and the build. For the frontend, also `next build` of `frontend/tests/app`.
+- Run the tests of the touched package, `tsc` of core, frontend, components and backend, `pnpm format:check` and the build. For the frontend, also `next build` of `frontend/tests/app`.
 - The tests that count are the GitHub Actions checks. Local backend failures against the shared database of `.env` do not block; never run two backend suites at once against it.
 - Say what could not be verified (rendering in a browser: the container has no Chromium).
 - Pull requests are squash-merged: the title is the commit and decides the release (`feat` and `fix` release; `refactor`, `test`, `docs` and `chore` do not). Before rewriting history, leave a `backup/<topic>-<something>` branch.
