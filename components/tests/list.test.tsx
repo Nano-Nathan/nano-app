@@ -42,11 +42,11 @@ function setStores(aApis: string[]): void {
   process.env[STORES_ENV] = JSON.stringify(Object.fromEntries(aEntries));
 }
 
-/** View of a list: its names, its page and its buttons */
-const fnView: View<ListMethods> = ({ items, page, next, prev, sort }) => (
+/** View of a list: its names, its page read from the store and its buttons */
+const fnView: View<ListMethods> = ({ stores, items, next, prev, sort }) => (
   <div>
-    <output>{(items ?? []).map(oUser => oUser.name).join(',')}</output>
-    <span>{`page ${page}`}</span>
+    <output>{(items() ?? []).map(oUser => oUser.name).join(',')}</output>
+    <span>{`page ${stores[API_STORE_TYPE]?.get('/list/page') ?? 0}`}</span>
     <button onClick={next}>next</button>
     <button onClick={prev}>prev</button>
     <button onClick={() => sort('name')}>sort</button>
@@ -121,6 +121,22 @@ describe('list', () => {
     await expectNames('Ana');
 
     assert.equal(aRequests[0], 'QUERY /api/admin/users {"skip":0,"top":1}');
+  });
+
+  test('a view that does not call items asks nothing', async () => {
+    // Renders a list whose view only shows the page
+    const List = list({ path: '/users', top: 1 }).bindView(({ stores }) => (
+      <span>{`page ${stores[API_STORE_TYPE].get('/list/page') ?? 0}`}</span>
+    ));
+    render(
+      <NanoAppProvider>
+        <List />
+      </NanoAppProvider>,
+    );
+    await act(() => new Promise(fnResolve => setTimeout(fnResolve, 50)));
+
+    assert.ok(screen.getByText('page 0'));
+    assert.equal(aRequests.length, 0);
   });
 
   test('without an api store it renders no items and asks nothing', async () => {

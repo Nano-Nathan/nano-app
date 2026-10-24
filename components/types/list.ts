@@ -8,15 +8,11 @@ export type ListOptions = {
   store?: string;
 };
 
-/** What the view of a `list` receives */
+/** Methods a `list` gives its view; the page (`/list/page`) and the order (`/list/orderby`) are read from its api store */
 export type ListMethods = {
   /** Items of the current page, `undefined` until they arrive */
   // any: the items are the consumer's, unknown to the framework
-  items: any[] | undefined;
-  /** Current page, from 0 */
-  page: number;
-  /** Requests in progress of the api store */
-  busy: number;
+  items(): any[] | undefined;
   /** Goes to the next page */
   next(): void;
   /** Goes to the previous page; stays on the first */

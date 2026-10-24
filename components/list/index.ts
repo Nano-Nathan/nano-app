@@ -8,24 +8,22 @@ export default function list(oOptions: ListOptions): Controller<ListMethods> {
   const { path, top, store = API_STORE_TYPE } = oOptions;
 
   return createController(({ stores }) => {
-    // Takes the api store of the options
+    // Takes the api store of the options, and reads the page chosen by the user from it
     const oApi = stores[store];
-
-    // Reads the page and the order chosen by the user
-    const iPage: number = oApi?.get('/list/page') ?? 0;
-    const oOrderby = oApi?.get('/list/orderby');
+    const fnPage = (): number => oApi?.get('/list/page') ?? 0;
 
     return {
-      // Reads the page from the backend, with the order
-      items: oApi?.read(path, { skip: iPage * top, top, orderby: oOrderby }),
-      page: iPage,
-      busy: oApi?.busy ?? 0,
+      items: () => {
+        // Reads the page from the backend, with the order chosen by the user
+        const oQuery = { skip: fnPage() * top, top, orderby: oApi?.get('/list/orderby') };
+        return oApi?.read(path, oQuery);
+      },
       // Moves the page forward or back, never before the first one
-      next: () => oApi?.set('/list/page', iPage + 1),
-      prev: () => oApi?.set('/list/page', Math.max(iPage - 1, 0)),
+      next: () => oApi?.set('/list/page', fnPage() + 1),
+      prev: () => oApi?.set('/list/page', Math.max(fnPage() - 1, 0)),
       sort: (sField: string) => {
         // Toggles the field between ascending and descending, and goes back to the first page
-        const sDirection = oOrderby?.[sField] === 'asc' ? 'desc' : 'asc';
+        const sDirection = oApi?.get('/list/orderby')?.[sField] === 'asc' ? 'desc' : 'asc';
         oApi?.set('/list/orderby', { [sField]: sDirection });
         oApi?.set('/list/page', 0);
       },

@@ -1,9 +1,10 @@
 import { defineConfig } from 'tsdown';
 import { globSync } from 'glob';
+import pkg from './package.json' with { type: 'json' };
 
 export default defineConfig({
   // One folder per component: `<name>/index.ts` is its import path (`@nano-app/components/<name>`)
-  entry: globSync('*/index.ts', { ignore: ['node_modules/**', 'build/**', 'tests/**'] }),
+  entry: globSync('*/index.ts'),
   // One output file per source file, like the frontend: Next reads `'use client'` per module
   unbundle: true,
   root: '.',
@@ -15,8 +16,8 @@ export default defineConfig({
   dts: { tsconfig: '../tsconfig.dts.json' },
   outDir: 'build',
   clean: true,
-  // The frontend and React are peers: the consumer's copy, so the views share its provider
+  // Peers stay out of the build: the consumer's copy, so the views share its provider
   deps: {
-    neverBundle: ['@nano-app/frontend', 'react', /^react\//],
+    neverBundle: [...Object.keys(pkg.peerDependencies), /^react\//],
   },
 });
