@@ -1,12 +1,13 @@
 'use client';
 
 import { enableStaticRendering, observer } from 'mobx-react-lite';
+import { IS_SERVER } from '@nano-app/core/const';
 import { useStores } from '../react/NanoAppProvider';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { ComponentContext, ComponentProps, Controller } from '../types/component';
 
 // The server renders each component once: no MobX subscriptions there
-enableStaticRendering(typeof window === 'undefined');
+enableStaticRendering(IS_SERVER);
 
 /** Creates a controller: methods on the stores and the props, for the views bound to it */
 export default function createController<M extends NanoObject>(

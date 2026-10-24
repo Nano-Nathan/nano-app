@@ -7,15 +7,15 @@ export type StoreFiles = NanoObject<{
   type: typeof APP_STORE_TYPE | typeof API_STORE_TYPE;
   /** Initial state */
   data?: NanoObject;
-  /** Headers the proxy adds, by name: each value names its env var (`STRIPE_KEY` → `API_STRIPE_KEY_HEADER`) */
+  /** Headers the proxy adds, each value names its env var: `KEY` → `API_KEY_HEADER` */
   headers?: NanoObject<string>;
 }>;
 
-/** Stores of one React tree by name: a `Store` per `app` file, an `ApiStore` per `api` file; `app` is always there */
+/** Stores of a React tree by name: a `Store` per `app` file, an `ApiStore` per `api` file */
 // any: each store is a `Store` or an `ApiStore` by its file, typed per name in typed-paths
 export type Stores = NanoObject<any> & { [APP_NAME]: Store };
 
-/** State of an `ApiStore`: requests in progress, results per path and query, and versions per entity */
+/** State of an `ApiStore`: requests in progress, results by path and query, versions by entity */
 export type ApiState = {
   iBusy: number;
   oResults: NanoObject<unknown>;

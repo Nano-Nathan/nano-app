@@ -1,9 +1,10 @@
 import { observable, runInAction } from 'mobx';
+import { IS_SERVER } from '@nano-app/core/const';
 import type { ApiResponse, QueryParams } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { ApiState } from '../types/store';
 
-/** Backend data of one `api` store, through the proxy (`/api/<name>/...`), cached per path and query */
+/** Backend data of an `api` store, through its proxy (`/api/<name>/...`), by path and query */
 export default class ApiStore {
   private sName: string;
   private oState: ApiState = observable({ iBusy: 0, oResults: {}, oVersions: {} });
@@ -19,9 +20,12 @@ export default class ApiStore {
     return this.oState.iBusy;
   }
 
-  /** Result at a path: from local, and asked to the backend when never read or its entity changed */
+  /** Result at a path: from local, asked to the backend when never read or its entity changed */
   // any: the result is the consumer's, unknown to the framework
   public read(sPath: string, oQuery?: QueryParams): any {
+    // Asks nothing on the server: the proxy is reached from the browser, which reads on hydrating
+    if (IS_SERVER) return undefined;
+
     // Finds the key of the path and query, and the version of its entity
     const sKey = oQuery ? `${sPath}?${JSON.stringify(oQuery)}` : sPath;
     const iVersion = this.oState.oVersions[ApiStore.entity(sPath)] ?? 0;
@@ -59,6 +63,7 @@ export default class ApiStore {
 
   /** Sends a write and changes the version of its entity when the answer comes back */
   private write(sMethod: string, sPath: string, oBody?: unknown): Promise<ApiResponse> {
+    // Raises the version of the entity once the answer is back, so its reads ask again
     return this.request(sPath, { method: sMethod, body: JSON.stringify(oBody) }).finally(() =>
       runInAction(() => {
         const sEntity = ApiStore.entity(sPath);
@@ -72,6 +77,7 @@ export default class ApiStore {
     // Counts the request while it is in progress
     runInAction(() => this.oState.iBusy++);
     try {
+      // Sends it to the proxy of the store and reads its JSON
       const oRes = await fetch(`/api/${this.sName}${sPath}`, {
         ...oInit,
         headers: { 'content-type': 'application/json' },

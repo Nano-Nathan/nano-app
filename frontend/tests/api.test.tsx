@@ -22,22 +22,22 @@ let iDelay = 0;
 function answer(sMethod: string, sUrl: string, sBody: string): [string, string] {
   const [, , , sEntity, sId] = sUrl.split('/');
   const oBody = sBody ? JSON.parse(sBody) : {};
-  const json = (oValue: NanoObject): [string, string] => [
+  const fnJson = (oValue: NanoObject): [string, string] => [
     'application/json',
     JSON.stringify(oValue),
   ];
 
   if (sEntity === 'html') return ['text/html', '<h1>Not found</h1>'];
-  if (sEntity === 'fail') return json({ success: false, message: 'Failed' });
-  if (sEntity === 'orders') return json({ success: true, result: [] });
-  if (sMethod === 'QUERY') return json({ success: true, result: aUsers.slice(0, oBody.top) });
+  if (sEntity === 'fail') return fnJson({ success: false, message: 'Failed' });
+  if (sEntity === 'orders') return fnJson({ success: true, result: [] });
+  if (sMethod === 'QUERY') return fnJson({ success: true, result: aUsers.slice(0, oBody.top) });
   if (sMethod === 'POST') aUsers = [...aUsers, oBody];
   if (sMethod === 'PUT') aUsers = aUsers.map(oUser => (oUser.id === Number(sId) ? oBody : oUser));
   if (sMethod === 'DELETE') aUsers = aUsers.filter(oUser => oUser.id !== Number(sId));
   if (sId && sMethod === 'GET')
-    return json({ success: true, result: aUsers.find(oUser => oUser.id === Number(sId)) });
+    return fnJson({ success: true, result: aUsers.find(oUser => oUser.id === Number(sId)) });
 
-  return json({ success: true, result: aUsers });
+  return fnJson({ success: true, result: aUsers });
 }
 
 // Backend behind the proxy: the test serves `/api/backend/...` on the DOM's origin

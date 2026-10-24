@@ -20,6 +20,9 @@ export const MISSING_DATABASE_URL =
 
 // Frontend
 
+/** Whether the code runs on the server, where Next renders each component once for the HTML */
+export const IS_SERVER = typeof window === 'undefined';
+
 /** Env var that carries the stores to the bundle. Read as `process.env.NANO_APP_STORES`, literal */
 export const STORES_ENV = 'NANO_APP_STORES';
 
