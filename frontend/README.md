@@ -99,7 +99,7 @@ The backend URL is read at runtime from `API_<STORE>_URL` (`backend` → `API_BA
 
 ### Reading and writing
 
-An `api` store has no `get` or `set`: it reads and writes its backend, and keeps what it read.
+An `api` store reads and writes its backend, and keeps what it read. It also has its own state like any store (`get`, `set`, and `data` in its file), apart from what it read: UI state about that backend (a page, an order) can live next to it.
 
 ```ts
 // src/controllers/users.controller.ts

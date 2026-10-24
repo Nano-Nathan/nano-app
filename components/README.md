@@ -24,7 +24,7 @@ export default list({ path: '/users', top: 20 }).bindView(({ items, page, next, 
 ```
 
 - Each call (`list({ … })`) returns a controller of `@nano-app/frontend`: bind views to it with `bindView`, and change or add methods with `extend(({ props, stores }) => ({ … }))`.
-- A component keeps its state in the `app` store, under its name (`/list`). Two components of the same kind share it.
+- A component keeps its state in its api store, under its name (`/list/page`). Two components of the same kind on the same store share it.
 - A component that reads the backend uses the store named in `store`, `api` by default (`src/stores/api.store.ts`). Without it, it renders without data and asks nothing.
 
 ## Components

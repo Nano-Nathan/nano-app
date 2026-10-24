@@ -28,6 +28,16 @@ describe('store state', () => {
     assert.equal(ui.get('/busy'), false);
   });
 
+  test('an api store has its own state from its data, read and written by path', () => {
+    // Creates an api store with initial data and writes it
+    process.env[STORES_ENV] = JSON.stringify({ backend: { type: 'api', data: { page: 1 } } });
+    const { backend } = createStores();
+    backend.set('/list/orderby', { name: 'asc' });
+
+    assert.equal(backend.get('/page'), 1);
+    assert.deepEqual(backend.get('/list/orderby'), { name: 'asc' });
+  });
+
   test('a write notifies only who read that path', () => {
     // Watches one path of the store
     const oStore = new Store({ user: { name: 'Ana', email: 'ana@nano.app' } });
