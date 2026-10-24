@@ -1,6 +1,6 @@
 # Features
 
-Planned work on this repository, one file per feature. A file says what the feature has to do, what it leaves out, when it is done and where it stands, so any agent can pick it up from here. Read [`.claude/CLAUDE.md`](../.claude/CLAUDE.md) first: it defines the feature branch, the modules and the approval point by point.
+Planned work on this repository, one file per feature. A file says what the feature has to do, what it leaves out, when it is done and where it stands, so any agent can pick it up from here. Read [`.claude/CLAUDE.md`](../.claude/CLAUDE.md) first: it defines the branch of each development, the modules when the maintainer splits a feature, and the approval point by point.
 
 | Feature | Done when | Depends on |
 |---|---|---|
