@@ -1,8 +1,8 @@
 ---
 status: todo
 owner: null
-depends_on: [frontend]
-updated: 2026-10-23
+depends_on: []
+updated: 2026-10-24
 ---
 
 # Server-sent events
@@ -27,7 +27,7 @@ The backend pushes events to the frontend over plain HTTP: an endpoint that stay
   ```
 
   In-memory registry of open connections by channel; data serialized with `JSON.stringify`, in the `ApiResponse` shape when it applies.
-- The client side in `@nano-app/frontend` (`EventSource` behind a store). It goes through the frontend proxy ([frontend](frontend.md)), since the browser never talks to the backend.
+- The client side in `@nano-app/frontend` (`EventSource` behind a store). It goes through the frontend proxy (`@nano-app/frontend/proxy`), since the browser never talks to the backend.
 - Gotcha: `compression` buffers and breaks SSE; exclude `text/event-stream` in its `filter`. Test this first.
 - To decide with the maintainer: how a stream authenticates.
 

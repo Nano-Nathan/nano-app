@@ -1,8 +1,8 @@
 ---
 status: todo
 owner: null
-depends_on: [frontend]
-updated: 2026-10-23
+depends_on: []
+updated: 2026-10-24
 ---
 
 # Typed paths
@@ -19,7 +19,7 @@ Path and resource mistakes show up when compiling, not at runtime.
 
 ## Out of scope
 
-The type of the controller in the view (done in [frontend](frontend.md)). The response contract ([response-contract](response-contract.md)).
+The type of the controller in the view (done in `@nano-app/frontend`). The response contract ([response-contract](response-contract.md)).
 
 ## Done when
 

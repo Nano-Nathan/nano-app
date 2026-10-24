@@ -364,6 +364,9 @@ importers:
 
   frontend/tests/app:
     dependencies:
+      '@nano-app/components':
+        specifier: workspace:*
+        version: link:../../../components
       '@nano-app/frontend':
         specifier: workspace:*
         version: link:../..
