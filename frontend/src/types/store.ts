@@ -1,15 +1,23 @@
-import type { APP_STORE_TYPE } from '@nano-app/core/const';
+import type { API_STORE_TYPE, APP_NAME, APP_STORE_TYPE } from '@nano-app/core/const';
 import type { NanoObject } from '@nano-app/core/types/objects';
+import type Store from '../stores/Store';
 
-/** `*.store.ts` of UI state */
-export type AppStoreFile = {
-  type: typeof APP_STORE_TYPE;
+/** Stores of the app by name (`src/stores/app.store.ts` → `app`), as their files export them */
+export type StoreFiles = NanoObject<{
+  type: typeof APP_STORE_TYPE | typeof API_STORE_TYPE;
   /** Initial state */
   data?: NanoObject;
+  /** Headers the proxy adds, each value names its env var: `KEY` → `API_KEY_HEADER` */
+  headers?: NanoObject<string>;
+}>;
+
+/** Stores of a React tree by name: a `Store` per `app` file, an `ApiStore` per `api` file */
+// any: each store is a `Store` or an `ApiStore` by its file, typed per name in typed-paths
+export type Stores = NanoObject<any> & { [APP_NAME]: Store };
+
+/** State of an `ApiStore`: requests in progress, results by path and query, versions by entity */
+export type ApiState = {
+  iBusy: number;
+  oResults: NanoObject<unknown>;
+  oVersions: NanoObject<number>;
 };
-
-/** Default export of a `*.store.ts` */
-export type StoreFile = AppStoreFile;
-
-/** Stores of the app by name (`src/stores/app.store.ts` → `app`) */
-export type StoreFiles = Record<string, StoreFile>;

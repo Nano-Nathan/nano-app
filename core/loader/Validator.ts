@@ -1,8 +1,9 @@
-import { APP_STORE_TYPE } from '../const';
+import { API_STORE_TYPE, APP_STORE_TYPE } from '../const';
 import type { RouteEntry, NanoObject } from '../types/objects';
 import type { FindableExtension } from '../types/loader';
 
 const HTTP_METHODS: (keyof RouteEntry)[] = ['GET', 'POST', 'PUT', 'DELETE', 'QUERY'];
+const STORE_TYPES: unknown[] = [APP_STORE_TYPE, API_STORE_TYPE];
 
 /** Checks the consumer's files: invalid ones are warned about and discarded */
 export default abstract class Validator {
@@ -19,7 +20,7 @@ export default abstract class Validator {
   }
 
   /** Checks that the default export is an object */
-  private static isObject(oEntry: unknown, sFilePath: string): oEntry is object {
+  private static isObject(oEntry: unknown, sFilePath: string): oEntry is NanoObject {
     if (oEntry && typeof oEntry === 'object') return true;
     return Validator.warn(sFilePath, 'the default export is not an object.');
   }
@@ -55,20 +56,32 @@ export default abstract class Validator {
   private static isStore(
     oEntry: unknown,
     sFilePath: string,
-  ): oEntry is { type: typeof APP_STORE_TYPE; data?: object } {
+  ): oEntry is {
+    type: typeof APP_STORE_TYPE | typeof API_STORE_TYPE;
+    data?: NanoObject;
+    headers?: NanoObject<string>;
+  } {
     // Checks that the default export is an object
     if (!Validator.isObject(oEntry, sFilePath)) return false;
 
-    // Reads it as a store
-    const oStore = oEntry as { type?: unknown; data?: unknown };
-
     // Checks that the type is a known one
-    if (oStore.type !== APP_STORE_TYPE)
-      return Validator.warn(sFilePath, `its type must be "${APP_STORE_TYPE}".`);
+    if (!STORE_TYPES.includes(oEntry.type))
+      return Validator.warn(
+        sFilePath,
+        `its type must be "${APP_STORE_TYPE}" or "${API_STORE_TYPE}".`,
+      );
 
     // Checks that the initial state is an object
-    if (oStore.data !== undefined && (!oStore.data || typeof oStore.data !== 'object'))
+    if (oEntry.data !== undefined && (!oEntry.data || typeof oEntry.data !== 'object'))
       return Validator.warn(sFilePath, '"data" must be an object.');
+
+    // Checks that the headers name a string (the env var of each value) per header
+    const isHeadersInvalid =
+      oEntry.headers !== undefined &&
+      (!Validator.isObject(oEntry.headers, sFilePath) ||
+        Object.values(oEntry.headers).some(sValue => typeof sValue !== 'string'));
+    if (isHeadersInvalid)
+      return Validator.warn(sFilePath, '"headers" must be an object of strings.');
 
     return true;
   }
