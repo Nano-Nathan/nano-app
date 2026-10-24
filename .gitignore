@@ -3,6 +3,7 @@ backend/build
 core/build
 plugins/build
 frontend/build
+components/build
 .env
 .env.*
 !.env.example

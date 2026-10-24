@@ -1,0 +1,112 @@
+# Filename must stay publish-components.yml. npm Trusted Publisher of @nano-app/components matches this name exactly.
+# https://docs.npmjs.com/trusted-publishers/
+#
+# One workflow for the whole flow of @nano-app/components (components/):
+# - pull request to main or to a feature branch: `test-components`, required to merge into main (the
+#   ruleset blocks the merge if it fails).
+#   It runs on every pull request, so the required check always reports; without changes in
+#   components/, frontend/ or core/ (its tests run on the frontend sources) it passes without testing.
+# - push to main (a squash merge) that touches the components: `test-components` again, then `release` only
+#   if it passed. semantic-release publishes only when the commits since the last `components-v*` tag ask
+#   for it (fix/feat). It reads every commit since that tag, also the ones that only touched another
+#   package: they can show up in the release notes and in the bump.
+name: Publish components
+
+on:
+  pull_request:
+    branches: [main, 'feat/**']
+  push:
+    branches: [main]
+    paths:
+      - components/**
+
+permissions:
+  contents: read
+
+# A new push to a pull request cancels its run in progress; a release never
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # No database: the components suites start their own HTTP backend
+  test-components:
+    runs-on: ubuntu-latest
+    steps:
+      # Full history: a pull request is tested only if its diff against the base touches the components
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Touches the components
+        id: changes
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ] || git diff --name-only "origin/$BASE_REF...HEAD" | grep -qE '^(components|frontend|core)/'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "No changes in components/, frontend/ or core/: nothing to test"
+          fi
+
+      - if: steps.changes.outputs.run == 'true'
+        uses: pnpm/action-setup@v6
+        with:
+          version: 12.11.2
+
+      - if: steps.changes.outputs.run == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          package-manager-cache: false
+
+      - if: steps.changes.outputs.run == 'true'
+        run: pnpm install --frozen-lockfile
+
+      # Code style: .prettierrc.json
+      - if: steps.changes.outputs.run == 'true'
+        run: pnpm format:check
+
+      - if: steps.changes.outputs.run == 'true'
+        run: pnpm --filter @nano-app/components test
+
+      - if: steps.changes.outputs.run == 'true'
+        run: pnpm --filter @nano-app/components build
+
+  release:
+    if: github.event_name == 'push'
+    needs: test-components
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+    defaults:
+      run:
+        working-directory: components
+    steps:
+      # Full history and tags: semantic-release reads the commits since the last tag
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12.11.2
+
+      # No registry-url: setup-node writes an empty _authToken and npm skips OIDC.
+      # https://github.com/npm/documentation/issues/1960
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          package-manager-cache: false
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      # Releases only for fix/feat commits since the last tag; see components/.releaserc.json
+      - run: npx semantic-release@25
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

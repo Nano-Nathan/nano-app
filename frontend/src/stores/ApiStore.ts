@@ -1,23 +1,28 @@
 import { observable, runInAction } from 'mobx';
 import { IS_SERVER } from '@nano-app/core/const';
+import Store from './Store';
 import type { ApiResponse, QueryParams } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
-import type { ApiState } from '../types/store';
+import type { ApiCache } from '../types/store';
 
-/** Backend data of an `api` store, through its proxy (`/api/<name>/...`), by path and query */
-export default class ApiStore {
+/**
+ * Backend data of an `api` store, through its proxy (`/api/<name>/...`), by path and query.
+ * Its own state (`get`/`set`) is the one of a `Store`; what it read stays apart.
+ */
+export default class ApiStore extends Store {
   private sName: string;
-  private oState: ApiState = observable({ iBusy: 0, oResults: {}, oVersions: {} });
+  private oCache: ApiCache = observable({ iBusy: 0, oResults: {}, oVersions: {} });
   private oRead: NanoObject<number> = {};
 
-  /** Store of the backend `API_<NAME>_URL` */
-  constructor(sName: string) {
+  /** Store of the backend `API_<NAME>_URL`, with the initial data of its file */
+  constructor(sName: string, oData?: NanoObject) {
+    super(oData);
     this.sName = sName;
   }
 
   /** Requests in progress */
   public get busy(): number {
-    return this.oState.iBusy;
+    return this.oCache.iBusy;
   }
 
   /** Result at a path: from local, asked to the backend when never read or its entity changed */
@@ -28,7 +33,7 @@ export default class ApiStore {
 
     // Finds the key of the path and query, and the version of its entity
     const sKey = oQuery ? `${sPath}?${JSON.stringify(oQuery)}` : sPath;
-    const iVersion = this.oState.oVersions[ApiStore.entity(sPath)] ?? 0;
+    const iVersion = this.oCache.oVersions[ApiStore.entity(sPath)] ?? 0;
 
     // Asks the backend once per version: the version is kept when the request leaves
     if (this.oRead[sKey] !== iVersion) {
@@ -38,12 +43,12 @@ export default class ApiStore {
       // Starts after the render that asked for it: requesting changes observable state
       queueMicrotask(() =>
         this.request(sPath, oInit).then(oResponse =>
-          runInAction(() => (this.oState.oResults[sKey] = oResponse.result)),
+          runInAction(() => (this.oCache.oResults[sKey] = oResponse.result)),
         ),
       );
     }
 
-    return this.oState.oResults[sKey];
+    return this.oCache.oResults[sKey];
   }
 
   /** `POST <path>` */
@@ -67,7 +72,7 @@ export default class ApiStore {
     return this.request(sPath, { method: sMethod, body: JSON.stringify(oBody) }).finally(() =>
       runInAction(() => {
         const sEntity = ApiStore.entity(sPath);
-        this.oState.oVersions[sEntity] = (this.oState.oVersions[sEntity] ?? 0) + 1;
+        this.oCache.oVersions[sEntity] = (this.oCache.oVersions[sEntity] ?? 0) + 1;
       }),
     );
   }
@@ -75,7 +80,7 @@ export default class ApiStore {
   /** Sends a request to the proxy and returns its JSON answer, counting it as busy */
   private async request(sPath: string, oInit: RequestInit): Promise<ApiResponse> {
     // Counts the request while it is in progress
-    runInAction(() => this.oState.iBusy++);
+    runInAction(() => this.oCache.iBusy++);
     try {
       // Sends it to the proxy of the store and reads its JSON
       const oRes = await fetch(`/api/${this.sName}${sPath}`, {
@@ -84,7 +89,7 @@ export default class ApiStore {
       });
       return await oRes.json();
     } finally {
-      runInAction(() => this.oState.iBusy--);
+      runInAction(() => this.oCache.iBusy--);
     }
   }
 

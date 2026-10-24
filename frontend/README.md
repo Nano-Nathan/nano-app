@@ -70,6 +70,14 @@ export default counterController.bindView(({ stores: { app }, increment }) => (
 - The view re-renders only when a store path it read changes.
 - A method named `props` or `stores` is hidden by the context of the same name.
 
+`extend` returns a new controller with your methods merged over its own: a method with the same name replaces the original, the others stay, and the original controller does not change. Its methods receive the same context (`props`, `stores`) as the controller's.
+
+```ts
+export default counterController.extend(({ stores: { app } }) => ({
+  reset: () => app.set('/iCount', 0),
+}));
+```
+
 ## Backend
 
 A store of type `api` connects the app to a backend. The browser never talks to the backend: it calls `/api/<store>/...` on the Next server, and the proxy sends the request there.
@@ -91,7 +99,7 @@ The backend URL is read at runtime from `API_<STORE>_URL` (`backend` → `API_BA
 
 ### Reading and writing
 
-An `api` store has no `get` or `set`: it reads and writes its backend, and keeps what it read.
+An `api` store reads and writes its backend, and keeps what it read. It also has its own state like any store (`get`, `set`, and `data` in its file), apart from what it read: UI state about that backend (a page, an order) can live next to it.
 
 ```ts
 // src/controllers/users.controller.ts
