@@ -15,9 +15,9 @@ updated: 2026-10-24
 
 - **Its own package** `@nano-app/components` (`components/`), released apart with `components-v*` tags and `publish-components.yml`. `@nano-app/frontend` and `react` are peers, so the views use the app's provider.
 - **A component is a factory** like a plugin: `import list from '@nano-app/components/list'`, then `list({ … }).bindView(view)`. A plain name, not `useList` (a hook runs in the render) nor `createList`.
-- **Its state lives in the `app` store**, under its name (`/list`), with no option to move it: two components of the same kind share it.
-- **Its api store** is the app's only `api` store, or the one named in `store` when there are several; a missing or wrong one fails with the fix.
-- **Extending** in the frontend: `controller.extend(methods)` returns a new controller with an object of methods merged over its own; a method with the same name wins, the original controller does not change.
+- **Its state lives in the `app` store**, under its name (`/list/page`, `/list/orderby`: public names, no prefixes), with no option to move it: two components of the same kind share it.
+- **No store names in the options**: the controller finds the app's `api` store in `stores` and uses it with `?.`, without validating that it exists.
+- **Extending** in the frontend: `controller.extend(context => methods)` returns a new controller with those methods merged over its own; they receive the same context as the controller's, a method with the same name wins, the original controller does not change.
 
 ## Scope
 
@@ -37,3 +37,4 @@ A default component is released and the test app renders it with its own view.
 
 - 2026-10-24 · projects-thread · Proposed by the maintainer while planning the first frontend release.
 - 2026-10-24 · projects-thread · Decided with the maintainer: own package, factories, state in `app`, the only api store or `store`, `extend` with an object of methods. First version on `feat/frontend--components`: `extend`, the package and `list`. Missing: the maintainer's review, the test app and npm's Trusted Publisher for `publish-components.yml`.
+- 2026-10-24 · projects-thread · Review of #43: no `store` option and no validation of the api store (`?.`), `extend` receives the context, state paths without prefixes (`/list/page`, `/list/orderby`).

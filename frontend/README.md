@@ -70,10 +70,12 @@ export default counterController.bindView(({ stores: { app }, increment }) => (
 - The view re-renders only when a store path it read changes.
 - A method named `props` or `stores` is hidden by the context of the same name.
 
-`extend` returns a new controller with your methods merged over its own: a method with the same name replaces the original, the others stay, and the original controller does not change. It receives only an object of methods: a replaced method does not reach the original one.
+`extend` returns a new controller with your methods merged over its own: a method with the same name replaces the original, the others stay, and the original controller does not change. Its methods receive the same context (`props`, `stores`) as the controller's.
 
 ```ts
-export default counterController.extend({ log: (sText: string) => console.info(sText) });
+export default counterController.extend(({ stores: { app } }) => ({
+  reset: () => app.set('/iCount', 0),
+}));
 ```
 
 ## Backend

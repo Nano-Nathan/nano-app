@@ -6,8 +6,8 @@ import { createServer } from 'node:http';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { NanoAppProvider } from '@nano-app/frontend';
 import list from '../list';
-import type { ListMethods } from '../types/list';
 import type { View } from '@nano-app/frontend';
+import type { ListMethods } from '../types/list';
 
 const PORT = 4201;
 
@@ -108,34 +108,18 @@ describe('list', () => {
     assert.ok(screen.getByText('page 0'));
   });
 
-  test('with several api stores it reads the one named in store', async () => {
-    // Renders a list of the second api store
-    setStores(['backend', 'admin']);
-    const List = list({ path: '/users', top: 1, store: 'admin' }).bindView(fnView);
+  test('without an api store it renders no items and asks nothing', async () => {
+    // Renders a list in an app without api stores
+    setStores([]);
+    const List = list({ path: '/users', top: 1 }).bindView(fnView);
     render(
       <NanoAppProvider>
         <List />
       </NanoAppProvider>,
     );
-    await expectNames('Ana');
+    await act(() => new Promise(fnResolve => setTimeout(fnResolve, 50)));
 
-    assert.equal(aRequests[0], 'QUERY /api/admin/users {"skip":0,"top":1}');
-  });
-
-  test('without the name of its api store it fails with the fix', async () => {
-    // Renders without api stores, with several and with a name that is not one
-    const List = list({ path: '/users', top: 1 }).bindView(fnView);
-    const Wrong = list({ path: '/users', top: 1, store: 'app' }).bindView(fnView);
-    const fnRender = (oNode: React.ReactNode) => () =>
-      render(<NanoAppProvider>{oNode}</NanoAppProvider>);
-
-    setStores([]);
-    assert.throws(fnRender(<List />), { message: /list needs an api store/ });
-    setStores(['backend', 'admin']);
-    assert.throws(fnRender(<List />), { message: /several api stores \(backend, admin\)/ });
-    assert.throws(fnRender(<Wrong />), { message: /"app" is not an api store/ });
-
-    // Lets React finish the failed renders
-    await act(() => Promise.resolve());
+    assert.equal(screen.getByRole('status').textContent, '');
+    assert.equal(aRequests.length, 0);
   });
 });

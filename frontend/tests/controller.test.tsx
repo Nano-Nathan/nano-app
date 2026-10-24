@@ -94,9 +94,12 @@ describe('createController', () => {
   });
 
   test('extend merges its methods over the controller, which keeps its own', () => {
-    // Extends the counter with a new method and one that replaces `increment`
+    // Extends the counter with a method on the context and one that replaces `increment`
     const Extended = counterController
-      .extend({ increment: () => undefined, sayHi: () => 'hi' })
+      .extend(({ props, stores: { app } }) => ({
+        increment: () => app.set('/iCount', app.get('/iCount') + 10),
+        sayHi: () => `hi ${props.sName}`,
+      }))
       .bindView(({ props, stores: { app }, increment, update, sayHi }) => (
         <div>
           <span>{`${props.sName} ${sayHi()} ${app.get('/iCount')}`}</span>
@@ -116,7 +119,7 @@ describe('createController', () => {
     fireEvent.click(screen.getByText('+3'));
     fireEvent.click(screen.getByText('+'));
 
-    assert.ok(screen.getByText('Leo hi 4'));
+    assert.ok(screen.getByText('Leo hi Leo 14'));
   });
 
   test('a view without NanoAppProvider fails with the fix', () => {

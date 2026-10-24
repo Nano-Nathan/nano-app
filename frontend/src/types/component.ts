@@ -19,5 +19,7 @@ export type Controller<M extends NanoObject> = {
   /** Creates a component that renders the view with the controller's methods */
   bindView(view: View<M>): (props: ComponentProps) => ReactNode;
   /** Creates a controller with these methods merged over its own: a method with the same name wins */
-  extend<E extends NanoObject>(methods: E): Controller<Omit<M, keyof E> & E>;
+  extend<E extends NanoObject>(
+    methods: (context: ComponentContext) => E,
+  ): Controller<Omit<M, keyof E> & E>;
 };

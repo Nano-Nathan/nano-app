@@ -22,14 +22,18 @@ createController(() => ({ stores: () => 1 })).bindView(({ stores }) => {
   return null;
 });
 
-oController.extend({ dec: (iStep: number) => -iStep }).bindView(({ inc, dec }) => {
-  // @ts-expect-error an extended controller keeps the types of its methods and the new ones
-  inc(dec('x'));
-  return null;
-});
+oController
+  .extend(() => ({ dec: (iStep: number) => -iStep }))
+  .bindView(({ inc, dec }) => {
+    // @ts-expect-error an extended controller keeps the types of its methods and the new ones
+    inc(dec('x'));
+    return null;
+  });
 
-oController.extend({ inc: (sText: string) => sText }).bindView(({ inc }) => {
-  // @ts-expect-error a method replaced by extend takes the new types
-  inc(1);
-  return null;
-});
+oController
+  .extend(() => ({ inc: (sText: string) => sText }))
+  .bindView(({ inc }) => {
+    // @ts-expect-error a method replaced by extend takes the new types
+    inc(1);
+    return null;
+  });
