@@ -12,7 +12,7 @@ export default function createStores(): Stores {
   const oStores = Object.fromEntries(
     Object.entries(oFiles).map(([sName, oFile]) => {
       const isApi = oFile.type === API_STORE_TYPE;
-      return [sName, isApi ? new ApiStore(sName) : new Store(oFile.data)];
+      return [sName, isApi ? new ApiStore(sName, oFile.data) : new Store(oFile.data)];
     }),
   );
 

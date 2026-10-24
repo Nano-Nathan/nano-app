@@ -3,6 +3,7 @@ packages:
   - "core"
   - "plugins"
   - "frontend"
+  - "components"
   - "frontend/tests/app"
 allowBuilds:
   '@prisma/engines': true
