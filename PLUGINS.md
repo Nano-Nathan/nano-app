@@ -76,7 +76,7 @@ Optional. Set `database: { enabled: true, schemaPath }` on the plugin config. Th
 
 At startup nano-app generates the plugin's client in `.nano-app/prisma-clients/<name>` (again only when the schema changed) and checks that every model can be read.
 
-- **A plugin of yours, or from another package:** its tables are applied with Prisma by whoever installs it, like the app's schema. `npx nano-app generate <name> --schema <path>` generates its client without starting.
+- **A plugin of yours, or from another package:** its tables are applied with Prisma by whoever installs it, like the app's schema.
 - **An official plugin:** nano-app also migrates it, so the consumer runs nothing. Its schema ships in `build/<name>/schema.prisma` with a `migrations/` folder next to it. At startup `prisma migrate deploy` applies the pending ones to the plugin's first `nano_*` schema, where its history (`_prisma_migrations`) lives apart from the app's. Each migration runs once, in a transaction, one instance at a time.
 
 ### Migrations of an official plugin
