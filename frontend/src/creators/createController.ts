@@ -23,5 +23,7 @@ export default function createController<M extends NanoObject>(
         // Renders the view with the methods; the context wins over a method with its name
         return fnView({ ...fnMethods(oContext), ...oContext });
       }),
+    // A new controller with the methods merged over these: a method with the same name wins
+    extend: oMethods => createController(oContext => ({ ...fnMethods(oContext), ...oMethods })),
   };
 }

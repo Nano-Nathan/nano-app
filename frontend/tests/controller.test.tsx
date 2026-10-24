@@ -93,6 +93,32 @@ describe('createController', () => {
     assert.equal(iRenders, 1);
   });
 
+  test('extend merges its methods over the controller, which keeps its own', () => {
+    // Extends the counter with a new method and one that replaces `increment`
+    const Extended = counterController
+      .extend({ increment: () => undefined, sayHi: () => 'hi' })
+      .bindView(({ props, stores: { app }, increment, update, sayHi }) => (
+        <div>
+          <span>{`${props.sName} ${sayHi()} ${app.get('/iCount')}`}</span>
+          <button onClick={increment}>inc</button>
+          <button onClick={() => update(3)}>+3</button>
+        </div>
+      ));
+    renderApp(
+      <>
+        <Extended sName="Leo" />
+        <Counter sName="Leo" />
+      </>,
+    );
+
+    // Clicks the replaced method, the kept one and the original controller's increment
+    fireEvent.click(screen.getByText('inc'));
+    fireEvent.click(screen.getByText('+3'));
+    fireEvent.click(screen.getByText('+'));
+
+    assert.ok(screen.getByText('Leo hi 4'));
+  });
+
   test('a view without NanoAppProvider fails with the fix', () => {
     // Renders outside the provider
     assert.throws(() => render(<Counter />), { message: MISSING_PROVIDER });

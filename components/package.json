@@ -1,0 +1,59 @@
+{
+  "name": "@nano-app/components",
+  "version": "0.0.0-semantic-release",
+  "description": "Official components for @nano-app/frontend: the logic, ready to bind to your view",
+  "type": "module",
+  "exports": {
+    "./*": {
+      "types": "./build/*/index.d.ts",
+      "import": "./build/*/index.js"
+    }
+  },
+  "files": [
+    "build",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "test": "tsx --test tests/*.test.tsx",
+    "prepublishOnly": "pnpm run build"
+  },
+  "keywords": [
+    "nano-app",
+    "next",
+    "react",
+    "components"
+  ],
+  "author": "Cristian Serrano",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nano-Nathan/nano-app.git",
+    "directory": "components"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "peerDependencies": {
+    "@nano-app/frontend": ">=0.4.0",
+    "react": ">=19.0.0"
+  },
+  "devDependencies": {
+    "@happy-dom/global-registrator": "^21.0.3",
+    "@nano-app/frontend": "workspace:*",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "glob": "^13.0.6",
+    "happy-dom": "^21.0.3",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tsdown": "^0.23.1",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
