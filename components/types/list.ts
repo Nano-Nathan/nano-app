@@ -4,6 +4,8 @@ export type ListOptions = {
   path: string;
   /** Items per page */
   top: number;
+  /** Name of the api store it reads (`api` by default) */
+  store?: string;
 };
 
 /** What the view of a `list` receives */

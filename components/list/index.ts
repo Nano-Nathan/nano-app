@@ -1,15 +1,15 @@
-import { ApiStore, createController } from '@nano-app/frontend';
+import { createController } from '@nano-app/frontend';
 import type { Controller } from '@nano-app/frontend';
 import type { ListMethods, ListOptions } from '../types/list';
 
 /** A paged and sortable list of a backend path; its state lives at `/list` of the app store */
 export default function list(oOptions: ListOptions): Controller<ListMethods> {
-  const { path, top } = oOptions;
+  const { path, top, store = 'api' } = oOptions;
 
   return createController(({ stores }) => {
-    // Finds the app store and the api store of the app
+    // Takes the app store and the api store of the options
     const { app } = stores;
-    const oApi = Object.values(stores).find(oStore => oStore instanceof ApiStore);
+    const oApi = stores[store];
 
     // Reads the page and the order chosen by the user
     const iPage: number = app.get('/list/page') ?? 0;

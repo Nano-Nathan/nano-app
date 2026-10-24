@@ -62,9 +62,9 @@ describe('list', () => {
   after(() => oBackend.close());
   afterEach(cleanup);
   beforeEach(() => {
-    // Starts each test with one api store and no requests
+    // Starts each test with the default api store and no requests
     aRequests.length = 0;
-    setStores(['backend']);
+    setStores(['api']);
   });
 
   test('reads the first page of the path, and next and prev move between pages', async () => {
@@ -85,7 +85,7 @@ describe('list', () => {
     await expectNames('Ana,Beto');
 
     assert.ok(screen.getByText('page 0'));
-    assert.equal(aRequests[0], 'QUERY /api/backend/users {"skip":0,"top":2}');
+    assert.equal(aRequests[0], 'QUERY /api/api/users {"skip":0,"top":2}');
   });
 
   test('sort orders by a field, toggles its direction and goes back to the first page', async () => {
@@ -106,6 +106,20 @@ describe('list', () => {
     await expectNames('Eva,Dora');
 
     assert.ok(screen.getByText('page 0'));
+  });
+
+  test('reads the api store named in store', async () => {
+    // Renders a list of another api store
+    setStores(['api', 'admin']);
+    const List = list({ path: '/users', top: 1, store: 'admin' }).bindView(fnView);
+    render(
+      <NanoAppProvider>
+        <List />
+      </NanoAppProvider>,
+    );
+    await expectNames('Ana');
+
+    assert.equal(aRequests[0], 'QUERY /api/admin/users {"skip":0,"top":1}');
   });
 
   test('without an api store it renders no items and asks nothing', async () => {
