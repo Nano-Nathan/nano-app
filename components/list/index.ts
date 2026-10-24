@@ -20,6 +20,7 @@ export default function list(oOptions: ListOptions): Controller<ListMethods> {
       items: oApi?.read(path, { skip: iPage * top, top, orderby: oOrderby }),
       page: iPage,
       busy: oApi?.busy ?? 0,
+      // Moves the page forward or back, never before the first one
       next: () => oApi?.set('/list/page', iPage + 1),
       prev: () => oApi?.set('/list/page', Math.max(iPage - 1, 0)),
       sort: (sField: string) => {

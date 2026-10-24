@@ -3,7 +3,7 @@ import { IS_SERVER } from '@nano-app/core/const';
 import Store from './Store';
 import type { ApiResponse, QueryParams } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
-import type { ApiState } from '../types/store';
+import type { ApiCache } from '../types/store';
 
 /**
  * Backend data of an `api` store, through its proxy (`/api/<name>/...`), by path and query.
@@ -11,7 +11,7 @@ import type { ApiState } from '../types/store';
  */
 export default class ApiStore extends Store {
   private sName: string;
-  private oCache: ApiState = observable({ iBusy: 0, oResults: {}, oVersions: {} });
+  private oCache: ApiCache = observable({ iBusy: 0, oResults: {}, oVersions: {} });
   private oRead: NanoObject<number> = {};
 
   /** Store of the backend `API_<NAME>_URL`, with the initial data of its file */

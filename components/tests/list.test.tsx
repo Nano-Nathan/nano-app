@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { NanoAppProvider } from '@nano-app/frontend';
+import { API_STORE_TYPE, STORES_ENV } from '@nano-app/core/const';
 import list from '../list';
 import type { View } from '@nano-app/frontend';
 import type { ListMethods } from '../types/list';
@@ -37,8 +38,8 @@ const oBackend = createServer((oReq, oRes) => {
 
 /** Sets the stores of the app, as `withNanoApp` inlines them */
 function setStores(aApis: string[]): void {
-  const aEntries = aApis.map(sName => [sName, { type: 'api' }]);
-  process.env.NANO_APP_STORES = JSON.stringify(Object.fromEntries(aEntries));
+  const aEntries = aApis.map(sName => [sName, { type: API_STORE_TYPE }]);
+  process.env[STORES_ENV] = JSON.stringify(Object.fromEntries(aEntries));
 }
 
 /** View of a list: its names, its page and its buttons */
@@ -64,7 +65,7 @@ describe('list', () => {
   beforeEach(() => {
     // Starts each test with the default api store and no requests
     aRequests.length = 0;
-    setStores(['api']);
+    setStores([API_STORE_TYPE]);
   });
 
   test('reads the first page of the path, and next and prev move between pages', async () => {
@@ -110,7 +111,7 @@ describe('list', () => {
 
   test('reads the api store named in store', async () => {
     // Renders a list of another api store
-    setStores(['api', 'admin']);
+    setStores([API_STORE_TYPE, 'admin']);
     const List = list({ path: '/users', top: 1, store: 'admin' }).bindView(fnView);
     render(
       <NanoAppProvider>
