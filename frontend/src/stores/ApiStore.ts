@@ -1,18 +1,17 @@
-import { observable, runInAction } from 'mobx';
+import { runInAction } from 'mobx';
 import { IS_SERVER } from '@nano-app/core/const';
 import Store from './Store';
 import type { ApiResponse, QueryParams } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
-import type { ApiCache } from '../types/store';
 
 /**
- * Backend data of an `api` store, through its proxy (`/api/<name>/...`), by path and query.
- * Its own state (`get`/`set`) is the one of a `Store`; what it read stays apart.
+ * Backend of an `api` store, through its proxy (`/api/<name>/...`). Each read keeps its
+ * `ApiResponse` in the store at its path and query, so the views get it with `get`.
  */
 export default class ApiStore extends Store {
   private sName: string;
-  private oCache: ApiCache = observable({ iBusy: 0, oResults: {}, oVersions: {} });
-  private oRead: NanoObject<number> = {};
+  private oVersions: NanoObject<number> = {};
+  private iCount = 0;
 
   /** Store of the backend `API_<NAME>_URL`, with the initial data of its file */
   constructor(sName: string, oData?: NanoObject) {
@@ -20,35 +19,31 @@ export default class ApiStore extends Store {
     this.sName = sName;
   }
 
-  /** Requests in progress */
-  public get busy(): number {
-    return this.oCache.iBusy;
+  /** `ApiResponse` a read kept for that path and query, or the value at a path of the state */
+  // any: the value is the consumer's, unknown to the framework
+  public get(sPath: string, oQuery?: QueryParams): any {
+    // A read is kept as one key (`/users/7`), apart from the levels of the state
+    return this.oState[ApiStore.key(sPath, oQuery)] ?? super.get(sPath);
   }
 
-  /** Result at a path: from local, asked to the backend when never read or its entity changed */
-  // any: the result is the consumer's, unknown to the framework
-  public read(sPath: string, oQuery?: QueryParams): any {
-    // Asks nothing on the server: the proxy is reached from the browser, which reads on hydrating
-    if (IS_SERVER) return undefined;
+  /** `ApiResponse` of a path and query: from the store while its entity did not change */
+  public async read(sPath: string, oQuery?: QueryParams): Promise<ApiResponse | undefined> {
+    // Asks nothing on the server: the proxy is reached from the browser
+    if (IS_SERVER) return;
 
-    // Finds the key of the path and query, and the version of its entity
-    const sKey = oQuery ? `${sPath}?${JSON.stringify(oQuery)}` : sPath;
-    const iVersion = this.oCache.oVersions[ApiStore.entity(sPath)] ?? 0;
+    // Answers from the store when it kept this read and its entity was not written since
+    const sEntity = ApiStore.entity(sPath);
+    const oKept = this.get(sPath, oQuery);
+    if (oKept && this.oVersions[sEntity] === 1) return oKept;
 
-    // Asks the backend once per version: the version is kept when the request leaves
-    if (this.oRead[sKey] !== iVersion) {
-      this.oRead[sKey] = iVersion;
-      const oInit = oQuery ? { method: 'QUERY', body: JSON.stringify(oQuery) } : { method: 'GET' };
+    // Marks the entity as read when the request leaves: a write while it is out marks it again
+    this.oVersions[sEntity] = 1;
+    const oInit = oQuery ? { method: 'QUERY', body: JSON.stringify(oQuery) } : { method: 'GET' };
+    const oResponse = await this.request(sPath, oInit);
 
-      // Starts after the render that asked for it: requesting changes observable state
-      queueMicrotask(() =>
-        this.request(sPath, oInit).then(oResponse =>
-          runInAction(() => (this.oCache.oResults[sKey] = oResponse.result)),
-        ),
-      );
-    }
-
-    return this.oCache.oResults[sKey];
+    // Keeps the answer as one key of the state: its path and query
+    runInAction(() => (this.oState[ApiStore.key(sPath, oQuery)] = oResponse));
+    return oResponse;
   }
 
   /** `POST <path>` */
@@ -66,21 +61,19 @@ export default class ApiStore extends Store {
     return this.write('DELETE', sPath);
   }
 
-  /** Sends a write and changes the version of its entity when the answer comes back */
-  private write(sMethod: string, sPath: string, oBody?: unknown): Promise<ApiResponse> {
-    // Raises the version of the entity once the answer is back, so its reads ask again
-    return this.request(sPath, { method: sMethod, body: JSON.stringify(oBody) }).finally(() =>
-      runInAction(() => {
-        const sEntity = ApiStore.entity(sPath);
-        this.oCache.oVersions[sEntity] = (this.oCache.oVersions[sEntity] ?? 0) + 1;
-      }),
-    );
+  /** Sends a write and marks its entity as changed, so its next reads ask the backend */
+  private async write(sMethod: string, sPath: string, oBody?: unknown): Promise<ApiResponse> {
+    // Sends it, and marks its entity once the answer is back
+    const oResponse = await this.request(sPath, { method: sMethod, body: JSON.stringify(oBody) });
+    this.oVersions[ApiStore.entity(sPath)] = 0;
+    return oResponse;
   }
 
-  /** Sends a request to the proxy and returns its JSON answer, counting it as busy */
+  /** Sends a request to the proxy and returns its JSON answer, keeping `/busy` while it is out */
   private async request(sPath: string, oInit: RequestInit): Promise<ApiResponse> {
-    // Counts the request while it is in progress
-    runInAction(() => this.oCache.iBusy++);
+    // Counts the request and marks the store busy
+    this.iCount++;
+    this.set('/busy', true);
     try {
       // Sends it to the proxy of the store and reads its JSON
       const oRes = await fetch(`/api/${this.sName}${sPath}`, {
@@ -89,8 +82,15 @@ export default class ApiStore extends Store {
       });
       return await oRes.json();
     } finally {
-      runInAction(() => this.oCache.iBusy--);
+      // Stops being busy when no request is left
+      this.iCount--;
+      this.set('/busy', this.iCount > 0);
     }
+  }
+
+  /** Key of a read in the store: its path, with its query when it has one */
+  private static key(sPath: string, oQuery?: QueryParams): string {
+    return oQuery ? `${sPath}?${JSON.stringify(oQuery)}` : sPath;
   }
 
   /** Entity of a path: its first segment (`/users/7` → `/users`) */

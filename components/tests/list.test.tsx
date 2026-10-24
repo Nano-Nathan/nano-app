@@ -19,6 +19,9 @@ const USERS = ['Ana', 'Beto', 'Ciro', 'Dora', 'Eva'].map((sName, iId) => ({
 }));
 const aRequests: string[] = [];
 
+/** A user of the backend */
+type User = (typeof USERS)[number];
+
 // Backend behind the proxy: answers `QUERY /api/<store>/users` with the page and order asked
 const oBackend = createServer((oReq, oRes) => {
   let sBody = '';
@@ -43,9 +46,10 @@ function setStores(aApis: string[]): void {
 }
 
 /** View of a list: its names, its page read from the store and its buttons */
-const fnView: View<ListMethods> = ({ stores, items, next, prev, sort }) => (
+const fnView: View<ListMethods> = ({ stores, load, items, next, prev, sort }) => (
   <div>
-    <output>{(items() ?? []).map(oUser => oUser.name).join(',')}</output>
+    <output>{(items()?.result ?? []).map((oUser: User) => oUser.name).join(',')}</output>
+    <button onClick={load}>load</button>
     <span>{`page ${stores[API_STORE_TYPE]?.get('/list/page') ?? 0}`}</span>
     <button onClick={next}>next</button>
     <button onClick={prev}>prev</button>
@@ -76,6 +80,7 @@ describe('list', () => {
         <List />
       </NanoAppProvider>,
     );
+    fireEvent.click(screen.getByText('load'));
     await expectNames('Ana,Beto');
 
     // Goes to the next page, then back twice: the first page is the last one back
@@ -118,16 +123,15 @@ describe('list', () => {
         <List />
       </NanoAppProvider>,
     );
+    fireEvent.click(screen.getByText('load'));
     await expectNames('Ana');
 
     assert.equal(aRequests[0], 'QUERY /api/admin/users {"skip":0,"top":1}');
   });
 
-  test('a view that does not call items asks nothing', async () => {
-    // Renders a list whose view only shows the page
-    const List = list({ path: '/users', top: 1 }).bindView(({ stores }) => (
-      <span>{`page ${stores[API_STORE_TYPE].get('/list/page') ?? 0}`}</span>
-    ));
+  test('it asks nothing until a method reads', async () => {
+    // Renders a list without loading it
+    const List = list({ path: '/users', top: 1 }).bindView(fnView);
     render(
       <NanoAppProvider>
         <List />
@@ -135,11 +139,11 @@ describe('list', () => {
     );
     await act(() => new Promise(fnResolve => setTimeout(fnResolve, 50)));
 
-    assert.ok(screen.getByText('page 0'));
+    assert.equal(screen.getByRole('status').textContent, '');
     assert.equal(aRequests.length, 0);
   });
 
-  test('without an api store it renders no items and asks nothing', async () => {
+  test('without an api store it loads no items and asks nothing', async () => {
     // Renders a list in an app without api stores
     setStores([]);
     const List = list({ path: '/users', top: 1 }).bindView(fnView);
@@ -148,6 +152,7 @@ describe('list', () => {
         <List />
       </NanoAppProvider>,
     );
+    fireEvent.click(screen.getByText('load'));
     await act(() => new Promise(fnResolve => setTimeout(fnResolve, 50)));
 
     assert.equal(screen.getByRole('status').textContent, '');

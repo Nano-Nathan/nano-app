@@ -99,49 +99,59 @@ The backend URL is read at runtime from `API_<STORE>_URL` (`backend` → `API_BA
 
 ### Reading and writing
 
-An `api` store reads and writes its backend, and keeps what it read. It also has its own state like any store (`get`, `set`, and `data` in its file), apart from what it read: UI state about that backend (a page, an order) can live next to it.
+An `api` store reads and writes its backend. The controllers read and write; the views get what a read kept. It also has its own state like any store (`get`, `set`, and `data` in its file): UI state about that backend (a page, an order) can live next to it.
 
 ```ts
 // src/controllers/users.controller.ts
 export default createController(({ stores: { backend } }) => ({
-  add: (sName: string) => backend.create('/users', { name: sName }),
-  rename: (iId: number, sName: string) => backend.update(`/users/${iId}`, { name: sName }),
-  remove: (iId: number) => backend.delete(`/users/${iId}`),
+  load: () => backend.read('/users'),
+  rename: async (iId: number, sName: string) => {
+    await backend.update(`/users/${iId}`, { name: sName });
+    return backend.read('/users');
+  },
 }));
 ```
 
 ```tsx
 // src/components/Users.tsx
-export default usersController.bindView(({ stores: { backend }, rename }) => (
-  <ul>
-    {(backend.read('/users') ?? []).map(oUser => (
-      <li key={oUser.id} onClick={() => rename(oUser.id, 'Bruno')}>{oUser.name}</li>
-    ))}
-  </ul>
-));
+export default usersController.bindView(({ stores: { backend }, load, rename }) => {
+  useEffect(() => {
+    load();
+  }, []);
+
+  return (
+    <ul>
+      {(backend.get('/users')?.result ?? []).map(oUser => (
+        <li key={oUser.id} onClick={() => rename(oUser.id, 'Bruno')}>{oUser.name}</li>
+      ))}
+    </ul>
+  );
+});
 ```
 
-- `read(path, query?)` returns the `result` it keeps for that path and query, `undefined` until it arrives. It works in the render: the first read, or a read after its entity changed, asks the backend (`GET`, or `QUERY` with the query as JSON body), and the view renders again when the answer comes. Each path and query is asked once per change of its entity.
-- The entity is the first segment of the path (`/users/7` → `/users`). `create` (`POST <path>`), `update` (`PUT <path>`) and `delete` (`DELETE <path>`) return the `ApiResponse`, and when it comes back every read of the entity asks again the next time it renders, whatever its query. Other entities keep what they have.
-- On the server (the first HTML that Next renders) `read` asks nothing and returns `undefined`: the browser asks when it hydrates.
-- `busy` counts the requests in progress (`backend.busy ? 'Loading…' : …`).
-- A read keeps the `result` of its answer, `undefined` when it failed, and is not asked again until a write on its entity. Its error does not reach the view yet.
-- A write returns the `ApiResponse` also when the backend fails (`success: false`, `message`), and rejects when there is no answer or it is not JSON: the controller that called it handles both (`backend.create(…).then(oRes => oRes.success || …)`).
+- `read(path, query?)` returns a promise of the `ApiResponse` and keeps it in the store for that path and query. The view gets it with `get(path, query?)`, and renders again when a read keeps a new one.
+- A read answers from the store while its entity was not written since; otherwise it asks the backend (`GET`, or `QUERY` with the query as JSON body). The entity is the first segment of the path (`/users/7` → `/users`).
+- `create` (`POST <path>`), `update` (`PUT <path>`) and `delete` (`DELETE <path>`) return a promise of the `ApiResponse` and mark their entity, so its next reads ask the backend, whatever their query. Other entities keep what they have.
+- A read or a write resolves with the `ApiResponse` also when the backend fails (`success: false`, `message`), and rejects when there is no answer or it is not JSON: the controller that called it handles both.
+- On the server (the first HTML that Next renders) `read` asks nothing and resolves with `undefined`.
+- `/busy` is `true` while a request of the store is out (`backend.get('/busy') ? 'Loading…' : …`).
 - What another user changes is seen after a write on the same entity.
-- Every path and query read stays kept while the page is open.
 
-To ask only when the user stops typing, keep the text in the `app` store and copy it to the query after a pause:
+To ask only when the user stops typing, keep the text in the `app` store and read after a pause:
 
 ```ts
 let oTimer: ReturnType<typeof setTimeout>;
-export default createController(({ stores: { app } }) => ({
+export default createController(({ stores: { app, backend } }) => ({
   type: (sText: string) => {
     app.set('/search/text', sText);
     clearTimeout(oTimer);
-    oTimer = setTimeout(() => app.set('/search/applied', sText), 300);
+    oTimer = setTimeout(() => {
+      app.set('/search/applied', sText);
+      backend.read('/users', { filter: { name: { contains: sText } } });
+    }, 300);
   },
 }));
-// The view reads backend.read('/users', { filter: { name: { contains: app.get('/search/applied') } } })
+// The view gets backend.get('/users', { filter: { name: { contains: app.get('/search/applied') } } })
 ```
 
 ### Headers per backend

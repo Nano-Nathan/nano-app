@@ -1,3 +1,5 @@
+import type { ApiResponse } from '@nano-app/core/types/api';
+
 /** Options of `list` */
 export type ListOptions = {
   /** Backend path it reads (`/users`) */
@@ -10,13 +12,14 @@ export type ListOptions = {
 
 /** Methods a `list` gives its view; the page (`/list/page`) and the order (`/list/orderby`) are read from its api store */
 export type ListMethods = {
-  /** Items of the current page, `undefined` until they arrive */
-  // any: the items are the consumer's, unknown to the framework
-  items(): any[] | undefined;
-  /** Goes to the next page */
-  next(): void;
-  /** Goes to the previous page; stays on the first */
-  prev(): void;
-  /** Orders by a field: ascending, and descending when it was already ascending */
-  sort(field: string): void;
+  /** Reads the current page from the backend */
+  load(): Promise<ApiResponse | undefined>;
+  /** `ApiResponse` kept for the current page, `undefined` until it is read */
+  items(): ApiResponse | undefined;
+  /** Goes to the next page and reads it */
+  next(): Promise<ApiResponse | undefined>;
+  /** Goes to the previous page and reads it; stays on the first */
+  prev(): Promise<ApiResponse | undefined>;
+  /** Orders by a field, ascending and descending when it was already ascending, and reads the first page */
+  sort(field: string): Promise<ApiResponse | undefined>;
 };

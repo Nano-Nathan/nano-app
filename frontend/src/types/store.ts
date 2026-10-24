@@ -14,10 +14,3 @@ export type StoreFiles = NanoObject<{
 /** Stores of a React tree by name: a `Store` per `app` file, an `ApiStore` per `api` file */
 // any: each store is a `Store` or an `ApiStore` by its file, typed per name in typed-paths
 export type Stores = NanoObject<any> & { [APP_NAME]: Store };
-
-/** What an `ApiStore` read: requests in progress, results by path and query, versions by entity */
-export type ApiCache = {
-  iBusy: number;
-  oResults: NanoObject<unknown>;
-  oVersions: NanoObject<number>;
-};
