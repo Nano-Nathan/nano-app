@@ -16,21 +16,21 @@ src/
 
 ```ts
 // src/plugins/hello/index.ts
-import { createPlugin } from "@nano-app/backend";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { createPlugin } from '@nano-app/backend';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 export default createPlugin((options?: { basePath?: string }) => ({
-  name: "hello",
-  basePath: options?.basePath ?? "/hello",
-  stage: "before",
-  routesDir: resolve(dirname(fileURLToPath(import.meta.url)), "routes"),
+  name: 'hello',
+  basePath: options?.basePath ?? '/hello',
+  stage: 'before',
+  routesDir: resolve(dirname(fileURLToPath(import.meta.url)), 'routes'),
 }));
 ```
 
 ```ts
 // src/plugins/hello/routes/index.route.ts
-import { createRoute } from "@nano-app/backend";
+import { createRoute } from '@nano-app/backend';
 
 export default createRoute({
   GET: async () => ({ success: true, result: { ok: true } }),
@@ -39,8 +39,8 @@ export default createRoute({
 
 ```ts
 // src/app.ts
-import { createNanoApp } from "@nano-app/backend";
-import hello from "./plugins/hello";
+import { createNanoApp } from '@nano-app/backend';
+import hello from './plugins/hello';
 
 createNanoApp({ plugins: [hello()] });
 ```
@@ -60,7 +60,7 @@ Publish a separate package. Do not add it to this repository unless a maintainer
   "name": "@you/nano-app-plugin-hello",
   "type": "module",
   "peerDependencies": {
-    "@nano-app/backend": "^0.7.0"
+    "@nano-app/backend": "^0.10.0"
   },
   "license": "MIT"
 }
@@ -89,4 +89,4 @@ Handlers and callbacks receive that client as `params.db`. Type it with `createR
 
 ## What belongs in this repository
 
-Pull requests to `backend/`, `core/` and `plugins/` are welcome. A pull request that adds `plugins/<name>` is not, until the maintainers ask for that plugin. Official plugins live in `plugins/<name>/`, are exported as `import <name> from "@nano-app/plugins/<name>"`, and `@nano-app/plugins` has its own version.
+Pull requests to `backend/`, `core/`, `plugins/`, `frontend/` and `components/` are welcome. A pull request that adds `plugins/<name>` is not, until the maintainers ask for that plugin. Official plugins live in `plugins/<name>/`, are exported as `import <name> from '@nano-app/plugins/<name>'`, and `@nano-app/plugins` has its own version.

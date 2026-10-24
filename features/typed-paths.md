@@ -15,7 +15,6 @@ Path and resource mistakes show up when compiling, not at runtime.
 
 - Frontend: the type of the store paths comes from the `data` of each `*.store.ts` (template literal types), so `app.get('/demo/counter')` stops being `any` and a typo does not compile. Writing on what `get` returns instead of using `set` is blocked with readonly types.
 - Backend: a `createRoute` typed with what the app injects (for example `defineApp<Deps>()`).
-- It changes the public API: the title of the final pull request decides whether it is `feat!:`.
 
 ## Out of scope
 

@@ -5,12 +5,12 @@
 Official plugins for [`@nano-app/backend`](https://www.npmjs.com/package/@nano-app/backend). One import path per plugin: `@nano-app/plugins/<name>`. Nothing is mounted unless you list it.
 
 ```bash
-npm install @nano-app/backend @nano-app/plugins
+pnpm add @nano-app/backend @nano-app/plugins
 ```
 
 ```ts
-import { createNanoApp } from "@nano-app/backend";
-import health from "@nano-app/plugins/health";
+import { createNanoApp } from '@nano-app/backend';
+import health from '@nano-app/plugins/health';
 
 createNanoApp({ plugins: [health()] });
 ```
@@ -19,7 +19,7 @@ createNanoApp({ plugins: [health()] });
 
 | Plugin | Import | Endpoints | Options |
 |---|---|---|---|
-| `health` | `import health from "@nano-app/plugins/health"` | `GET /health` → `{ status: "ok" }` | `basePath` (default `"/health"`) |
+| `health` | `import health from '@nano-app/plugins/health'` | `GET /health` → `{ status: "ok" }` | `basePath` (default `"/health"`) |
 
 ## Layout
 
