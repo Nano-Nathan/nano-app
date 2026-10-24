@@ -34,7 +34,7 @@ function answer(sMethod: string, sUrl: string, sBody: string): [string, string] 
   if (sMethod === 'POST') aUsers = [...aUsers, oBody];
   if (sMethod === 'PUT') aUsers = aUsers.map(oUser => (oUser.id === Number(sId) ? oBody : oUser));
   if (sMethod === 'DELETE') aUsers = aUsers.filter(oUser => oUser.id !== Number(sId));
-  if (sId && sMethod === 'GET')
+  if (sId && (sMethod === 'GET' || sMethod === 'PUT'))
     return fnJson({ success: true, result: aUsers.find(oUser => oUser.id === Number(sId)) });
 
   return fnJson({ success: true, result: aUsers });
@@ -132,18 +132,43 @@ describe('api store', () => {
     assert.equal(count('GET /api/backend/users'), 1);
     assert.equal(count('GET /api/backend/users/7'), 1);
 
-    // Writes another path, then `/users/7`: the write on `/users/7` asks both again
+    // Writes another path, then deletes `/users/7`: both ask again
     await backend.create('/orders', { id: 1 });
     await backend.read('/users');
     assert.equal(count('GET /api/backend/users'), 1);
+    await backend.delete('/users/7');
+    await backend.read('/users/7');
+    await backend.read('/users');
+
+    assert.equal(count('GET /api/backend/users/7'), 2);
+    assert.equal(count('GET /api/backend/users'), 2);
+  });
+
+  test('a successful update keeps its answer at its path, and its parents ask again', async () => {
+    // Reads the list and a user, then renames the user
+    const { backend } = renderStores();
+    await backend.read('/users');
+    await backend.read('/users/7');
     await backend.update('/users/7', { id: 7, name: 'Bruno' });
+
+    // Reads both again: only the list asks the backend
     const oRead = await backend.read('/users/7');
     await backend.read('/users');
 
     assert.equal(oRead.result.name, 'Bruno');
-    assert.equal(backend.get('/users/7').result.name, 'Bruno');
-    assert.equal(count('GET /api/backend/users/7'), 2);
+    assert.equal(count('GET /api/backend/users/7'), 1);
     assert.equal(count('GET /api/backend/users'), 2);
+  });
+
+  test('a failed update keeps nothing, and its path asks again', async () => {
+    // Reads a path that fails, and updates it
+    const { backend } = renderStores();
+    await backend.read('/fail');
+    await backend.update('/fail', {});
+    await backend.read('/fail');
+
+    assert.equal(backend.get('/fail').success, false);
+    assert.equal(count('GET /api/backend/fail'), 2);
   });
 
   test('a read keeps what the store had at its path', async () => {
@@ -166,7 +191,7 @@ describe('api store', () => {
     iDelay = 100;
     const { backend } = renderStores();
     const oRead = backend.read('/users/7');
-    await backend.update('/users/7', { id: 7, name: 'Bruno' });
+    await backend.delete('/users/7');
     await oRead;
     await backend.read('/users/7');
 

@@ -36,8 +36,8 @@ export default class ApiStore extends Store {
     const oInit = oQuery ? { method: 'QUERY', body: JSON.stringify(oQuery) } : { method: 'GET' };
     const oResponse = await this.request(sPath, oInit);
 
-    // Keeps the answer at its path and query, over what the store had there
-    this.set(ApiStore.key(sPath, oQuery), { ...this.get(sPath, oQuery), ...oResponse });
+    // Keeps the answer at its path and query
+    this.keep(oResponse, sPath, oQuery);
     return oResponse;
   }
 
@@ -46,9 +46,18 @@ export default class ApiStore extends Store {
     return this.write('POST', sPath, oBody);
   }
 
-  /** `PUT <path>` */
-  public update(sPath: string, oBody: unknown): Promise<ApiResponse> {
-    return this.write('PUT', sPath, oBody);
+  /** `PUT <path>`, keeping a successful answer at its path, which stays at version 1 */
+  public async update(sPath: string, oBody: unknown): Promise<ApiResponse> {
+    // Sends the write
+    const oResponse = await this.write('PUT', sPath, oBody);
+
+    // Returns a failed answer as is
+    if (!oResponse.success) return oResponse;
+
+    // Keeps the answer at its path and sets the path to version 1
+    this.keep(oResponse, sPath);
+    this.oVersions[sPath] = 1;
+    return oResponse;
   }
 
   /** `DELETE <path>` */
@@ -81,6 +90,12 @@ export default class ApiStore extends Store {
       this.iCount--;
       this.set('/busy', this.iCount > 0);
     }
+  }
+
+  /** Keeps an answer at its path and query, over what the store had there */
+  private keep(oResponse: ApiResponse, sPath: string, oQuery?: QueryParams): void {
+    // Sets the answer merged over the value at its key
+    this.set(ApiStore.key(sPath, oQuery), { ...this.get(sPath, oQuery), ...oResponse });
   }
 
   /** A path and each of its parents */

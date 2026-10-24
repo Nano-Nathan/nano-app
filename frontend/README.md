@@ -132,6 +132,7 @@ export default usersController.bindView(({ stores: { backend }, load, add }) => 
 - `read(path, query?)` returns a promise of the `ApiResponse` and keeps it in the store for that path and query, over what the store had there (a field the new answer does not bring stays from the last one). The view gets it with `get(path, query?)`, and renders again when a read keeps a new one.
 - A read answers from the store while its path is at version 1; otherwise it asks the backend (`GET`, or `QUERY` with the query as JSON body) and sets the path to version 1.
 - `create` (`POST <path>`), `update` (`PUT <path>`) and `delete` (`DELETE <path>`) return a promise of the `ApiResponse` and set their path and its parents to version 0 (`update('/users/7')` sets `/users/7` and `/users`), so their next reads ask the backend, whatever their query. Other paths keep what they have.
+- A successful `update` also keeps its `ApiResponse` at its path, over what the store had there, and leaves the path at version 1: its next read answers from the store. `create` and `delete` keep nothing.
 - A read or a write resolves with the `ApiResponse` also when the backend fails (`success: false`, `message`), and rejects when there is no answer or it is not JSON: the controller that called it handles both.
 - On the server (the first HTML that Next renders) `read` asks nothing and resolves with an empty `ApiResponse` (`{}`).
 - `/busy` is `true` while a request of the store is out (`backend.get('/busy') ? 'Loading…' : …`).
