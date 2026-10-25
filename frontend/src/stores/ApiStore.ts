@@ -2,6 +2,7 @@ import { IS_SERVER, REQUEST_FAILED } from '@nano-app/core/const';
 import Store from './Store';
 import type { ApiResponse, QueryParams } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
+import type { ApiError } from '../types/store';
 
 /** Backend of an `api` store through its proxy; each read keeps its `ApiResponse` in the store */
 export default class ApiStore extends Store {
@@ -101,7 +102,11 @@ export default class ApiStore extends Store {
 
     // Adds a failed answer to the errors of the store
     if (!oResponse.success) {
-      const oError = { ...oResponse, message: oResponse.message || REQUEST_FAILED };
+      const oError: ApiError = {
+        ...oResponse,
+        message: oResponse.message || REQUEST_FAILED,
+        timestamp: Date.now(),
+      };
       this.set('/error/list', [...(this.get('/error/list') ?? []), oError]);
     }
 

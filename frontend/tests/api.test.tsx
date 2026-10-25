@@ -8,6 +8,7 @@ import { REQUEST_FAILED, STORES_ENV } from '@nano-app/core/const';
 import createController from '../src/creators/createController';
 import { NanoAppProvider } from '../src/react/NanoAppProvider';
 import type { NanoObject } from '@nano-app/core/types/objects';
+import type { ApiError } from '../src/types/store';
 
 const PORT = 4200;
 
@@ -235,7 +236,12 @@ describe('api store', () => {
     assert.deepEqual(await backend.read('/fail'), oFailed);
     assert.deepEqual(backend.get('/fail'), oFailed);
     assert.deepEqual(await backend.create('/fail', {}), oFailed);
-    assert.deepEqual(backend.get('/error/list'), [oFailed, oFailed]);
+    const aErrors: ApiError[] = backend.get('/error/list');
+    assert.deepEqual(aErrors, [
+      { ...oFailed, timestamp: aErrors[0].timestamp },
+      { ...oFailed, timestamp: aErrors[1].timestamp },
+    ]);
+    assert.equal(typeof aErrors[0].timestamp, 'number');
   });
 
   test('an answer without JSON, or no answer, is a failed ApiResponse', async () => {

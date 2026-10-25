@@ -48,7 +48,7 @@ export default list({ path: '/users', top: 20 }).bindView(
 | `error` | `import error from '@nano-app/components/error'` | — | `items()`, `remove(index)`, `clear()`, `last()`, `dismiss()` |
 | `list` | `import list from '@nano-app/components/list'` | `path`, `top`, `store` (default `'api'`) | `load()`, `items()`, `next()`, `prev()`, `sort(field)`; in the store: `/list/page` (from 0, `undefined` until it moves), `/list/orderby` |
 
-`error()` gathers the `/error/list` of every api store: `items()` gives all the errors (the `ApiResponse` of each failed request) in order, `remove(index)` removes the one at that index of `items()` from its store and `clear()` empties them all: a panel of errors uses them. `last()` gives the last one and `dismiss()` removes it: an alert uses them.
+`error()` gathers the `/error/list` of every api store: `items()` gives all the errors (the `ApiResponse` of each failed request with its `timestamp`) from the newest, `remove(index)` removes the one at that index of `items()` from its store and `clear()` empties them all: a panel of errors uses them. `last()` gives the newest one and `dismiss()` removes it: an alert uses them.
 
 `load()` reads the current page of `path` with a `QUERY` (`skip`, `top`, `orderby`) through the store, and `items()` gets the `ApiResponse` it kept; nothing is asked until a method reads. `next`, `prev` and `sort` change the page or the order and read it. `sort` orders by one field, ascending and then descending, and goes back to the first page. `prev` stays on the first page.
 

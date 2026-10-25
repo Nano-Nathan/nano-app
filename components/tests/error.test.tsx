@@ -7,7 +7,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { NanoAppProvider } from '@nano-app/frontend';
 import { REQUEST_FAILED, STORES_ENV } from '@nano-app/core/const';
 import error from '../error';
-import type { ApiResponse } from '@nano-app/core/types/api';
+import type { ApiError } from '@nano-app/frontend';
 
 const PORT = 4201;
 
@@ -31,7 +31,7 @@ const Errors = error()
   .bindView(({ items, remove, last, dismiss, clear, failApi, warnAdmin }) => (
     <div>
       <ul>
-        {items().map((oError: ApiResponse, iIndex) => (
+        {items().map((oError: ApiError, iIndex) => (
           <li key={iIndex}>
             {oError.warning ? `warning ${oError.message}` : oError.message}
             <button onClick={() => remove(iIndex)}>remove</button>
@@ -46,6 +46,18 @@ const Errors = error()
     </div>
   ));
 
+/** Fails a request on `api`, then a later one on `admin` */
+async function failBoth(): Promise<void> {
+  // Fails the first request and waits for its error
+  fireEvent.click(screen.getByText('fail'));
+  await waitFor(() => assert.equal(screen.getAllByRole('listitem').length, 1));
+
+  // Waits so the next error is newer, then fails the second request
+  await new Promise(fnResolve => setTimeout(fnResolve, 5));
+  fireEvent.click(screen.getByText('warn'));
+  await waitFor(() => assert.equal(screen.getAllByRole('listitem').length, 2));
+}
+
 describe('error', () => {
   before(() => new Promise<void>(fnResolve => oBackend.listen(PORT, fnResolve)));
   after(() => oBackend.close());
@@ -58,25 +70,20 @@ describe('error', () => {
     ),
   );
 
-  test('gives the errors of every api store and the last one', async () => {
+  test('gives the errors of every api store from the newest, and the newest one', async () => {
     // Fails a request on each store
-    fireEvent.click(screen.getByText('fail'));
-    await waitFor(() => assert.equal(screen.getAllByRole('listitem').length, 1));
-    fireEvent.click(screen.getByText('warn'));
-    await waitFor(() => assert.equal(screen.getAllByRole('listitem').length, 2));
+    await failBoth();
 
-    assert.equal(screen.getAllByRole('listitem')[0].firstChild?.textContent, REQUEST_FAILED);
-    assert.equal(screen.getAllByRole('listitem')[1].firstChild?.textContent, 'warning Careful');
+    assert.equal(screen.getAllByRole('listitem')[0].firstChild?.textContent, 'warning Careful');
+    assert.equal(screen.getAllByRole('listitem')[1].firstChild?.textContent, REQUEST_FAILED);
     assert.equal(screen.getByRole('status').textContent, 'Careful');
   });
 
-  test('dismiss removes the last error, and clear removes all of them', async () => {
+  test('dismiss removes the newest error, and clear removes all of them', async () => {
     // Fails a request on each store
-    fireEvent.click(screen.getByText('fail'));
-    fireEvent.click(screen.getByText('warn'));
-    await waitFor(() => assert.equal(screen.getAllByRole('listitem').length, 2));
+    await failBoth();
 
-    // Dismisses the last error, then clears the rest
+    // Dismisses the newest error, then clears the rest
     fireEvent.click(screen.getByText('dismiss'));
     await waitFor(() => assert.equal(screen.getAllByRole('listitem').length, 1));
     assert.equal(screen.getByRole('status').textContent, REQUEST_FAILED);
@@ -88,14 +95,12 @@ describe('error', () => {
 
   test('remove removes the error at its index', async () => {
     // Fails a request on each store
-    fireEvent.click(screen.getByText('fail'));
-    fireEvent.click(screen.getByText('warn'));
-    await waitFor(() => assert.equal(screen.getAllByRole('listitem').length, 2));
+    await failBoth();
 
     // Removes the first error
     fireEvent.click(screen.getAllByText('remove')[0]);
     await waitFor(() => assert.equal(screen.getAllByRole('listitem').length, 1));
 
-    assert.equal(screen.getAllByRole('listitem')[0].firstChild?.textContent, 'warning Careful');
+    assert.equal(screen.getAllByRole('listitem')[0].firstChild?.textContent, REQUEST_FAILED);
   });
 });
