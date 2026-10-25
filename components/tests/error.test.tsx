@@ -32,15 +32,13 @@ const Errors = error()
     <div>
       <ul>
         {items().map((oError: ApiResponse, iIndex) => (
-          <li key={iIndex}>
-            {oError.warning ? `warning ${oError.message}` : oError.message}
-            <button onClick={() => dismiss(oError)}>dismiss</button>
-          </li>
+          <li key={iIndex}>{oError.warning ? `warning ${oError.message}` : oError.message}</li>
         ))}
       </ul>
       <output>{last()?.message ?? 'none'}</output>
       <button onClick={failApi}>fail</button>
       <button onClick={warnAdmin}>warn</button>
+      <button onClick={dismiss}>dismiss</button>
       <button onClick={clear}>clear</button>
     </div>
   ));
@@ -69,16 +67,16 @@ describe('error', () => {
     assert.equal(screen.getByRole('status').textContent, 'Careful');
   });
 
-  test('dismiss removes one error, and clear removes all of them', async () => {
+  test('dismiss removes the last error, and clear removes all of them', async () => {
     // Fails a request on each store
     fireEvent.click(screen.getByText('fail'));
     fireEvent.click(screen.getByText('warn'));
     await waitFor(() => assert.equal(screen.getAllByRole('listitem').length, 2));
 
-    // Dismisses the first error, then clears the rest
-    fireEvent.click(screen.getAllByText('dismiss')[0]);
+    // Dismisses the last error, then clears the rest
+    fireEvent.click(screen.getByText('dismiss'));
     await waitFor(() => assert.equal(screen.getAllByRole('listitem').length, 1));
-    assert.equal(screen.getByRole('status').textContent, 'Careful');
+    assert.equal(screen.getByRole('status').textContent, REQUEST_FAILED);
     fireEvent.click(screen.getByText('clear'));
     await waitFor(() => assert.equal(screen.queryAllByRole('listitem').length, 0));
 

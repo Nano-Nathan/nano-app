@@ -12,14 +12,12 @@ export default error()
     <section>
       <ul>
         {items().map((oError, iIndex) => (
-          <li key={iIndex}>
-            {oError.message}
-            <button onClick={() => dismiss(oError)}>dismiss</button>
-          </li>
+          <li key={iIndex}>{oError.message}</li>
         ))}
       </ul>
       <button onClick={failRead}>fail read</button>
       <button onClick={failWrite}>fail write</button>
+      <button onClick={dismiss}>dismiss</button>
       <button onClick={clear}>clear</button>
     </section>
   ));

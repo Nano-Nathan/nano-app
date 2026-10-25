@@ -6,8 +6,8 @@ export type ErrorMethods = {
   items(): ApiResponse[];
   /** The last error, `undefined` when there is none */
   last(): ApiResponse | undefined;
-  /** Removes an error from its store */
-  dismiss(error: ApiResponse): void;
+  /** Removes the last error from its store */
+  dismiss(): void;
   /** Removes the errors of every store */
   clear(): void;
 };

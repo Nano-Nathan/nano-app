@@ -14,16 +14,10 @@ export default function error(): Controller<ErrorMethods> {
       items: fnItems,
       // The last error of all the stores
       last: () => fnItems().at(-1),
-      dismiss: (oError: ApiResponse) => {
-        // Removes the error from the store that has it
-        for (const oStore of aStores) {
-          const aList: ApiResponse[] | undefined = oStore.get('/error/list');
-          if (aList?.includes(oError))
-            oStore.set(
-              '/error/list',
-              aList.filter(oItem => oItem !== oError),
-            );
-        }
+      dismiss: () => {
+        // Removes the last error from the last store that has errors
+        const oStore = aStores.filter(oItem => oItem.get('/error/list')?.length).at(-1);
+        oStore?.set('/error/list', oStore.get('/error/list').slice(0, -1));
       },
       clear: () => {
         // Empties the errors of every store that has them
