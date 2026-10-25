@@ -84,8 +84,22 @@ export default class ApiStore extends Store {
     this.iCount++;
     this.set('/busy', true);
 
-    // Sends it and adds a failed answer to the errors of the store
-    const oResponse = await this.send(sPath, oInit);
+    // Sends it to the proxy of the store and reads its answer as an `ApiResponse`
+    let sText: string | undefined;
+    let oResponse: ApiResponse = { success: false, message: REQUEST_FAILED };
+    try {
+      const oRes = await fetch(`/api/${this.sName}${sPath}`, {
+        ...oInit,
+        headers: { 'content-type': 'application/json' },
+      });
+      sText = await oRes.text();
+      oResponse = JSON.parse(sText);
+    } catch {
+      // Keeps the text of an answer that is not JSON as the result of the failed `ApiResponse`
+      if (sText !== undefined) oResponse = { ...oResponse, result: sText };
+    }
+
+    // Adds a failed answer to the errors of the store
     if (!oResponse.success) {
       const oError = { ...oResponse, message: oResponse.message || REQUEST_FAILED };
       this.set('/error/list', [...(this.get('/error/list') ?? []), oError]);
@@ -95,33 +109,6 @@ export default class ApiStore extends Store {
     this.iCount--;
     this.set('/busy', this.iCount > 0);
     return oResponse;
-  }
-
-  /** Sends a request to the proxy and returns its answer as an `ApiResponse` */
-  private async send(sPath: string, oInit: RequestInit): Promise<ApiResponse> {
-    try {
-      // Sends it to the proxy of the store and reads its text
-      const oRes = await fetch(`/api/${this.sName}${sPath}`, {
-        ...oInit,
-        headers: { 'content-type': 'application/json' },
-      });
-      return ApiStore.parse(await oRes.text());
-    } catch {
-      // Answers a failed `ApiResponse` when there is no answer
-      return { success: false, message: REQUEST_FAILED };
-    }
-  }
-
-  /** `ApiResponse` of an answer's text, or a failed one with the text as its result */
-  private static parse(sText: string): ApiResponse {
-    try {
-      // Reads the text as JSON
-      const oResponse: ApiResponse = JSON.parse(sText);
-      return oResponse;
-    } catch {
-      // Answers a failed `ApiResponse` with the text
-      return { success: false, message: REQUEST_FAILED, result: sText };
-    }
   }
 
   /** Keeps an answer at its path and query, over what was there, with its path's version */
