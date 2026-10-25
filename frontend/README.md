@@ -173,6 +173,58 @@ The proxy sends `x-api-key` with the value of `API_STRIPE_KEY_HEADER` (the name 
 - The user's own credentials (the session cookie, `Authorization`) still go as the browser sends them. Do not declare a header the user needs in the store, or every user goes with the store's value.
 - Without a `matcher`, Next runs the proxy on every request; to skip the rest, add `export const config = { matcher: '/api/:path*' };` to `proxy.ts` (Next reads it only when it is written there).
 
+### Sessions
+
+With [Better Auth](../backend/README.md#better-auth) on in the backend, its store declares `auth`, the `basePath` of Better Auth there. Without it the store stays as is.
+
+```ts
+// src/stores/backend.store.ts
+export default { type: 'api', auth: '/api/auth' };
+```
+
+```ts
+// src/controllers/session.controller.ts
+export default createController(({ stores: { backend } }) => ({
+  load: () => backend.readSession(),
+  signIn: (sEmail: string, sPassword: string) =>
+    backend.signIn('email', { email: sEmail, password: sPassword }),
+  signOut: () => backend.signOut(),
+}));
+```
+
+- `signIn(kind, body)` and `signUp(kind, body)` send `POST <auth>/sign-in/<kind>` and `POST <auth>/sign-up/<kind>`: `kind` is the method of Better Auth (`email`, ...), and `body` what it asks. `signOut()` sends `POST <auth>/sign-out`.
+- They return Better Auth's answer inside an `ApiResponse`: `{ success, result, message }`, with `success` when the backend answered 2xx and its `message` when it failed.
+- `readSession()` asks `GET <auth>/get-session` and keeps `{ user, session }` at `/session`, or `null` without a session. It answers from the store until a `signIn`, `signUp` or `signOut` succeeds, which reads it again. On the server it asks nothing and resolves with `{}`.
+- Any 401 of the store's backend sets `/session` to `null`, and the next `readSession()` asks again.
+- The session lives in Better Auth's cookie, which the proxy passes as any other: a refresh reads it again with `readSession()`.
+- Better Auth checks the `Origin` of every `POST`: add the URL of the frontend to its `trustedOrigins` in the backend.
+- With two backends with Better Auth, their cookies get the same name on the frontend's domain: give one of them another `advanced.cookiePrefix`.
+
+A page that needs a session gets a layout bound to the session controller: it renders nothing until the session is read, and goes to the login without one, also after a 401.
+
+```tsx
+// src/components/Private.tsx
+'use client';
+
+export default sessionController.bindView(({ props, stores: { backend }, load }) => {
+  const oRouter = useRouter();
+  const oSession = backend.get('/session');
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  useEffect(() => {
+    if (oSession === null) oRouter.replace('/login');
+  }, [oSession]);
+
+  return oSession ? props.children : null;
+});
+// app/private/layout.tsx renders <Private>{children}</Private>
+```
+
+The data stays protected by the backend: the layout only keeps the page from showing.
+
 ### With a proxy of your own
 
 Next takes one `proxy.ts`. To keep yours, call nano-app's from it for `/api` and include `/api/:path*` in your `matcher`:
@@ -208,6 +260,8 @@ The `Users` component reads and writes `/users` of the `backend` store, and `Use
 ```bash
 API_BACKEND_URL=http://localhost:3000 API_BACKEND_KEY_HEADER=dev pnpm --filter nano-frontend-test-app start
 ```
+
+The `backend` store declares `auth: '/api/auth'`: the backend has Better Auth with `emailAndPassword`, and the URL of the app (`http://localhost:3100`) in its `trustedOrigins`. `/login` signs in, `/` shows the session with a button to sign out, and `/private` shows only with a session.
 
 ## Design
 

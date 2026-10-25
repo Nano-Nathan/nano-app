@@ -60,6 +60,7 @@ export default abstract class Validator {
     type: typeof APP_STORE_TYPE | typeof API_STORE_TYPE;
     data?: NanoObject;
     headers?: NanoObject<string>;
+    auth?: string;
   } {
     // Checks that the default export is an object
     if (!Validator.isObject(oEntry, sFilePath)) return false;
@@ -82,6 +83,10 @@ export default abstract class Validator {
         Object.values(oEntry.headers).some(sValue => typeof sValue !== 'string'));
     if (isHeadersInvalid)
       return Validator.warn(sFilePath, '"headers" must be an object of strings.');
+
+    // Checks that the base path of Better Auth is a string
+    if (oEntry.auth !== undefined && typeof oEntry.auth !== 'string')
+      return Validator.warn(sFilePath, '"auth" must be a string: the base path of Better Auth.');
 
     return true;
   }
