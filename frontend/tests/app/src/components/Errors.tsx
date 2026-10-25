@@ -8,16 +8,18 @@ export default error()
     failRead: () => backend.read('/missing'),
     failWrite: () => backend.update('/missing', {}),
   }))
-  .bindView(({ items, dismiss, clear, failRead, failWrite }) => (
+  .bindView(({ items, remove, clear, failRead, failWrite }) => (
     <section>
       <ul>
         {items().map((oError, iIndex) => (
-          <li key={iIndex}>{oError.message}</li>
+          <li key={iIndex}>
+            {oError.message}
+            <button onClick={() => remove(iIndex)}>remove</button>
+          </li>
         ))}
       </ul>
       <button onClick={failRead}>fail read</button>
       <button onClick={failWrite}>fail write</button>
-      <button onClick={dismiss}>dismiss</button>
       <button onClick={clear}>clear</button>
     </section>
   ));

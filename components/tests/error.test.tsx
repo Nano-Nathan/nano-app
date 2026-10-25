@@ -28,11 +28,14 @@ const Errors = error()
     failApi: () => api.read('/users'),
     warnAdmin: () => admin.update('/warn', {}),
   }))
-  .bindView(({ items, last, dismiss, clear, failApi, warnAdmin }) => (
+  .bindView(({ items, remove, last, dismiss, clear, failApi, warnAdmin }) => (
     <div>
       <ul>
         {items().map((oError: ApiResponse, iIndex) => (
-          <li key={iIndex}>{oError.warning ? `warning ${oError.message}` : oError.message}</li>
+          <li key={iIndex}>
+            {oError.warning ? `warning ${oError.message}` : oError.message}
+            <button onClick={() => remove(iIndex)}>remove</button>
+          </li>
         ))}
       </ul>
       <output>{last()?.message ?? 'none'}</output>
@@ -81,5 +84,18 @@ describe('error', () => {
     await waitFor(() => assert.equal(screen.queryAllByRole('listitem').length, 0));
 
     assert.equal(screen.getByRole('status').textContent, 'none');
+  });
+
+  test('remove removes the error at its index', async () => {
+    // Fails a request on each store
+    fireEvent.click(screen.getByText('fail'));
+    fireEvent.click(screen.getByText('warn'));
+    await waitFor(() => assert.equal(screen.getAllByRole('listitem').length, 2));
+
+    // Removes the first error
+    fireEvent.click(screen.getAllByText('remove')[0]);
+    await waitFor(() => assert.equal(screen.getAllByRole('listitem').length, 1));
+
+    assert.equal(screen.getAllByRole('listitem')[0].firstChild?.textContent, 'warning Careful');
   });
 });
