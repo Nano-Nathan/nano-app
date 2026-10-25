@@ -11,6 +11,14 @@ export type StoreFiles = NanoObject<{
   headers?: NanoObject<string>;
 }>;
 
+/** A failed request in the `/error/list` of its api store */
+export type ApiError = {
+  /** Message of the backend, or `Request failed` when it brings none */
+  message: string;
+  /** Whether the backend marked it as a warning */
+  warning?: boolean;
+};
+
 /** Stores of a React tree by name: a `Store` per `app` file, an `ApiStore` per `api` file */
 // any: each store is a `Store` or an `ApiStore` by its file, typed per name in typed-paths
 export type Stores = NanoObject<any> & { [APP_NAME]: Store };

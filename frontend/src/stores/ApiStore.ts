@@ -1,7 +1,8 @@
-import { IS_SERVER } from '@nano-app/core/const';
+import { IS_SERVER, REQUEST_FAILED } from '@nano-app/core/const';
 import Store from './Store';
 import type { ApiResponse, QueryParams } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
+import type { ApiError } from '../types/store';
 
 /** Backend of an `api` store through its proxy; each read keeps its `ApiResponse` in the store */
 export default class ApiStore extends Store {
@@ -78,22 +79,52 @@ export default class ApiStore extends Store {
     return oResponse;
   }
 
-  /** Sends a request to the proxy and returns its JSON answer, keeping `/busy` while it is out */
+  /** Sends a request, keeping `/busy` while it is out and a failed answer in `/error/list` */
   private async request(sPath: string, oInit: RequestInit): Promise<ApiResponse> {
     // Counts the request and sets the store busy
     this.iCount++;
     this.set('/busy', true);
+
+    // Sends it and adds a failed answer to the errors of the store
+    const oResponse = await this.send(sPath, oInit);
+    if (!oResponse.success) {
+      const oError: ApiError = {
+        message: oResponse.message || REQUEST_FAILED,
+        warning: oResponse.warning,
+      };
+      this.set('/error/list', [...(this.get('/error/list') ?? []), oError]);
+    }
+
+    // Sets the store not busy when no request is left
+    this.iCount--;
+    this.set('/busy', this.iCount > 0);
+    return oResponse;
+  }
+
+  /** Sends a request to the proxy and returns its answer as an `ApiResponse` */
+  private async send(sPath: string, oInit: RequestInit): Promise<ApiResponse> {
     try {
-      // Sends it to the proxy of the store and reads its JSON
+      // Sends it to the proxy of the store and reads its text
       const oRes = await fetch(`/api/${this.sName}${sPath}`, {
         ...oInit,
         headers: { 'content-type': 'application/json' },
       });
-      return await oRes.json();
-    } finally {
-      // Sets the store not busy when no request is left
-      this.iCount--;
-      this.set('/busy', this.iCount > 0);
+      return ApiStore.parse(await oRes.text());
+    } catch {
+      // Answers a failed `ApiResponse` when there is no answer
+      return { success: false, message: REQUEST_FAILED };
+    }
+  }
+
+  /** `ApiResponse` of an answer's text, or a failed one with the text as its result */
+  private static parse(sText: string): ApiResponse {
+    try {
+      // Reads the text as JSON
+      const oResponse: ApiResponse = JSON.parse(sText);
+      return oResponse;
+    } catch {
+      // Answers a failed `ApiResponse` with the text
+      return { success: false, message: REQUEST_FAILED, result: sText };
     }
   }
 
