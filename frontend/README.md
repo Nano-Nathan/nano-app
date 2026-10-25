@@ -136,7 +136,7 @@ export default usersController.bindView(({ stores: { backend }, load, add }) => 
 - `create` (`POST <path>`), `update` (`PUT <path>`) and `delete` (`DELETE <path>`) return a promise of the `ApiResponse` and raise the version of their path and its parents (`update('/users/7')` raises `/users/7` and `/users`), so their next reads ask the backend, whatever their query. Other paths keep what they have.
 - A successful `update` also keeps its `ApiResponse` at its path, over what the store had there, with the new version of the path: its next read answers from the store. `create` and `delete` keep nothing.
 - A read or a write always resolves with an `ApiResponse`. When the backend fails it is the backend's (`success: false`, `message`); an answer that is not JSON becomes `{ success: false, message: 'Request failed', result: <the text> }`, and no answer `{ success: false, message: 'Request failed' }`.
-- Each failed request adds `{ message, warning }` to the store's `/error/list` (`message` is `'Request failed'` when the backend brings none). The views get it with `get('/error/list')`, or through the `error` component of `@nano-app/components`.
+- Each failed request adds its `ApiResponse` to the store's `/error/list`, with `message` set to `'Request failed'` when the backend brings none. The views get it with `get('/error/list')`, or through the `error` component of `@nano-app/components`.
 - On the server (the first HTML that Next renders) `read` asks nothing and resolves with an empty `ApiResponse` (`{}`).
 - `/busy` is `true` while a request of the store is out (`backend.get('/busy') ? 'Loading…' : …`).
 - What another user changes is seen after a write on the same path.

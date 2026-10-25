@@ -235,10 +235,7 @@ describe('api store', () => {
     assert.deepEqual(await backend.read('/fail'), oFailed);
     assert.deepEqual(backend.get('/fail'), oFailed);
     assert.deepEqual(await backend.create('/fail', {}), oFailed);
-    assert.deepEqual(backend.get('/error/list'), [
-      { message: 'Failed', warning: undefined },
-      { message: 'Failed', warning: undefined },
-    ]);
+    assert.deepEqual(backend.get('/error/list'), [oFailed, oFailed]);
   });
 
   test('an answer without JSON, or no answer, is a failed ApiResponse', async () => {
@@ -251,6 +248,7 @@ describe('api store', () => {
       result: '<h1>Not found</h1>',
     });
     assert.deepEqual(await backend.delete('/drop'), { success: false, message: REQUEST_FAILED });
+    assert.equal(backend.get('/error/list')[0].result, '<h1>Not found</h1>');
     assert.equal(backend.get('/error/list').length, 2);
     assert.equal(backend.get('/busy'), false);
   });

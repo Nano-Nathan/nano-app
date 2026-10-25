@@ -7,7 +7,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { NanoAppProvider } from '@nano-app/frontend';
 import { REQUEST_FAILED, STORES_ENV } from '@nano-app/core/const';
 import error from '../error';
-import type { ApiError } from '@nano-app/frontend';
+import type { ApiResponse } from '@nano-app/core/types/api';
 
 const PORT = 4201;
 
@@ -31,7 +31,7 @@ const Errors = error()
   .bindView(({ items, last, dismiss, clear, failApi, warnAdmin }) => (
     <div>
       <ul>
-        {items().map((oError: ApiError, iIndex) => (
+        {items().map((oError: ApiResponse, iIndex) => (
           <li key={iIndex}>
             {oError.warning ? `warning ${oError.message}` : oError.message}
             <button onClick={() => dismiss(oError)}>dismiss</button>
