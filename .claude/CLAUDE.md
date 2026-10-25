@@ -128,6 +128,7 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 - Routes are private by default. A plugin that exposes something public says so in its README; with `packages.betterAuth`, only its endpoints and the plugins mounted before the app are public.
 - The error handler answers with the message of what was thrown, also on 5xx: it is the consumer's job not to throw internal data. Framework messages never include secrets or connection strings.
 - No DDL at startup: the consumer migrates their schemas with Prisma; the startup only generates clients and checks tables. The one exception is an official plugin's reviewed, additive migrations (`migrations/` next to its schema), applied with `prisma migrate deploy` (see PLUGINS.md).
-- A new dependency needs a reason a built-in cannot cover. No dependencies with install scripts.
+- A new dependency needs a reason a built-in cannot cover. Install scripts run only for the packages in `allowBuilds` of `pnpm-workspace.yaml`.
 - Workflows: `permissions: contents: read` by default; `id-token: write` and `contents: write` only on release jobs. Packages are published only by CI (npm trusted publishing).
+- Actions are pinned by commit SHA with the version in a comment (`actions/checkout@<sha> # v7.0.1`); checkouts of test jobs use `persist-credentials: false`. Workflows run tools from the lockfile with `pnpm exec`, never `npx`.
 - Report vulnerabilities as in [SECURITY.md](../SECURITY.md).

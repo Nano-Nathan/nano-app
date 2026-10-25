@@ -9,12 +9,15 @@ export const APP_STORE_TYPE = 'app';
 /** Type of a `*.store.ts` that reads and writes a backend, through the frontend proxy */
 export const API_STORE_TYPE = 'api';
 
+/** HTTP methods a route can handle */
+export const HTTP_METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'QUERY'] as const;
+
 // Backend
 
 /** Package of the official plugins: only its schemas may declare nano_* */
 export const OFFICIAL_PLUGINS = '@nano-app/plugins';
 
-/** Error when the database URL is missing, at startup and on `nano-app push` */
+/** Error when the database URL is missing at startup */
 export const MISSING_DATABASE_URL =
   '[nano-app] [ERROR] The DATABASE_URL environment variable is not defined.';
 

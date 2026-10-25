@@ -7,6 +7,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { REQUEST_FAILED, STORES_ENV } from '@nano-app/core/const';
 import createController from '../src/creators/createController';
 import { NanoAppProvider } from '../src/react/NanoAppProvider';
+import { count } from './helpers';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { ApiError } from '../src/types/store';
 
@@ -74,11 +75,6 @@ function renderStores(): NanoObject {
   return oStores;
 }
 
-/** Requests received for one method and path */
-function count(sRequest: string): number {
-  return aRequests.filter(sEntry => sEntry === sRequest).length;
-}
-
 describe('api store', () => {
   before(() => new Promise<void>(fnResolve => oBackend.listen(PORT, fnResolve)));
   after(() => oBackend.close());
@@ -95,10 +91,10 @@ describe('api store', () => {
 
   test('a read keeps its ApiResponse at its path and query, and the views get it', async () => {
     // A controller reads the users and the first one; a view gets both
-    const usersController = createController(({ stores: { backend } }) => ({
+    const oUsersController = createController(({ stores: { backend } }) => ({
       load: () => Promise.all([backend.read('/users'), backend.read('/users', { top: 1 })]),
     }));
-    const List = usersController.bindView(({ stores: { backend }, load }) => (
+    const List = oUsersController.bindView(({ stores: { backend }, load }) => (
       <div>
         <ul>
           {(backend.get('/users')?.result ?? []).map((oUser: NanoObject) => (
@@ -133,19 +129,19 @@ describe('api store', () => {
     await backend.read('/users/7');
 
     assert.deepEqual(oKept.result, aUsers);
-    assert.equal(count('GET /api/backend/users'), 1);
-    assert.equal(count('GET /api/backend/users/7'), 1);
+    assert.equal(count(aRequests, 'GET /api/backend/users'), 1);
+    assert.equal(count(aRequests, 'GET /api/backend/users/7'), 1);
 
     // Writes another path, then deletes `/users/7`: both ask again
     await backend.create('/orders', { id: 1 });
     await backend.read('/users');
-    assert.equal(count('GET /api/backend/users'), 1);
+    assert.equal(count(aRequests, 'GET /api/backend/users'), 1);
     await backend.delete('/users/7');
     await backend.read('/users/7');
     await backend.read('/users');
 
-    assert.equal(count('GET /api/backend/users/7'), 2);
-    assert.equal(count('GET /api/backend/users'), 2);
+    assert.equal(count(aRequests, 'GET /api/backend/users/7'), 2);
+    assert.equal(count(aRequests, 'GET /api/backend/users'), 2);
   });
 
   test('a successful update keeps its answer at its path, and its parents ask again', async () => {
@@ -160,8 +156,8 @@ describe('api store', () => {
     await backend.read('/users');
 
     assert.equal(oRead.result.name, 'Bruno');
-    assert.equal(count('GET /api/backend/users/7'), 1);
-    assert.equal(count('GET /api/backend/users'), 2);
+    assert.equal(count(aRequests, 'GET /api/backend/users/7'), 1);
+    assert.equal(count(aRequests, 'GET /api/backend/users'), 2);
   });
 
   test('a read answered after an update does not replace its answer', async () => {
@@ -174,7 +170,7 @@ describe('api store', () => {
     await backend.read('/users/7');
 
     assert.equal(backend.get('/users/7').result.name, 'Bruno');
-    assert.equal(count('GET /api/backend/users/7'), 1);
+    assert.equal(count(aRequests, 'GET /api/backend/users/7'), 1);
   });
 
   test('a failed update keeps nothing, and its path asks again', async () => {
@@ -185,7 +181,7 @@ describe('api store', () => {
     await backend.read('/fail');
 
     assert.equal(backend.get('/fail').success, false);
-    assert.equal(count('GET /api/backend/fail'), 2);
+    assert.equal(count(aRequests, 'GET /api/backend/fail'), 2);
   });
 
   test('a read keeps what the store had at its path', async () => {
@@ -200,7 +196,7 @@ describe('api store', () => {
 
     assert.equal(backend.get('/users/page'), 2);
     assert.equal(backend.get('/users/7').result.name, 'Beto');
-    assert.equal(count('GET /api/backend/users/7'), 1);
+    assert.equal(count(aRequests, 'GET /api/backend/users/7'), 1);
   });
 
   test('a read answered after a write is asked again', async () => {
@@ -212,7 +208,7 @@ describe('api store', () => {
     await oRead;
     await backend.read('/users/7');
 
-    assert.equal(count('GET /api/backend/users/7'), 2);
+    assert.equal(count(aRequests, 'GET /api/backend/users/7'), 2);
   });
 
   test('busy is true while a request is out', async () => {

@@ -13,8 +13,10 @@ export type Params<DB = any> = Partial<
   }
 >;
 
-/** Endpoint handlers */
+/** Endpoint handler */
 export type Handler<DB> = (req: Request, params: Params<DB>) => ApiPromise;
+
+/** Endpoint handlers, one per HTTP method */
 export type Handlers<DB = any> = {
   GET?: Handler<DB>;
   POST?: Handler<DB>;
@@ -23,13 +25,17 @@ export type Handlers<DB = any> = {
   QUERY?: Handler<DB>;
 };
 
-/** Callbacks */
+/** Callback run with the params */
 export type Callback<DB> = (params: Params<DB>) => Promise<void>;
+
+/** Callback run before a method, with its request */
 export type CallbackMethod<DB> = (
   req: Request,
   method: string,
   params: Params<DB>,
 ) => Promise<NanoObject>;
+
+/** Callback run with the Express app */
 export type CallbackMount<DB> = (app: Express, params: Params<DB>) => Promise<void>;
 
 /** Callbacks of an endpoint. They never receive the app: what affects the whole app goes in the plugin's onMount */

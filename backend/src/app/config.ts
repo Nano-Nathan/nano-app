@@ -6,7 +6,7 @@ import type { PluginConfig } from '../types/plugin';
 
 /** Initial application configuration */
 export const INITIAL_CONFIG = {
-  /** Initial application configuration */
+  /** Application port */
   port: 3000,
 
   /** Application listener */
@@ -73,13 +73,23 @@ function deepMerge(oDefault: unknown, oValue: unknown): unknown {
   return Object.fromEntries(aKeys.map(sKey => [sKey, deepMerge(oDefault[sKey], oValue[sKey])]));
 }
 
+/** Whether a merged configuration kept the plain object of the initial one */
+function isMergedConfig(oValue: unknown): oValue is typeof INITIAL_CONFIG {
+  return isPlainObject(oValue);
+}
+
 /** Merges the consumer configuration over the initial one; the main plugin is always named "app" */
 export function mergeConfig(oConfig: NanoAppConfig = {}): NanoAppConfig &
   Required<Pick<NanoAppConfig, 'settings' | 'plugins' | 'packages'>> & {
     mainPlugin: PluginConfig;
   } {
   // Every level keeps its default where the consumer set nothing
-  const oMerged = deepMerge(INITIAL_CONFIG, oConfig) as typeof INITIAL_CONFIG;
+  const oMerged = deepMerge(INITIAL_CONFIG, oConfig);
+
+  // Fails when the configuration is not an object
+  if (!isMergedConfig(oMerged)) {
+    throw new Error('[nano-app] [ERROR] The configuration of createNanoApp must be an object.');
+  }
 
   // Names the main plugin
   return { ...oMerged, mainPlugin: { ...oMerged.mainPlugin, name: APP_NAME } };

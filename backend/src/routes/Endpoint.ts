@@ -1,3 +1,4 @@
+import { HTTP_METHODS } from '@nano-app/core/const';
 import type { RequestHandler } from 'express';
 import type { Callbacks, Handlers, Params } from '@nano-app/core';
 
@@ -25,8 +26,9 @@ export default class Endpoint {
   private createHandler(oParams: Params): RequestHandler {
     return (oReq, oRes, fnNext) => {
       // Finds the handler of the request method
-      const sMethod = oReq.method.toUpperCase() as keyof Handlers;
-      const fnMethod = this.oMethods[sMethod];
+      const sMethod = oReq.method.toUpperCase();
+      const sHandled = HTTP_METHODS.find(sHttpMethod => sHttpMethod === sMethod);
+      const fnMethod = sHandled && this.oMethods[sHandled];
 
       // Checks whether the method is defined
       if (!fnMethod) return fnNext({ status: 405, message: `Method ${sMethod} not implemented` });

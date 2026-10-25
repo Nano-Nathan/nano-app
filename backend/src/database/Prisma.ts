@@ -5,9 +5,7 @@ import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { FileReader, Formatter } from '@nano-app/core';
 import { MISSING_DATABASE_URL } from '@nano-app/core/const';
-
-/** What `generate` remembers of a client: the schema it came from and its hash */
-type ClientSource = { schemaPath: string; hash: string };
+import type { ClientSource } from '../types/database';
 
 /** Runs the consumer's Prisma CLI: generates clients and applies official plugins' migrations */
 export default abstract class Prisma {
@@ -98,7 +96,7 @@ export default abstract class Prisma {
     } catch {
       // Not resolvable: the package is not installed
       throw new Error(
-        `[nano-app] [ERROR] The database "${sName}" needs Prisma: install the prisma package.`,
+        `[nano-app] [ERROR] The database "${sName}" needs Prisma. Run \`pnpm add prisma\`.`,
       );
     }
 
@@ -110,10 +108,11 @@ export default abstract class Prisma {
       });
     } catch (oError) {
       // execFileSync's error carries the command's stderr and stdout
-      const oFailed = oError as { stderr?: Buffer; stdout?: Buffer };
-      const sOutput =
-        `${oFailed.stderr ?? ''}${oFailed.stdout ?? ''}`.trim() || Formatter.error(oError);
-      throw new Error(`[nano-app] [ERROR] prisma ${aArgs[0]} failed for "${sName}": ${sOutput}`);
+      const isOutput = oError instanceof Error && 'stderr' in oError && 'stdout' in oError;
+      const sOutput = isOutput ? `${oError.stderr}${oError.stdout}`.trim() : '';
+      throw new Error(
+        `[nano-app] [ERROR] prisma ${aArgs[0]} failed for "${sName}": ${sOutput || Formatter.error(oError)}`,
+      );
     }
   }
 }

@@ -6,6 +6,7 @@ import { createServer } from 'node:http';
 import { STORES_ENV } from '@nano-app/core/const';
 import createStores from '../src/creators/createStores';
 import AuthStore from '../src/stores/AuthStore';
+import { count } from './helpers';
 import type { NanoObject } from '@nano-app/core/types/objects';
 
 const PORT = 4201;
@@ -58,11 +59,6 @@ const oBackend = createServer((oReq, oRes) => {
     oRes.writeHead(iStatus, { 'content-type': 'application/json' }).end(JSON.stringify(oAnswer));
   });
 });
-
-/** Requests received for one method and path */
-function count(sRequest: string): number {
-  return aRequests.filter(sEntry => sEntry === sRequest).length;
-}
 
 describe('auth store', () => {
   before(async () => {
@@ -124,13 +120,13 @@ describe('auth store', () => {
     await oStore.signIn('email', { email: 'ana@nano.app', password: 'secret' });
     await oStore.readSession();
 
-    assert.equal(count('GET /api/backend/api/auth/get-session'), 2);
+    assert.equal(count(aRequests, 'GET /api/backend/api/auth/get-session'), 2);
 
     // Signs out: the session is read again, without a user
     await oStore.signOut();
     await oStore.readSession();
 
-    assert.equal(count('GET /api/backend/api/auth/get-session'), 3);
+    assert.equal(count(aRequests, 'GET /api/backend/api/auth/get-session'), 3);
     assert.equal(oStore.get('/session'), null);
   });
 
@@ -151,6 +147,6 @@ describe('auth store', () => {
 
     assert.deepEqual(oResponse, { success: false, message: 'Not authenticated' });
     assert.equal(oStore.get('/session'), null);
-    assert.equal(count('GET /api/backend/api/auth/get-session'), 2);
+    assert.equal(count(aRequests, 'GET /api/backend/api/auth/get-session'), 2);
   });
 });

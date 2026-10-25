@@ -1,0 +1,47 @@
+# Checks the dependencies of every pull request to main or to a feature branch:
+# - `dependency-review`: fails if the pull request adds a dependency with a high or critical advisory.
+# - `audit`: fails if any runtime dependency of the lockfile has a high or critical advisory.
+name: Security
+
+on:
+  pull_request:
+    branches: [main, 'feat/**']
+
+permissions:
+  contents: read
+
+# A new push to a pull request cancels its run in progress
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: 12.11.2
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      # Reads only the lockfile: no install
+      - run: pnpm audit --prod --audit-level high

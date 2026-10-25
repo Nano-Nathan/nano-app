@@ -1,13 +1,14 @@
 import { API_STORE_TYPE, APP_NAME } from '@nano-app/core/const';
 import ApiStore from '../stores/ApiStore';
 import AuthStore from '../stores/AuthStore';
+import readStoreFiles from '../stores/readStoreFiles';
 import Store from '../stores/Store';
-import type { StoreFile, StoreFiles, Stores } from '../types/store';
+import type { StoreFile, Stores } from '../types/store';
 
 /** Stores of one React tree, from the ones `withNanoApp` inlined at build time */
 export default function createStores(): Stores {
-  // `process.env.NANO_APP_STORES` stays literal so Next can replace it
-  const oFiles: StoreFiles = JSON.parse(process.env.NANO_APP_STORES ?? '{}');
+  // Reads the store files
+  const oFiles = readStoreFiles();
 
   // Creates each store with its own state
   const oStores = Object.fromEntries(

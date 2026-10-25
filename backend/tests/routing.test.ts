@@ -1,32 +1,31 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { startApp, request, mountedPaths } from './helpers';
+import { startApp, request } from './helpers';
 
 describe('file path to express path', () => {
-  // [routesDir, basePath, expected Express path]
+  // [routesDir, basePath, a path the route answers]
   const aCases: [string, string | undefined, string][] = [
     ['tests/fixtures/paths/index', undefined, '/'],
-    ['tests/fixtures/paths/index-expression', undefined, '/:entity'],
-    ['tests/fixtures/paths/plain', undefined, '/service/test/:id'],
+    ['tests/fixtures/paths/index-expression', undefined, '/users'],
+    ['tests/fixtures/paths/plain', undefined, '/service/test/7'],
     ['tests/fixtures/paths/index', '/demo', '/demo'],
-    ['tests/fixtures/paths/plain', '/demo', '/demo/service/test/:id'],
+    ['tests/fixtures/paths/plain', '/demo', '/demo/service/test/7'],
+    ['tests/fixtures/paths/index-expression', '/demo', '/demo/users'],
   ];
 
   // One test per case
-  for (const [sRoutesDir, sBasePath, sExpected] of aCases) {
-    test(`${sRoutesDir.split('/').pop()} + base ${sBasePath ?? '-'} → ${sExpected}`, async () => {
-      assert.deepEqual(await mountedPaths({ routesDir: sRoutesDir, basePath: sBasePath }), [
-        sExpected,
-      ]);
+  for (const [sRoutesDir, sBasePath, sPath] of aCases) {
+    test(`${sRoutesDir.split('/').pop()} + base ${sBasePath ?? '-'} answers ${sPath}`, async () => {
+      // Starts an app with the routes
+      const oServer = await startApp([{ routesDir: sRoutesDir, basePath: sBasePath }]);
+
+      // Checks that the route answers the path
+      assert.equal((await request(oServer.url, sPath)).status, 200);
+
+      // Stops the server
+      await oServer.close();
     });
   }
-
-  test('index-expression + base /demo → /demo/:entity', async () => {
-    assert.deepEqual(
-      await mountedPaths({ routesDir: 'tests/fixtures/paths/index-expression', basePath: '/demo' }),
-      ['/demo/:entity'],
-    );
-  });
 });
 
 describe('routes by file convention', () => {
@@ -102,12 +101,12 @@ describe('routes by file convention', () => {
     const { status, body } = await request(oServer.url, '/health', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hola: 'mundo' }),
+      body: JSON.stringify({ name: 'Bruno' }),
     });
 
     // Checks that the handler got it parsed
     assert.equal(status, 200);
-    assert.deepEqual(body.result, { hola: 'mundo' });
+    assert.deepEqual(body.result, { name: 'Bruno' });
   });
 
   test('an invalid file is discarded without taking down the other routes', async () => {

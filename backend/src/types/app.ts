@@ -33,6 +33,13 @@ export type PackagesConfig = {
   betterAuth?: Omit<BetterAuthOptions, 'database'> | false;
 };
 
+/** Error shape thrown by the consumer handlers */
+export type HandlerError = {
+  status?: number;
+  message?: string;
+  warning?: boolean;
+};
+
 /** Application configuration */
 export type NanoAppConfig = {
   /** Listener run once the server is listening */

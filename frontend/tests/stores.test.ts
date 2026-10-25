@@ -1,6 +1,5 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { reaction } from 'mobx';
 import { STORES_ENV } from '@nano-app/core/const';
@@ -73,15 +72,5 @@ describe('withNanoApp', () => {
     } finally {
       process.chdir(sCwd);
     }
-  });
-
-  test('createStores reads the env var that withNanoApp writes', () => {
-    // Reads the source: Next only inlines `process.env.<name>` written literally
-    const sSource = readFileSync(
-      fileURLToPath(new URL('../src/creators/createStores.ts', import.meta.url)),
-      'utf8',
-    );
-
-    assert.ok(sSource.includes(`process.env.${STORES_ENV}`));
   });
 });

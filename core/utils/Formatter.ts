@@ -2,7 +2,13 @@
 export default abstract class Formatter {
   /** Message of anything thrown: its `message` when it has one, else the value itself */
   public static error(oError: unknown): string {
-    return String((oError as { message?: unknown } | undefined)?.message ?? oError);
+    // An object with a `message`: its message
+    if (oError && typeof oError === 'object' && 'message' in oError) {
+      return String(oError.message ?? oError);
+    }
+
+    // Anything else: the value itself
+    return String(oError);
   }
 
   /** Formats a date for the request log, in UTC: `2026-10-19 12:03:10` */

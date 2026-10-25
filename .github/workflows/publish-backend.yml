@@ -42,9 +42,10 @@ jobs:
       NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
     steps:
       # Full history: a pull request is tested only if its diff against the base touches the backend
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Touches the backend
         id: changes
@@ -59,12 +60,12 @@ jobs:
           fi
 
       - if: steps.changes.outputs.run == 'true'
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
         with:
           version: 12.11.2
 
       - if: steps.changes.outputs.run == 'true'
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           cache: pnpm
@@ -80,7 +81,7 @@ jobs:
       - name: Create Neon branch
         id: neon
         if: steps.changes.outputs.run == 'true' && env.NEON_API_KEY != ''
-        uses: neondatabase/create-branch-action@v6
+        uses: neondatabase/create-branch-action@fb620d43d4c565abaf088b848a4e28e5c4ea4d9c # v6.3.1
         with:
           project_id: ${{ env.NEON_PROJECT_ID }}
           api_key: ${{ env.NEON_API_KEY }}
@@ -97,7 +98,7 @@ jobs:
 
       - name: Delete Neon branch
         if: always() && steps.neon.outputs.branch_id != ''
-        uses: neondatabase/delete-branch-action@v3
+        uses: neondatabase/delete-branch-action@4468d825d5a88ef4012f1705a82f02ec3072f776 # v3.2.1
         with:
           project_id: ${{ env.NEON_PROJECT_ID }}
           branch: ${{ steps.neon.outputs.branch_id }}
@@ -115,17 +116,17 @@ jobs:
         working-directory: backend
     steps:
       # Full history and tags: semantic-release reads the commits since the last tag
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
         with:
           version: 12.11.2
 
       # No registry-url: setup-node writes an empty _authToken and npm skips OIDC.
       # https://github.com/npm/documentation/issues/1960
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           cache: pnpm
@@ -135,6 +136,6 @@ jobs:
       - run: pnpm build
 
       # Releases only for fix/feat commits since the last tag; see backend/.releaserc.json
-      - run: npx semantic-release@25
+      - run: pnpm exec semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

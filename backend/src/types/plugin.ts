@@ -6,7 +6,7 @@ export type PluginStage = 'before' | 'after';
 
 /** Plugin configuration: a group of endpoints */
 export type PluginConfig<Options = NanoObject> = {
-  /** Name of the plugin, same as his database (If have one) */
+  /** Name of the plugin, also the name of its database when it has one */
   name: string;
   /** Directory used to discover the `*.route.ts` files */
   routesDir: string;
@@ -21,6 +21,9 @@ export type PluginConfig<Options = NanoObject> = {
   /** Plugin callbacks */
   callbacks?: PluginCallbacks;
 };
+
+/** A function of a plugin's own options that returns its configuration */
+export type PluginCreator<Options> = (options?: Options) => PluginConfig<Options>;
 
 /** The project's plugin: nano-app names it "app" and mounts it between the "before" and "after" plugins */
 export type MainPluginConfig<Options = NanoObject> = {

@@ -1,10 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { FileLoader, FileReader, Formatter, type NanoObject } from '@nano-app/core';
+import { FileLoader, FileReader, Formatter } from '@nano-app/core';
 import { MISSING_DATABASE_URL, OFFICIAL_PLUGINS } from '@nano-app/core/const';
 import Prisma from './Prisma';
 import type { PrismaPg } from '@prisma/adapter-pg';
-import type { DatabaseConfig } from '../types/database';
+import type { NanoObject } from '@nano-app/core';
+import type { DatabaseConfig, PackageJson } from '../types/database';
 
 /** Prisma clients of the app and its plugins, one per name */
 export default abstract class Database {
@@ -118,7 +119,7 @@ export default abstract class Database {
     }
 
     // Checks the name of the package it belongs to
-    const { name } = JSON.parse(readFileSync(join(sDir, 'package.json'), 'utf-8'));
-    return name === OFFICIAL_PLUGINS;
+    const oPackage: PackageJson = JSON.parse(readFileSync(join(sDir, 'package.json'), 'utf-8'));
+    return oPackage.name === OFFICIAL_PLUGINS;
   }
 }

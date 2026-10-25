@@ -55,12 +55,14 @@ describe('proxy', () => {
   after(() => oBackend.close());
 
   test('a request reaches its backend with method, path, query, body, cookie and the store key', async () => {
+    // Sends a request with a body and a cookie to a store with a key
     const oRes = await send('/api/admin_users/users/7?top=1', {
       method: 'POST',
       headers: { cookie: 'session=old' },
       body: '{"name":"Ana"}',
     });
 
+    // Checks what the backend received and that its cookie came back
     assert.equal(oRes.headers.get('set-cookie'), 'session=new; Path=/; HttpOnly');
     assert.deepEqual(await oRes.json(), {
       method: 'POST',
@@ -72,12 +74,15 @@ describe('proxy', () => {
   });
 
   test('the browser cannot replace a header of the store', async () => {
+    // Sends the store's header from the browser
     const oRes = await send('/api/admin_users/users', { headers: { 'x-api-key': 'fake' } });
 
+    // Checks that the backend got the store's value
     assert.equal((await oRes.json()).key, 'secret');
   });
 
   test('a request outside /api/<store> goes on to the app routes', async () => {
+    // Checks that each path goes on to Next
     for (const sPath of ['/admin_users/users', '/api']) {
       const oRes = await send(sPath);
       assert.equal(oRes.headers.get('x-middleware-next'), '1', sPath);
