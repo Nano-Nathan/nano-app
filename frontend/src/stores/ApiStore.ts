@@ -1,7 +1,8 @@
-import { IS_SERVER } from '@nano-app/core/const';
+import { IS_SERVER, REQUEST_FAILED } from '@nano-app/core/const';
 import Store from './Store';
 import type { ApiResponse, QueryParams } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
+import type { ApiError } from '../types/store';
 
 /** Backend of an `api` store through its proxy; each read keeps its `ApiResponse` in the store */
 export default class ApiStore extends Store {
@@ -78,23 +79,41 @@ export default class ApiStore extends Store {
     return oResponse;
   }
 
-  /** Sends a request to the proxy and returns its JSON answer, keeping `/busy` while it is out */
+  /** Sends a request, keeping `/busy` while it is out and a failed answer in `/error/list` */
   private async request(sPath: string, oInit: RequestInit): Promise<ApiResponse> {
     // Counts the request and sets the store busy
     this.iCount++;
     this.set('/busy', true);
+
+    // Sends it to the proxy of the store and reads its answer as an `ApiResponse`
+    let sText: string | undefined;
+    let oResponse: ApiResponse = { success: false, message: REQUEST_FAILED };
     try {
-      // Sends it to the proxy of the store and reads its JSON
       const oRes = await fetch(`/api/${this.sName}${sPath}`, {
         ...oInit,
         headers: { 'content-type': 'application/json' },
       });
-      return await oRes.json();
-    } finally {
-      // Sets the store not busy when no request is left
-      this.iCount--;
-      this.set('/busy', this.iCount > 0);
+      sText = await oRes.text();
+      oResponse = JSON.parse(sText);
+    } catch {
+      // Keeps the text of an answer that is not JSON as the result of the failed `ApiResponse`
+      if (sText !== undefined) oResponse = { ...oResponse, result: sText };
     }
+
+    // Adds a failed answer to the errors of the store
+    if (!oResponse.success) {
+      const oError: ApiError = {
+        ...oResponse,
+        message: oResponse.message || REQUEST_FAILED,
+        timestamp: Date.now(),
+      };
+      this.set('/error/list', [...(this.get('/error/list') ?? []), oError]);
+    }
+
+    // Sets the store not busy when no request is left
+    this.iCount--;
+    this.set('/busy', this.iCount > 0);
+    return oResponse;
   }
 
   /** Keeps an answer at its path and query, over what was there, with its path's version */

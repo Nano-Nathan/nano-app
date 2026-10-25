@@ -4,10 +4,11 @@ import { test, describe, before, after, beforeEach, afterEach } from 'node:test'
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { STORES_ENV } from '@nano-app/core/const';
+import { REQUEST_FAILED, STORES_ENV } from '@nano-app/core/const';
 import createController from '../src/creators/createController';
 import { NanoAppProvider } from '../src/react/NanoAppProvider';
 import type { NanoObject } from '@nano-app/core/types/objects';
+import type { ApiError } from '../src/types/store';
 
 const PORT = 4200;
 
@@ -47,6 +48,9 @@ const oBackend = createServer((oReq, oRes) => {
   oReq.on('end', () => {
     const { method = '', url = '' } = oReq;
     aRequests.push(`${method} ${url}`);
+
+    // Closes `/drop` without an answer
+    if (url.endsWith('/drop')) return oReq.socket.destroy();
     const [sType, sAnswer] = answer(method, url, sBody);
     setTimeout(() => oRes.writeHead(200, { 'content-type': sType }).end(sAnswer), iDelay);
   });
@@ -224,15 +228,34 @@ describe('api store', () => {
     assert.equal(backend.get('/busy'), false);
   });
 
-  test('a read and a write return the ApiResponse, and an answer without JSON rejects', async () => {
-    // Reads and writes a path that answers success: false, and one that answers HTML
+  test('a failed request returns its ApiResponse and adds its error to the store', async () => {
+    // Reads and writes a path that answers success: false
     const { backend } = renderStores();
     const oFailed = { success: false, message: 'Failed' };
 
     assert.deepEqual(await backend.read('/fail'), oFailed);
     assert.deepEqual(backend.get('/fail'), oFailed);
     assert.deepEqual(await backend.create('/fail', {}), oFailed);
-    await assert.rejects(backend.read('/html'));
-    await assert.rejects(backend.delete('/html/1'));
+    const aErrors: ApiError[] = backend.get('/error/list');
+    assert.deepEqual(aErrors, [
+      { ...oFailed, timestamp: aErrors[0].timestamp },
+      { ...oFailed, timestamp: aErrors[1].timestamp },
+    ]);
+    assert.equal(typeof aErrors[0].timestamp, 'number');
+  });
+
+  test('an answer without JSON, or no answer, is a failed ApiResponse', async () => {
+    // Reads a path that answers HTML and one that closes without an answer
+    const { backend } = renderStores();
+
+    assert.deepEqual(await backend.read('/html'), {
+      success: false,
+      message: REQUEST_FAILED,
+      result: '<h1>Not found</h1>',
+    });
+    assert.deepEqual(await backend.delete('/drop'), { success: false, message: REQUEST_FAILED });
+    assert.equal(backend.get('/error/list')[0].result, '<h1>Not found</h1>');
+    assert.equal(backend.get('/error/list').length, 2);
+    assert.equal(backend.get('/busy'), false);
   });
 });

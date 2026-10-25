@@ -15,7 +15,7 @@
   ],
   "scripts": {
     "build": "tsdown",
-    "test": "tsx --test tests/*.test.tsx",
+    "test": "tsx --test --test-concurrency=1 tests/*.test.tsx",
     "prepublishOnly": "pnpm run build"
   },
   "keywords": [

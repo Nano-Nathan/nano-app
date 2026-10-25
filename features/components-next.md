@@ -1,7 +1,7 @@
 ---
 status: todo
 owner: null
-depends_on: [error-component, frontend-auth]
+depends_on: [frontend-auth]
 updated: 2026-10-24
 ---
 
@@ -13,7 +13,7 @@ More components in `@nano-app/components`, the same way as `list`: a factory tha
 
 ## Scope
 
-- `form`: needs the [error component](error-component.md).
+- `form`: shows its errors with the `error` component.
 - `login`, `session` and `logout`: need [auth in the frontend](frontend-auth.md).
 - Each one listed point by point with the maintainer before writing code.
 
