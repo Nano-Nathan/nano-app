@@ -3,14 +3,19 @@ import type { ApiResponse } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type Store from '../stores/Store';
 
-/** Stores of the app by name (`src/stores/app.store.ts` → `app`), as their files export them */
-export type StoreFiles = NanoObject<{
+/** A store as its file exports it */
+export type StoreFile = {
   type: typeof APP_STORE_TYPE | typeof API_STORE_TYPE;
   /** Initial state */
   data?: NanoObject;
   /** Headers the proxy adds, each value names its env var: `KEY` → `API_KEY_HEADER` */
   headers?: NanoObject<string>;
-}>;
+  /** Base path of Better Auth in the backend of an `api` store (`/api/auth`) */
+  auth?: string;
+};
+
+/** Stores of the app by name (`src/stores/app.store.ts` → `app`), as their files export them */
+export type StoreFiles = NanoObject<StoreFile>;
 
 /** A failed request in the `/error/list` of its api store: its `ApiResponse` and when it failed */
 export type ApiError = ApiResponse & {

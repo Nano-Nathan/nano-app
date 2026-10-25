@@ -14,19 +14,21 @@ describe('store files', () => {
     assert.deepEqual(oFiles.admin_users, { type: 'app', data: { aUsers: [] } });
   });
 
-  test('a store must be an app or api store with object data and string headers', () => {
+  test('a store must be an app or api store with object data, string headers and auth', () => {
     const oFiles = Validator.validate(
       {
         none: 'not an object',
         kind: { type: 'other' },
         api: { type: 'api', headers: { 'x-api-key': 'STRIPE_KEY' } },
         headers: { type: 'api', headers: { 'x-api-key': 1 } },
+        auth: { type: 'api', auth: true },
+        session: { type: 'api', auth: '/api/auth' },
         data: { type: 'app', data: 'not an object' },
         app: { type: 'app', data: { iCount: 0 } },
       },
       'store',
     );
 
-    assert.deepEqual(Object.keys(oFiles), ['api', 'app']);
+    assert.deepEqual(Object.keys(oFiles), ['api', 'session', 'app']);
   });
 });

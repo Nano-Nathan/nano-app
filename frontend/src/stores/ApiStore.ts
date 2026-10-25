@@ -80,7 +80,7 @@ export default class ApiStore extends Store {
   }
 
   /** Sends a request, keeping `/busy` while it is out and a failed answer in `/error/list` */
-  private async request(sPath: string, oInit: RequestInit): Promise<ApiResponse> {
+  protected async request(sPath: string, oInit: RequestInit): Promise<ApiResponse> {
     // Counts the request and sets the store busy
     this.iCount++;
     this.set('/busy', true);
@@ -94,7 +94,7 @@ export default class ApiStore extends Store {
         headers: { 'content-type': 'application/json' },
       });
       sText = await oRes.text();
-      oResponse = JSON.parse(sText);
+      oResponse = this.receive(sPath, oRes, JSON.parse(sText));
     } catch {
       // Keeps the text of an answer that is not JSON as the result of the failed `ApiResponse`
       if (sText !== undefined) oResponse = { ...oResponse, result: sText };
@@ -113,6 +113,11 @@ export default class ApiStore extends Store {
     // Sets the store not busy when no request is left
     this.iCount--;
     this.set('/busy', this.iCount > 0);
+    return oResponse;
+  }
+
+  /** `ApiResponse` of an answer of the proxy, from its JSON */
+  protected receive(_sPath: string, _oRes: Response, oResponse: ApiResponse): ApiResponse {
     return oResponse;
   }
 
