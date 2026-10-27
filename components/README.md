@@ -4,6 +4,9 @@
 
 Official components for [`@nano-app/frontend`](https://www.npmjs.com/package/@nano-app/frontend). A component is the logic of a piece of UI, a controller ready to use: you write only the view. One import path per component: `@nano-app/components/<name>`. No markup and no styles.
 
+- Node.js 22.23.4, 24.22.1 or 26.12.1 and newer. ESM only.
+- `@nano-app/frontend` 0.6 and React 19 or newer, as peer dependencies.
+
 ```bash
 pnpm add @nano-app/frontend @nano-app/components
 ```
