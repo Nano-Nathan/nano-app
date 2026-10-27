@@ -1,12 +1,10 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import sessionController from '../controllers/session.controller';
+import authController from '../controllers/auth.controller';
 
 /** Renders its children only with a session, and goes to the login without one */
-export default sessionController.bindView(({ props, stores: { backend }, load }) => {
-  const oRouter = useRouter();
+export default authController.bindView(({ props, stores: { backend }, load, navTo }) => {
   const oSession = backend.get('/session');
 
   // Reads the session once the view is on the page
@@ -16,7 +14,7 @@ export default sessionController.bindView(({ props, stores: { backend }, load })
 
   // Goes to the login when there is no session, also after a 401
   useEffect(() => {
-    if (oSession === null) oRouter.replace('/login');
+    if (oSession === null) navTo('/login');
   }, [oSession]);
 
   // Renders the page only with a session
