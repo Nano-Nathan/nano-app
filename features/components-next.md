@@ -1,8 +1,8 @@
 ---
-status: todo
-owner: null
+status: in-progress
+owner: projects-thread
 depends_on: []
-updated: 2026-10-25
+updated: 2026-10-27
 ---
 
 # Next components
@@ -28,3 +28,4 @@ Styles, markup or any UI kit.
 ## Log
 
 - 2026-10-24 · projects-thread · Split from frontend-components when `list` was released and the test app rendered it.
+- 2026-10-27 · projects-thread · Started `login`: points listed to the maintainer, waiting for the OK.
