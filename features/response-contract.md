@@ -2,7 +2,7 @@
 status: todo
 owner: null
 depends_on: []
-updated: 2026-10-24
+updated: 2026-10-25
 ---
 
 # Response contract
@@ -13,7 +13,7 @@ Close the backend response contract before apps are built on it and before freez
 
 ## Problem
 
-`Endpoint.handler` only produces 200 (`success: true`), 400 (anything else) and 405. No 201, 204, 404, 409, headers, cookies or streaming: the handler does not receive `res`.
+`Endpoint.createHandler` only produces 200 (`success: true`) when the handler returns, any status it throws (`{ status, message }`, a string is 400) and 405. A success is always 200, and there are no 201, 204, headers, cookies or streaming: the handler does not receive `res`.
 
 ## Scope
 

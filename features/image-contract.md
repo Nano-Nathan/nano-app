@@ -2,7 +2,7 @@
 status: todo
 owner: null
 depends_on: [migrations, example-app]
-updated: 2026-10-24
+updated: 2026-10-25
 ---
 
 # Image contract
@@ -14,9 +14,9 @@ Every app on nano-app produces images with the same contract, so they deploy wit
 ## Scope
 
 - Write the backend contract in the framework docs:
-  - listens on `:3000`; no `/health` and no probes for now (they come when the framework exposes them);
+  - listens on `:3000`; probes on `/health` of `@nano-app/plugins/health`;
   - configured only by env at runtime (`DATABASE_URL` and the app's variables);
-  - the `migrate` script ([migrations](migrations.md)) is run by hand before starting the new version: startup does not migrate;
+  - the `migrate` script ([migrations](migrations.md)) is run by hand before starting the new version: startup migrates only the official plugins' schemas;
   - `backend/Dockerfile` and `frontend/Dockerfile`, built with the repository root as context.
 - Write the frontend contract next to it:
   - listens on `:80`;

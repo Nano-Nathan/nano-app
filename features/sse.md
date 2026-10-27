@@ -2,7 +2,7 @@
 status: todo
 owner: null
 depends_on: []
-updated: 2026-10-24
+updated: 2026-10-25
 ---
 
 # Server-sent events
@@ -15,7 +15,7 @@ The backend pushes events to the frontend over plain HTTP: an endpoint that stay
 
 ## Scope
 
-- In core, not a plugin: the endpoint holds the socket and writes over time, while a handler returns an `ApiResponse` and never touches `res`, so the framework registers it directly, like the error handler.
+- In the backend (`@nano-app/backend`), not a plugin: the endpoint holds the socket and writes over time, while a handler returns an `ApiResponse` and never touches `res`, so the framework registers it directly, like the error handler.
 - `GET /events?channels=orders,alerts`: `Content-Type: text/event-stream`, `Cache-Control: no-cache`, `Connection: keep-alive`, `X-Accel-Buffering: no`, a heartbeat comment every N seconds, removal from the registry on `close`.
 - A process-level emitter, importable from any route:
 
