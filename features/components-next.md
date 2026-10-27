@@ -30,3 +30,4 @@ Styles, markup or any UI kit.
 - 2026-10-24 · projects-thread · Split from frontend-components when `list` was released and the test app rendered it.
 - 2026-10-27 · projects-thread · Started `login`: points listed to the maintainer, waiting for the OK.
 - 2026-10-27 · projects-thread · `login`, `session` and `logout` became one `auth` component: `auth({ kind, store })` gives `signIn(body)`, `signUp(body)`, `signOut()`, `load()` and `navTo(url)` (Next's `router.push`). Components connect by nesting views with props (the form gets `onSubmit`). Implemented on `feat/components-auth`.
+- 2026-10-27 · projects-thread · `auth` merged to `main` (#61). Missing: `form`.
