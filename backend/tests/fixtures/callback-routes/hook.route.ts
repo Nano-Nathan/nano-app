@@ -19,7 +19,6 @@ export default createRoute({
   },
 
   GET: async (_oReq, { greeting, onBeforeResult }) => ({
-    success: true,
     result: { greeting, before: onBeforeResult?.greeting },
   }),
 });

@@ -65,13 +65,13 @@ describe('routes by file convention', () => {
     assert.deepEqual(body.result, { id: '42' });
   });
 
-  test('success:false answers 400', async () => {
-    // Calls the handler that returns success: false
+  test('the status of a handler is the HTTP status, and an error status sets success false', async () => {
+    // Calls the handler that returns status 409
     const { status, body } = await request(oServer.url, '/service/test/42', { method: 'DELETE' });
 
-    // Checks the 400
-    assert.equal(status, 400);
-    assert.equal(body.success, false);
+    // Checks the 409
+    assert.equal(status, 409);
+    assert.deepEqual(body, { success: false, message: 'Cannot be deleted' });
   });
 
   test('QUERY reaches the handler with its body', async () => {
@@ -104,8 +104,8 @@ describe('routes by file convention', () => {
       body: JSON.stringify({ name: 'Bruno' }),
     });
 
-    // Checks that the handler got it parsed
-    assert.equal(status, 200);
+    // Checks that the handler got it parsed, with its status 201
+    assert.equal(status, 201);
     assert.deepEqual(body.result, { name: 'Bruno' });
   });
 

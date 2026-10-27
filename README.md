@@ -41,7 +41,7 @@ createNanoApp({ port: 3000 });
 import { createRoute } from '@nano-app/backend';
 
 export default createRoute({
-  GET: async () => ({ success: true, result: { status: 'ok' } }),
+  GET: async () => ({ result: { status: 'ok' } }),
 });
 ```
 
