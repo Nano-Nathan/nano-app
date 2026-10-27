@@ -18,6 +18,6 @@ export default defineConfig({
   clean: true,
   // Peers stay out of the build: the consumer's copy, so the views share its provider
   deps: {
-    neverBundle: [...Object.keys(pkg.peerDependencies), /^react\//],
+    neverBundle: [...Object.keys(pkg.peerDependencies), /^react\//, /^next\//],
   },
 });
