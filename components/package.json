@@ -38,7 +38,7 @@
     "node": "^22.23.4 || ^24.22.1 || >=26.12.1"
   },
   "peerDependencies": {
-    "@nano-app/frontend": ">=0.5.0",
+    "@nano-app/frontend": ">=0.6.0",
     "react": ">=19.0.0"
   },
   "devDependencies": {

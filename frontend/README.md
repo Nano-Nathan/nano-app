@@ -4,6 +4,9 @@
 
 Frontend of [nano-app](https://github.com/Nano-Nathan/nano-app) for Next.js apps: UI state in stores, and controllers whose methods the views use.
 
+- Node.js 22.23.4, 24.22.1 or 26.12.1 and newer. ESM only.
+- Next.js 16.3 and React 19 or newer, as peer dependencies.
+
 ## Quick start
 
 ```bash
@@ -79,6 +82,8 @@ export default counterController.extend(({ stores: { app } }) => ({
   reset: () => app.set('/iCount', 0),
 }));
 ```
+
+The types of a controller and its views come from `@nano-app/frontend`: `Controller`, `View`, `ComponentContext` (`props` and `stores`) and `ComponentProps`.
 
 ## Backend
 
@@ -170,6 +175,8 @@ export default { type: 'api', headers: { 'x-api-key': 'STRIPE_KEY' } };
 The proxy sends `x-api-key` with the value of `API_STRIPE_KEY_HEADER` (the name in upper case) on every request to that store; a missing variable answers 500 with its name.
 
 - A store header wins over a browser header with the same name: the browser cannot replace or guess the key.
+- The proxy adds the key to every request to that store, from any visitor, with or without a session: anyone who reaches the app can call any path and method of that backend with it. Declare a key only for a backend whose every endpoint may be called by your visitors, and keep the rest protected there.
+- The proxy sends every header of the browser to the backend, cookies included: point a store only at a backend you trust with your users' cookies.
 - The user's own credentials (the session cookie, `Authorization`) still go as the browser sends them. Do not declare a header the user needs in the store, or every user goes with the store's value.
 - Without a `matcher`, Next runs the proxy on every request; to skip the rest, add `export const config = { matcher: '/api/:path*' };` to `proxy.ts` (Next reads it only when it is written there).
 
