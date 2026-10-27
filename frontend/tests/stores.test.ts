@@ -1,3 +1,5 @@
+// First: the stores of the app, read when the frontend loads
+import './env/stores';
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
@@ -19,8 +21,7 @@ describe('store state', () => {
   });
 
   test('createStores starts each store with its data, plus an empty app store', () => {
-    // Creates the stores of one app file, as `withNanoApp` inlines them
-    process.env[STORES_ENV] = JSON.stringify({ ui: { type: 'app', data: { busy: false } } });
+    // Creates the stores, as one React tree does
     const { app, ui } = createStores();
 
     assert.deepEqual(app.get('/'), {});
@@ -28,8 +29,7 @@ describe('store state', () => {
   });
 
   test('an api store has its own state from its data, read and written by path', () => {
-    // Creates an api store with initial data and writes it
-    process.env[STORES_ENV] = JSON.stringify({ backend: { type: 'api', data: { page: 1 } } });
+    // Creates the stores and writes the api store
     const { backend } = createStores();
     backend.set('/list/orderby', { name: 'asc' });
 

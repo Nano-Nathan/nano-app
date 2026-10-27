@@ -1,7 +1,7 @@
 import NanoApp from './NanoApp';
 import type { PluginCallbacks, RouteEntry } from '@nano-app/core';
 import type { NanoAppConfig } from '../types/app';
-import type { PluginCreator } from '../types/plugin';
+import type { PluginConfig } from '../types/plugin';
 
 /** Creates a new NanoApp instance */
 export function createNanoApp(oConfig?: NanoAppConfig): NanoApp {
@@ -14,7 +14,9 @@ export function createRoute<DB>(oRoute: RouteEntry<DB>): RouteEntry<DB> {
 }
 
 /** Creates a plugin: a function of the plugin's own options that returns its configuration. */
-export function createPlugin<Options>(fnCreator: PluginCreator<Options>): PluginCreator<Options> {
+export function createPlugin<Options>(
+  fnCreator: (options?: Options) => PluginConfig<Options>,
+): (options?: Options) => PluginConfig<Options> {
   return fnCreator;
 }
 

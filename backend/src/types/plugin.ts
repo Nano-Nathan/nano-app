@@ -22,9 +22,6 @@ export type PluginConfig<Options = NanoObject> = {
   callbacks?: PluginCallbacks;
 };
 
-/** A function of a plugin's own options that returns its configuration */
-export type PluginCreator<Options> = (options?: Options) => PluginConfig<Options>;
-
 /** The project's plugin: nano-app names it "app" and mounts it between the "before" and "after" plugins */
 export type MainPluginConfig<Options = NanoObject> = {
   /** Directory of the project's `*.route.ts` files. Defaults to "src/routes" */

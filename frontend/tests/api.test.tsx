@@ -1,10 +1,11 @@
 // First: Testing Library needs the DOM when it loads
 import './dom';
+import './env/api';
 import { test, describe, before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { REQUEST_FAILED, STORES_ENV } from '@nano-app/core/const';
+import { REQUEST_FAILED } from '@nano-app/core/const';
 import createController from '../src/creators/createController';
 import { NanoAppProvider } from '../src/react/NanoAppProvider';
 import { count } from './helpers';
@@ -56,9 +57,6 @@ const oBackend = createServer((oReq, oRes) => {
     setTimeout(() => oRes.writeHead(200, { 'content-type': sType }).end(sAnswer), iDelay);
   });
 });
-
-// Store of the backend, as `withNanoApp` inlines it
-process.env[STORES_ENV] = JSON.stringify({ backend: { type: 'api' } });
 
 /** Stores of a rendered tree, to call the api store as a controller does */
 function renderStores(): NanoObject {

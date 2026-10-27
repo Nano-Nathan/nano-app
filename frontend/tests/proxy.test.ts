@@ -1,8 +1,9 @@
+// First: the stores of the proxy, read when it loads
+import './env/proxy';
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { NextRequest } from 'next/server';
-import { STORES_ENV } from '@nano-app/core/const';
 import { proxy } from '../src/proxy';
 
 const PORT = 4100;
@@ -39,12 +40,6 @@ describe('proxy', () => {
   before(async () => {
     // Starts the backend
     await new Promise<void>(fnResolve => oBackend.listen(PORT, fnResolve));
-
-    // Declares the headers of two stores, as `withNanoApp` inlines them
-    process.env[STORES_ENV] = JSON.stringify({
-      admin_users: { type: 'api', headers: { 'x-api-key': 'users_key' } },
-      orders: { type: 'api', headers: { 'x-api-key': 'ORDERS_KEY' } },
-    });
 
     // Sets their env; orders has no key
     process.env.API_ADMIN_USERS_URL = `http://localhost:${PORT}/api`;

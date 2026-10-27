@@ -1,9 +1,9 @@
 // First: the stores need the DOM when they load
 import './dom';
+import './env/auth';
 import { test, describe, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { STORES_ENV } from '@nano-app/core/const';
 import createStores from '../src/creators/createStores';
 import AuthStore from '../src/stores/AuthStore';
 import { count } from './helpers';
@@ -74,11 +74,7 @@ describe('auth store', () => {
   });
 
   test('an api store with auth reads the session, and one without it does not', () => {
-    // Creates an api store with auth and one without, as `withNanoApp` inlines them
-    process.env[STORES_ENV] = JSON.stringify({
-      backend: { type: 'api', auth: '/api/auth' },
-      payments: { type: 'api' },
-    });
+    // Creates the stores: an api store with auth and one without
     const { backend, payments } = createStores();
 
     assert.equal(typeof backend.readSession, 'function');
