@@ -1,6 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { mergeConfig, INITIAL_CONFIG } from '../src/app/config';
+import { boot, request } from './helpers';
 
 describe('config merge', () => {
   test('a partial section keeps the other defaults', () => {
@@ -62,5 +63,26 @@ describe('config merge', () => {
     // Checks that INITIAL_CONFIG was not mutated
     assert.equal(INITIAL_CONFIG.packages.helmet, true);
     assert.deepEqual(INITIAL_CONFIG.settings, {});
+  });
+});
+
+describe('request log', () => {
+  test('the default format logs the path without its query string', async () => {
+    // Boots a real NanoApp with the default packages
+    const oApp = await boot({});
+
+    // Waits for the log line of a request that carries a token in its query string
+    const oLogged = new Promise<void>(fnResolve => {
+      oApp.child.stdout!.on('data', () => {
+        if (oApp.output().includes('GET /health')) fnResolve();
+      });
+    });
+    await request(oApp.url, '/health?token=secret');
+    await oLogged;
+    oApp.child.kill('SIGKILL');
+
+    // Checks that the path is logged and the token is not
+    assert.match(oApp.output(), /GET \/health 200/);
+    assert.doesNotMatch(oApp.output(), /secret/);
   });
 });

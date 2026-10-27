@@ -1,5 +1,6 @@
 import { Formatter } from '@nano-app/core';
 import { APP_NAME } from '@nano-app/core/const';
+import type { Request } from 'express';
 import type { NanoObject } from '@nano-app/core';
 import type { NanoAppConfig } from '../types/app';
 import type { PluginConfig } from '../types/plugin';
@@ -20,8 +21,9 @@ export const INITIAL_CONFIG = {
     morgan: {
       tokens: {
         timestamp: () => Formatter.logDate(),
+        path: (oReq: Request) => oReq.path,
       },
-      format: ':timestamp | :method :url :status',
+      format: ':timestamp | :method :path :status',
     },
     cors: {
       methods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE', 'QUERY'],
