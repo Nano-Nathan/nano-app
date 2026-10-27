@@ -4,6 +4,7 @@ import type { NanoObject } from './objects';
 
 /** API response */
 export type ApiResponse<T = any> = {
+  status?: number;
   success?: boolean;
   result?: T;
   message?: string;

@@ -33,7 +33,7 @@ export default createPlugin((options?: { basePath?: string }) => ({
 import { createRoute } from '@nano-app/backend';
 
 export default createRoute({
-  GET: async () => ({ success: true, result: { ok: true } }),
+  GET: async () => ({ result: { ok: true } }),
 });
 ```
 

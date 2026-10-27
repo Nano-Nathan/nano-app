@@ -42,7 +42,10 @@ export default class Endpoint {
         .then(onBeforeResult => fnMethod(oReq, { ...oRequestParams, onBeforeResult }))
         // Handles the response
         .then(oResponse => {
-          oRes.status(oResponse.success ? 200 : 400).json(oResponse);
+          // Answers with the status of the handler, 200 by default, and its success
+          const { status, ...oBody } = oResponse;
+          const iStatus = status ?? 200;
+          oRes.status(iStatus).json({ ...oBody, success: iStatus < 400 });
         })
         // Forwards the error to the next error middleware
         .catch(fnNext);

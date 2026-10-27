@@ -34,7 +34,7 @@ createNanoApp({ port: 3000 });
 import { createRoute } from '@nano-app/backend';
 
 export default createRoute({
-  GET: async () => ({ success: true, result: { status: 'ok' } }),
+  GET: async () => ({ result: { status: 'ok' } }),
 });
 ```
 
@@ -53,16 +53,17 @@ Each `*.route.ts` under `mainPlugin.routesDir` default-exports an object with th
 ```ts
 export default createRoute({
   expression: '/:id',                                  // → /users/:id
-  GET:    async req => ({ success: true, result: { id: req.params.id } }),
-  DELETE: async req => ({ success: true, message: 'Deleted' }),
+  GET:    async req => ({ result: { id: req.params.id } }),
+  DELETE: async req => ({ message: 'Deleted' }),
 });
 ```
 
-Each handler receives `(req, params)` and returns an `ApiResponse`. `params` holds the plugin's `options`, `db` (the Prisma client when a database is enabled, see [Database](#database)) and `onBeforeResult` (see [Callbacks](#callbacks)):
+Each handler receives `(req, params)` and returns an `ApiResponse` without `success`: its `status` is the HTTP status (`200` by default) and the framework sets `success` to `status < 400`. `params` holds the plugin's `options`, `db` (the Prisma client when a database is enabled, see [Database](#database)) and `onBeforeResult` (see [Callbacks](#callbacks)):
 
 ```ts
 type ApiResponse<T> = {
-  success?: boolean;   // true → HTTP 200, any other value → HTTP 400
+  status?: number;     // HTTP status, 200 by default; not sent in the body
+  success?: boolean;   // set by the framework: status < 400
   result?: T;
   message?: string;
   warning?: boolean;
@@ -137,7 +138,7 @@ import { createRoute } from '@nano-app/backend';
 import type { PrismaClient } from '../../.nano-app/prisma-clients/app/generated/client';
 
 export default createRoute<PrismaClient>({
-  GET: async (_req, { db }) => ({ success: true, result: await db!.user.findMany() }),
+  GET: async (_req, { db }) => ({ result: await db!.user.findMany() }),
 });
 ```
 
@@ -222,7 +223,7 @@ export default createPlugin((options?: { basePath?: string }) => ({
 import { createRoute } from '@nano-app/backend';
 
 export default createRoute({
-  GET: async () => ({ success: true, result: { ok: true } }),
+  GET: async () => ({ result: { ok: true } }),
 });
 ```
 

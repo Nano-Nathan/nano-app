@@ -1,8 +1,8 @@
 ---
-status: todo
-owner: null
+status: review
+owner: projects-thread
 depends_on: []
-updated: 2026-10-25
+updated: 2026-10-27
 ---
 
 # Response contract
@@ -32,3 +32,5 @@ Automatic CRUD ([automatic-crud](automatic-crud.md)).
 A handler answers 201, 404 and 409 without throwing, and the frontend sees them.
 
 ## Log
+
+- 2026-10-27 · projects-thread · The handler returns `status` (HTTP status, 200 by default) and the framework sets `success` to `status < 400`; `status` is not sent in the body. Headers, cookies, streaming, a handler returning `void` and a `ctx` with `res` stay out, as proposals.
