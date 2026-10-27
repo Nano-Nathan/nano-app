@@ -1,15 +1,12 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import { createRequire } from 'node:module';
 import { rmSync } from 'node:fs';
-import { boot, request, type Booted } from '../helpers';
+import { boot, prisma, request } from '../helpers';
 import { AUTH_OPTIONS } from '../fixtures/auth/auth';
+import type { Booted } from '../helpers';
 
-/**
- * Better Auth suite. Imported by database.test.ts, not a test file of its own: both boot the
- * "app" client in .nano-app/prisma-clients/app, so they run one after the other in one process
- */
+// Better Auth suite, imported by database.test.ts: both boot the "app" client in
+// .nano-app/prisma-clients/app, one after the other in one process
 
 const FIXTURES = 'tests/fixtures/auth';
 const SCHEMA = `${FIXTURES}/schema.prisma`;
@@ -17,14 +14,6 @@ const NO_AUTH_SCHEMA = 'tests/fixtures/database/schema.prisma';
 
 /** Env of the instance: Better Auth signs its cookies with the secret */
 const ENV = { BETTER_AUTH_SECRET: 'a-secret-only-for-the-tests-of-nano-app' };
-
-/** Runs the Prisma CLI of the backend's dev dependencies */
-const fnPrisma = (...aArgs: string[]) =>
-  execFileSync(
-    process.execPath,
-    [createRequire(import.meta.url).resolve('prisma/build/index.js'), ...aArgs],
-    { stdio: 'ignore' },
-  );
 
 /** Boots the app with Better Auth on a schema, after removing its client */
 const fnBoot = (sSchemaPath: string) => {
@@ -38,14 +27,14 @@ const fnBoot = (sSchemaPath: string) => {
         database: { enabled: true, schemaPath: sSchemaPath },
       },
     },
-    { env: ENV },
+    { oEnv: ENV },
   );
 };
 
 describe('Better Auth without a database', () => {
   test('fails the startup', async () => {
     // Boots with Better Auth and the database off
-    const oApp = await boot({ packages: { betterAuth: AUTH_OPTIONS } }, { env: ENV });
+    const oApp = await boot({ packages: { betterAuth: AUTH_OPTIONS } }, { oEnv: ENV });
 
     // Checks that it exits saying what to enable
     assert.equal(await oApp.exited, 1);
@@ -59,7 +48,7 @@ describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is no
 
   before(async () => {
     // What the consumer does by hand: apply the schema with the models of Better Auth
-    fnPrisma('db', 'push', '--schema', SCHEMA, '--url', process.env.DATABASE_URL!);
+    prisma('db', 'push', '--schema', SCHEMA, '--url', process.env.DATABASE_URL!);
 
     // Boots with Better Auth on the app's database
     oApp = await fnBoot(SCHEMA);
@@ -72,7 +61,7 @@ describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is no
 
   test('a schema without its models fails the startup with the command that adds them', async () => {
     // Boots with a schema that has no Better Auth models
-    fnPrisma('db', 'push', '--schema', NO_AUTH_SCHEMA, '--url', process.env.DATABASE_URL!);
+    prisma('db', 'push', '--schema', NO_AUTH_SCHEMA, '--url', process.env.DATABASE_URL!);
     const oFailed = await fnBoot(NO_AUTH_SCHEMA);
 
     // Checks that it exits naming the models and the fix
@@ -118,6 +107,7 @@ describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is no
   });
 
   test('the plugins mounted before the app stay public', async () => {
+    // Checks that the plugin answers without a session
     const { status } = await request(oApp.url, '/ping');
     assert.equal(status, 200);
   });

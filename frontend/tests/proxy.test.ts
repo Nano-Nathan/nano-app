@@ -1,8 +1,9 @@
+// First: the stores of the proxy, read when it loads
+import './env/proxy';
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { NextRequest } from 'next/server';
-import { STORES_ENV } from '@nano-app/core/const';
 import { proxy } from '../src/proxy';
 
 const PORT = 4100;
@@ -40,12 +41,6 @@ describe('proxy', () => {
     // Starts the backend
     await new Promise<void>(fnResolve => oBackend.listen(PORT, fnResolve));
 
-    // Declares the headers of two stores, as `withNanoApp` inlines them
-    process.env[STORES_ENV] = JSON.stringify({
-      admin_users: { type: 'api', headers: { 'x-api-key': 'users_key' } },
-      orders: { type: 'api', headers: { 'x-api-key': 'ORDERS_KEY' } },
-    });
-
     // Sets their env; orders has no key
     process.env.API_ADMIN_USERS_URL = `http://localhost:${PORT}/api`;
     process.env.API_USERS_KEY_HEADER = 'secret';
@@ -55,12 +50,14 @@ describe('proxy', () => {
   after(() => oBackend.close());
 
   test('a request reaches its backend with method, path, query, body, cookie and the store key', async () => {
+    // Sends a request with a body and a cookie to a store with a key
     const oRes = await send('/api/admin_users/users/7?top=1', {
       method: 'POST',
       headers: { cookie: 'session=old' },
       body: '{"name":"Ana"}',
     });
 
+    // Checks what the backend received and that its cookie came back
     assert.equal(oRes.headers.get('set-cookie'), 'session=new; Path=/; HttpOnly');
     assert.deepEqual(await oRes.json(), {
       method: 'POST',
@@ -72,12 +69,15 @@ describe('proxy', () => {
   });
 
   test('the browser cannot replace a header of the store', async () => {
+    // Sends the store's header from the browser
     const oRes = await send('/api/admin_users/users', { headers: { 'x-api-key': 'fake' } });
 
+    // Checks that the backend got the store's value
     assert.equal((await oRes.json()).key, 'secret');
   });
 
   test('a request outside /api/<store> goes on to the app routes', async () => {
+    // Checks that each path goes on to Next
     for (const sPath of ['/admin_users/users', '/api']) {
       const oRes = await send(sPath);
       assert.equal(oRes.headers.get('x-middleware-next'), '1', sPath);

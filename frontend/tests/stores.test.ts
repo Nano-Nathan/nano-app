@@ -1,6 +1,7 @@
+// First: the stores of the app, read when the frontend loads
+import './env/stores';
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { reaction } from 'mobx';
 import { STORES_ENV } from '@nano-app/core/const';
@@ -20,8 +21,7 @@ describe('store state', () => {
   });
 
   test('createStores starts each store with its data, plus an empty app store', () => {
-    // Creates the stores of one app file, as `withNanoApp` inlines them
-    process.env[STORES_ENV] = JSON.stringify({ ui: { type: 'app', data: { busy: false } } });
+    // Creates the stores, as one React tree does
     const { app, ui } = createStores();
 
     assert.deepEqual(app.get('/'), {});
@@ -29,8 +29,7 @@ describe('store state', () => {
   });
 
   test('an api store has its own state from its data, read and written by path', () => {
-    // Creates an api store with initial data and writes it
-    process.env[STORES_ENV] = JSON.stringify({ backend: { type: 'api', data: { page: 1 } } });
+    // Creates the stores and writes the api store
     const { backend } = createStores();
     backend.set('/list/orderby', { name: 'asc' });
 
@@ -73,15 +72,5 @@ describe('withNanoApp', () => {
     } finally {
       process.chdir(sCwd);
     }
-  });
-
-  test('createStores reads the env var that withNanoApp writes', () => {
-    // Reads the source: Next only inlines `process.env.<name>` written literally
-    const sSource = readFileSync(
-      fileURLToPath(new URL('../src/creators/createStores.ts', import.meta.url)),
-      'utf8',
-    );
-
-    assert.ok(sSource.includes(`process.env.${STORES_ENV}`));
   });
 });

@@ -1,10 +1,12 @@
-import { spawn, type ChildProcess } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { createServer } from 'node:net';
-import express, { type Express } from 'express';
+import express from 'express';
 import Plugin from '../src/routes/Plugin';
 import { errorHandler, notFoundHandler } from '../src/app/errors';
+import type { ChildProcess } from 'node:child_process';
 import type { Server } from 'node:http';
-import type { AddressInfo } from 'node:net';
+import type { NanoObject } from '@nano-app/core';
 import type { PluginConfig } from '../src/types/plugin';
 
 const FIXTURES_ROUTES = 'tests/fixtures/routes';
@@ -16,26 +18,11 @@ export async function findFreePort(): Promise<number> {
     const oProbe = createServer();
     oProbe.once('error', fnReject);
     oProbe.listen(0, () => {
-      const { port } = oProbe.address() as AddressInfo;
-      oProbe.close(() => fnResolve(port));
+      const oAddress = oProbe.address();
+      if (!oAddress || typeof oAddress === 'string') return fnReject(new Error('No port assigned'));
+      oProbe.close(() => fnResolve(oAddress.port));
     });
   });
-}
-
-/** Mounts a plugin on a stub application and returns the registered paths */
-export async function mountedPaths(oConfig: Partial<PluginConfig>): Promise<string[]> {
-  // A stub app that only records the paths of app.all()
-  const aPaths: string[] = [];
-  const oStub = {
-    all: (sPath: string) => {
-      aPaths.push(sPath);
-    },
-  } as unknown as Express;
-
-  // Mounts the plugin on it
-  await new Plugin({ name: 'test', routesDir: '', ...oConfig }).mount(oStub);
-
-  return aPaths.sort();
 }
 
 /**
@@ -77,12 +64,27 @@ export async function startApp(
   };
 }
 
+/** Runs the Prisma CLI of the backend's dev dependencies */
+export function prisma(...aArgs: string[]): void {
+  execFileSync(
+    process.execPath,
+    [createRequire(import.meta.url).resolve('prisma/build/index.js'), ...aArgs],
+    { stdio: 'ignore' },
+  );
+}
+
 /** Request helper: returns the status and the parsed body */
-export async function request(sUrl: string, sPath: string, oInit: RequestInit = {}) {
+export async function request(
+  sUrl: string,
+  sPath: string,
+  oInit: RequestInit = {},
+): Promise<TestResponse> {
+  // Sends the request and reads the body as text
   const oResponse = await fetch(`${sUrl}${sPath}`, oInit);
   const sText = await oResponse.text();
 
   // Parses the body when it is JSON
+  // any: the body is whatever the server answered
   let oBody: any = sText;
   try {
     oBody = JSON.parse(sText);
@@ -93,6 +95,15 @@ export async function request(sUrl: string, sPath: string, oInit: RequestInit = 
   return { status: oResponse.status, body: oBody, headers: oResponse.headers };
 }
 
+/** What `request` returns */
+export type TestResponse = {
+  status: number;
+  // any: the body is whatever the server answered
+  body: any;
+  headers: Headers;
+};
+
+/** A NanoApp started in a child process by `boot` */
 export type Booted = {
   child: ChildProcess;
   url: string;
@@ -105,13 +116,13 @@ export type Booted = {
  * `process.exit` on startup failure. Resolves once it prints READY or exits.
  */
 export async function boot(
-  oConfig: object,
-  { env = {}, blockPrisma = false }: { env?: NodeJS.ProcessEnv; blockPrisma?: boolean } = {},
+  oConfig: NanoObject,
+  { oEnv = {}, isBlockPrisma = false }: { oEnv?: NodeJS.ProcessEnv; isBlockPrisma?: boolean } = {},
 ): Promise<Booted> {
   // Node flags: tsx, and the Prisma blocker when asked
   const iPort = await findFreePort();
   const aArgs = [
-    ...(blockPrisma ? ['--import', './tests/fixtures/database/block-prisma.mjs'] : []),
+    ...(isBlockPrisma ? ['--import', './tests/fixtures/database/block-prisma.mjs'] : []),
     '--import',
     'tsx',
     'tests/fixtures/database/boot.ts',
@@ -119,7 +130,7 @@ export async function boot(
 
   // The config travels as an env var
   const oChild = spawn(process.execPath, aArgs, {
-    env: { ...process.env, ...env, NANO_TEST_CONFIG: JSON.stringify({ port: iPort, ...oConfig }) },
+    env: { ...process.env, ...oEnv, NANO_TEST_CONFIG: JSON.stringify({ port: iPort, ...oConfig }) },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 

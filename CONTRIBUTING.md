@@ -40,7 +40,7 @@ Each development (a feature, a fix, a refactor) is one branch and one pull reque
 3. If `main` moves, merge `main` into the feature branch (no rebase: module branches start from it).
 4. When the feature is done, open one pull request from the feature branch to `main`. Its title decides the release.
 
-Each package's publish workflow runs its tests and build on every pull request that touches the package, to `main` or to a feature branch. Their jobs (`test-backend`, `test-plugins`, `test-frontend`, `test-components`) are the checks required to merge. The PostgreSQL suite runs on a Neon branch created for the run; pull requests from forks and Dependabot skip it.
+Each package's publish workflow runs its tests and build on every pull request that touches the package, to `main` or to a feature branch. Their jobs (`test-backend`, `test-plugins`, `test-frontend`, `test-components`) are the checks required to merge, with the `dependency-review` and `audit` jobs of `security.yml`, which fail on a dependency with a high or critical advisory. The PostgreSQL suite runs on a Neon branch created for the run; pull requests from forks and Dependabot skip it.
 
 ## Releases
 
@@ -51,7 +51,7 @@ Each published package has its own version, its own tags and its own publish wor
 | `@nano-app/backend` | `backend/`, `core/` | `backend-vX.Y.Z` | `publish-backend.yml` |
 | `@nano-app/plugins` | `plugins/` | `plugins-vX.Y.Z` | `publish-plugins.yml` |
 | `@nano-app/frontend` | `frontend/`, `core/` | `frontend-vX.Y.Z` | `publish-frontend.yml` |
-| `@nano-app/components` | `components/` | `components-vX.Y.Z` | `publish-components.yml` |
+| `@nano-app/components` | `components/`, `core/` | `components-vX.Y.Z` | `publish-components.yml` |
 
 [semantic-release](https://github.com/semantic-release/semantic-release) reads the commits since the package's last tag and publishes it only when one of them is a [Conventional Commit](https://www.conventionalcommits.org/) that asks for it. It reads every commit since that tag, also the ones that touched only another package:
 

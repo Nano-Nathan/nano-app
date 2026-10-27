@@ -1,12 +1,11 @@
 import type { ErrorRequestHandler, RequestHandler } from 'express';
 import type { ApiResponse } from '@nano-app/core';
+import type { HandlerError } from '../types/app';
 
-/** Error shape thrown by the consumer handlers */
-type HandlerError = {
-  status?: number;
-  message?: string;
-  warning?: boolean;
-};
+/** Whether anything thrown is an object, read as a HandlerError */
+function isHandlerError(oError: unknown): oError is HandlerError {
+  return typeof oError === 'object' && oError !== null;
+}
 
 /** Normalizes anything thrown by a handler into an ApiResponse plus its status */
 function normalize(oError: unknown): { status: number; body: ApiResponse } {
@@ -15,8 +14,8 @@ function normalize(oError: unknown): { status: number; body: ApiResponse } {
     return { status: 400, body: { success: false, message: oError } };
   }
 
-  // Anything else is read as { status, message, warning }
-  const { status, message, warning } = (oError ?? {}) as HandlerError;
+  // An object is read as { status, message, warning }; anything else has none of them
+  const { status, message, warning } = isHandlerError(oError) ? oError : {};
 
   return {
     status: status ?? 500,

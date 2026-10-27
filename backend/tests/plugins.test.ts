@@ -1,9 +1,9 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { startApp, request, mountedPaths, boot } from './helpers';
+import express from 'express';
+import { startApp, request, boot } from './helpers';
 import Plugin from '../src/routes/Plugin';
 import { createPluginCallbacks } from '../src/app/creators';
-import type { Express } from 'express';
 
 const PLUGIN_ROUTES = 'tests/fixtures/plugin-routes';
 const CALLBACK_ROUTES = 'tests/fixtures/callback-routes';
@@ -20,17 +20,31 @@ describe('plugins', () => {
     assert.equal(status, 200);
     assert.equal(body.message, 'pong');
 
+    // Stops the server
     await oServer.close();
   });
 
   test('prepends the base path to every endpoint', async () => {
-    assert.deepEqual(await mountedPaths({ routesDir: PLUGIN_ROUTES, basePath: '/demo' }), [
-      '/demo/ping',
-    ]);
+    // Starts an app with the plugin under /demo
+    const oServer = await startApp([{ routesDir: PLUGIN_ROUTES, basePath: '/demo' }]);
+
+    // Checks that its route answers only under the base path
+    assert.equal((await request(oServer.url, '/demo/ping')).status, 200);
+    assert.equal((await request(oServer.url, '/ping')).status, 404);
+
+    // Stops the server
+    await oServer.close();
   });
 
   test('a plugin with no routesDir mounts nothing', async () => {
-    assert.deepEqual(await mountedPaths({ basePath: '/empty' }), []);
+    // Starts an app with a plugin without routes
+    const oServer = await startApp([{ basePath: '/empty' }]);
+
+    // Checks that its base path has nothing
+    assert.equal((await request(oServer.url, '/empty')).status, 404);
+
+    // Stops the server
+    await oServer.close();
   });
 
   test('several plugins coexist on the same application', async () => {
@@ -44,11 +58,21 @@ describe('plugins', () => {
     assert.equal((await request(oServer.url, '/first/ping')).status, 200);
     assert.equal((await request(oServer.url, '/second/ping')).status, 200);
 
+    // Stops the server
     await oServer.close();
   });
 
   test('discovers built .js route files and ignores their .d.ts', async () => {
-    assert.deepEqual(await mountedPaths({ routesDir: 'tests/fixtures/built-routes' }), ['/hello']);
+    // Starts an app with the built routes
+    const oServer = await startApp([{ routesDir: 'tests/fixtures/built-routes' }]);
+
+    // Checks that the built route answers
+    const { status, body } = await request(oServer.url, '/hello');
+    assert.equal(status, 200);
+    assert.equal(body.message, 'hello');
+
+    // Stops the server
+    await oServer.close();
   });
 
   test('plugin onMount runs once with the app before its endpoints; endpoint onInit once, onBefore per request', async () => {
@@ -124,9 +148,6 @@ describe('plugins', () => {
     });
 
     // Checks that mounting it fails saying which
-    await assert.rejects(
-      oPlugin.mount({ all: () => {} } as unknown as Express),
-      /tests\/fixtures\/missing.prisma not found/,
-    );
+    await assert.rejects(oPlugin.mount(express()), /tests\/fixtures\/missing.prisma not found/);
   });
 });

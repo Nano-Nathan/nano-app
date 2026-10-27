@@ -45,6 +45,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Touches the backend
         id: changes
@@ -135,6 +136,6 @@ jobs:
       - run: pnpm build
 
       # Releases only for fix/feat commits since the last tag; see backend/.releaserc.json
-      - run: npx semantic-release@25
+      - run: pnpm exec semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

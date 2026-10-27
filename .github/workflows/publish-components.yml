@@ -1,7 +1,7 @@
 # Filename must stay publish-components.yml. npm Trusted Publisher of @nano-app/components matches this name exactly.
 # https://docs.npmjs.com/trusted-publishers/
 #
-# One workflow for the whole flow of @nano-app/components (components/):
+# One workflow for the whole flow of @nano-app/components (components/ and core/, inlined into it):
 # - pull request to main or to a feature branch: `test-components`, required to merge into main (the
 #   ruleset blocks the merge if it fails).
 #   It runs on every pull request, so the required check always reports; without changes in
@@ -19,6 +19,7 @@ on:
     branches: [main]
     paths:
       - components/**
+      - core/**
 
 permissions:
   contents: read
@@ -37,6 +38,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Touches the components
         id: changes
@@ -107,6 +109,6 @@ jobs:
       - run: pnpm build
 
       # Releases only for fix/feat commits since the last tag; see components/.releaserc.json
-      - run: npx semantic-release@25
+      - run: pnpm exec semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

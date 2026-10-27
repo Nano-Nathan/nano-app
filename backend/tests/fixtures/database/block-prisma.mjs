@@ -3,7 +3,7 @@ import { register } from 'node:module';
 
 register(`data:text/javascript,${encodeURIComponent(`
   export async function resolve(sSpecifier, oContext, fnNext) {
-    if (/^(@prisma\\/|pg$|prisma$)/.test(sSpecifier)) throw new Error("BLOCKED " + sSpecifier);
+    if (/^(@prisma\\/|pg$|prisma$)/.test(sSpecifier)) throw new Error(\`BLOCKED \${sSpecifier}\`);
     return fnNext(sSpecifier, oContext);
   }
 `)}`);

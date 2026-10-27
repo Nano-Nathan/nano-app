@@ -1,11 +1,12 @@
 // First: Testing Library needs the DOM when it loads
 import './dom';
+import './env/error';
 import { test, describe, before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { NanoAppProvider } from '@nano-app/frontend';
-import { REQUEST_FAILED, STORES_ENV } from '@nano-app/core/const';
+import { REQUEST_FAILED } from '@nano-app/core/const';
 import error from '../error';
 import type { ApiError } from '@nano-app/frontend';
 
@@ -18,9 +19,6 @@ const oBackend = createServer((oReq, oRes) => {
     : { success: false };
   oRes.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(oAnswer));
 });
-
-// Two api stores, as `withNanoApp` inlines them
-process.env[STORES_ENV] = JSON.stringify({ api: { type: 'api' }, admin: { type: 'api' } });
 
 // The errors of every store, the last one and buttons that fail a request on each store
 const Errors = error()

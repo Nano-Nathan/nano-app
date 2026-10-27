@@ -1,13 +1,12 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
 import { existsSync, rmSync } from 'node:fs';
-import { createRequire } from 'node:module';
 import pg from 'pg';
 import { FileLoader } from '@nano-app/core';
 import Database from '../src/database/Database';
-import { boot, request, type Booted } from './helpers';
+import { boot, prisma, request } from './helpers';
 import './database/better-auth';
+import type { Booted } from './helpers';
 
 const FIXTURES = 'tests/fixtures/database';
 const SCHEMA = `${FIXTURES}/schema.prisma`;
@@ -20,14 +19,6 @@ const CLIENT = `${FIXTURES}/generated/client/client.ts`;
 const PLUGIN = `${FIXTURES}/generated/plugin/client.ts`;
 const MYSQL = `${FIXTURES}/generated/mysql/client.ts`;
 
-/** Runs the Prisma CLI of the backend's dev dependencies */
-const fnPrisma = (...aArgs: string[]) =>
-  execFileSync(
-    process.execPath,
-    [createRequire(import.meta.url).resolve('prisma/build/index.js'), ...aArgs],
-    { stdio: 'ignore' },
-  );
-
 /** Every client lives in .nano-app/prisma-clients/<name>: removes it, so the mount generates it */
 const fnResetClient = (sName: string) => {
   rmSync(`.nano-app/prisma-clients/${sName}`, { recursive: true, force: true });
@@ -36,7 +27,7 @@ const fnResetClient = (sName: string) => {
 // The generated clients are not versioned: the suite generates them (no database involved)
 before(() => {
   for (const sName of ['schema', 'plugin', 'mysql']) {
-    fnPrisma('generate', '--schema', `${FIXTURES}/${sName}.prisma`);
+    prisma('generate', '--schema', `${FIXTURES}/${sName}.prisma`);
   }
 });
 
@@ -54,6 +45,7 @@ describe('client validation', () => {
   });
 
   test('findPrismaClient validates the schema and loads the client class', async () => {
+    // Checks that the generated client loads as a class
     assert.equal(typeof (await FileLoader.findPrismaClient(CLIENT, SCHEMA)), 'function');
   });
 
@@ -109,6 +101,7 @@ describe('client validation', () => {
   });
 
   test('mount fails when the schema does not exist', async () => {
+    // Checks that mounting a missing schema fails naming it
     await assert.rejects(
       Database.mount('missing', { schemaPath: `${FIXTURES}/missing.prisma` }),
       /missing.prisma not found/,
@@ -131,7 +124,7 @@ describe('startup without a database', () => {
     fnResetClient('app');
     const oApp = await boot(
       { mainPlugin: { database: { enabled: true, schemaPath: SCHEMA } } },
-      { env: { DATABASE_URL: 'postgres://unused@127.0.0.1:1/unused' } },
+      { oEnv: { DATABASE_URL: 'postgres://unused@127.0.0.1:1/unused' } },
     );
 
     // Checks that it generated the client, then stopped at the tables with what to do
@@ -149,7 +142,7 @@ describe('startup without a database', () => {
     fnResetClient('app');
     const oApp = await boot(
       { mainPlugin: { database: { enabled: true, schemaPath: SCHEMA } } },
-      { env: { DATABASE_URL: '' } },
+      { oEnv: { DATABASE_URL: '' } },
     );
 
     // Checks that it exits saying why
@@ -163,7 +156,7 @@ describe('startup without a database', () => {
     const oDatabase = { enabled: true, schemaPath: PLUGIN_SCHEMA };
     const oApp = await boot(
       { mainPlugin: { database: oDatabase } },
-      { env: { DATABASE_URL: 'postgres://unused@localhost/unused' } },
+      { oEnv: { DATABASE_URL: 'postgres://unused@localhost/unused' } },
     );
 
     // Checks that it exits
@@ -176,7 +169,7 @@ describe('startup without a database', () => {
     const oDatabase = { enabled: false, schemaPath: SCHEMA };
     const oApp = await boot(
       { mainPlugin: { routesDir: `${FIXTURES}/routes`, database: oDatabase } },
-      { env: { DATABASE_URL: '' } },
+      { oEnv: { DATABASE_URL: '' } },
     );
 
     try {
@@ -191,7 +184,7 @@ describe('startup without a database', () => {
 
   test('an app without a database neither loads nor needs Prisma', async () => {
     // Boots with the Prisma stack unresolvable
-    const oApp = await boot({}, { blockPrisma: true });
+    const oApp = await boot({}, { isBlockPrisma: true });
 
     // Checks that the app answers
     const { status } = await request(oApp.url, '/health');
@@ -209,7 +202,7 @@ describe('PostgreSQL', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not
 
   before(async () => {
     // What the consumer does by hand: apply their schema
-    fnPrisma('db', 'push', '--schema', SCHEMA, '--url', process.env.DATABASE_URL!);
+    prisma('db', 'push', '--schema', SCHEMA, '--url', process.env.DATABASE_URL!);
 
     // Boots with the database enabled
     fnResetClient('app');
@@ -254,7 +247,7 @@ describe('PostgreSQL', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not
 
   test('a missing column of the consumer fails the mount', async () => {
     // The consumer's schema applied, then a column dropped by hand
-    fnPrisma('db', 'push', '--schema', SCHEMA, '--url', process.env.DATABASE_URL!);
+    prisma('db', 'push', '--schema', SCHEMA, '--url', process.env.DATABASE_URL!);
     const oClient = new pg.Client({ connectionString: process.env.DATABASE_URL });
     await oClient.connect();
     await oClient.query('TRUNCATE "app_data"."notes"');
@@ -270,10 +263,11 @@ describe('PostgreSQL', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not
     );
 
     // Restores the consumer's schema for the other tests
-    fnPrisma('db', 'push', '--schema', SCHEMA, '--url', process.env.DATABASE_URL!);
+    prisma('db', 'push', '--schema', SCHEMA, '--url', process.env.DATABASE_URL!);
   });
 
   test("the consumer's routes receive its client", async () => {
+    // Checks that the route got the client
     const { body } = await request(oApp.url, '/has-db');
     assert.equal(body.result, true);
   });

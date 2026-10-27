@@ -6,7 +6,7 @@ export type PluginStage = 'before' | 'after';
 
 /** Plugin configuration: a group of endpoints */
 export type PluginConfig<Options = NanoObject> = {
-  /** Name of the plugin, same as his database (If have one) */
+  /** Name of the plugin, also the name of its database when it has one */
   name: string;
   /** Directory used to discover the `*.route.ts` files */
   routesDir: string;

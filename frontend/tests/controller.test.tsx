@@ -1,18 +1,13 @@
 // First: Testing Library needs the DOM when it loads
 import './dom';
+import './env/controller';
 import { test, describe, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { MISSING_PROVIDER, STORES_ENV } from '@nano-app/core/const';
+import { MISSING_PROVIDER } from '@nano-app/core/const';
 import createController from '../src/creators/createController';
 import { NanoAppProvider } from '../src/react/NanoAppProvider';
 import type { ReactNode } from 'react';
-
-// Stores of the app under test, as `withNanoApp` inlines them
-process.env[STORES_ENV] = JSON.stringify({
-  app: { type: 'app', data: { iCount: 0, sReason: '' } },
-  ui: { type: 'app', data: { isOpen: false } },
-});
 
 /** Renders inside the provider, like the root layout does */
 function renderApp(oNode: ReactNode): void {

@@ -1,11 +1,12 @@
 // First: the stores need the DOM when they load
 import './dom';
+import './env/auth';
 import { test, describe, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { STORES_ENV } from '@nano-app/core/const';
 import createStores from '../src/creators/createStores';
 import AuthStore from '../src/stores/AuthStore';
+import { count } from './helpers';
 import type { NanoObject } from '@nano-app/core/types/objects';
 
 const PORT = 4201;
@@ -59,11 +60,6 @@ const oBackend = createServer((oReq, oRes) => {
   });
 });
 
-/** Requests received for one method and path */
-function count(sRequest: string): number {
-  return aRequests.filter(sEntry => sEntry === sRequest).length;
-}
-
 describe('auth store', () => {
   before(async () => {
     // Moves the DOM to this backend's origin: the api store tests use the default one
@@ -78,11 +74,7 @@ describe('auth store', () => {
   });
 
   test('an api store with auth reads the session, and one without it does not', () => {
-    // Creates an api store with auth and one without, as `withNanoApp` inlines them
-    process.env[STORES_ENV] = JSON.stringify({
-      backend: { type: 'api', auth: '/api/auth' },
-      payments: { type: 'api' },
-    });
+    // Creates the stores: an api store with auth and one without
     const { backend, payments } = createStores();
 
     assert.equal(typeof backend.readSession, 'function');
@@ -124,13 +116,13 @@ describe('auth store', () => {
     await oStore.signIn('email', { email: 'ana@nano.app', password: 'secret' });
     await oStore.readSession();
 
-    assert.equal(count('GET /api/backend/api/auth/get-session'), 2);
+    assert.equal(count(aRequests, 'GET /api/backend/api/auth/get-session'), 2);
 
     // Signs out: the session is read again, without a user
     await oStore.signOut();
     await oStore.readSession();
 
-    assert.equal(count('GET /api/backend/api/auth/get-session'), 3);
+    assert.equal(count(aRequests, 'GET /api/backend/api/auth/get-session'), 3);
     assert.equal(oStore.get('/session'), null);
   });
 
@@ -151,6 +143,6 @@ describe('auth store', () => {
 
     assert.deepEqual(oResponse, { success: false, message: 'Not authenticated' });
     assert.equal(oStore.get('/session'), null);
-    assert.equal(count('GET /api/backend/api/auth/get-session'), 2);
+    assert.equal(count(aRequests, 'GET /api/backend/api/auth/get-session'), 2);
   });
 });

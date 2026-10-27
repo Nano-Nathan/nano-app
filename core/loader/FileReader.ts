@@ -1,10 +1,11 @@
 import { isAbsolute, resolve } from 'node:path';
 import { readFileSync, existsSync } from 'node:fs';
-import { createJiti, type JitiResolveOptions } from 'jiti';
+import { createJiti } from 'jiti';
+import type { JitiResolveOptions } from 'jiti';
 
 /** Reads and loads files from disk, resolved from `cwd` */
 export default abstract class FileReader {
-  // The Prisma runtime is loaded natively: through jiti its interop breaks the error messages
+  /** Loader of the consumer's modules; the Prisma runtime is loaded natively */
   private static oJiti = createJiti(import.meta.url, { nativeModules: ['@prisma/client'] });
 
   /** Loads a module via jiti */

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
+import STORE_FILES from './stores/storeFiles';
 import type { NextRequest } from 'next/server';
-import type { StoreFiles } from './types/store';
 
 /** Sends `/api/<store>/<path>` to the backend of `<store>`, in `API_<STORE>_URL`, with its headers */
 export async function proxy(oReq: NextRequest): Promise<Response> {
@@ -11,10 +11,8 @@ export async function proxy(oReq: NextRequest): Promise<Response> {
   if (sPrefix !== 'api' || !sName) return NextResponse.next();
 
   // Names the env vars of the store: its URL and one per header (`STRIPE_KEY` → `API_STRIPE_KEY_HEADER`)
-  // `process.env.NANO_APP_STORES` stays literal so Next can replace it
-  const oFiles: StoreFiles = JSON.parse(process.env.NANO_APP_STORES ?? '{}');
   const sUrlEnv = `API_${sName.toUpperCase()}_URL`;
-  const aHeaders = Object.entries(oFiles[sName]?.headers ?? {}).map(([sHeader, sValue]) => [
+  const aHeaders = Object.entries(STORE_FILES[sName]?.headers ?? {}).map(([sHeader, sValue]) => [
     sHeader,
     `API_${sValue.toUpperCase()}_HEADER`,
   ]);
