@@ -14,7 +14,7 @@ pnpm test
 pnpm build
 ```
 
-Set `DATABASE_URL` in a `.env` at the repository root, pointing at a disposable PostgreSQL database, to run the database suite. The test scripts of every package read it. The suite can drop schemas. Do not point it at a database you need to keep.
+Set `DATABASE_URL` in a `.env` at the repository root, pointing at a disposable PostgreSQL database, to run the database suite. The test scripts of the backend and the plugins read it. The suite can drop schemas. Do not point it at a database you need to keep.
 
 ## What to send
 
@@ -27,7 +27,7 @@ Public API, comments, and these files are English: `README.md`, `PLUGINS.md` and
 
 `main` is protected: every change reaches it through a pull request.
 
-1. Branch from `main`: `feat/<topic>`, `fix/<topic>`, `docs/<topic>`.
+1. Branch from `main`: `feat/<topic>`, `fix/<topic>`, `refactor/<topic>`, `docs/<topic>`.
 2. Keep the change focused.
 3. Run `pnpm test`. If you touch the build, run `pnpm build`. Both run every package; `pnpm --filter <package>` runs one.
 4. Open the pull request to `main`. Its title must be a [Conventional Commit](https://www.conventionalcommits.org/) (`feat: add X`, `fix: Y`): the merge squashes the branch into one commit with that title, and the title decides the release (see [Releases](#releases)).

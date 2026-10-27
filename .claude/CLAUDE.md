@@ -44,7 +44,7 @@ Industry practices this repository follows. The concrete rules below win when th
 - **Validate at the boundaries**: data from outside (requests, consumer files, env) is checked once where it enters; inside, types are trusted.
 - **Immutability**: `const` by default, `let` only when a value changes. Do not mutate parameters; return a new value.
 - **Least surprise**: names say what a thing does and nothing more; a function named `get` has no side effects.
-- **Least privilege**: routes private by default, workflow permissions minimal, no secrets in logs.
+- **Least privilege**: routes private when `packages.betterAuth` is on, workflow permissions minimal, no secrets in logs.
 - **HTTP semantics**: `GET` reads and never changes state; status codes mean what the standard says (400 bad input, 401 not authenticated, 403 not allowed, 404 not found, 5xx server fault).
 - **Semantic Versioning and Conventional Commits**: a change to the public API is `feat!:`; fixes are `fix:`.
 - **Tests describe behavior**, not implementation: they call the public API and check what a consumer sees.
@@ -125,7 +125,7 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 
 - Never commit secrets, and never print them: no `cat .env`, no `source .env`, no logging `process.env`. To use the root `.env` elsewhere, copy the file.
 - Untrusted input (`req.body`, `req.params`, `req.query`, headers) is validated before use. SQL uses parameters (`$1`); identifiers (schema, table) come only from constants.
-- Routes are private by default. A plugin that exposes something public says so in its README; with `packages.betterAuth`, only its endpoints and the plugins mounted before the app are public.
+- Routes are private when `packages.betterAuth` is on: only its endpoints and the plugins mounted before the app are public. Without it every route is public. A plugin that exposes something public says so in its README.
 - The error handler answers with the message of what was thrown, also on 5xx: it is the consumer's job not to throw internal data. Framework messages never include secrets or connection strings.
 - No DDL at startup: the consumer migrates their schemas with Prisma; the startup only generates clients and checks tables. The one exception is an official plugin's reviewed, additive migrations (`migrations/` next to its schema), applied with `prisma migrate deploy` (see PLUGINS.md).
 - A new dependency needs a reason a built-in cannot cover. Install scripts run only for the packages in `allowBuilds` of `pnpm-workspace.yaml`.

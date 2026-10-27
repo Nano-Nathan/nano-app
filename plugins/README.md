@@ -19,7 +19,7 @@ createNanoApp({ plugins: [health()] });
 
 | Plugin | Import | Endpoints | Options |
 |---|---|---|---|
-| `health` | `import health from '@nano-app/plugins/health'` | `GET /health` → `{ status: "ok" }` | `basePath` (default `"/health"`) |
+| `health` | `import health from '@nano-app/plugins/health'` | `GET /health` → `{ success: true, result: { status: "ok" } }` | `basePath` (default `"/health"`) |
 
 ## Layout
 

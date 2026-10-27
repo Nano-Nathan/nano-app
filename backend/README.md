@@ -86,7 +86,7 @@ Every option is optional.
 | `mainPlugin` | `{ routesDir: "src/routes" }` | Your routes (`routesDir`, relative to `cwd`), `basePath` (e.g. `/api`, no trailing slash) and database: see [Database](#database). |
 | `plugins` | `[]` | Plugins mounted around your routes, in order: see [Plugins](#plugins). |
 
-`packages` accepts `morgan`, `cors`, `helmet`, `compression`, `rateLimit`, `express` (`express.json` options), `urlencoded` and `betterAuth` (off by default: see [Better Auth](#better-auth)). The merge is **per section**: passing one key keeps the others; pass `false`/`undefined` to disable one.
+`packages` accepts `morgan`, `cors`, `helmet`, `compression`, `rateLimit`, `express` (`express.json` options), `urlencoded` and `betterAuth` (off by default: see [Better Auth](#better-auth)). The merge is **per section**: passing one key keeps the others; pass `false` to disable one.
 
 ```ts
 createNanoApp({
@@ -101,7 +101,7 @@ createNanoApp({
 
 ## Database
 
-Off until enabled: at startup nano-app generates the Prisma client of your schema, checks that its tables can be read and passes it to your handlers as their second parameter. **It never modifies your database**: applying the schema (`prisma db push`, `prisma migrate dev`, `prisma migrate deploy`) is up to you, with Prisma.
+Off until enabled: at startup nano-app generates the Prisma client of your schema, checks that its tables can be read and passes it to your handlers as their second parameter. **It never modifies your schemas**: applying them (`prisma db push`, `prisma migrate dev`, `prisma migrate deploy`) is up to you, with Prisma.
 
 ```bash
 pnpm add prisma @prisma/client @prisma/adapter-pg pg   # prisma too: the startup generates the client
@@ -261,7 +261,7 @@ The endpoints of one plugin have no guaranteed order: one route's `onInit` must 
 
 Everything is mounted on one Express application, in this order: base middlewares → `before` plugins → your routes → `after` plugins → 404 → error handler.
 
-A plugin with a database follows the same rules, with its client in `.nano-app/prisma-clients/<name>`: a plugin of yours points `database.schemaPath` at its schema and you apply it with Prisma. If that folder holds the client of another schema (another plugin with the same name), the startup warns and replaces it. An official plugin of `@nano-app/plugins` needs nothing from you: at startup nano-app applies its migrations to its own `nano_*` schema. See [PLUGINS.md](https://github.com/Nano-Nathan/nano-app/blob/main/PLUGINS.md).
+A plugin with a database follows the same rules, with its client in `.nano-app/prisma-clients/<name>`: a plugin of yours points `database.schemaPath` at its schema and you apply it with Prisma. Two plugins with the same name and a database fail at startup. If that folder holds the client of another schema from an earlier start, the startup warns and replaces it. An official plugin of `@nano-app/plugins` needs nothing from you: at startup nano-app applies its migrations to its own `nano_*` schema. See [PLUGINS.md](https://github.com/Nano-Nathan/nano-app/blob/main/PLUGINS.md).
 
 ## Errors
 

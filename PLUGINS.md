@@ -60,7 +60,7 @@ Publish a separate package. Do not add it to this repository unless a maintainer
   "name": "@you/nano-app-plugin-hello",
   "type": "module",
   "peerDependencies": {
-    "@nano-app/backend": "^0.10.0"
+    "@nano-app/backend": ">=0.11.0"
   },
   "license": "MIT"
 }
