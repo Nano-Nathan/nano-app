@@ -14,9 +14,8 @@ export function createRoute<DB>(oRoute: RouteEntry<DB>): RouteEntry<DB> {
 }
 
 /** Creates a plugin: a function of the plugin's own options that returns its configuration. */
-export function createPlugin<Options>(
-  fnCreator: (options?: Options) => PluginConfig<Options>,
-): (options?: Options) => PluginConfig<Options> {
+type Creator<Options> = (options?: Options) => PluginConfig<Options>;
+export function createPlugin<Options>(fnCreator: Creator<Options>): Creator<Options> {
   return fnCreator;
 }
 
