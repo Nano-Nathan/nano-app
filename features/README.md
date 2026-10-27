@@ -7,10 +7,9 @@ Planned work on this repository, one file per feature. A file says what the feat
 | [typed-paths](typed-paths.md) | A mistyped store path or injected resource does not compile | — |
 | [example-app](example-app.md) | An app built on the published packages builds its images | typed-paths |
 | [migrations](migrations.md) | `migrate` applies the app's and its plugins' migrations, with history | — |
-| [response-contract](response-contract.md) | A handler answers 201, 404 and 409 without throwing, and the frontend sees them | — |
 | [components-next](components-next.md) | `form` and `login` are released and the test app renders them | — |
 | [image-contract](image-contract.md) | The image contract is written and the example app meets it | migrations, example-app |
-| [automatic-crud](automatic-crud.md) | Every exposed model is REST without writing a route (1.0) | response-contract |
+| [automatic-crud](automatic-crud.md) | Every exposed model is REST without writing a route (1.0) | — |
 | [create-nano-app](create-nano-app.md) | A generated app starts, migrates and builds its images | example-app, migrations |
 | [sse](sse.md) | The backend pushes an event and a component updates | Only when the maintainer asks |
 
