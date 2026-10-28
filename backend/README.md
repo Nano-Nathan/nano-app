@@ -264,7 +264,7 @@ The endpoints of one plugin have no guaranteed order: one route's `onInit` must 
 
 Everything is mounted on one Express application, in this order: base middlewares → `before` plugins → your routes → `after` plugins → 404 → error handler.
 
-A plugin with a database follows the same rules, with its client in `.nano-app/prisma-clients/<name>`: a plugin of yours points `database.schemaPath` at its schema and you apply it with Prisma. Two plugins with the same name and a database fail at startup. If that folder holds the client of another schema from an earlier start, the startup warns and replaces it. An official plugin of `@nano-app/plugins` needs nothing from you: at startup nano-app applies its migrations to its own `nano_*` schema. See [PLUGINS.md](https://github.com/Nano-Nathan/nano-app/blob/main/PLUGINS.md).
+A plugin with a database follows the same rules, with its client in `.nano-app/prisma-clients/<name>`: a plugin of yours points `database.schemaPath` at its schema and you apply it with Prisma. Two plugins with the same name and a database fail at startup. If that folder holds the client of another schema from an earlier start, the startup warns and replaces it. An official plugin of `@nano-app/plugins` needs nothing from you: at startup nano-app applies its migrations to its own `nano_*` schema. See [`@nano-app/plugins`](https://github.com/Nano-Nathan/nano-app/blob/main/plugins/README.md#database).
 
 ## Errors
 

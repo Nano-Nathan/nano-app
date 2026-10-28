@@ -17,3 +17,7 @@ backend/tests/fixtures/database/generated
 # Next.js output of the frontend test app
 frontend/tests/app/.next
 frontend/tests/app/next-env.d.ts
+
+# VitePress output of the documentation site
+site/.vitepress/dist
+site/.vitepress/cache
