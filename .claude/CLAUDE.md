@@ -127,7 +127,7 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 - Untrusted input (`req.body`, `req.params`, `req.query`, headers) is validated before use. SQL uses parameters (`$1`); identifiers (schema, table) come only from constants.
 - Routes are private when `packages.betterAuth` is on: only its endpoints and the plugins mounted before the app are public. Without it every route is public. A plugin that exposes something public says so in its README.
 - The error handler answers with the message of what was thrown, also on 5xx: it is the consumer's job not to throw internal data. Framework messages never include secrets or connection strings.
-- No DDL at startup: the consumer migrates their schemas with Prisma; the startup only generates clients and checks tables. The one exception is an official plugin's reviewed, additive migrations (`migrations/` next to its schema), applied with `prisma migrate deploy` (see PLUGINS.md).
+- No DDL at startup: the consumer migrates their schemas with Prisma; the startup only generates clients and checks tables. The one exception is an official plugin's reviewed, additive migrations (`migrations/` next to its schema), applied with `prisma migrate deploy` (see `plugins/README.md`).
 - A new dependency needs a reason a built-in cannot cover. Install scripts run only for the packages in `allowBuilds` of `pnpm-workspace.yaml`.
 - Workflows: `permissions: contents: read` by default; `id-token: write` and `contents: write` only on release jobs. Packages are published only by CI (npm trusted publishing).
 - Report vulnerabilities as in [SECURITY.md](../SECURITY.md).

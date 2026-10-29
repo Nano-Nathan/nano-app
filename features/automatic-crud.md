@@ -1,8 +1,8 @@
 ---
 status: todo
 owner: null
-depends_on: [response-contract]
-updated: 2026-10-23
+depends_on: []
+updated: 2026-10-27
 ---
 
 # Automatic CRUD
