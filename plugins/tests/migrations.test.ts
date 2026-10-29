@@ -13,7 +13,7 @@ describe('migrations of the official plugins', () => {
       const sSql = readFileSync(sFile, 'utf-8').replace(/--.*$/gm, '');
 
       // Checks that nothing in it loses data
-      assert.doesNotMatch(sSql, DESTRUCTIVE, `${sFile} must only add: see PLUGINS.md`);
+      assert.doesNotMatch(sSql, DESTRUCTIVE, `${sFile} must only add: see plugins/README.md`);
     }
   });
 });
