@@ -1,8 +1,8 @@
 ---
 status: todo
 owner: null
-depends_on: [example-app, migrations]
-updated: 2026-10-23
+depends_on: [example-app]
+updated: 2026-10-29
 ---
 
 # create-nano-app
@@ -26,3 +26,5 @@ The image build workflow (outside this repository).
 An app generated with `create-nano-app` starts, migrates and builds its images.
 
 ## Log
+
+- 2026-10-29 · kleo · `migrations` closed: nano-app has no `migrate` command. The consumer migrates the app's schema with Prisma; the startup migrates only the official plugins' schemas.
