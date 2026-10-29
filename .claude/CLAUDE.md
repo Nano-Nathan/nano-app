@@ -30,6 +30,8 @@ A development is planned and reviewed as a whole, on its one branch. When the ma
 
 Reuse and extend what exists (`core/` loaders, validators, utils) before writing new code, and keep each change to the smallest code that does the job.
 
+A large idea is first broken into tasks and a dependency tree: see [Breaking down a feature](../features/README.md#breaking-down-a-feature).
+
 ## Principles
 
 Industry practices this repository follows. The concrete rules below win when they are more specific.
