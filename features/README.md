@@ -11,8 +11,8 @@ Planned work on this repository, one file per feature. A file says what the feat
 | [image-contract](image-contract.md) | The image contract is written and the example app meets it | migrations, example-app |
 | [automatic-crud](automatic-crud.md) | Every exposed model is REST without writing a route (1.0) | — |
 | [create-nano-app](create-nano-app.md) | A generated app starts, migrates and builds its images | example-app, migrations |
-| [mail](mail.md) | A route sends an email through the `mail` plugin | — |
 | [scheduler](scheduler.md) | A job declared in the `scheduler` plugin runs on its cron, in its timezone | — |
+| [mail](mail.md) | A route sends an email through the `mail` plugin | scheduler |
 | [sse](sse.md) | The backend pushes an event and a component updates | Only when the maintainer asks |
 
 The order of the table is the order of work. Work outside this repository (cluster, deploys, apps) is not tracked here.
