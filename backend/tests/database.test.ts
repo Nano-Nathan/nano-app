@@ -13,6 +13,7 @@ const SCHEMA = `${FIXTURES}/schema.prisma`;
 const PLUGIN_SCHEMA = `${FIXTURES}/plugin.prisma`;
 const MYSQL_SCHEMA = `${FIXTURES}/mysql.prisma`;
 const OFFICIAL_SCHEMA = `${FIXTURES}/official/schema.prisma`;
+const OFFICIAL_V2_SCHEMA = `${FIXTURES}/official-v2/schema.prisma`;
 
 /** Generated clients (the generator `output` of each fixture schema) */
 const CLIENT = `${FIXTURES}/generated/client/client.ts`;
@@ -242,6 +243,27 @@ describe('PostgreSQL', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not
     await Database.mount('official-again', { schemaPath: OFFICIAL_SCHEMA });
     const { rowCount } = await oClient.query('SELECT 1 FROM "nano_test"."_prisma_migrations"');
     assert.equal(rowCount, 1);
+    await oClient.end();
+  });
+
+  test("an official plugin's next version applies only its new migrations", async () => {
+    // Starts from the first version of the plugin, already migrated
+    const oClient = new pg.Client({ connectionString: process.env.DATABASE_URL });
+    await oClient.connect();
+    await oClient.query('DROP SCHEMA IF EXISTS "nano_test" CASCADE');
+    fnResetClient('official-v1');
+    await Database.init();
+    const oV1 = await Database.mount('official-v1', { schemaPath: OFFICIAL_SCHEMA });
+    await oV1.item.create({ data: { id: 1 } });
+
+    // Mounts the next version: only its new migration runs, the data stays
+    fnResetClient('official-v2');
+    const oV2 = await Database.mount('official-v2', { schemaPath: OFFICIAL_V2_SCHEMA });
+    const { rows } = await oClient.query(
+      'SELECT migration_name FROM "nano_test"."_prisma_migrations" ORDER BY migration_name',
+    );
+    assert.deepEqual(rows, [{ migration_name: '0001_init' }, { migration_name: '0002_add_name' }]);
+    assert.deepEqual(await oV2.item.findMany(), [{ id: 1, name: '' }]);
     await oClient.end();
   });
 

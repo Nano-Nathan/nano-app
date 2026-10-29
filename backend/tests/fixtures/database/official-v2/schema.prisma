@@ -1,0 +1,17 @@
+// Next version of the official plugin in ../official: adds a column to Item
+datasource db {
+  provider = "postgresql"
+  schemas  = ["nano_test"]
+}
+
+generator client {
+  provider = "prisma-client"
+  output   = "./generated"
+}
+
+model Item {
+  id   Int    @id
+  name String @default("")
+
+  @@schema("nano_test")
+}
