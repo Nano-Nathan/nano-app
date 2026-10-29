@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect } from 'react';
-import sessionController from '../controllers/session.controller';
+import authController from '../controllers/auth.controller';
 
 /** User of the session, with a button to sign out */
-export default sessionController.bindView(({ stores: { backend }, load, signOut }) => {
+export default authController.bindView(({ stores: { backend }, load, signOut }) => {
   // Reads the session once the view is on the page
   useEffect(() => {
     load();
