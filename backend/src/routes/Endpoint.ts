@@ -6,11 +6,13 @@ import type { Callbacks, Handlers, Params } from '@nano-app/core';
 export default class Endpoint {
   private oMethods: Handlers;
   private oCallbacks: Callbacks;
+  private bPublic: boolean;
 
   /** Allowed methods */
-  constructor(oMethods: Handlers, oCallbacks: Callbacks = {}) {
+  constructor(oMethods: Handlers, oCallbacks: Callbacks = {}, bPublic = false) {
     this.oMethods = oMethods;
     this.oCallbacks = oCallbacks;
+    this.bPublic = bPublic;
   }
 
   /** Handler for all methods */
@@ -25,6 +27,10 @@ export default class Endpoint {
   /** Express handler: onBefore, then the method of the request */
   private createHandler(oParams: Params): RequestHandler {
     return (oReq, oRes, fnNext) => {
+      // With Better Auth on, a route needs a session unless it is public
+      if (oRes.locals.auth && !oRes.locals.session && !this.bPublic)
+        return fnNext({ status: 401, message: 'Not authenticated' });
+
       // Finds the handler of the request method
       const sMethod = oReq.method.toUpperCase();
       const sHandled = HTTP_METHODS.find(sHttpMethod => sHttpMethod === sMethod);
@@ -33,7 +39,7 @@ export default class Endpoint {
       // Checks whether the method is defined
       if (!fnMethod) return fnNext({ status: 405, message: `Method ${sMethod} not implemented` });
 
-      // The session of the request, when Better Auth's guard found one
+      // The session of the request, when Better Auth found one
       const oRequestParams = { ...oParams, session: oRes.locals.session };
 
       // Runs the onBefore callback

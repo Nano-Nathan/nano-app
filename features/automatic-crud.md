@@ -63,3 +63,4 @@ In the test app, a new model of the schema is read, filtered, created, updated a
 
 - 2026-10-29 · kleo · Taken. Split into modules by the maintainer. Decided: models from `ModelName`; JSON filters with Prisma's operators; `expand` is added to `QueryParams`; `QUERY` for lists and single records; `PUT` instead of `PATCH`; exposure and permissions wait for the new [access](access.md) feature. Soft delete left out.
 - 2026-10-30 · kleo · Maintainer: the `public` task of [access](access.md) becomes the module `public` of this feature (branch `feat/automatic-crud--public`).
+- 2026-11-03 · kleo · Module `public` implemented on `feat/automatic-crud--public`: Better Auth only looks up the session, each `Endpoint` answers 401 without one unless the route is `public`; tests on the real database, README of `backend` updated.
