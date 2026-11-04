@@ -51,7 +51,7 @@
     "react": ">=19.0.0"
   },
   "dependencies": {
-    "glob": "^13.0.6",
+    "glob": "^14.0.3",
     "jiti": "^2.7.0",
     "mobx": "^7.1.3",
     "mobx-react-lite": "^5.1.0"
