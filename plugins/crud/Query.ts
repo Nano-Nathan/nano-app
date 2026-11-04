@@ -3,90 +3,60 @@ import type { NanoObject, QueryParams } from '@nano-app/backend';
 /** Records a list answers when the request sends no `top` */
 const DEFAULT_TOP = 100;
 
-/** Arguments of a Prisma `findMany` */
-export type PrismaArgs = {
-  where?: NanoObject;
-  orderBy?: NanoObject[];
-  take: number;
-  skip?: number;
-  select?: NanoObject;
-  include?: NanoObject;
-};
-
-/** Translates core's `QueryParams` into the arguments of Prisma */
+/** Translates core's `QueryParams` into the arguments of a Prisma `findMany` */
 export default abstract class Query {
-  /** `filter` → `where`, `orderby` → `orderBy`, `top`/`skip` → `take`/`skip`, `select` → `select`, `expand` → `include` */
-  public static toPrisma(oQuery: QueryParams = {}): PrismaArgs {
+  /** `filter` → `where`, `orderby` → `orderBy`, `top`/`skip` → `take`/`skip`, `select` and `expand` → `select` or `include` */
+  public static toPrisma(oQuery: QueryParams): NanoObject {
     const { filter, orderby, top, skip, select, expand } = oQuery;
 
-    // 100 by default; the client may ask for any amount
-    const oArgs: PrismaArgs = { take: top ?? DEFAULT_TOP };
+    // Prisma does not take select and include on the same level: with select, the relations go inside it
+    const oInclude = expand ? Query.include(Query.list(expand)) : undefined;
+    const oSelect = select ? Query.fields(Query.list(select), oInclude) : undefined;
 
-    // Prisma's operators as they are
-    if (filter) oArgs.where = filter;
-
-    // The fields in the order they were sent
-    if (orderby) oArgs.orderBy = Query.orderBy(orderby);
-
-    // Records to leave out, as they are
-    if (skip !== undefined) oArgs.skip = skip;
-
-    // Prisma does not take select and include on the same level: the relations go inside select
-    const oInclude = expand ? Query.include(expand) : undefined;
-    if (select) oArgs.select = { ...Query.select(select), ...oInclude };
-    else if (oInclude) oArgs.include = oInclude;
-
-    return oArgs;
+    // Prisma leaves out the arguments that are undefined
+    return {
+      where: filter,
+      orderBy:
+        orderby &&
+        Object.entries(orderby).map(([sPath, sDirection]) =>
+          Query.nest(sPath.split('.'), sDirection),
+        ),
+      take: top ?? DEFAULT_TOP,
+      skip,
+      select: oSelect,
+      include: oSelect ? undefined : oInclude,
+    };
   }
 
-  /** `{ "user.name": "asc" }` → `[{ user: { name: 'asc' } }]`, one entry per field */
-  private static orderBy(oOrderBy: NanoObject<'asc' | 'desc'>): NanoObject[] {
-    return Object.entries(oOrderBy).map(
-      // Nests one object per segment of the dot notation, from the last one
-      ([sPath, sDirection]) =>
-        sPath
-          .split('.')
-          .reduceRight<unknown>(
-            (oValue, sField) => ({ [sField]: oValue }),
-            sDirection,
-          ) as NanoObject,
+  /** `['user', 'name']`, `'asc'` → `{ user: { name: 'asc' } }` */
+  private static nest(aPath: string[], sValue: string): NanoObject {
+    const [sField, ...aRest] = aPath;
+    return { [sField]: aRest.length ? Query.nest(aRest, sValue) : sValue };
+  }
+
+  /** `['user', 'posts.comments']` → `{ user: true, posts: { include: { comments: true } } }` */
+  private static include(aPaths: string[]): NanoObject {
+    const aRelations = [...new Set(aPaths.map(sPath => sPath.split('.')[0]))];
+
+    return Object.fromEntries(
+      aRelations.map(sRelation => {
+        // The paths under this relation, without it
+        const aNested = aPaths
+          .filter(sPath => sPath.startsWith(`${sRelation}.`))
+          .map(sPath => sPath.slice(sRelation.length + 1));
+
+        return [sRelation, aNested.length ? { include: Query.include(aNested) } : true];
+      }),
     );
   }
 
-  /** `"id,name"` → `{ id: true, name: true }` */
-  private static select(sSelect: string): NanoObject<true> {
-    return Object.fromEntries(Query.list(sSelect).map(sField => [sField, true]));
+  /** `['id', 'name']` → `{ id: true, name: true }`, plus the relations to load */
+  private static fields(aFields: string[], oInclude?: NanoObject): NanoObject {
+    return { ...Object.fromEntries(aFields.map(sField => [sField, true])), ...oInclude };
   }
 
-  /** `"user,posts.comments"` → `{ user: true, posts: { include: { comments: true } } }`, with no depth ceiling */
-  private static include(sExpand: string): NanoObject {
-    const oInclude: NanoObject = {};
-
-    for (const sPath of Query.list(sExpand)) {
-      const aRelations = sPath.split('.');
-      let oLevel = oInclude;
-
-      aRelations.forEach((sRelation, iIndex) => {
-        // The last relation of the path is only loaded, unless another path already goes deeper
-        if (iIndex === aRelations.length - 1) {
-          oLevel[sRelation] ??= true;
-          return;
-        }
-
-        // The others include the next level
-        if (typeof oLevel[sRelation] !== 'object') oLevel[sRelation] = { include: {} };
-        oLevel = oLevel[sRelation].include;
-      });
-    }
-
-    return oInclude;
-  }
-
-  /** `"a, b,"` → `['a', 'b']` */
+  /** `"a, b"` → `['a', 'b']` */
   private static list(sList: string): string[] {
-    return sList
-      .split(',')
-      .map(sItem => sItem.trim())
-      .filter(Boolean);
+    return sList.split(',').map(sItem => sItem.trim());
   }
 }
