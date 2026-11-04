@@ -199,6 +199,9 @@ npx prisma migrate dev
 - Relate your models to `User` in the same schema, as any Prisma relation. Extra user fields go in its `user.additionalFields`.
 - With several PostgreSQL schemas, add `@@schema(...)` to the generated models.
 - Set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` in the environment, as Better Auth asks.
+- With it on, every route of the app and of the plugins mounted after it (`stage: 'after'`) needs a session: without one it answers 401 `Not authenticated`. The handlers receive it in `session`.
+- `createRoute({ public: true, ... })` answers without a session; its handlers still receive `session` when the request has one. An unknown path answers 404.
+- Its own endpoints, the plugins mounted before the app and the middlewares a plugin adds with `app.use` in `onMount` are not checked: a plugin that exposes something public says it in its README.
 - Better Auth is loaded only when it is on.
 
 ## Plugins

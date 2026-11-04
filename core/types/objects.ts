@@ -8,7 +8,7 @@ export type Params<DB = any> = Partial<
   NanoObject & {
     db?: DB;
     onBeforeResult?: NanoObject;
-    /** `{ user, session }` of Better Auth, on the routes behind its guard */
+    /** `{ user, session }` of Better Auth, when the request has one */
     session?: NanoObject;
   }
 >;
@@ -56,6 +56,8 @@ export type PluginCallbacks<DB = any> = {
 export type RouteEntry<DB = any> = {
   /** Express route expression appended to the path (e.g. `/:id`) */
   expression?: string;
+  /** With Better Auth on, answers without a session; the handlers still receive it when there is one */
+  public?: boolean;
   callbacks?: Callbacks<DB>;
 } & Handlers<DB>;
 

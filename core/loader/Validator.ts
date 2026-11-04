@@ -33,6 +33,10 @@ export default abstract class Validator {
     if (oEntry.expression && typeof oEntry.expression !== 'string')
       return Validator.warn(sFilePath, '"expression" must be a string.');
 
+    // Checks that the public field is a boolean
+    if (oEntry.public !== undefined && typeof oEntry.public !== 'boolean')
+      return Validator.warn(sFilePath, '"public" must be a boolean.');
+
     // Checks that each HTTP method is a function
     for (const sMethod of HTTP_METHODS) {
       if (oEntry[sMethod] && typeof oEntry[sMethod] !== 'function')

@@ -21,7 +21,15 @@ const fnBoot = (sSchemaPath: string) => {
   return boot(
     {
       packages: { betterAuth: AUTH_OPTIONS },
-      plugins: [{ name: 'public', routesDir: 'tests/fixtures/plugin-routes' }],
+      plugins: [
+        { name: 'public', routesDir: 'tests/fixtures/plugin-routes' },
+        {
+          name: 'after',
+          stage: 'after',
+          basePath: '/after',
+          routesDir: 'tests/fixtures/plugin-routes',
+        },
+      ],
       mainPlugin: {
         routesDir: `${FIXTURES}/routes`,
         database: { enabled: true, schemaPath: sSchemaPath },
@@ -110,5 +118,39 @@ describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is no
     // Checks that the plugin answers without a session
     const { status } = await request(oApp.url, '/ping');
     assert.equal(status, 200);
+  });
+
+  test('a public route answers without a session, and receives it when there is one', async () => {
+    // Without a session
+    const oAnonymous = await request(oApp.url, '/open');
+    assert.equal(oAnonymous.status, 200);
+    assert.equal(oAnonymous.body.result, null);
+
+    // With the session of the sign-in
+    const oSigned = await request(oApp.url, '/open', { headers: { cookie: sCookie } });
+    assert.equal(oSigned.status, 200);
+    assert.match(oSigned.body.result, /@nano-app\.test$/);
+  });
+
+  test('the plugins mounted after the app need a session', async () => {
+    // Without a session
+    const oDenied = await request(oApp.url, '/after/ping');
+    assert.equal(oDenied.status, 401);
+
+    // With the session of the sign-in
+    const oAllowed = await request(oApp.url, '/after/ping', { headers: { cookie: sCookie } });
+    assert.equal(oAllowed.status, 200);
+  });
+
+  test('an unknown path answers 404 without a session', async () => {
+    const { status } = await request(oApp.url, '/nowhere');
+    assert.equal(status, 404);
+  });
+
+  test('a route whose public is not a boolean is discarded', async () => {
+    // Checks the warning and that it is not mounted
+    assert.match(oApp.output(), /"public" must be a boolean/);
+    const { status } = await request(oApp.url, '/bad-public', { headers: { cookie: sCookie } });
+    assert.equal(status, 404);
   });
 });

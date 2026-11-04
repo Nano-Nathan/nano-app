@@ -26,7 +26,7 @@ export default class Plugin {
     // Every callback and handler receives the plugin's options and client
     const oParams = { ...options, db: oDb };
 
-    // Better Auth: its endpoints stay public, its guard covers everything mounted after them
+    // Better Auth: its endpoints stay public; past them, every request carries its session, if any
     if (this.oAuthOptions) {
       // Checks that the database is mounted: Better Auth keeps its tables there
       if (!oDb) {
@@ -35,9 +35,9 @@ export default class Plugin {
         );
       }
 
-      const { sPath, oHandler, fnGuard } = await BetterAuth.create(this.oAuthOptions, oDb);
+      const { sPath, oHandler, fnSession } = await BetterAuth.create(this.oAuthOptions, oDb);
       oApp.all(sPath, oHandler);
-      oApp.use(fnGuard);
+      oApp.use(fnSession);
     }
 
     // Plugin setup with the app, before any of its endpoints
