@@ -9,14 +9,15 @@ export type PrismaArgs = {
   orderBy?: NanoObject[];
   take: number;
   skip?: number;
-  select?: NanoObject<true>;
+  select?: NanoObject;
+  include?: NanoObject;
 };
 
 /** Translates core's `QueryParams` into the arguments of Prisma */
 export default abstract class Query {
-  /** `filter` → `where`, `orderby` → `orderBy`, `top`/`skip` → `take`/`skip`, `select` → `select` */
+  /** `filter` → `where`, `orderby` → `orderBy`, `top`/`skip` → `take`/`skip`, `select` → `select`, `expand` → `include` */
   public static toPrisma(oQuery: QueryParams = {}): PrismaArgs {
-    const { filter, orderby, top, skip, select } = oQuery;
+    const { filter, orderby, top, skip, select, expand } = oQuery;
 
     // 100 by default; the client may ask for any amount
     const oArgs: PrismaArgs = { take: top ?? DEFAULT_TOP };
@@ -30,8 +31,10 @@ export default abstract class Query {
     // Records to leave out, as they are
     if (skip !== undefined) oArgs.skip = skip;
 
-    // Only the fields of the model itself
-    if (select) oArgs.select = Query.select(select);
+    // Prisma does not take select and include on the same level: the relations go inside select
+    const oInclude = expand ? Query.include(expand) : undefined;
+    if (select) oArgs.select = { ...Query.select(select), ...oInclude };
+    else if (oInclude) oArgs.include = oInclude;
 
     return oArgs;
   }
@@ -52,10 +55,38 @@ export default abstract class Query {
 
   /** `"id,name"` → `{ id: true, name: true }` */
   private static select(sSelect: string): NanoObject<true> {
-    const aFields = sSelect
+    return Object.fromEntries(Query.list(sSelect).map(sField => [sField, true]));
+  }
+
+  /** `"user,posts.comments"` → `{ user: true, posts: { include: { comments: true } } }`, with no depth ceiling */
+  private static include(sExpand: string): NanoObject {
+    const oInclude: NanoObject = {};
+
+    for (const sPath of Query.list(sExpand)) {
+      const aRelations = sPath.split('.');
+      let oLevel = oInclude;
+
+      aRelations.forEach((sRelation, iIndex) => {
+        // The last relation of the path is only loaded, unless another path already goes deeper
+        if (iIndex === aRelations.length - 1) {
+          oLevel[sRelation] ??= true;
+          return;
+        }
+
+        // The others include the next level
+        if (typeof oLevel[sRelation] !== 'object') oLevel[sRelation] = { include: {} };
+        oLevel = oLevel[sRelation].include;
+      });
+    }
+
+    return oInclude;
+  }
+
+  /** `"a, b,"` → `['a', 'b']` */
+  private static list(sList: string): string[] {
+    return sList
       .split(',')
-      .map(sField => sField.trim())
+      .map(sItem => sItem.trim())
       .filter(Boolean);
-    return Object.fromEntries(aFields.map(sField => [sField, true]));
   }
 }

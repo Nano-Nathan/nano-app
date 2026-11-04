@@ -40,3 +40,42 @@ describe('Query', () => {
     assert.deepEqual(oArgs.select, { id: true, name: true });
   });
 });
+
+describe('Query expand', () => {
+  test('expand goes to include, one level per segment of the dot notation', () => {
+    // Translates a relation and a nested one
+    const oArgs = Query.toPrisma({ expand: 'user,posts.comments' });
+
+    // Checks the include
+    assert.deepEqual(oArgs.include, { user: true, posts: { include: { comments: true } } });
+  });
+
+  test('expand merges paths that share a relation, in any order', () => {
+    // Translates a relation before and after its nested path
+    const oBefore = Query.toPrisma({ expand: 'posts,posts.comments' });
+    const oAfter = Query.toPrisma({ expand: 'posts.comments,posts' });
+
+    // Checks that the nested level is kept
+    assert.deepEqual(oBefore.include, { posts: { include: { comments: true } } });
+    assert.deepEqual(oAfter.include, { posts: { include: { comments: true } } });
+  });
+
+  test('expand has no depth ceiling', () => {
+    // Translates four levels
+    const oArgs = Query.toPrisma({ expand: 'a.b.c.d' });
+
+    // Checks every level
+    assert.deepEqual(oArgs.include, {
+      a: { include: { b: { include: { c: { include: { d: true } } } } } },
+    });
+  });
+
+  test('with select, the relations go inside select', () => {
+    // Translates fields and a relation
+    const oArgs = Query.toPrisma({ select: 'id,name', expand: 'user' });
+
+    // Checks that there is no include next to select
+    assert.deepEqual(oArgs.select, { id: true, name: true, user: true });
+    assert.equal(oArgs.include, undefined);
+  });
+});
