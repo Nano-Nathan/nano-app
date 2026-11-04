@@ -49,7 +49,7 @@ Split by the maintainer (2026-10-29): branch `feat/automatic-crud`, one branch a
 
 ## To decide with the maintainer
 
-1. Ceilings for `expand` depth and `top` (otherwise a denial-of-service vector).
+Nothing pending: `top` and `expand` have no ceiling (see the Log, 2026-11-04).
 
 ## Out of scope
 
@@ -65,3 +65,5 @@ In the test app, a new model of the schema is read, filtered, created, updated a
 - 2026-10-30 · kleo · Maintainer: the `public` task of [access](access.md) becomes the module `public` of this feature (branch `feat/automatic-crud--public`).
 - 2026-11-03 · kleo · Module `public` implemented on `feat/automatic-crud--public`: Better Auth only looks up the session, each `Endpoint` answers 401 without one unless the route is `public`; tests on the real database, README of `backend` updated.
 - 2026-11-04 · kleo · Maintainer, module `query`: `top` is 100 by default with no ceiling (the client may ask for any amount); `select` `"id,name"` → `{ id: true, name: true }`, only fields of the model; `orderby` → an array in the order sent, dot notation nested; `filter` → `where` as it is; `top`/`skip` → `take`/`skip` directly.
+- 2026-11-04 · kleo · Maintainer, module `expand`: `expand` is a string in core's `QueryParams`, `"user,posts.comments"` → `include` nested by the dot notation, with no depth ceiling (same as `top`); with `select`, the relations go inside `select`; unknown relations are left to the modules `errors` and `exposure`.
+- 2026-11-04 · kleo · Module `expand`, review against CLAUDE.md: `Query` without `as`, `.forEach` nor its own args type; its unit tests are removed, the translation is tested in the module `read` through the endpoint and the real database.
