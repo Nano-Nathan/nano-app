@@ -42,10 +42,9 @@ Split by the maintainer (2026-10-29): branch `feat/automatic-crud`, one branch a
 3. `read`: the route with `QUERY` and `GET`, the list with its `count`, a missing record → 404. Depends on: `query`.
 4. `write`: `POST`, `PUT`, `DELETE`. Depends on: `read`.
 5. `errors`: Prisma errors to 404 / 409 / 400. Depends on: `read`.
-6. `override`: a consumer route wins over the generic one (personal-app's `POST Collections`). Depends on: `read`.
-7. `public`: `createRoute({ public: true })` answers without a session. The Better Auth guard moves from the global `app.use` to each endpoint: routes of plugins mounted after the app need a session unless `public`, an unknown URL answers 404, a public route still receives `session` when there is one, middlewares added in `onMount` stay outside the guard. Depends on: —. Decided in [access](access.md).
-8. `exposure`: which models and actions are published, and for whom, through [access](access.md). Depends on: `read`, access.
-9. `e2e`: the "Done when" below. Depends on: every module.
+6. `public`: `createRoute({ public: true })` answers without a session. The Better Auth guard moves from the global `app.use` to each endpoint: routes of plugins mounted after the app need a session unless `public`, an unknown URL answers 404, a public route still receives `session` when there is one, middlewares added in `onMount` stay outside the guard. Depends on: —. Decided in [access](access.md).
+7. `exposure`: which models and actions are published, and for whom, through [access](access.md). Depends on: `read`, access.
+8. `e2e`: the "Done when" below. Depends on: every module.
 
 ## To decide with the maintainer
 
@@ -71,3 +70,4 @@ In the test app, a new model of the schema is read, filtered, created, updated a
 - 2026-11-05 · kleo · Maintainer, module `write`: `POST` → `create`, `PUT` → `update` (only the fields sent), `DELETE` → `delete`, each answering the record (the deleted one too); body and `:id` go to Prisma as they are, with no validation: a missing record fails with 500 until `errors`.
 - 2026-11-05 · kleo · Maintainer, module `errors`: mapped in the core's `normalize` (`backend/src/app/errors.ts`) by `code`, or `name` for validation, so the consumer's routes get it too; fixed messages `Not found` / `Conflict` / `Invalid request`; `read` uses `findUniqueOrThrow` and its own 404 goes. 409 is tested with `P2003`; `P2002` has no test (no `@unique` in the fixture).
 - 2026-11-05 · kleo · Maintainer, module `errors`: every 5xx answers `Internal server error`, never its own message (it may carry Prisma's tables and columns); the full error is still logged to stderr.
+- 2026-11-05 · kleo · Maintainer: module `override` dropped. Business logic (personal-app's `POST Collections`) goes in a consumer route with its own URL; a consumer route on the same URL takes every method of it, and changing that is not needed.
