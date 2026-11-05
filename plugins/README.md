@@ -17,10 +17,10 @@ createNanoApp({ plugins: [health()] });
 
 ## Official plugins
 
-| Plugin | Import | Endpoints | Options |
-|---|---|---|---|
-| `health` | `import health from '@nano-app/plugins/health'` | `GET /health` → `{ success: true, result: { status: "ok" } }` | `basePath` (default `"/health"`) |
-| `crud` | `import crud from '@nano-app/plugins/crud'` | `GET` and `QUERY` on `/api/<model>{/<id>}` → a list `{ result, count }` or one record, with `QueryParams` as the body of `QUERY` | `basePath` (default `"/api"`) |
+| Plugin   | Import                                          | Endpoints                                                                                                                                                                                                                                 | Options                          |
+| -------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| `health` | `import health from '@nano-app/plugins/health'` | `GET /health` → `{ success: true, result: { status: "ok" } }`                                                                                                                                                                             | `basePath` (default `"/health"`) |
+| `crud`   | `import crud from '@nano-app/plugins/crud'`     | `GET` and `QUERY` on `/api/<model>{/<id>}` → a list `{ result, count }` or one record, with `QueryParams` as the body of `QUERY`; `POST /api/<model>`, `PUT` and `DELETE` on `/api/<model>/<id>` → the record created, updated or deleted | `basePath` (default `"/api"`)    |
 
 ### Layout
 

@@ -8,10 +8,15 @@ import type { TestResponse } from '../../backend/tests/helpers';
 
 const SCHEMA = '../backend/tests/fixtures/database/crud.prisma';
 
-/** Sends a `QUERY` with its parameters as the JSON body */
-function query(sUrl: string, sPath: string, oBody: NanoObject): Promise<TestResponse> {
+/** Sends a request with a JSON body */
+function send(
+  sMethod: string,
+  sUrl: string,
+  sPath: string,
+  oBody: NanoObject,
+): Promise<TestResponse> {
   return request(sUrl, sPath, {
-    method: 'QUERY',
+    method: sMethod,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(oBody),
   });
@@ -21,6 +26,7 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
   const sTag = `crud-${Date.now()}`;
   let oServer: Awaited<ReturnType<typeof startApp>>;
   let sCommentId: string;
+  let iNoteId: number;
 
   before(async () => {
     // What the consumer does by hand: apply their schema
@@ -38,6 +44,7 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
     });
     await oDb.note.create({ data: { title: `${sTag}-b` } });
     sCommentId = oNote.comments[0].id;
+    iNoteId = oNote.id;
   });
 
   after(async () => {
@@ -60,7 +67,7 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
 
   test('QUERY filters, orders, pages, selects and expands', async () => {
     // Reads the last note of this run with its comments
-    const { body } = await query(oServer.url, '/api/note', {
+    const { body } = await send('QUERY', oServer.url, '/api/note', {
       filter: { title: { startsWith: sTag } },
       orderby: { title: 'asc' },
       top: 1,
@@ -78,13 +85,35 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
 
   test('QUERY reads one record by its string id, with a nested relation', async () => {
     // Reads the comment with its note
-    const { status, body } = await query(oServer.url, `/api/comment/${sCommentId}`, {
+    const { status, body } = await send('QUERY', oServer.url, `/api/comment/${sCommentId}`, {
       expand: 'note',
     });
 
     // Checks the record and its relation
     assert.equal(status, 200);
     assert.equal(body.result.note.title, `${sTag}-a`);
+  });
+
+  test('POST creates, PUT updates the fields sent and DELETE deletes', async () => {
+    // Creates a comment on the first note
+    const { body: oCreated } = await send('POST', oServer.url, '/api/comment', {
+      text: 'second',
+      noteId: iNoteId,
+    });
+    const sPath = `/api/comment/${oCreated.result.id}`;
+
+    // Updates only its text
+    const { body: oUpdated } = await send('PUT', oServer.url, sPath, { text: 'edited' });
+
+    // Deletes it, then reads it
+    const { body: oDeleted } = await request(oServer.url, sPath, { method: 'DELETE' });
+    const { status } = await request(oServer.url, sPath);
+
+    // Checks each change
+    assert.equal(oCreated.result.text, 'second');
+    assert.deepEqual(oUpdated.result, { ...oCreated.result, text: 'edited' });
+    assert.equal(oDeleted.result.text, 'edited');
+    assert.equal(status, 404);
   });
 
   test('a record that does not exist answers 404', async () => {
