@@ -31,14 +31,14 @@ describe('error handling', () => {
     assert.deepEqual(body, { success: false, message: 'Field name is required' });
   });
 
-  test('an Error without status answers 500 with its message', async () => {
+  test('an Error without status answers 500 without its message', async () => {
     // Requests the route that throws an Error
     const { status, body } = await request(oServer.url, '/throw/error');
 
-    // Checks that it is a 500 with the Error's message
+    // Checks that it is a 500 that hides the Error's message
     assert.equal(status, 500);
     assert.equal(body.success, false);
-    assert.equal(body.message, 'boom');
+    assert.equal(body.message, 'Internal server error');
   });
 
   test('the warning flag goes in the response', async () => {

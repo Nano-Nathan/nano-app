@@ -276,7 +276,9 @@ The framework mounts the 404 and the error handler: an unmatched request becomes
 ```ts
 throw { status: 409, message: 'Already exists' };   // → 409 { success: false, warning: false, message: "Already exists" }
 throw 'Field name is required';                     // → 400 { success: false, message: "Field name is required" }
-throw new Error('boom');                            // → 500, logged to stderr
+throw new Error('boom');                            // → 500 "Internal server error", logged to stderr
+// A Prisma error the request caused answers without its message, which names tables and columns:
+// P2025 → 404 "Not found", P2002 and P2003 → 409 "Conflict", validation → 400 "Invalid request"
 GET /unknown                                        // → 404 { success: false, warning: false, message: "/unknown not found" }
 ```
 

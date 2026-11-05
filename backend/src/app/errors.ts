@@ -2,8 +2,19 @@ import type { ErrorRequestHandler, RequestHandler } from 'express';
 import type { ApiResponse } from '@nano-app/core';
 import type { HandlerError } from '../types/app';
 
-/** Whether anything thrown is an object, read as a HandlerError */
-function isHandlerError(oError: unknown): oError is HandlerError {
+/** What tells a Prisma error apart: its code, or its name when it has none */
+type PrismaError = { code?: string; name?: string };
+
+/** Prisma errors the request caused; their own messages name tables and columns */
+const PRISMA_ERRORS: { [sKey: string]: HandlerError } = {
+  P2025: { status: 404, message: 'Not found' },
+  P2002: { status: 409, message: 'Conflict' },
+  P2003: { status: 409, message: 'Conflict' },
+  PrismaClientValidationError: { status: 400, message: 'Invalid request' },
+};
+
+/** Whether anything thrown is an object, read as a HandlerError or a Prisma error */
+function isHandlerError(oError: unknown): oError is HandlerError & PrismaError {
   return typeof oError === 'object' && oError !== null;
 }
 
@@ -15,14 +26,19 @@ function normalize(oError: unknown): { status: number; body: ApiResponse } {
   }
 
   // An object is read as { status, message, warning }; anything else has none of them
-  const { status, message, warning } = isHandlerError(oError) ? oError : {};
+  const oThrown = isHandlerError(oError) ? oError : {};
 
+  // A Prisma error caused by the request answers its own status, never its message
+  const { status, message, warning } = PRISMA_ERRORS[oThrown.code ?? oThrown.name ?? ''] ?? oThrown;
+
+  // A server error never answers its message, which may carry internals: it is logged in full
+  const iStatus = status ?? 500;
   return {
-    status: status ?? 500,
+    status: iStatus,
     body: {
       success: false,
       warning: warning ?? false,
-      message: message || 'Internal server error',
+      message: (iStatus < 500 && message) || 'Internal server error',
     },
   };
 }

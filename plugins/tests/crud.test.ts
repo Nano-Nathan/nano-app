@@ -116,11 +116,27 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
     assert.equal(status, 404);
   });
 
-  test('a record that does not exist answers 404', async () => {
-    // Reads a comment nobody created
-    const { status } = await request(oServer.url, '/api/comment/missing');
+  test('Prisma errors answer their status without their message', async () => {
+    // A comment nobody created: read, updated and deleted
+    const sPath = '/api/comment/missing';
+    const { status: iRead, body: oRead } = await request(oServer.url, sPath);
+    const { status: iUpdate } = await send('PUT', oServer.url, sPath, { text: 'edited' });
+    const { status: iDelete } = await request(oServer.url, sPath, { method: 'DELETE' });
 
-    // Checks the status
-    assert.equal(status, 404);
+    // A comment of a note that does not exist, and a note without its title
+    const { status: iConflict, body: oConflict } = await send('POST', oServer.url, '/api/comment', {
+      text: 'orphan',
+      noteId: 0,
+    });
+    const { status: iInvalid, body: oInvalid } = await send('POST', oServer.url, '/api/note', {
+      name: 'unknown field',
+    });
+
+    // Checks each status, and that the messages name no table or column
+    assert.deepEqual([iRead, iUpdate, iDelete, iConflict, iInvalid], [404, 404, 404, 409, 400]);
+    assert.deepEqual(
+      [oRead.message, oConflict.message, oInvalid.message],
+      ['Not found', 'Conflict', 'Invalid request'],
+    );
   });
 });
