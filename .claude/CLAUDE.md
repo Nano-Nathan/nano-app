@@ -39,6 +39,7 @@ Industry practices this repository follows. The concrete rules below win when th
 - **A framework for others**: every feature is general, never shaped for one app or one plugin. The consumer gets a small, easy layer (`createRoute`, `createPlugin`, one config object) and the framework does the work behind it. Convention over configuration: a file in the right folder works without registering it.
 - **Only what is needed**: add exactly what the task requires. No option, default, fallback, retry or `try`/`catch` nobody asked for; when something is missing, fail with a clear message instead of guessing. General does not mean speculative: generalize what exists, do not build for cases nobody has.
 - **KISS and YAGNI**: the simplest solution for today's need. No code for a future that has not arrived.
+- **Least code**: implement each change with the least code possible. Before adding anything, check whether it is needed at all; prefer reusing what exists, and no change over a small one.
 - **DRY**: one source of truth for each piece of knowledge (a rule, a message, a constant), not only for repeated lines.
 - **Single responsibility**: a function does one thing, a file has one job, a module one reason to change.
 - **Separation of concerns**: I/O (files, network, database, `console`) at the edges; the logic in between receives values and returns values, so it can be tested and read alone.
