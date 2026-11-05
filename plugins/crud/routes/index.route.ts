@@ -13,9 +13,7 @@ async function read(oReq: Request, { db }: Params): ApiPromise {
   // One record: only its fields and relations apply
   if (id) {
     const { select, include } = oArgs;
-    const oRecord = await db[sModel].findUnique({ where: { id }, select, include });
-    if (!oRecord) throw { status: 404, message: `${oReq.path} not found` };
-    return { result: oRecord };
+    return { result: await db[sModel].findUniqueOrThrow({ where: { id }, select, include }) };
   }
 
   // A list: the page and the total of the same filter
