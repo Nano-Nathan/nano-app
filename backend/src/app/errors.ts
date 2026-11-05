@@ -31,12 +31,14 @@ function normalize(oError: unknown): { status: number; body: ApiResponse } {
   // A Prisma error caused by the request answers its own status, never its message
   const { status, message, warning } = PRISMA_ERRORS[oThrown.code ?? oThrown.name ?? ''] ?? oThrown;
 
+  // A server error never answers its message, which may carry internals: it is logged in full
+  const iStatus = status ?? 500;
   return {
-    status: status ?? 500,
+    status: iStatus,
     body: {
       success: false,
       warning: warning ?? false,
-      message: message || 'Internal server error',
+      message: (iStatus < 500 && message) || 'Internal server error',
     },
   };
 }
