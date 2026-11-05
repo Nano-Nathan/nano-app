@@ -7,6 +7,8 @@ export type ApiResponse<T = any> = {
   status?: number;
   success?: boolean;
   result?: T;
+  /** Total of a list, for a table to paginate */
+  count?: number;
   message?: string;
   warning?: boolean;
 };

@@ -58,7 +58,7 @@ export default createRoute({
 });
 ```
 
-Each handler receives `(req, params)` and returns an `ApiResponse` without `success`: its `status` is the HTTP status (`200` by default) and the framework sets `success` to `status < 400`. `params` holds the plugin's `options`, `db` (the Prisma client when a database is enabled, see [Database](#database)) and `onBeforeResult` (see [Callbacks](#callbacks)):
+Each handler receives `(req, params)` and returns an `ApiResponse` without `success`: its `status` is the HTTP status (`200` by default) and the framework sets `success` to `status < 400`. `params` holds the plugin's `options`, `db` (the Prisma client when a database is enabled, see [Database](#database); a plugin without its own gets the app's) and `onBeforeResult` (see [Callbacks](#callbacks)):
 
 ```ts
 type ApiResponse<T> = {
