@@ -1,3 +1,4 @@
+import { APP_NAME } from '@nano-app/core/const';
 import Router from './Router';
 import BetterAuth from '../auth/BetterAuth';
 import Database from '../database/Database';
@@ -20,8 +21,8 @@ export default class Plugin {
   public async mount(oApp: Express): Promise<void> {
     const { name, routesDir, basePath, database, options, callbacks } = this.oConfig;
 
-    // Mounts the Prisma client, named as the plugin
-    const oDb = database?.enabled ? await Database.mount(name, database) : undefined;
+    // Mounts the Prisma client, named as the plugin; without its own, the app's
+    const oDb = database?.enabled ? await Database.mount(name, database) : Database.get(APP_NAME);
 
     // Every callback and handler receives the plugin's options and client
     const oParams = { ...options, db: oDb };

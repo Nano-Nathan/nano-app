@@ -26,11 +26,11 @@ An official plugin: one route file (`routes/index.route.ts`, expression `/:model
 
 - `QUERY` is the way to read with parameters, for a list and for one record: it is what the frontend store `api` already sends.
 - `PUT`, not `PATCH`: the store's `update` already sends `PUT` and CORS allows it.
-- The model list comes from the generated client's `ModelName` (public API), not from the DMMF or from parsing `schema.prisma`.
+- `:model` is the Prisma delegate as it is (`/api/note` → `db.note`): it is always a model of the app, so it is not validated. `:id` goes to Prisma as the URL sends it.
 - Filters are JSON only (core's `QueryParams`), with Prisma's operators as they are: `{ "price": { "gte": 1000 } }`.
 - A list answer carries the total, so a table can paginate: `{ "success": true, "result": [ … ], "count": 128 }`.
 - Errors: `P2025` → 404, `P2002` and `P2003` → 409, validation → 400; anything else falls to the core error handler as 500. The raw Prisma message is never sent: it carries table and column names.
-- An unknown model answers 404 before touching the database. Private by default, like every route.
+- Private by default, like every route.
 - Earlier implementation of the query builder, as reference: `git show 350114a:backend/src/odata/QueryBuilder.ts` in `nano-app.dev`.
 
 ## Modules
@@ -39,7 +39,7 @@ Split by the maintainer (2026-10-29): branch `feat/automatic-crud`, one branch a
 
 1. `query`: `QueryParams` → Prisma arguments: `filter` → `where`, `orderby` → `orderBy` (dot notation for nested fields), `top`/`skip` → `take`/`skip`, `select` → `select`. A pure function, unit tests without a database. Depends on: —.
 2. `expand`: `expand` in core's `QueryParams`, translated to `include`. Depends on: `query`.
-3. `read`: the route with `QUERY` and `GET`, the list with its `count`, unknown models → 404. Depends on: `query`.
+3. `read`: the route with `QUERY` and `GET`, the list with its `count`, a missing record → 404. Depends on: `query`.
 4. `write`: `POST`, `PUT`, `DELETE`. Depends on: `read`.
 5. `errors`: Prisma errors to 404 / 409 / 400. Depends on: `read`.
 6. `override`: a consumer route wins over the generic one (personal-app's `POST Collections`). Depends on: `read`.
@@ -67,3 +67,4 @@ In the test app, a new model of the schema is read, filtered, created, updated a
 - 2026-11-04 · kleo · Maintainer, module `query`: `top` is 100 by default with no ceiling (the client may ask for any amount); `select` `"id,name"` → `{ id: true, name: true }`, only fields of the model; `orderby` → an array in the order sent, dot notation nested; `filter` → `where` as it is; `top`/`skip` → `take`/`skip` directly.
 - 2026-11-04 · kleo · Maintainer, module `expand`: `expand` is a string in core's `QueryParams`, `"user,posts.comments"` → `include` nested by the dot notation, with no depth ceiling (same as `top`); with `select`, the relations go inside `select`; unknown relations are left to the modules `errors` and `exposure`.
 - 2026-11-04 · kleo · Module `expand`, review against CLAUDE.md: `Query` without `as`, `.forEach` nor its own args type; its unit tests are removed, the translation is tested in the module `read` through the endpoint and the real database.
+- 2026-11-05 · kleo · Maintainer, module `read`: plugin `crud` (`@nano-app/plugins/crud`, `basePath` `/api`, `stage: 'after'`), `GET` and `QUERY` on `/:model{/:id}`; `:model` is the Prisma delegate as it is (`/api/note` → `db.note`) and is not validated (it is always a model of the list; this replaces the `ModelName` and unknown-model 404 bullets of the Scope); `:id` goes to Prisma as the URL sends it, with no conversion; a list answers `count`, a missing record 404. A plugin without its own database receives the app's client in `db`.
