@@ -2,9 +2,6 @@ import type { ErrorRequestHandler, RequestHandler } from 'express';
 import type { ApiResponse } from '@nano-app/core';
 import type { HandlerError } from '../types/app';
 
-/** What tells a Prisma error apart: its code, or its name when it has none */
-type PrismaError = { code?: string; name?: string };
-
 /** Prisma errors the request caused; their own messages name tables and columns */
 const PRISMA_ERRORS: { [sKey: string]: HandlerError } = {
   P2025: { status: 404, message: 'Not found' },
@@ -14,7 +11,9 @@ const PRISMA_ERRORS: { [sKey: string]: HandlerError } = {
 };
 
 /** Whether anything thrown is an object, read as a HandlerError or a Prisma error */
-function isHandlerError(oError: unknown): oError is HandlerError & PrismaError {
+function isHandlerError(
+  oError: unknown,
+): oError is HandlerError & { code?: string; name?: string } {
   return typeof oError === 'object' && oError !== null;
 }
 

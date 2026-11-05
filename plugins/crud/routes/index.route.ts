@@ -1,44 +1,47 @@
 import { createRoute } from '@nano-app/backend';
 import Query from '../Query';
-import type { ApiPromise, Params, QueryParams, Request } from '@nano-app/backend';
+import type { ApiPromise, Params, Request } from '@nano-app/backend';
+
+/** The Prisma delegate of the URL's model: Express types a param as a string or a list of them */
+function delegate(oReq: Request, { db }: Params) {
+  return db[String(oReq.params.model)];
+}
 
 /** A list of the model with its total, or one record by its id as the URL sends it */
-async function read(oReq: Request, { db }: Params): ApiPromise {
+async function read(oReq: Request, oParams: Params): ApiPromise {
   const { id } = oReq.params;
-  // Express types a param as a string or a list of them: the model is always one string
-  const sModel = String(oReq.params.model);
-  const oQuery: QueryParams = oReq.body ?? {};
-  const oArgs = Query.toPrisma(oQuery);
+  const oModel = delegate(oReq, oParams);
+  const oArgs = Query.toPrisma(oReq.body ?? {});
 
   // One record: only its fields and relations apply
   if (id) {
     const { select, include } = oArgs;
-    return { result: await db[sModel].findUniqueOrThrow({ where: { id }, select, include }) };
+    return { result: await oModel.findUniqueOrThrow({ where: { id }, select, include }) };
   }
 
   // A list: the page and the total of the same filter
   const [aRecords, iCount] = await Promise.all([
-    db[sModel].findMany(oArgs),
-    db[sModel].count({ where: oArgs.where }),
+    oModel.findMany(oArgs),
+    oModel.count({ where: oArgs.where }),
   ]);
   return { result: aRecords, count: iCount };
 }
 
 /** Creates a record with the body as its data */
-async function create(oReq: Request, { db }: Params): ApiPromise {
-  return { result: await db[String(oReq.params.model)].create({ data: oReq.body }) };
+async function create(oReq: Request, oParams: Params): ApiPromise {
+  return { result: await delegate(oReq, oParams).create({ data: oReq.body }) };
 }
 
 /** Updates only the fields of the body */
-async function update(oReq: Request, { db }: Params): ApiPromise {
+async function update(oReq: Request, oParams: Params): ApiPromise {
   const { id } = oReq.params;
-  return { result: await db[String(oReq.params.model)].update({ where: { id }, data: oReq.body }) };
+  return { result: await delegate(oReq, oParams).update({ where: { id }, data: oReq.body }) };
 }
 
 /** Deletes a record and answers it */
-async function remove(oReq: Request, { db }: Params): ApiPromise {
+async function remove(oReq: Request, oParams: Params): ApiPromise {
   const { id } = oReq.params;
-  return { result: await db[String(oReq.params.model)].delete({ where: { id } }) };
+  return { result: await delegate(oReq, oParams).delete({ where: { id } }) };
 }
 
 /** `GET` reads without parameters, `QUERY` with `QueryParams` as its body */
