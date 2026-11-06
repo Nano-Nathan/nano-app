@@ -2,7 +2,7 @@
 status: in-progress
 owner: kleo
 depends_on: []
-updated: 2026-10-30
+updated: 2026-11-05
 ---
 
 # Access
@@ -39,3 +39,4 @@ In the test app, a user without the role gets 403 on a route that asks for it, a
 - 2026-10-30 · kleo · Maintainer: start with public routes. Decided: a flag on the route, `createRoute({ public: true, ... })` for the whole route (not per method); the guard moves from the global `app.use` to each endpoint. Better Auth installation may change.
 - 2026-10-30 · kleo · Better Auth stays in core (`packages.betterAuth`), not an official plugin: its models live in the app schema and the guard belongs to `Endpoint`. Task `public` decided: middlewares added in `onMount` stay outside the guard (documented); an unknown URL answers 404; routes of plugins mounted after the app need a session unless `public: true`; a public route still receives `session` when there is one.
 - 2026-10-30 · kleo · Task `public` moved to [automatic-crud](automatic-crud.md) as its module `public`.
+- 2026-11-05 · kleo · Maintainer: roles and permissions are those of Better Auth's admin plugin; one module. `createRoute({ permissions })` answers 403 without them (`userHasPermission`); a public route does not check them; without Better Auth the route answers, with a warning at startup. Every plugin mounted with the app or after it receives Better Auth's instance as `auth` (`BetterAuth.get()`), and its params are frozen.
