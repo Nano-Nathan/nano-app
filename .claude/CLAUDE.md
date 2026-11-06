@@ -13,7 +13,7 @@ pnpm monorepo: `core/` (private, inlined into the backend, frontend and componen
 - Only when the maintainer says a feature is split into modules (a large one, like `frontend`): it lives on a feature branch from `main` (`feat/<feature>`), linked to an issue when there is one. Each module gets its own branch from the up-to-date feature branch (`feat/<feature>--<module>`, `--` because a branch cannot also be a folder of branches) and a pull request to the feature branch. The next module starts only after that pull request is merged. When the feature is done, one pull request takes the feature branch to `main`, and its title decides the release.
 - Planned features live in `features/`, one file per feature, with its scope, status and log. Read `features/README.md` before taking one.
 - When `main` moves during a feature split into modules, merge `main` into the feature branch; never rebase it, module branches start from it.
-- Agents do not commit or push. Stage only the files you changed; the maintainer commits.
+- Agents commit and push their work to its branch, and always open its pull request: to the feature branch for a module, to `main` otherwise.
 - Agents never add a `Co-authored-by` trailer (for themselves or another agent) to commits or pull requests: co-authorship is added by hand by the maintainer.
 
 ## New development: plan, implement after approval
@@ -25,7 +25,7 @@ A development is planned and reviewed as a whole, on its one branch. When the ma
 1. Before writing any code, list what it will do, point by point. Each point says what and how, in plain words: what comes in, what happens to it, what goes out, and what it reuses from `core/` or existing code.
 2. When a point hides a decision (a default, an edge case, an error, where the code lives), give two or three options with their cost and mark one as the recommendation.
 3. The maintainer answers point by point. Adjust the points and list again only what changed.
-4. Implement only when every point has the maintainer's OK. Then show the diff; the pull request goes to `main`, or to the feature branch for a module, and the next module starts after it is merged.
+4. Implement only when every point has the maintainer's OK. Then commit, push and open the pull request: to `main`, or to the feature branch for a module, and the next module starts after it is merged.
 5. The tests, the README of the package and the feature file in `features/` follow the final decisions, not the first proposal: when a point changes during the review, update them in the same branch.
 
 Reuse and extend what exists (`core/` loaders, validators, utils) before writing new code, and keep each change to the smallest code that does the job.
