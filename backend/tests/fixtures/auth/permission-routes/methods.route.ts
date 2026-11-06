@@ -1,15 +1,8 @@
 import { createRoute } from '../../../../src/app/creators';
-import type { NanoObject } from '@nano-app/core';
 
-/** Permissions of each method: the admin role lists users, but has none on notes */
-const PERMISSIONS: NanoObject<NanoObject<string[]>> = {
-  GET: { user: ['list'] },
-  POST: { notes: ['create'] },
-};
-
-/** A route whose permissions depend on the request */
+/** Permissions of the route, and others for POST: the admin role has none on notes, but lists users */
 export default createRoute({
-  permissions: oReq => PERMISSIONS[oReq.method],
+  permissions: { notes: ['read'] },
   GET: async () => ({ message: 'listed' }),
-  POST: async () => ({ message: 'created' }),
+  POST: { handler: async () => ({ message: 'created' }), permissions: { user: ['list'] } },
 });

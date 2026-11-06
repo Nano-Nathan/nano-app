@@ -215,7 +215,7 @@ export default createRoute({
 });
 ```
 
-When they depend on the request, `permissions` is a function of it: `permissions: oReq => ({ notes: [oReq.method === 'GET' ? 'read' : 'create'] })`.
+A method may ask for its own permissions instead of the route's: `POST: { handler, permissions: { notes: ['create'] } }`. A plain function takes those of the route. Without any, a session is enough. In a handler of your own, `isGranted(params, permissions)` asks Better Auth the same.
 
 A public route does not check them. Without Better Auth the route answers anyway, with a warning at startup. Handlers and callbacks receive Better Auth's instance as `auth`, next to `db`; these params are read-only.
 

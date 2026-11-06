@@ -56,7 +56,7 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
   });
 
   test('a model out of the list answers 404', async () => {
-    // Reads a model the app does not list
+    // Reads a model of the schema the app does not list
     const { status } = await request(oServer.url, '/api/secret');
     assert.equal(status, 404);
   });

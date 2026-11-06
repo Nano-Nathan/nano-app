@@ -179,7 +179,7 @@ describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is no
     const oPublic = await request(oApp.url, '/permissions/open');
     assert.equal(oPublic.status, 200);
 
-    // Permissions computed from the request: it lists users, but cannot create notes
+    // Permissions of a method win over those of the route: it cannot read notes, but lists users
     const oListed = await request(oApp.url, '/permissions/methods', {
       headers: { cookie: sCookie },
     });
@@ -187,7 +187,7 @@ describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is no
       method: 'POST',
       headers: { cookie: sCookie },
     });
-    assert.deepEqual([oListed.status, oCreated.status], [200, 403]);
+    assert.deepEqual([oListed.status, oCreated.status], [403, 200]);
   });
 
   test('without Better Auth, a route with permissions answers and warns at startup', async () => {

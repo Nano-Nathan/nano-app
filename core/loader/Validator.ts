@@ -37,10 +37,14 @@ export default abstract class Validator {
     if (oEntry.public !== undefined && typeof oEntry.public !== 'boolean')
       return Validator.warn(sFilePath, '"public" must be a boolean.');
 
-    // Checks that each HTTP method is a function
+    // Checks that each HTTP method is a function, or an object with one as its handler
     for (const sMethod of HTTP_METHODS) {
-      if (oEntry[sMethod] && typeof oEntry[sMethod] !== 'function')
-        return Validator.warn(sFilePath, `"${sMethod}" must be a function.`);
+      const oMethod = oEntry[sMethod];
+      if (oMethod && typeof oMethod !== 'function' && typeof oMethod.handler !== 'function')
+        return Validator.warn(
+          sFilePath,
+          `"${sMethod}" must be a function or { handler, permissions }.`,
+        );
     }
 
     // Checks that the entry defines at least one HTTP method

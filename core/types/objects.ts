@@ -18,13 +18,20 @@ export type Params<DB = any> = Partial<
 /** Endpoint handler */
 export type Handler<DB> = (req: Request, params: Params<DB>) => ApiPromise;
 
-/** Endpoint handlers, one per HTTP method */
+/** A method with its own permissions, instead of those of the route */
+export type MethodEntry<DB = any> = {
+  handler: Handler<DB>;
+  /** With Better Auth on, the permissions this method needs instead of the route's */
+  permissions?: NanoObject<string[]>;
+};
+
+/** Endpoint handlers, one per HTTP method: the handler, or it with its permissions */
 export type Handlers<DB = any> = {
-  GET?: Handler<DB>;
-  POST?: Handler<DB>;
-  PUT?: Handler<DB>;
-  DELETE?: Handler<DB>;
-  QUERY?: Handler<DB>;
+  GET?: Handler<DB> | MethodEntry<DB>;
+  POST?: Handler<DB> | MethodEntry<DB>;
+  PUT?: Handler<DB> | MethodEntry<DB>;
+  DELETE?: Handler<DB> | MethodEntry<DB>;
+  QUERY?: Handler<DB> | MethodEntry<DB>;
 };
 
 /** Callback run with the params */
@@ -60,8 +67,8 @@ export type RouteEntry<DB = any> = {
   expression?: string;
   /** With Better Auth on, answers without a session; the handlers still receive it when there is one */
   public?: boolean;
-  /** With Better Auth on, the permissions of its admin plugin the user needs (`{ notes: ['read'] }`), or a function of the request that returns them */
-  permissions?: NanoObject<string[]> | ((req: Request) => NanoObject<string[]>);
+  /** With Better Auth on, the permissions of its admin plugin the user needs (`{ notes: ['read'] }`) */
+  permissions?: NanoObject<string[]>;
   callbacks?: Callbacks<DB>;
 } & Handlers<DB>;
 

@@ -14,6 +14,7 @@ export type {
   RouteEntry,
   Handler,
   Handlers,
+  MethodEntry,
   NanoObject,
   Params,
   Callbacks,
@@ -23,3 +24,6 @@ export type {
 /** Main class and creators */
 export { default as NanoApp } from './app/NanoApp';
 export * from './app/creators';
+
+/** Permissions check by Better Auth */
+export { default as isGranted } from './auth/permissions';
