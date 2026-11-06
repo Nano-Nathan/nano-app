@@ -215,6 +215,8 @@ export default createRoute({
 });
 ```
 
+When they depend on the request, `permissions` is a function of it: `permissions: oReq => ({ notes: [oReq.method === 'GET' ? 'read' : 'create'] })`.
+
 A public route does not check them. Without Better Auth the route answers anyway, with a warning at startup. Handlers and callbacks receive Better Auth's instance as `auth`, next to `db`; these params are read-only.
 
 ## Plugins

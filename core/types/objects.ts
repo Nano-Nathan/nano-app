@@ -60,8 +60,8 @@ export type RouteEntry<DB = any> = {
   expression?: string;
   /** With Better Auth on, answers without a session; the handlers still receive it when there is one */
   public?: boolean;
-  /** With Better Auth on, the permissions of its admin plugin the user needs (`{ notes: ['read'] }`) */
-  permissions?: NanoObject<string[]>;
+  /** With Better Auth on, the permissions of its admin plugin the user needs (`{ notes: ['read'] }`), or a function of the request that returns them */
+  permissions?: NanoObject<string[]> | ((req: Request) => NanoObject<string[]>);
   callbacks?: Callbacks<DB>;
 } & Handlers<DB>;
 

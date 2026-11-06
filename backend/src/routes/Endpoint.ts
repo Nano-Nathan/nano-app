@@ -1,13 +1,13 @@
 import { HTTP_METHODS } from '@nano-app/core/const';
-import type { RequestHandler } from 'express';
-import type { Callbacks, Handlers, NanoObject, Params, RouteEntry } from '@nano-app/core';
+import type { Request, RequestHandler } from 'express';
+import type { Callbacks, Handlers, Params, RouteEntry } from '@nano-app/core';
 
 /** Base class for all endpoints */
 export default class Endpoint {
   private oMethods: Handlers;
   private oCallbacks: Callbacks;
   private isPublic: boolean;
-  private oPermissions?: NanoObject<string[]>;
+  private oPermissions?: RouteEntry['permissions'];
 
   /** Allowed methods and the options of the route */
   constructor(
@@ -59,7 +59,7 @@ export default class Endpoint {
       const oRequestParams = { ...oParams, session: oRes.locals.session };
 
       // Checks the permissions of the route, then runs the onBefore callback
-      this.isGranted(oRequestParams)
+      this.isGranted(oReq, oRequestParams)
         .then(isGranted => {
           if (!isGranted) throw { status: 403, message: 'Forbidden' };
           return this.oCallbacks.onBefore?.(oReq, sMethod, oRequestParams) ?? {};
@@ -79,13 +79,17 @@ export default class Endpoint {
   }
 
   /** Whether the user of the session has the permissions of the route, by Better Auth */
-  private async isGranted({ auth, session }: Params): Promise<boolean> {
+  private async isGranted(oReq: Request, { auth, session }: Params): Promise<boolean> {
     // Nothing to check without Better Auth or permissions, or on a public route
     if (!auth || !this.oPermissions || this.isPublic) return true;
 
+    // The permissions of this request, when the route computes them from it
+    const oPermissions =
+      typeof this.oPermissions === 'function' ? this.oPermissions(oReq) : this.oPermissions;
+
     // Asks Better Auth whether the role of the user has the permissions
     const { success } = await auth.api.userHasPermission({
-      body: { userId: session?.user.id, role: session?.user.role, permissions: this.oPermissions },
+      body: { userId: session?.user.id, role: session?.user.role, permissions: oPermissions },
     });
     return success;
   }

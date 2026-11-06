@@ -35,7 +35,7 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
     // Mounts the app's database, then the plugin after it
     await Database.init();
     const oDb = await Database.mount('app', { enabled: true, schemaPath: SCHEMA });
-    oServer = await startApp([crud()]);
+    oServer = await startApp([crud({ models: ['note', 'comment'] })]);
 
     // Two notes of this run, the first with a comment
     const oNote = await oDb.note.create({
@@ -53,6 +53,12 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
     await oDb.note.deleteMany({ where: { title: { startsWith: sTag } } });
     await oDb.$disconnect();
     await oServer.close();
+  });
+
+  test('a model out of the list answers 404', async () => {
+    // Reads a model the app does not list
+    const { status } = await request(oServer.url, '/api/secret');
+    assert.equal(status, 404);
   });
 
   test('GET lists a model with its total', async () => {
