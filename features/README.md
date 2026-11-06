@@ -8,8 +8,6 @@ Planned work on this repository, one file per feature. A file says what the feat
 | [example-app](example-app.md) | An app built on the published packages builds its images | typed-paths |
 | [components-next](components-next.md) | `form` and `auth` are released and the test app renders them | — |
 | [image-contract](image-contract.md) | The image contract is written and the example app meets it | example-app |
-| [access](access.md) | A route allows a model and an action by the user's role | — |
-| [automatic-crud](automatic-crud.md) | Every exposed model is REST without writing a route (1.0) | access (its `exposure` module) |
 | [create-nano-app](create-nano-app.md) | A generated app starts, migrates and builds its images | example-app |
 | [scheduler](scheduler.md) | A job declared in the `scheduler` plugin runs on its cron, in its timezone | — |
 | [mail](mail.md) | A route sends an email through the `mail` plugin | scheduler |
@@ -44,7 +42,7 @@ A large idea reaches code in small steps, each one approved by the maintainer be
 3. Iterate: take the first task of the tree with no pending dependency. If it is still large (more than one pull request, or more than 3 decisions), split it again and show the sub-tree. Repeat until every task is simple.
 4. Define the task, before any decision: what it does (what comes in, what goes out) and its scope (what it covers, what it leaves to other tasks), with its "done when". The maintainer approves it.
 5. Decide: at most 3 decisions per message, each with options (A, B, …) and one marked as the recommendation, so the maintainer can answer in one line (`1A 2B 3A`).
-6. Implement: only the approved task, following [New development](../.claude/CLAUDE.md). Show the diff, stage it, then update the feature and move to the next task of the tree.
+6. Implement: only the approved task, following [New development](../.claude/CLAUDE.md). Commit, push and open its pull request, then update the feature and move to the next task of the tree.
 7. Record: the tree lives in the feature's `## Modules` (task, what it does, what it depends on) and every decision in its `## Log`, so anyone resumes from the file.
 
 ## Before reporting a module

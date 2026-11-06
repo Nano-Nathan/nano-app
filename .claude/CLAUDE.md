@@ -13,7 +13,7 @@ pnpm monorepo: `core/` (private, inlined into the backend, frontend and componen
 - Only when the maintainer says a feature is split into modules (a large one, like `frontend`): it lives on a feature branch from `main` (`feat/<feature>`), linked to an issue when there is one. Each module gets its own branch from the up-to-date feature branch (`feat/<feature>--<module>`, `--` because a branch cannot also be a folder of branches) and a pull request to the feature branch. The next module starts only after that pull request is merged. When the feature is done, one pull request takes the feature branch to `main`, and its title decides the release.
 - Planned features live in `features/`, one file per feature, with its scope, status and log. Read `features/README.md` before taking one.
 - When `main` moves during a feature split into modules, merge `main` into the feature branch; never rebase it, module branches start from it.
-- Agents do not commit or push. Stage only the files you changed; the maintainer commits.
+- Agents commit and push their work to its branch, and always open its pull request: to the feature branch for a module, to `main` otherwise.
 - Agents never add a `Co-authored-by` trailer (for themselves or another agent) to commits or pull requests: co-authorship is added by hand by the maintainer.
 
 ## New development: plan, implement after approval
@@ -25,7 +25,7 @@ A development is planned and reviewed as a whole, on its one branch. When the ma
 1. Before writing any code, list what it will do, point by point. Each point says what and how, in plain words: what comes in, what happens to it, what goes out, and what it reuses from `core/` or existing code.
 2. When a point hides a decision (a default, an edge case, an error, where the code lives), give two or three options with their cost and mark one as the recommendation.
 3. The maintainer answers point by point. Adjust the points and list again only what changed.
-4. Implement only when every point has the maintainer's OK. Then show the diff; the pull request goes to `main`, or to the feature branch for a module, and the next module starts after it is merged.
+4. Implement only when every point has the maintainer's OK. Then commit, push and open the pull request: to `main`, or to the feature branch for a module, and the next module starts after it is merged.
 5. The tests, the README of the package and the feature file in `features/` follow the final decisions, not the first proposal: when a point changes during the review, update them in the same branch.
 
 Reuse and extend what exists (`core/` loaders, validators, utils) before writing new code, and keep each change to the smallest code that does the job.
@@ -39,6 +39,7 @@ Industry practices this repository follows. The concrete rules below win when th
 - **A framework for others**: every feature is general, never shaped for one app or one plugin. The consumer gets a small, easy layer (`createRoute`, `createPlugin`, one config object) and the framework does the work behind it. Convention over configuration: a file in the right folder works without registering it.
 - **Only what is needed**: add exactly what the task requires. No option, default, fallback, retry or `try`/`catch` nobody asked for; when something is missing, fail with a clear message instead of guessing. General does not mean speculative: generalize what exists, do not build for cases nobody has.
 - **KISS and YAGNI**: the simplest solution for today's need. No code for a future that has not arrived.
+- **Least code**: implement each change with the least code possible. Before adding anything, check whether it is needed at all; prefer reusing what exists, and no change over a small one.
 - **DRY**: one source of truth for each piece of knowledge (a rule, a message, a constant), not only for repeated lines.
 - **Single responsibility**: a function does one thing, a file has one job, a module one reason to change.
 - **Separation of concerns**: I/O (files, network, database, `console`) at the edges; the logic in between receives values and returns values, so it can be tested and read alone.
