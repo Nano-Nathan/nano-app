@@ -1,6 +1,6 @@
 import { HTTP_METHODS } from '@nano-app/core/const';
 import type { RequestHandler } from 'express';
-import type { Callbacks, Handlers, NanoObject, Params } from '@nano-app/core';
+import type { Callbacks, Handlers, NanoObject, Params, RouteEntry } from '@nano-app/core';
 
 /** Base class for all endpoints */
 export default class Endpoint {
@@ -9,17 +9,19 @@ export default class Endpoint {
   private bPublic: boolean;
   private oPermissions?: NanoObject<string[]>;
 
-  /** Allowed methods */
+  /** Allowed methods and the options of the route */
   constructor(
     oMethods: Handlers,
-    oCallbacks: Callbacks = {},
-    bPublic = false,
-    oPermissions?: NanoObject<string[]>,
+    {
+      callbacks = {},
+      public: bPublic = false,
+      permissions,
+    }: Pick<RouteEntry, 'callbacks' | 'public' | 'permissions'>,
   ) {
     this.oMethods = oMethods;
-    this.oCallbacks = oCallbacks;
+    this.oCallbacks = callbacks;
     this.bPublic = bPublic;
-    this.oPermissions = oPermissions;
+    this.oPermissions = permissions;
   }
 
   /** Handler for all methods */

@@ -30,7 +30,10 @@ export default class Router {
         console.log(`[nano-app] [INFO] ${sPath}`);
 
         // Create the endpoint
-        return { path: sPath, endpoint: new Endpoint(methods, callbacks, bPublic, permissions) };
+        return {
+          path: sPath,
+          endpoint: new Endpoint(methods, { callbacks, public: bPublic, permissions }),
+        };
       },
     );
   }
