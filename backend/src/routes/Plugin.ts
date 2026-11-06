@@ -47,7 +47,7 @@ export default class Plugin {
     // Append the handlers
     const oRouter = new Router(routesDir, basePath);
     for (const { path, endpoint } of await oRouter.mount()) {
-      oApp.all(path, await endpoint.mount(oParams));
+      oApp.all(path, await endpoint.mount(oParams, path));
     }
   }
 }

@@ -24,7 +24,7 @@ export default class Router {
 
     // Create the endpoints
     return Object.entries(this.oRoutes).map(
-      ([sFilePath, { expression, callbacks, public: bPublic, permissions, ...methods }]) => {
+      ([sFilePath, { expression, callbacks, public: isPublic, permissions, ...methods }]) => {
         // Create the path of endpoints
         const sPath = this.createPath(sFilePath, expression);
         console.log(`[nano-app] [INFO] ${sPath}`);
@@ -32,7 +32,7 @@ export default class Router {
         // Create the endpoint
         return {
           path: sPath,
-          endpoint: new Endpoint(methods, { callbacks, public: bPublic, permissions }),
+          endpoint: new Endpoint(methods, { callbacks, public: isPublic, permissions }),
         };
       },
     );

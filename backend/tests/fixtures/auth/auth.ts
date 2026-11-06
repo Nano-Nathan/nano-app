@@ -1,5 +1,6 @@
-import { betterAuth, type BetterAuthOptions } from 'better-auth';
+import { betterAuth } from 'better-auth';
 import { admin } from 'better-auth/plugins';
+import type { BetterAuthOptions } from 'better-auth';
 
 /** Better Auth options of the tests, also read by `npx auth generate` */
 export const AUTH_OPTIONS: BetterAuthOptions = {

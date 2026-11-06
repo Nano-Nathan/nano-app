@@ -215,7 +215,7 @@ export default createRoute({
 });
 ```
 
-Without Better Auth the route answers anyway, with a warning at startup. Handlers and callbacks receive Better Auth's instance as `auth`, next to `db`; these params are read-only.
+A public route does not check them. Without Better Auth the route answers anyway, with a warning at startup. Handlers and callbacks receive Better Auth's instance as `auth`, next to `db`; these params are read-only.
 
 ## Plugins
 

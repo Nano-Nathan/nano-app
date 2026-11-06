@@ -2,7 +2,6 @@ import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { boot, prisma, request } from '../helpers';
-import { AUTH_OPTIONS } from '../fixtures/auth/auth';
 import type { Booted } from '../helpers';
 
 // Better Auth suite, imported by database.test.ts: both boot the "app" client in
@@ -20,7 +19,7 @@ const fnBoot = (sSchemaPath: string) => {
   rmSync('.nano-app/prisma-clients/app', { recursive: true, force: true });
   return boot(
     {
-      packages: { betterAuth: AUTH_OPTIONS },
+      packages: { betterAuth: true },
       plugins: [
         { name: 'public', routesDir: 'tests/fixtures/plugin-routes' },
         { name: 'early', basePath: '/early', routesDir: `${FIXTURES}/permission-routes` },
@@ -49,7 +48,7 @@ const fnBoot = (sSchemaPath: string) => {
 describe('Better Auth without a database', () => {
   test('fails the startup', async () => {
     // Boots with Better Auth and the database off
-    const oApp = await boot({ packages: { betterAuth: AUTH_OPTIONS } }, { oEnv: ENV });
+    const oApp = await boot({ packages: { betterAuth: true } }, { oEnv: ENV });
 
     // Checks that it exits saying what to enable
     assert.equal(await oApp.exited, 1);
@@ -175,12 +174,21 @@ describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is no
       headers: { cookie: sCookie },
     });
     assert.equal(oGranted.status, 200);
+
+    // A public route answers without checking them
+    const oPublic = await request(oApp.url, '/permissions/open');
+    assert.equal(oPublic.status, 200);
   });
 
   test('without Better Auth, a route with permissions answers and warns at startup', async () => {
-    // The plugin mounted before the app has no Better Auth
+    // The plugin mounted before the app has no Better Auth: it answers anyway
     const { status } = await request(oApp.url, '/early/notes');
     assert.equal(status, 200);
-    assert.match(oApp.output(), /asks for permissions without Better Auth/);
+
+    // It warned at startup that the permissions are not checked
+    assert.match(
+      oApp.output(),
+      /\/early\/notes: its permissions are not checked without Better Auth/,
+    );
   });
 });

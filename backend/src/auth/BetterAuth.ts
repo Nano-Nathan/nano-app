@@ -36,6 +36,8 @@ export default abstract class BetterAuth {
       ...oOptions,
       database: prismaAdapter(oDb, { provider: 'postgresql' }),
     });
+
+    // Keeps the instance for the plugins mounted with the app or after it
     this.oAuth = oAuth;
 
     // Session lookup: the session of every request that reaches it, if any; each endpoint decides whether it needs one
