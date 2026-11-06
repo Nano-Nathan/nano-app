@@ -178,6 +178,16 @@ describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is no
     // A public route answers without checking them
     const oPublic = await request(oApp.url, '/permissions/open');
     assert.equal(oPublic.status, 200);
+
+    // Permissions of a method win over those of the route: it cannot read notes, but lists users
+    const oListed = await request(oApp.url, '/permissions/methods', {
+      headers: { cookie: sCookie },
+    });
+    const oCreated = await request(oApp.url, '/permissions/methods', {
+      method: 'POST',
+      headers: { cookie: sCookie },
+    });
+    assert.deepEqual([oListed.status, oCreated.status], [403, 200]);
   });
 
   test('without Better Auth, a route with permissions answers and warns at startup', async () => {

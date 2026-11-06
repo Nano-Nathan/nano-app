@@ -1,13 +1,20 @@
 import { HTTP_METHODS } from '@nano-app/core/const';
+import isGranted from '../auth/permissions';
 import type { RequestHandler } from 'express';
-import type { Callbacks, Handlers, NanoObject, Params, RouteEntry } from '@nano-app/core';
+import type {
+  Callbacks,
+  Handlers,
+  MethodEntry,
+  NanoObject,
+  Params,
+  RouteEntry,
+} from '@nano-app/core';
 
 /** Base class for all endpoints */
 export default class Endpoint {
-  private oMethods: Handlers;
+  private oMethods: NanoObject<MethodEntry>;
   private oCallbacks: Callbacks;
   private isPublic: boolean;
-  private oPermissions?: NanoObject<string[]>;
 
   /** Allowed methods and the options of the route */
   constructor(
@@ -18,16 +25,23 @@ export default class Endpoint {
       permissions,
     }: Pick<RouteEntry, 'callbacks' | 'public' | 'permissions'>,
   ) {
-    this.oMethods = oMethods;
+    // Each method with its handler and permissions: its own, or else those of the route
+    this.oMethods = Object.fromEntries(
+      Object.entries(oMethods).map(([sMethod, oMethod]) => [
+        sMethod,
+        typeof oMethod === 'function'
+          ? { handler: oMethod, permissions }
+          : { permissions, ...oMethod },
+      ]),
+    );
     this.oCallbacks = callbacks;
     this.isPublic = isPublic;
-    this.oPermissions = permissions;
   }
 
   /** Handler for all methods */
   public async mount(oParams: Params, sPath: string): Promise<RequestHandler> {
     // Without Better Auth, a route with permissions answers without checking them
-    if (this.oPermissions && !oParams.auth) {
+    if (!oParams.auth && Object.values(this.oMethods).some(({ permissions }) => permissions)) {
       console.warn(
         `[nano-app] [WARNING] ${sPath}: its permissions are not checked without Better Auth. Turn on packages.betterAuth.`,
       );
@@ -50,22 +64,22 @@ export default class Endpoint {
       // Finds the handler of the request method
       const sMethod = oReq.method.toUpperCase();
       const sHandled = HTTP_METHODS.find(sHttpMethod => sHttpMethod === sMethod);
-      const fnMethod = sHandled && this.oMethods[sHandled];
+      const oMethod = sHandled && this.oMethods[sHandled];
 
       // Checks whether the method is defined
-      if (!fnMethod) return fnNext({ status: 405, message: `Method ${sMethod} not implemented` });
+      if (!oMethod) return fnNext({ status: 405, message: `Method ${sMethod} not implemented` });
 
       // The session of the request, when Better Auth found one
       const oRequestParams = { ...oParams, session: oRes.locals.session };
 
-      // Checks the permissions of the route, then runs the onBefore callback
-      this.isGranted(oRequestParams)
-        .then(isGranted => {
-          if (!isGranted) throw { status: 403, message: 'Forbidden' };
+      // Checks the permissions of the method, none on a public route, then runs the onBefore callback
+      isGranted(oRequestParams, this.isPublic ? undefined : oMethod.permissions)
+        .then(isAllowed => {
+          if (!isAllowed) throw { status: 403, message: 'Forbidden' };
           return this.oCallbacks.onBefore?.(oReq, sMethod, oRequestParams) ?? {};
         })
         // Runs the method
-        .then(onBeforeResult => fnMethod(oReq, { ...oRequestParams, onBeforeResult }))
+        .then(onBeforeResult => oMethod.handler(oReq, { ...oRequestParams, onBeforeResult }))
         // Handles the response
         .then(oResponse => {
           // Answers with the status of the handler, 200 by default, and its success
@@ -76,17 +90,5 @@ export default class Endpoint {
         // Forwards the error to the next error middleware
         .catch(fnNext);
     };
-  }
-
-  /** Whether the user of the session has the permissions of the route, by Better Auth */
-  private async isGranted({ auth, session }: Params): Promise<boolean> {
-    // Nothing to check without Better Auth or permissions, or on a public route
-    if (!auth || !this.oPermissions || this.isPublic) return true;
-
-    // Asks Better Auth whether the role of the user has the permissions
-    const { success } = await auth.api.userHasPermission({
-      body: { userId: session?.user.id, role: session?.user.role, permissions: this.oPermissions },
-    });
-    return success;
   }
 }
