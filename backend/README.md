@@ -58,7 +58,7 @@ export default createRoute({
 });
 ```
 
-Each handler receives `(req, params)` and returns an `ApiResponse` without `success`: its `status` is the HTTP status (`200` by default) and the framework sets `success` to `status < 400`. `params` holds the plugin's `options`, `db` (the Prisma client when a database is enabled, see [Database](#database)) and `onBeforeResult` (see [Callbacks](#callbacks)):
+Each handler receives `(req, params)` and returns an `ApiResponse` without `success`: its `status` is the HTTP status (`200` by default) and the framework sets `success` to `status < 400`. `params` holds the plugin's `options`, `db` (the Prisma client when a database is enabled, see [Database](#database); a plugin without its own gets the app's) and `onBeforeResult` (see [Callbacks](#callbacks)):
 
 ```ts
 type ApiResponse<T> = {
@@ -199,7 +199,25 @@ npx prisma migrate dev
 - Relate your models to `User` in the same schema, as any Prisma relation. Extra user fields go in its `user.additionalFields`.
 - With several PostgreSQL schemas, add `@@schema(...)` to the generated models.
 - Set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` in the environment, as Better Auth asks.
+- With it on, every route of the app and of the plugins mounted after it (`stage: 'after'`) needs a session: without one it answers 401 `Not authenticated`. The handlers receive it in `session`.
+- `createRoute({ public: true, ... })` answers without a session; its handlers still receive `session` when the request has one. An unknown path answers 404.
+- Its own endpoints, the plugins mounted before the app and the middlewares a plugin adds with `app.use` in `onMount` are not checked: a plugin that exposes something public says it in its README.
 - Better Auth is loaded only when it is on.
+
+### Permissions
+
+A route asks for permissions of Better Auth's [admin plugin](https://www.better-auth.com/docs/plugins/admin): add `admin()` to the `plugins` of your options, with your roles (`ac` and `roles`), and generate its fields with `npx auth generate`. A user without them gets 403:
+
+```ts
+export default createRoute({
+  permissions: { notes: ['read'] },
+  GET: async (_req, { db }) => ({ result: await db.note.findMany() }),
+});
+```
+
+A method may ask for its own permissions instead of the route's: `POST: { handler, permissions: { notes: ['create'] } }`. A plain function takes those of the route. Without any, a session is enough. In a handler of your own, `isGranted(params, permissions)` asks Better Auth the same.
+
+A public route does not check them. Without Better Auth the route answers anyway, with a warning at startup. Handlers and callbacks receive Better Auth's instance as `auth`, next to `db`; these params are read-only.
 
 ## Plugins
 
@@ -273,7 +291,9 @@ The framework mounts the 404 and the error handler: an unmatched request becomes
 ```ts
 throw { status: 409, message: 'Already exists' };   // → 409 { success: false, warning: false, message: "Already exists" }
 throw 'Field name is required';                     // → 400 { success: false, message: "Field name is required" }
-throw new Error('boom');                            // → 500, logged to stderr
+throw new Error('boom');                            // → 500 "Internal server error", logged to stderr
+// A Prisma error the request caused answers without its message, which names tables and columns:
+// P2025 → 404 "Not found", P2002 and P2003 → 409 "Conflict", validation → 400 "Invalid request"
 GET /unknown                                        // → 404 { success: false, warning: false, message: "/unknown not found" }
 ```
 

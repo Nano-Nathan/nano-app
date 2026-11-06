@@ -17,9 +17,12 @@ createNanoApp({ plugins: [health()] });
 
 ## Official plugins
 
-| Plugin | Import | Endpoints | Options |
-|---|---|---|---|
-| `health` | `import health from '@nano-app/plugins/health'` | `GET /health` → `{ success: true, result: { status: "ok" } }` | `basePath` (default `"/health"`) |
+| Plugin   | Import                                          | Endpoints                                                                                                                                                                                                                                 | Options                          |
+| -------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| `health` | `import health from '@nano-app/plugins/health'` | `GET /health` → `{ success: true, result: { status: "ok" } }`                                                                                                                                                                             | `basePath` (default `"/health"`) |
+| `crud`   | `import crud from '@nano-app/plugins/crud'`     | On the models listed in `models` (any other answers 404): `GET` and `QUERY` on `/api/<model>{/<id>}` → a list `{ result, count }` or one record, with `QueryParams` as the body of `QUERY`; `POST /api/<model>`, `PUT` and `DELETE` on `/api/<model>/<id>` → the record created, updated or deleted. `<id>` takes the type of the model's id (`Int`, `BigInt` or `String`). With Better Auth, each method asks for a permission on the model: `read` (`GET`, `QUERY`), `create`, `update`, `delete` | `models` (the published ones), `basePath` (default `"/api"`)    |
+
+What is not CRUD, such as creating a record with business logic, goes in a route of your own with its own URL: a route of yours on a `crud` URL takes every method of it.
 
 ### Layout
 
