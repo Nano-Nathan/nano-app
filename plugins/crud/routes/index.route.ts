@@ -11,6 +11,9 @@ const ACTIONS: NanoObject<string> = {
   DELETE: 'delete',
 };
 
+/** Conversion of the URL's id to the type of the model's id, when it is not a string */
+const ID_TYPES: NanoObject<(sId: string) => number | bigint> = { Int: Number, BigInt: BigInt };
+
 /** The Prisma delegate of the URL's model: 404 when the app does not publish it, 403 without its permission */
 // any: a delegate of the consumer's Prisma client
 async function delegate(oReq: Request, oParams: Params): Promise<any> {
@@ -28,7 +31,15 @@ async function delegate(oReq: Request, oParams: Params): Promise<any> {
   return oParams.db[sModel];
 }
 
-/** A list of the model with its total, or one record by its id as the URL sends it */
+/** The `where` of the URL's id, converted to the type of the model's id */
+// any: a delegate of the consumer's Prisma client
+function where(oReq: Request, oModel: any): NanoObject {
+  // Converts the id when the model's id is a number
+  const sId = String(oReq.params.id);
+  return { id: ID_TYPES[oModel.fields.id.typeName]?.(sId) ?? sId };
+}
+
+/** A list of the model with its total, or one record by its id */
 async function read(oReq: Request, oParams: Params): ApiPromise {
   const { id } = oReq.params;
   const oModel = await delegate(oReq, oParams);
@@ -37,7 +48,9 @@ async function read(oReq: Request, oParams: Params): ApiPromise {
   // One record: only its fields and relations apply
   if (id) {
     const { select, include } = oArgs;
-    return { result: await oModel.findUniqueOrThrow({ where: { id }, select, include }) };
+    return {
+      result: await oModel.findUniqueOrThrow({ where: where(oReq, oModel), select, include }),
+    };
   }
 
   // A list: the page and the total of the same filter
@@ -55,16 +68,14 @@ async function create(oReq: Request, oParams: Params): ApiPromise {
 
 /** Updates only the fields of the body */
 async function update(oReq: Request, oParams: Params): ApiPromise {
-  const { id } = oReq.params;
-  return {
-    result: await (await delegate(oReq, oParams)).update({ where: { id }, data: oReq.body }),
-  };
+  const oModel = await delegate(oReq, oParams);
+  return { result: await oModel.update({ where: where(oReq, oModel), data: oReq.body }) };
 }
 
 /** Deletes a record and answers it */
 async function remove(oReq: Request, oParams: Params): ApiPromise {
-  const { id } = oReq.params;
-  return { result: await (await delegate(oReq, oParams)).delete({ where: { id } }) };
+  const oModel = await delegate(oReq, oParams);
+  return { result: await oModel.delete({ where: where(oReq, oModel) }) };
 }
 
 /** `GET` reads without parameters, `QUERY` with `QueryParams` as its body */

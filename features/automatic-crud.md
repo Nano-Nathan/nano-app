@@ -1,8 +1,8 @@
 ---
-status: in-progress
+status: review
 owner: kleo
 depends_on: []
-updated: 2026-10-29
+updated: 2026-11-06
 ---
 
 # Automatic CRUD
@@ -26,7 +26,7 @@ An official plugin: one route file (`routes/index.route.ts`, expression `/:model
 
 - `QUERY` is the way to read with parameters, for a list and for one record: it is what the frontend store `api` already sends.
 - `PUT`, not `PATCH`: the store's `update` already sends `PUT` and CORS allows it.
-- `:model` is the Prisma delegate as it is (`/api/note` → `db.note`): it is always a model of the app, so it is not validated. `:id` goes to Prisma as the URL sends it.
+- `:model` is the Prisma delegate as it is (`/api/note` → `db.note`): it is always a model of the app, so it is not validated. `:id` takes the type of the model's id (`Int`, `BigInt` or `String`).
 - Filters are JSON only (core's `QueryParams`), with Prisma's operators as they are: `{ "price": { "gte": 1000 } }`.
 - A list answer carries the total, so a table can paginate: `{ "success": true, "result": [ … ], "count": 128 }`.
 - Errors: `P2025` → 404, `P2002` and `P2003` → 409, validation → 400; anything else falls to the core error handler as 500. The raw Prisma message is never sent: it carries table and column names.
@@ -56,7 +56,7 @@ Nothing pending: `top` and `expand` have no ceiling (see the Log, 2026-11-04).
 
 ## Done when
 
-In the test app, a new model of the schema is read, filtered, created, updated and deleted from the frontend without routes of its own.
+The frontend's `api` store, through its `proxy`, reads, filters, creates, updates and deletes a model of the schema on a backend with `crud` and no routes of its own.
 
 ## Log
 
@@ -72,3 +72,4 @@ In the test app, a new model of the schema is read, filtered, created, updated a
 - 2026-11-05 · kleo · Maintainer, module `errors`: every 5xx answers `Internal server error`, never its own message (it may carry Prisma's tables and columns); the full error is still logged to stderr.
 - 2026-11-05 · kleo · Maintainer: module `override` dropped. Business logic (personal-app's `POST Collections`) goes in a consumer route with its own URL; a consumer route on the same URL takes every method of it, and changing that is not needed.
 - 2026-11-06 · kleo · Maintainer, module `exposure`: `crud({ models })` publishes only the listed models, any other answers 404 (Better Auth's tables stay out). A method of a route is a handler or `{ handler, permissions }`: its permissions replace those of the route, which stay an object; without any, a session is enough. `crud` checks in `delegate`, after the 404, `read` (`GET`, `QUERY`), `create`, `update` or `delete` on the URL's model, by `isGranted`. No file per entity.
+- 2026-11-06 · projects-thread · Maintainer, module `e2e`: a test in `plugins/tests` (its workflow has the database) where an `ApiStore` goes through the frontend's `proxy` to a backend with `crud`, without Better Auth and without a browser; "Done when" reworded to it. It found that an `Int` id failed: `:id` now takes the type of the model's id (`Int`, `BigInt` or `String`) from Prisma's `fields`. Every module is done: the feature goes to `review`.
