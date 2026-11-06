@@ -23,11 +23,18 @@ const fnBoot = (sSchemaPath: string) => {
       packages: { betterAuth: AUTH_OPTIONS },
       plugins: [
         { name: 'public', routesDir: 'tests/fixtures/plugin-routes' },
+        { name: 'early', basePath: '/early', routesDir: `${FIXTURES}/permission-routes` },
         {
           name: 'after',
           stage: 'after',
           basePath: '/after',
           routesDir: 'tests/fixtures/plugin-routes',
+        },
+        {
+          name: 'permissions',
+          stage: 'after',
+          basePath: '/permissions',
+          routesDir: `${FIXTURES}/permission-routes`,
         },
       ],
       mainPlugin: {
@@ -152,5 +159,28 @@ describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is no
     assert.match(oApp.output(), /"public" must be a boolean/);
     const { status } = await request(oApp.url, '/bad-public', { headers: { cookie: sCookie } });
     assert.equal(status, 404);
+  });
+
+  test('a route with permissions needs them', async () => {
+    // Without a session it still answers 401
+    const oNoSession = await request(oApp.url, '/permissions/notes');
+    assert.equal(oNoSession.status, 401);
+
+    // The role of the user, admin, has no permission on notes
+    const oDenied = await request(oApp.url, '/permissions/notes', { headers: { cookie: sCookie } });
+    assert.equal(oDenied.status, 403);
+
+    // It has the permission to list users
+    const oGranted = await request(oApp.url, '/permissions/users', {
+      headers: { cookie: sCookie },
+    });
+    assert.equal(oGranted.status, 200);
+  });
+
+  test('without Better Auth, a route with permissions answers and warns at startup', async () => {
+    // The plugin mounted before the app has no Better Auth
+    const { status } = await request(oApp.url, '/early/notes');
+    assert.equal(status, 200);
+    assert.match(oApp.output(), /asks for permissions without Better Auth/);
   });
 });

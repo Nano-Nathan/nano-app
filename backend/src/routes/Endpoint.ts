@@ -1,22 +1,37 @@
 import { HTTP_METHODS } from '@nano-app/core/const';
 import type { RequestHandler } from 'express';
-import type { Callbacks, Handlers, Params } from '@nano-app/core';
+import type { Callbacks, Handlers, NanoObject, Params } from '@nano-app/core';
 
 /** Base class for all endpoints */
 export default class Endpoint {
   private oMethods: Handlers;
   private oCallbacks: Callbacks;
   private bPublic: boolean;
+  private oPermissions?: NanoObject<string[]>;
 
   /** Allowed methods */
-  constructor(oMethods: Handlers, oCallbacks: Callbacks = {}, bPublic = false) {
+  constructor(
+    oMethods: Handlers,
+    oCallbacks: Callbacks = {},
+    bPublic = false,
+    oPermissions?: NanoObject<string[]>,
+  ) {
     this.oMethods = oMethods;
     this.oCallbacks = oCallbacks;
     this.bPublic = bPublic;
+    this.oPermissions = oPermissions;
   }
 
   /** Handler for all methods */
   public async mount(oParams: Params): Promise<RequestHandler> {
+    // Without Better Auth, a route with permissions answers without checking them
+    if (this.oPermissions && !oParams.auth) {
+      const sPermissions = JSON.stringify(this.oPermissions);
+      console.warn(
+        `[nano-app] [WARNING] a route asks for permissions without Better Auth: ${sPermissions}`,
+      );
+    }
+
     // Runs the onInit callback
     await this.oCallbacks.onInit?.(oParams);
 
@@ -28,7 +43,7 @@ export default class Endpoint {
   private createHandler(oParams: Params): RequestHandler {
     return (oReq, oRes, fnNext) => {
       // With Better Auth on, a route needs a session unless it is public
-      if (oRes.locals.auth && !oRes.locals.session && !this.bPublic)
+      if (oParams.auth && !oRes.locals.session && !this.bPublic)
         return fnNext({ status: 401, message: 'Not authenticated' });
 
       // Finds the handler of the request method
@@ -42,8 +57,12 @@ export default class Endpoint {
       // The session of the request, when Better Auth found one
       const oRequestParams = { ...oParams, session: oRes.locals.session };
 
-      // Runs the onBefore callback
-      (this.oCallbacks.onBefore?.(oReq, sMethod, oRequestParams) ?? Promise.resolve({}))
+      // Checks the permissions of the route, then runs the onBefore callback
+      this.isGranted(oParams, oRes.locals.session)
+        .then(isGranted => {
+          if (!isGranted) throw { status: 403, message: 'Forbidden' };
+          return this.oCallbacks.onBefore?.(oReq, sMethod, oRequestParams) ?? {};
+        })
         // Runs the method
         .then(onBeforeResult => fnMethod(oReq, { ...oRequestParams, onBeforeResult }))
         // Handles the response
@@ -56,5 +75,18 @@ export default class Endpoint {
         // Forwards the error to the next error middleware
         .catch(fnNext);
     };
+  }
+
+  /** Whether the user of the session has the permissions of the route, by Better Auth */
+  private async isGranted(oParams: Params, oSession?: NanoObject): Promise<boolean> {
+    if (!oParams.auth || !this.oPermissions) return true;
+    const { success } = await oParams.auth.api.userHasPermission({
+      body: {
+        userId: oSession?.user.id,
+        role: oSession?.user.role,
+        permissions: this.oPermissions,
+      },
+    });
+    return success;
   }
 }

@@ -7,6 +7,8 @@ import type { ApiPromise } from './api';
 export type Params<DB = any> = Partial<
   NanoObject & {
     db?: DB;
+    /** Better Auth's instance, when it is on */
+    auth?: NanoObject;
     onBeforeResult?: NanoObject;
     /** `{ user, session }` of Better Auth, when the request has one */
     session?: NanoObject;
@@ -58,6 +60,8 @@ export type RouteEntry<DB = any> = {
   expression?: string;
   /** With Better Auth on, answers without a session; the handlers still receive it when there is one */
   public?: boolean;
+  /** With Better Auth on, the permissions of its admin plugin the user needs (`{ notes: ['read'] }`) */
+  permissions?: NanoObject<string[]>;
   callbacks?: Callbacks<DB>;
 } & Handlers<DB>;
 

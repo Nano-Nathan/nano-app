@@ -204,6 +204,19 @@ npx prisma migrate dev
 - Its own endpoints, the plugins mounted before the app and the middlewares a plugin adds with `app.use` in `onMount` are not checked: a plugin that exposes something public says it in its README.
 - Better Auth is loaded only when it is on.
 
+### Permissions
+
+A route asks for permissions of Better Auth's [admin plugin](https://www.better-auth.com/docs/plugins/admin): add `admin()` to the `plugins` of your options, with your roles (`ac` and `roles`), and generate its fields with `npx auth generate`. A user without them gets 403:
+
+```ts
+export default createRoute({
+  permissions: { notes: ['read'] },
+  GET: async (_req, { db }) => ({ result: await db.note.findMany() }),
+});
+```
+
+Without Better Auth the route answers anyway, with a warning at startup. Handlers and callbacks receive Better Auth's instance as `auth`, next to `db`; these params are read-only.
+
 ## Plugins
 
 A plugin is a group of endpoints mounted under a base path. Your routes are mounted as one (named `app`). The official plugins are in [`@nano-app/plugins`](https://github.com/Nano-Nathan/nano-app/blob/main/plugins/README.md). You write one with `createPlugin` and list it in `plugins`. Nothing is mounted unless you list it. Official plugins that have tables ship their own migrations: nano-app applies them at startup, each in its `nano_*` schema. That is the only change it makes to your database.
