@@ -71,7 +71,9 @@ A controller holds the methods; a view binds to one controller and gets its meth
 import { createController } from '@nano-app/frontend';
 
 export default createController(({ props, stores: { app } }) => ({
-  increment: () => app.set('/iCount', app.get('/iCount') + 1),
+  increment(): void {
+    app.set('/iCount', app.get('/iCount') + 1);
+  },
 }));
 ```
 
@@ -91,20 +93,32 @@ export default counterController.bindView(({ stores: { app }, increment }) => (
 - A method named `props`, `stores` or `router` is hidden by the context of the same name.
 - Before its `return`, the function only keeps what it reads from the context (`const oApi = stores.backend;`). A method reaches the others with `this` (`last() { return this.items()[0]; }`), also when the view calls it alone; `this` needs the method syntax, not an arrow. `onMount` gets the same `this`.
 
-`callbacks`, first in that object, is not a method: `onMount` runs once when each bound view mounts (never on the server), to read what the view needs.
+`callbacks`, first in that object, is not a method: `onMount` runs once when each bound view mounts (never on the server), to read what the view needs. To act when a value changes, the view calls a method from a `useEffect` with that value as its dependency (see [Sessions](#sessions)); the logic stays in the method.
 
 ```ts
 export default createController(({ stores: { backend } }) => ({
-  callbacks: { onMount: () => backend.read('/users') },
-  users: () => backend.get('/users')?.result ?? [],
+  callbacks: {
+    onMount(): Promise<unknown> {
+      return backend.read('/users');
+    },
+  },
+  users(): unknown[] {
+    return backend.get('/users')?.result ?? [];
+  },
 }));
 ```
 
-`extend` returns a new controller with your methods merged over its own: a method with the same name replaces the original, the others stay, and the original controller does not change. Both `onMount` run, the original's first. Its methods receive the same context (`props`, `stores`, `router`) as the controller's.
+`extend` returns a new controller with your methods merged over its own: a method with the same name replaces the original, the others stay, and the original controller does not change. Both `onMount` run, the original's first. Its methods receive the same context (`props`, `stores`, `router`) as the controller's, and reach the controller's methods and their own with `this`.
 
 ```ts
 export default counterController.extend(({ stores: { app } }) => ({
-  reset: () => app.set('/iCount', 0),
+  reset(): void {
+    app.set('/iCount', 0);
+  },
+  double(): void {
+    this.increment();
+    this.increment();
+  },
 }));
 ```
 
@@ -136,10 +150,17 @@ An `api` store reads and writes its backend. The controllers read and write; the
 ```ts
 // src/controllers/users.controller.ts
 export default createController(({ stores: { backend } }) => ({
-  callbacks: { onMount: () => backend.read('/users') },
-  add: async (sName: string) => {
-    await backend.create('/users', { name: sName });
+  callbacks: {
+    onMount(): Promise<unknown> {
+      return this.load();
+    },
+  },
+  load(): Promise<unknown> {
     return backend.read('/users');
+  },
+  async add(sName: string): Promise<unknown> {
+    await backend.create('/users', { name: sName });
+    return this.load();
   },
 }));
 ```
@@ -170,7 +191,7 @@ To ask only when the user stops typing, keep the text in the `app` store and rea
 ```ts
 let oTimer: ReturnType<typeof setTimeout>;
 export default createController(({ stores: { app, backend } }) => ({
-  type: (sText: string) => {
+  type(sText: string): void {
     app.set('/search/text', sText);
     clearTimeout(oTimer);
     oTimer = setTimeout(() => {
@@ -212,10 +233,15 @@ export default { type: 'api', auth: '/api/auth' };
 ```ts
 // src/controllers/session.controller.ts
 export default createController(({ stores: { backend } }) => ({
-  load: () => backend.readSession(),
-  signIn: (sEmail: string, sPassword: string) =>
-    backend.signIn('email', { email: sEmail, password: sPassword }),
-  signOut: () => backend.signOut(),
+  load(): Promise<unknown> {
+    return backend.readSession();
+  },
+  signIn(sEmail: string, sPassword: string): Promise<unknown> {
+    return backend.signIn('email', { email: sEmail, password: sPassword });
+  },
+  signOut(): Promise<unknown> {
+    return backend.signOut();
+  },
 }));
 ```
 
@@ -233,20 +259,21 @@ A page that needs a session gets a layout bound to the session controller: it re
 // src/components/Private.tsx
 'use client';
 
-export default sessionController.bindView(({ props, stores: { backend }, load }) => {
-  const oRouter = useRouter();
-  const oSession = backend.get('/session');
-
-  useEffect(() => {
-    load();
-  }, []);
-
-  useEffect(() => {
-    if (oSession === null) oRouter.replace('/login');
-  }, [oSession]);
-
-  return oSession ? props.children : null;
-});
+export default sessionController
+  .extend(({ stores: { backend }, router }) => ({
+    callbacks: {
+      onMount(): Promise<unknown> {
+        return this.load();
+      },
+    },
+    guard(): void {
+      if (backend.get('/session') === null) router.replace('/login');
+    },
+  }))
+  .bindView(({ props, stores: { backend }, guard }) => {
+    useEffect(guard, [backend.get('/session')]);
+    return backend.get('/session') ? props.children : null;
+  });
 // app/private/layout.tsx renders <Private>{children}</Private>
 ```
 

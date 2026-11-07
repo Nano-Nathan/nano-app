@@ -79,7 +79,6 @@ describe('list', () => {
         <List />
       </TestApp>,
     );
-    fireEvent.click(screen.getByText('load'));
     await expectNames('Ana,Beto');
 
     // Goes to the next page, then back twice: the first page is the last one back
@@ -121,7 +120,6 @@ describe('list', () => {
         <List />
       </TestApp>,
     );
-    fireEvent.click(screen.getByText('load'));
     await expectNames('Ana');
 
     assert.equal(aRequests[0], 'QUERY /api/admin/users {"skip":0,"top":1}');

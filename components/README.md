@@ -56,15 +56,15 @@ export default list({ path: '/users', top: 20 }).bindView(
 export default auth();
 
 // src/components/Logout.tsx
-export default authController.bindView(({ signOut, navTo }) => {
-  // Signs out and goes to the login
-  const fnSignOut = async () => {
-    const oResponse = await signOut();
-    if (oResponse?.success) navTo('/login');
-  };
-
-  return <button onClick={fnSignOut}>sign out</button>;
-});
+export default authController
+  .extend(() => ({
+    async logout(): Promise<void> {
+      // Signs out and goes to the login
+      const oResponse = await this.signOut();
+      if (oResponse?.success) this.navTo('/login');
+    },
+  }))
+  .bindView(({ logout }) => <button onClick={logout}>sign out</button>);
 ```
 
 `field` is the controller of a field view: bind one view per kind of input (a text, a select, a date picker) and give it the props `form` (the name of its form) and `field` (its config).
