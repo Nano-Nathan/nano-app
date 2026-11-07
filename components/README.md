@@ -49,7 +49,7 @@ export default list({ path: '/users', top: 20 }).bindView(
 | `error` | `import error from '@nano-app/components/error'` | — | `items()`, `remove(index)`, `clear()`, `last()`, `dismiss()` |
 | `list` | `import list from '@nano-app/components/list'` | `path`, `top`, `store` (default `'api'`) | `load()`, `items()`, `next()`, `prev()`, `sort(field)`; in the store: `/list/page` (from 0, `undefined` until it moves), `/list/orderby` |
 
-`auth()` uses the [sessions](../frontend/README.md#sessions) of an api store that declares `auth`: `signIn(body)` and `signUp(body)` send `body` to Better Auth's method `kind` (`{ email, password }` for `email`), `signOut()` signs out and `load()` reads the session into `/session`. Each one returns the store's `ApiResponse`. `navTo(url)` goes to a url of the app with Next's router; the view decides when. Create the controller once and bind every view to it:
+`auth()` uses the [sessions](../frontend/README.md#sessions) of an api store that declares `auth`: `signIn(body)` and `signUp(body)` send `body` to Better Auth's method `kind` (`{ email, password }` for `email`), `signOut()` signs out and `load()` reads the session into `/session`, which the controller also does when its view mounts. Each one returns the store's `ApiResponse`. `navTo(url)` goes to a url of the app with the `router` of the context; the view decides when. Create the controller once and bind every view to it:
 
 ```tsx
 // src/controllers/auth.controller.ts

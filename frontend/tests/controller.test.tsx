@@ -6,12 +6,12 @@ import assert from 'node:assert/strict';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MISSING_PROVIDER } from '@nano-app/core/const';
 import createController from '../src/creators/createController';
-import { NanoAppProvider } from '../src/react/NanoAppProvider';
+import TestApp from './TestApp';
 import type { ReactNode } from 'react';
 
 /** Renders inside the provider, like the root layout does */
 function renderApp(oNode: ReactNode): void {
-  render(<NanoAppProvider>{oNode}</NanoAppProvider>);
+  render(<TestApp>{oNode}</TestApp>);
 }
 
 /** Renders of the counter, to check which writes render it */

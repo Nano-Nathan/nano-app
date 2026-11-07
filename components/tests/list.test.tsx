@@ -5,9 +5,9 @@ import { test, describe, before, after, beforeEach, afterEach } from 'node:test'
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { NanoAppProvider } from '@nano-app/frontend';
 import { API_STORE_TYPE } from '@nano-app/core/const';
 import list from '../list';
+import TestApp from './TestApp';
 
 const PORT = 4201;
 
@@ -75,9 +75,9 @@ describe('list', () => {
     // Renders a list of two per page
     const List = list({ path: '/users', top: 2 }).bindView(fnView);
     render(
-      <NanoAppProvider>
+      <TestApp>
         <List />
-      </NanoAppProvider>,
+      </TestApp>,
     );
     fireEvent.click(screen.getByText('load'));
     await expectNames('Ana,Beto');
@@ -97,9 +97,9 @@ describe('list', () => {
     // Renders the list and moves to the second page
     const List = list({ path: '/users', top: 2 }).bindView(fnView);
     render(
-      <NanoAppProvider>
+      <TestApp>
         <List />
-      </NanoAppProvider>,
+      </TestApp>,
     );
     fireEvent.click(screen.getByText('next'));
     await expectNames('Ciro,Dora');
@@ -117,9 +117,9 @@ describe('list', () => {
     // Renders a list of another api store
     const List = list({ path: '/users', top: 1, store: 'admin' }).bindView(fnView);
     render(
-      <NanoAppProvider>
+      <TestApp>
         <List />
-      </NanoAppProvider>,
+      </TestApp>,
     );
     fireEvent.click(screen.getByText('load'));
     await expectNames('Ana');
@@ -131,9 +131,9 @@ describe('list', () => {
     // Renders a list without clicking anything
     const List = list({ path: '/users', top: 1 }).bindView(fnView);
     render(
-      <NanoAppProvider>
+      <TestApp>
         <List />
-      </NanoAppProvider>,
+      </TestApp>,
     );
     await expectNames('Ana');
 
@@ -148,9 +148,9 @@ describe('list', () => {
     // Renders a list of a store the app does not have
     const List = list({ path: '/users', top: 1, store: 'missing' }).bindView(fnView);
     render(
-      <NanoAppProvider>
+      <TestApp>
         <List />
-      </NanoAppProvider>,
+      </TestApp>,
     );
     fireEvent.click(screen.getByText('load'));
     await act(() => new Promise(fnResolve => setTimeout(fnResolve, 50)));

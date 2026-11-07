@@ -64,7 +64,7 @@ Each store reads and writes by path: `app.get('/drawer/isOpen')`, `app.set('/dra
 
 ## Controllers and views
 
-A controller holds the methods; a view binds to one controller and gets its methods, the props and the stores. Several views can bind to the same controller.
+A controller holds the methods; a view binds to one controller and gets its methods, the props, the stores and `router` (Next's `useRouter()`, to navigate without hooks). Several views can bind to the same controller.
 
 ```ts
 // src/controllers/counter.controller.ts
@@ -88,7 +88,7 @@ export default counterController.bindView(({ stores: { app }, increment }) => (
 
 - A file that calls `bindView` needs `'use client'`. A component without stores or methods is a plain React function and can stay a server component.
 - The view re-renders only when a store path it read changes.
-- A method named `props` or `stores` is hidden by the context of the same name.
+- A method named `props`, `stores` or `router` is hidden by the context of the same name.
 - The function only returns the object: what several methods share goes in functions of the file that receive the context (`function page({ stores }: ComponentContext): number`).
 
 `callbacks` in that object is not a method: `onMount` runs once when each bound view mounts (never on the server), to read what the view needs.
@@ -100,7 +100,7 @@ export default createController(({ stores: { backend } }) => ({
 }));
 ```
 
-`extend` returns a new controller with your methods merged over its own: a method with the same name replaces the original, the others stay, and the original controller does not change. Both `onMount` run, the original's first. Its methods receive the same context (`props`, `stores`) as the controller's.
+`extend` returns a new controller with your methods merged over its own: a method with the same name replaces the original, the others stay, and the original controller does not change. Both `onMount` run, the original's first. Its methods receive the same context (`props`, `stores`, `router`) as the controller's.
 
 ```ts
 export default counterController.extend(({ stores: { app } }) => ({
@@ -108,7 +108,7 @@ export default counterController.extend(({ stores: { app } }) => ({
 }));
 ```
 
-The types of a controller and its views come from `@nano-app/frontend`: `Controller`, `View`, `ComponentContext` (`props` and `stores`), `ComponentProps` and `ControllerCallbacks`.
+The types of a controller and its views come from `@nano-app/frontend`: `Controller`, `View`, `ComponentContext` (`props`, `stores` and `router`), `ComponentProps` and `ControllerCallbacks`.
 
 ## Backend
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { enableStaticRendering, observer } from 'mobx-react-lite';
 import { IS_SERVER } from '@nano-app/core/const';
 import { useStores } from '../react/NanoAppProvider';
@@ -23,8 +24,8 @@ export default function createController<
     // Each bound view is a component that re-renders when a store path it read changes
     bindView: fnView =>
       observer((oProps: ComponentProps) => {
-        // Gives the methods the props and the stores
-        const oContext = { props: oProps, stores: useStores() };
+        // Gives the methods the props, the stores and the router of the app
+        const oContext = { props: oProps, stores: useStores(), router: useRouter() };
         const oMethods = fnMethods(oContext);
 
         // Runs onMount once, when the view mounts

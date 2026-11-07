@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { useRouter } from 'next/navigation';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { Stores } from './store';
 
@@ -6,8 +7,12 @@ import type { Stores } from './store';
 // any: the props are the consumer's, unknown to the framework
 export type ComponentProps = NanoObject<any>;
 
-/** What a controller and its views receive: the props and the stores */
-export type ComponentContext = { props: ComponentProps; stores: Stores };
+/** What a controller and its views receive: the props, the stores and Next's router */
+export type ComponentContext = {
+  props: ComponentProps;
+  stores: Stores;
+  router: ReturnType<typeof useRouter>;
+};
 
 /** Callbacks of a controller, run by each view bound to it */
 export type ControllerCallbacks = {
