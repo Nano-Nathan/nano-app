@@ -1,5 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { PRIVATE_NETWORKS } from '@nano-app/core/const';
 import { mergeConfig, INITIAL_CONFIG } from '../src/app/config';
 import { boot, request } from './helpers';
 
@@ -62,7 +63,27 @@ describe('config merge', () => {
 
     // Checks that INITIAL_CONFIG was not mutated
     assert.equal(INITIAL_CONFIG.packages.helmet, true);
-    assert.deepEqual(INITIAL_CONFIG.settings, {});
+    assert.deepEqual(INITIAL_CONFIG.settings, { 'trust proxy': PRIVATE_NETWORKS });
+  });
+});
+
+describe('client IP', () => {
+  test('the rate limit counts each client behind a private proxy apart', async () => {
+    // Boots a real NanoApp that allows one request per client
+    const oApp = await boot({ packages: { rateLimit: { max: 1 } } });
+
+    // Sends requests from a local proxy: a forged IP, then the one the proxy appended
+    const fnPing = (sForwardedFor: string) =>
+      request(oApp.url, '/health', { headers: { 'x-forwarded-for': sForwardedFor } });
+    const aStatuses = [
+      (await fnPing('198.51.100.1, 203.0.113.1')).status,
+      (await fnPing('198.51.100.1, 203.0.113.1')).status,
+      (await fnPing('198.51.100.1, 203.0.113.2')).status,
+    ];
+    oApp.child.kill('SIGKILL');
+
+    // Checks that the second request of a client is limited and another client still passes
+    assert.deepEqual(aStatuses, [200, 429, 200]);
   });
 });
 

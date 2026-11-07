@@ -5,9 +5,10 @@ import type { NanoObject } from '@nano-app/core';
 // in NANO_TEST_CONFIG, and prints READY once it is listening
 const oConfig: NanoObject = JSON.parse(process.env.NANO_TEST_CONFIG ?? '{}');
 
-// Better Auth's options hold functions, lost in JSON: they come from the auth fixture
+// Better Auth's options hold functions, lost in JSON: the auth fixture's, under the test's own
 if (oConfig.packages?.betterAuth) {
-  oConfig.packages.betterAuth = (await import('../auth/auth')).AUTH_OPTIONS;
+  const { AUTH_OPTIONS } = await import('../auth/auth');
+  oConfig.packages.betterAuth = { ...AUTH_OPTIONS, ...oConfig.packages.betterAuth };
 }
 
 createNanoApp({

@@ -1,3 +1,4 @@
+import { PRIVATE_NETWORKS } from '@nano-app/core/const';
 import type { RequestHandler } from 'express';
 import type { BetterAuthOptions } from 'better-auth';
 import type { NanoObject } from '@nano-app/core';
@@ -31,9 +32,13 @@ export default abstract class BetterAuth {
       );
     }
 
-    // Creates the instance on the app's client
+    // Creates the instance on the app's client, with the trusted proxies of Express by default
     const oAuth = betterAuth({
       ...oOptions,
+      advanced: {
+        ...oOptions.advanced,
+        ipAddress: { trustedProxies: PRIVATE_NETWORKS, ...oOptions.advanced?.ipAddress },
+      },
       database: prismaAdapter(oDb, { provider: 'postgresql' }),
     });
 

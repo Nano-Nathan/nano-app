@@ -14,12 +14,12 @@ const NO_AUTH_SCHEMA = 'tests/fixtures/database/schema.prisma';
 /** Env of the instance: Better Auth signs its cookies with the secret */
 const ENV = { BETTER_AUTH_SECRET: 'a-secret-only-for-the-tests-of-nano-app' };
 
-/** Boots the app with Better Auth on a schema, after removing its client */
+/** Boots the app with Better Auth and its rate limit on a schema, after removing its client */
 const fnBoot = (sSchemaPath: string) => {
   rmSync('.nano-app/prisma-clients/app', { recursive: true, force: true });
   return boot(
     {
-      packages: { betterAuth: true },
+      packages: { betterAuth: { rateLimit: { enabled: true } } },
       plugins: [
         { name: 'public', routesDir: 'tests/fixtures/plugin-routes' },
         { name: 'early', basePath: '/early', routesDir: `${FIXTURES}/permission-routes` },
@@ -200,5 +200,28 @@ describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is no
       oApp.output(),
       /\/early\/notes: its permissions are not checked without Better Auth/,
     );
+  });
+
+  test('sign-in is limited per client behind private proxies', async () => {
+    // Signs in with a wrong password from a client: a forged IP, then the one its proxy appended
+    const fnSignIn = (sForwardedFor: string) =>
+      request(oApp.url, '/api/auth/sign-in/email', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          origin: oApp.url,
+          'x-forwarded-for': sForwardedFor,
+        },
+        body: JSON.stringify({ email: 'nobody@nano-app.test', password: 'a-wrong-password' }),
+      });
+
+    // Uses up the three attempts of one client: the fourth gets 429
+    for (const _iTry of [1, 2, 3]) await fnSignIn('198.51.100.1, 203.0.113.1');
+    const oLimited = await fnSignIn('198.51.100.1, 203.0.113.1');
+    assert.equal(oLimited.status, 429);
+
+    // Another client with the same forged IP keeps its own count
+    const oOther = await fnSignIn('198.51.100.1, 203.0.113.2');
+    assert.notEqual(oOther.status, 429);
   });
 });
