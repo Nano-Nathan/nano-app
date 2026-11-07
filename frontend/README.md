@@ -91,12 +91,12 @@ export default counterController.bindView(({ stores: { app }, increment }) => (
 - A method named `props`, `stores` or `router` is hidden by the context of the same name.
 - Before its `return`, the function only keeps what it reads from the context (`const oApi = stores.backend;`): logic that several methods share goes in functions of the file.
 
-`callbacks` in that object is not a method: `onMount` runs once when each bound view mounts (never on the server), to read what the view needs.
+`callbacks`, first in that object, is not a method: `onMount` runs once when each bound view mounts (never on the server), to read what the view needs.
 
 ```ts
 export default createController(({ stores: { backend } }) => ({
-  users: () => backend.get('/users')?.result ?? [],
   callbacks: { onMount: () => backend.read('/users') },
+  users: () => backend.get('/users')?.result ?? [],
 }));
 ```
 
@@ -136,11 +136,11 @@ An `api` store reads and writes its backend. The controllers read and write; the
 ```ts
 // src/controllers/users.controller.ts
 export default createController(({ stores: { backend } }) => ({
+  callbacks: { onMount: () => backend.read('/users') },
   add: async (sName: string) => {
     await backend.create('/users', { name: sName });
     return backend.read('/users');
   },
-  callbacks: { onMount: () => backend.read('/users') },
 }));
 ```
 

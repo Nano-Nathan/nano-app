@@ -41,6 +41,8 @@ export default function list(oOptions: ListOptions) {
     const oApi = stores[store];
 
     return {
+      // Reads the current page when the view mounts
+      callbacks: { onMount: () => read(oApi, oOptions) },
       // Reads the current page, and gives the answer kept for it
       load: async () => read(oApi, oOptions),
       items: () => oApi?.get(path, query(oApi, top)),
@@ -53,8 +55,6 @@ export default function list(oOptions: ListOptions) {
         oApi?.set('/list/orderby', { [sField]: sDirection });
         return goTo(oApi, oOptions, 0);
       },
-      // Reads the current page when the view mounts
-      callbacks: { onMount: () => read(oApi, oOptions) },
     };
   });
 }

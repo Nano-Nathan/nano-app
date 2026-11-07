@@ -11,6 +11,8 @@ export default function auth(oOptions: AuthOptions = {}) {
     const oApi = stores[store];
 
     return {
+      // Reads the session when the view mounts
+      callbacks: { onMount: () => oApi?.readSession() },
       // Better Auth's sign-in and sign-up of the kind of the options, its sign-out and its session
       signIn: async (oBody: unknown) => oApi?.signIn(kind, oBody),
       signUp: async (oBody: unknown) => oApi?.signUp(kind, oBody),
@@ -18,8 +20,6 @@ export default function auth(oOptions: AuthOptions = {}) {
       load: async () => oApi?.readSession(),
       // Goes to a url of the app
       navTo: (sUrl: string) => router.push(sUrl),
-      // Reads the session when the view mounts
-      callbacks: { onMount: () => oApi?.readSession() },
     };
   });
 }

@@ -64,7 +64,7 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 - Exported functions of `backend` and `plugins` stay even when nothing in the repo uses them: consumers may. `core` is private: what nothing uses there is deleted.
 - Up to 3 positional parameters; with more, one object (`FindOptions`).
 - A class when there is state (`Database`, `Plugin`); `abstract class` with `static` methods for stateless utilities grouped by area (`FileReader`, `Validator`). Public API is plain functions (`createRoute`, `createPlugin`).
-- The function of `createController` returns its object: the methods and `callbacks` (`onMount` reads what the view needs). Before the `return` only `const` that read the context or the options (`const oApi = stores[store];`, a path); no functions, hooks or effects. Logic the methods share goes in functions of the file; the view only renders.
+- The function of `createController` returns its object: `callbacks` first (`onMount` reads what the view needs), then the methods. Before the `return` only `const` that read the context or the options (`const oApi = stores[store];`, a path); no functions, hooks or effects. Logic the methods share goes in functions of the file; the view only renders.
 - `public`, `protected` or `private` on every class method and field; constructors go without.
 - Declared functions and methods state their return type (`: Promise<void>`); inline callbacks infer it, and so does the factory of a component (`list`), from the controller it returns.
 - No `any` without a comment saying why (`// any: anything can be thrown`). Prefer `unknown` and validate.
