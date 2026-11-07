@@ -117,6 +117,33 @@ describe('createController', () => {
     assert.ok(screen.getByText('Leo hi Leo 14'));
   });
 
+  test('onMount runs once when the view mounts, and extend runs both in order', () => {
+    // A controller that logs its mount, extended with another log
+    const mountController = createController(({ props, stores: { app } }) => ({
+      callbacks: {
+        onMount: () => app.set('/sLog', `${app.get('/sLog') ?? ''}${props.sName}`),
+      },
+    }));
+    const Mounted = mountController.bindView(({ stores: { app } }) => (
+      <output>{app.get('/sLog')}</output>
+    ));
+    const Extended = mountController
+      .extend(({ stores: { app } }) => ({
+        callbacks: { onMount: () => app.set('/sLog', `${app.get('/sLog')}+`) },
+      }))
+      .bindView(() => null);
+
+    // Mounts the view, then the extended one
+    renderApp(
+      <>
+        <Mounted sName="a" />
+        <Extended sName="b" />
+      </>,
+    );
+
+    assert.equal(screen.getByRole('status').textContent, 'ab+');
+  });
+
   test('a view without NanoAppProvider fails with the fix', () => {
     // Renders outside the provider
     assert.throws(() => render(<Counter />), { message: MISSING_PROVIDER });

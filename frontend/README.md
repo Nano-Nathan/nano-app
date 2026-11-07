@@ -89,8 +89,18 @@ export default counterController.bindView(({ stores: { app }, increment }) => (
 - A file that calls `bindView` needs `'use client'`. A component without stores or methods is a plain React function and can stay a server component.
 - The view re-renders only when a store path it read changes.
 - A method named `props` or `stores` is hidden by the context of the same name.
+- The function only returns the object: what several methods share goes in functions of the file that receive the context (`function page({ stores }: ComponentContext): number`).
 
-`extend` returns a new controller with your methods merged over its own: a method with the same name replaces the original, the others stay, and the original controller does not change. Its methods receive the same context (`props`, `stores`) as the controller's.
+`callbacks` in that object is not a method: `onMount` runs once when each bound view mounts (never on the server), to read what the view needs.
+
+```ts
+export default createController(({ stores: { backend } }) => ({
+  users: () => backend.get('/users')?.result ?? [],
+  callbacks: { onMount: () => backend.read('/users') },
+}));
+```
+
+`extend` returns a new controller with your methods merged over its own: a method with the same name replaces the original, the others stay, and the original controller does not change. Both `onMount` run, the original's first. Its methods receive the same context (`props`, `stores`) as the controller's.
 
 ```ts
 export default counterController.extend(({ stores: { app } }) => ({
@@ -98,7 +108,7 @@ export default counterController.extend(({ stores: { app } }) => ({
 }));
 ```
 
-The types of a controller and its views come from `@nano-app/frontend`: `Controller`, `View`, `ComponentContext` (`props` and `stores`) and `ComponentProps`.
+The types of a controller and its views come from `@nano-app/frontend`: `Controller`, `View`, `ComponentContext` (`props` and `stores`), `ComponentProps` and `ControllerCallbacks`.
 
 ## Backend
 
@@ -126,29 +136,23 @@ An `api` store reads and writes its backend. The controllers read and write; the
 ```ts
 // src/controllers/users.controller.ts
 export default createController(({ stores: { backend } }) => ({
-  load: () => backend.read('/users'),
   add: async (sName: string) => {
     await backend.create('/users', { name: sName });
     return backend.read('/users');
   },
+  callbacks: { onMount: () => backend.read('/users') },
 }));
 ```
 
 ```tsx
 // src/components/Users.tsx
-export default usersController.bindView(({ stores: { backend }, load, add }) => {
-  useEffect(() => {
-    load();
-  }, []);
-
-  return (
-    <ul onClick={() => add('Bruno')}>
-      {(backend.get('/users')?.result ?? []).map(oUser => (
-        <li key={oUser.id}>{oUser.name}</li>
-      ))}
-    </ul>
-  );
-});
+export default usersController.bindView(({ stores: { backend }, add }) => (
+  <ul onClick={() => add('Bruno')}>
+    {(backend.get('/users')?.result ?? []).map(oUser => (
+      <li key={oUser.id}>{oUser.name}</li>
+    ))}
+  </ul>
+));
 ```
 
 - `read(path, query?)` returns a promise of the `ApiResponse` and keeps it in the store for that path and query, over what the store had there (a field the new answer does not bring stays from the last one). The view gets it with `get(path, query?)`, and renders again when a read keeps a new one.

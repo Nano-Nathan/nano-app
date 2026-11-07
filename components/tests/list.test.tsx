@@ -127,18 +127,21 @@ describe('list', () => {
     assert.equal(aRequests[0], 'QUERY /api/admin/users {"skip":0,"top":1}');
   });
 
-  test('it asks nothing until a method reads', async () => {
-    // Renders a list without loading it
+  test('reads the first page when the view mounts, and load reads it from the store', async () => {
+    // Renders a list without clicking anything
     const List = list({ path: '/users', top: 1 }).bindView(fnView);
     render(
       <NanoAppProvider>
         <List />
       </NanoAppProvider>,
     );
+    await expectNames('Ana');
+
+    // Loads it again: the store answers without asking
+    fireEvent.click(screen.getByText('load'));
     await act(() => new Promise(fnResolve => setTimeout(fnResolve, 50)));
 
-    assert.equal(screen.getByRole('status').textContent, '');
-    assert.equal(aRequests.length, 0);
+    assert.deepEqual(aRequests, ['QUERY /api/api/users {"skip":0,"top":1}']);
   });
 
   test('without its api store it loads no items and asks nothing', async () => {

@@ -9,6 +9,12 @@ export type ComponentProps = NanoObject<any>;
 /** What a controller and its views receive: the props and the stores */
 export type ComponentContext = { props: ComponentProps; stores: Stores };
 
+/** Callbacks of a controller, run by each view bound to it */
+export type ControllerCallbacks = {
+  /** Run once, when the view mounts */
+  onMount?(): unknown;
+};
+
 /** Renders a component with the controller's methods; the context wins over a method's name */
 export type View<M extends NanoObject> = (
   params: Omit<M, keyof ComponentContext> & ComponentContext,
@@ -18,7 +24,7 @@ export type View<M extends NanoObject> = (
 export type Controller<M extends NanoObject> = {
   /** Creates a component that renders the view with the controller's methods */
   bindView(view: View<M>): (props: ComponentProps) => ReactNode;
-  /** Creates a controller with these methods merged over its own: a method with the same name wins */
+  /** Creates a controller with these methods merged over its own: a method with the same name wins, and both `onMount` run */
   extend<E extends NanoObject>(
     methods: (context: ComponentContext) => E,
   ): Controller<Omit<M, keyof E> & E>;

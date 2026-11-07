@@ -15,33 +15,27 @@ pnpm add @nano-app/frontend @nano-app/components
 // src/components/Users.tsx
 'use client';
 
-import { useEffect } from 'react';
 import list from '@nano-app/components/list';
 
 export default list({ path: '/users', top: 20 }).bindView(
-  ({ stores: { api }, load, items, next, prev, sort }) => {
-    useEffect(() => {
-      load();
-    }, []);
-
-    return (
-      <section>
-        <button onClick={() => sort('name')}>name</button>
-        <ul>
-          {items()?.result?.map(oUser => (
-            <li key={oUser.id}>{oUser.name}</li>
-          ))}
-        </ul>
-        <button onClick={prev}>←</button> {(api.get('/list/page') ?? 0) + 1}{' '}
-        <button onClick={next}>→</button>
-      </section>
-    );
-  },
+  ({ stores: { api }, items, next, prev, sort }) => (
+    <section>
+      <button onClick={() => sort('name')}>name</button>
+      <ul>
+        {items()?.result?.map(oUser => (
+          <li key={oUser.id}>{oUser.name}</li>
+        ))}
+      </ul>
+      <button onClick={prev}>←</button> {(api.get('/list/page') ?? 0) + 1}{' '}
+      <button onClick={next}>→</button>
+    </section>
+  ),
 );
 ```
 
 - Every component is a function, also without options (`error()`): its options configure the logic once and are shared by every view bound to it, and the props of a view carry the data of each use.
 - Each call (`list({ … })`) returns a controller of `@nano-app/frontend`: bind views to it with `bindView`, and change or add methods with `extend(({ props, stores }) => ({ … }))`.
+- A component reads what it needs when its view mounts (`callbacks.onMount`): the view only renders.
 - A component gives its view only methods. Its state lives in its api store, under its name (`/list/page`): the view reads it with `get`, and the requests in progress with the store's `/busy`. Two components of the same kind on the same store share it. `form` and `field` keep theirs in the `app` store, under the form's name.
 - A component that reads the backend uses the store named in `store`, `api` by default (`src/stores/api.store.ts`). Without it, it renders without data and asks nothing.
 
@@ -115,7 +109,7 @@ const EVENT_FIELDS = [
 
 `error()` gathers the `/error/list` of every api store: `items()` gives all the errors (the `ApiResponse` of each failed request with its `timestamp`) from the newest, `remove(index)` removes the one at that index of `items()` from its store and `clear()` empties them all: a panel of errors uses them. `last()` gives the newest one and `dismiss()` removes it: an alert uses them.
 
-`load()` reads the current page of `path` with a `QUERY` (`skip`, `top`, `orderby`) through the store, and `items()` gets the `ApiResponse` it kept; nothing is asked until a method reads. `next`, `prev` and `sort` change the page or the order and read it. `sort` orders by one field, ascending and then descending, and goes back to the first page. `prev` stays on the first page.
+`load()` reads the current page of `path` with a `QUERY` (`skip`, `top`, `orderby`) through the store, and `items()` gets the `ApiResponse` it kept. The list reads its current page when its view mounts. `next`, `prev` and `sort` change the page or the order and read it. `sort` orders by one field, ascending and then descending, and goes back to the first page. `prev` stays on the first page.
 
 ## Layout
 
