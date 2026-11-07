@@ -65,6 +65,7 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 - Up to 3 positional parameters; with more, one object (`FindOptions`).
 - A class when there is state (`Database`, `Plugin`); `abstract class` with `static` methods for stateless utilities grouped by area (`FileReader`, `Validator`). Public API is plain functions (`createRoute`, `createPlugin`).
 - The function of `createController` returns its object: `callbacks` first (`onMount` reads what the view needs), then the methods. Before the `return` only `const` that read the context or the options (`const oApi = stores[store];`, a path); no functions, hooks or effects. Logic lives in the methods: one reaches another with `this` (`last() { return this.items()[0]; }`, method syntax, never an arrow), also from `onMount`; the view only renders.
+- The object of `createRoute` goes in order: its config (`expression`, `public`, `permissions`), then `callbacks`, then the handlers (`GET`, `POST`…).
 - `public`, `protected` or `private` on every class method and field; constructors go without.
 - Declared functions and methods state their return type (`: Promise<void>`); inline callbacks infer it, and so does the factory of a component (`list`), from the controller it returns.
 - No `any` without a comment saying why (`// any: anything can be thrown`). Prefer `unknown` and validate.
