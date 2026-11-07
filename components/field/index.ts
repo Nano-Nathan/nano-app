@@ -1,45 +1,69 @@
 import { createController } from '@nano-app/frontend';
+import { API_STORE_TYPE } from '@nano-app/core/const';
+import type { ApiResponse } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { FormField } from '../types/field';
 
 /** Message of each default rule */
 const MESSAGES = { required: 'Required', email: 'Invalid email', number: 'Invalid number' };
 
-/** Message of the first rule the field's value breaks, `undefined` when it is valid */
-function validate(oField: FormField, oValues: NanoObject): string | undefined {
-  const { name, type, required, errorMessage } = oField;
-  const oValue = oValues[name];
-
-  // Required: a value missing or empty
-  const isEmpty = [undefined, null, ''].includes(oValue);
-  if (isEmpty && required) return errorMessage ?? MESSAGES.required;
-
-  // Type: an email or a number, when there is a value
-  if (!isEmpty && type === 'email' && !/^[^\s@]+@[^\s@]+$/.test(oValue))
-    return errorMessage ?? MESSAGES.email;
-  if (!isEmpty && type === 'number' && Number.isNaN(Number(oValue)))
-    return errorMessage ?? MESSAGES.number;
-
-  // The field's own rule
-  return oField.validate?.(oValue, oValues);
-}
-
-/** A field of a form: its value and error at `/form/<form>` of the `app` store */
+/** A field of a form: its value and error at `/form/<form>` of `app`, and its select items */
 export default function field() {
-  return createController(({ props, stores: { app } }) => {
-    // Takes the form and the field of its config
-    const { form, field: oField } = props;
+  return createController(({ props, stores }) => {
+    // Takes the form and the field of its config, the api store of its options and its paths
+    const { form } = props;
+    const oField: FormField = props.field;
+    const { options } = oField;
+    const oApi = stores[options?.store ?? API_STORE_TYPE];
     const sValues = `/form/${form}/values`;
+    const sValue = `${sValues}/${oField.name}`;
     const sError = `/form/${form}/errors/${oField.name}`;
 
     return {
-      // The value and the error of the field
-      value: () => app.get(`${sValues}/${oField.name}`),
-      error: () => app.get(sError),
-      change: (oValue: unknown) => {
+      // Reads the items of its options from the backend when the view mounts
+      callbacks: {
+        onMount(): Promise<ApiResponse | undefined> | undefined {
+          return options && oApi?.read(options.path);
+        },
+      },
+      // any: the value is what the view gave `change`, or what the field's format gives
+      value(): any {
+        // The value kept, through the field's format when it has one
+        const oValue = stores.app.get(sValue);
+        return oField.format ? oField.format(oValue) : oValue;
+      },
+      error(): string | undefined {
+        return stores.app.get(sError);
+      },
+      change(oInput: unknown): void {
         // Keeps the value and the message of the first rule it breaks
-        app.set(`${sValues}/${oField.name}`, oValue);
-        app.set(sError, validate(oField, app.get(sValues)));
+        stores.app.set(sValue, this.parse(oInput));
+        stores.app.set(sError, this.validate(stores.app.get(sValues)));
+      },
+      parse(oInput: unknown): unknown {
+        // The field's own parse, or a number when a number field's text is that number as is
+        if (oField.parse) return oField.parse(oInput);
+        const iNumber = Number(oInput);
+        const isNumber = oField.type === 'number' && String(iNumber) === oInput;
+        return isNumber ? iNumber : oInput;
+      },
+      validate(oValues: NanoObject): string | undefined {
+        // Required: a value missing or empty
+        const { name, type, required, errorMessage } = oField;
+        const oValue = oValues[name];
+        const isEmpty = [undefined, null, ''].includes(oValue);
+        if (isEmpty && required) return errorMessage ?? MESSAGES.required;
+        // Type: an email or a number, when there is a value
+        if (!isEmpty && type === 'email' && !/^[^\s@]+@[^\s@]+$/.test(oValue))
+          return errorMessage ?? MESSAGES.email;
+        if (!isEmpty && type === 'number' && Number.isNaN(Number(oValue)))
+          return errorMessage ?? MESSAGES.number;
+        // The field's own rule
+        return oField.validate?.(oValue, oValues);
+      },
+      options(): NanoObject[] {
+        // The items kept for the path of its options, as the backend gave them
+        return (options && oApi?.get(options.path)?.result) ?? [];
       },
     };
   });

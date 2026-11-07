@@ -1,11 +1,34 @@
 // First: Testing Library needs the DOM when it loads
 import './dom';
-import { test, describe, afterEach } from 'node:test';
+import './env/field';
+import { test, describe, before, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { createServer } from 'node:http';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import field from '../field';
 import TestApp from './provider';
 import type { FormField } from '../types/field';
+
+const PORT = 4201;
+
+// Backend behind the proxy: answers the roles of a select
+const oBackend = createServer((_oReq, oRes) => {
+  const aRoles = [
+    { id: 1, name: 'Admin' },
+    { id: 2, name: 'User' },
+  ];
+  const sAnswer = JSON.stringify({ success: true, result: aRoles });
+  oRes.writeHead(200, { 'content-type': 'application/json' }).end(sAnswer);
+});
+
+// View of a select: shows its options
+const Select = field().bindView(({ options }) => (
+  <output>
+    {options()
+      .map(oRole => `${oRole.id}:${oRole.name}`)
+      .join(',')}
+  </output>
+));
 
 // View of a field: a text input with its error
 const Input = field().bindView(({ props: { field: oField }, value, error, change }) => (
@@ -53,6 +76,8 @@ function errorOf(sName: string): string | null {
 }
 
 describe('field', () => {
+  before(() => new Promise<void>(fnResolve => oBackend.listen(PORT, fnResolve)));
+  after(() => oBackend.close());
   afterEach(cleanup);
 
   test('change keeps the value and validates the email, the number and required', () => {
@@ -105,5 +130,44 @@ describe('field', () => {
 
     assert.equal(errorOf('one'), 'one: Required');
     assert.equal(errorOf('two'), 'two: ok');
+  });
+
+  test('a number field keeps a number, and the text of one being typed', () => {
+    // Renders a number field that shows the type of its value, and types a number and a part of one
+    renderFields('pay', [
+      { name: 'total', type: 'number', format: oValue => `${typeof oValue} ${oValue}` },
+    ]);
+    type('total', '12');
+    assert.equal(screen.getByLabelText<HTMLInputElement>('total').value, 'number 12');
+    type('total', '1.');
+    assert.equal(screen.getByLabelText<HTMLInputElement>('total').value, 'string 1.');
+  });
+
+  test('format shows the value kept and parse keeps what the view gives', () => {
+    // Renders a price shown with its sign and kept as a number, and types one
+    const oPrice: FormField = {
+      name: 'price',
+      format: iPrice => `$${iPrice}`,
+      parse: sPrice => Number(sPrice.replace('$', '')),
+      validate: oValue => (typeof oValue === 'number' ? undefined : 'Text'),
+    };
+    renderFields('pay', [oPrice]);
+    type('price', '$15');
+
+    assert.equal(screen.getByLabelText<HTMLInputElement>('price').value, '$15');
+    assert.equal(errorOf('price'), 'price: ok');
+  });
+
+  test('options are the items of their path, read when the view mounts', async () => {
+    // Renders a select of roles
+    const oRole: FormField = { name: 'role', options: { path: '/roles' } };
+    render(
+      <TestApp>
+        <Select form="user" field={oRole} />
+      </TestApp>,
+    );
+
+    // Shows the roles of the backend
+    await waitFor(() => assert.equal(screen.getByRole('status').textContent, '1:Admin,2:User'));
   });
 });
