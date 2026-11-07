@@ -4,19 +4,17 @@ import { useEffect } from 'react';
 import authController from '../controllers/auth.controller';
 
 /** Renders its children only with a session, and goes to the login without one */
-export default authController.bindView(({ props, stores: { backend }, load, navTo }) => {
-  const oSession = backend.get('/session');
+export default authController
+  .extend(({ stores: { backend } }) => ({
+    guard(): void {
+      // Goes to the login when there is no session, also after a 401
+      if (backend.get('/session') === null) this.navTo('/login');
+    },
+  }))
+  .bindView(({ props, stores: { backend }, guard }) => {
+    // Runs the guard when the session changes
+    useEffect(guard, [backend.get('/session')]);
 
-  // Reads the session once the view is on the page
-  useEffect(() => {
-    load();
-  }, []);
-
-  // Goes to the login when there is no session, also after a 401
-  useEffect(() => {
-    if (oSession === null) navTo('/login');
-  }, [oSession]);
-
-  // Renders the page only with a session
-  return oSession ? props.children : null;
-});
+    // Renders the page only with a session
+    return backend.get('/session') ? props.children : null;
+  });

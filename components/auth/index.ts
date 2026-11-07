@@ -18,13 +18,26 @@ export default function auth(oOptions: AuthOptions = {}) {
           return this.load();
         },
       },
-      // Better Auth's sign-in and sign-up of the kind of the options, its sign-out and its session
-      signIn: async (oBody: unknown) => oApi?.signIn(kind, oBody),
-      signUp: async (oBody: unknown) => oApi?.signUp(kind, oBody),
-      signOut: async () => oApi?.signOut(),
-      load: async () => oApi?.readSession(),
-      // Goes to a url of the app
-      navTo: (sUrl: string) => router.push(sUrl),
+      async signIn(oBody: unknown): Promise<ApiResponse | undefined> {
+        // Better Auth's sign-in of the kind of the options
+        return oApi?.signIn(kind, oBody);
+      },
+      async signUp(oBody: unknown): Promise<ApiResponse | undefined> {
+        // Better Auth's sign-up of the kind of the options
+        return oApi?.signUp(kind, oBody);
+      },
+      async signOut(): Promise<ApiResponse | undefined> {
+        // Better Auth's sign-out
+        return oApi?.signOut();
+      },
+      async load(): Promise<ApiResponse | undefined> {
+        // Reads the session
+        return oApi?.readSession();
+      },
+      navTo(sUrl: string): void {
+        // Goes to a url of the app
+        router.push(sUrl);
+      },
     };
   });
 }

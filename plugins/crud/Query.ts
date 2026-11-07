@@ -1,10 +1,30 @@
-import type { NanoObject, QueryParams } from '@nano-app/backend';
+import type { ApiPromise, NanoObject, QueryParams } from '@nano-app/backend';
 
 /** Records a list answers when the request sends no `top` */
 const DEFAULT_TOP = 100;
 
-/** Translates core's `QueryParams` into the arguments of a Prisma `findMany` */
+/** Reads a model of the app's Prisma client with core's `QueryParams` */
 export default abstract class Query {
+  /** A list of the model with its total, or one record by its `where` */
+  // any: a delegate of the consumer's Prisma client
+  public static async read(oModel: any, oQuery: QueryParams, oWhere?: NanoObject): ApiPromise {
+    // The Prisma arguments of the query
+    const oArgs = Query.toPrisma(oQuery);
+
+    // One record: only its fields and relations apply
+    if (oWhere) {
+      const { select, include } = oArgs;
+      return { result: await oModel.findUniqueOrThrow({ where: oWhere, select, include }) };
+    }
+
+    // A list: the page and the total of the same filter
+    const [aRecords, iCount] = await Promise.all([
+      oModel.findMany(oArgs),
+      oModel.count({ where: oArgs.where }),
+    ]);
+    return { result: aRecords, count: iCount };
+  }
+
   /** `filter` → `where`, `orderby` → `orderBy`, `top`/`skip` → `take`/`skip`, `select` and `expand` → `select` or `include` */
   public static toPrisma(oQuery: QueryParams): NanoObject {
     const { filter, orderby, top, skip, select, expand } = oQuery;

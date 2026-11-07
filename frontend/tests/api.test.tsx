@@ -90,7 +90,10 @@ describe('api store', () => {
   test('a read keeps its ApiResponse at its path and query, and the views get it', async () => {
     // A controller reads the users and the first one; a view gets both
     const oUsersController = createController(({ stores: { backend } }) => ({
-      load: () => Promise.all([backend.read('/users'), backend.read('/users', { top: 1 })]),
+      load(): Promise<unknown> {
+        // Reads the users twice: without a query and with one
+        return Promise.all([backend.read('/users'), backend.read('/users', { top: 1 })]);
+      },
     }));
     const List = oUsersController.bindView(({ stores: { backend }, load }) => (
       <div>

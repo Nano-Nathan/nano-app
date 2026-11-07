@@ -5,8 +5,14 @@ import error from '@nano-app/components/error';
 /** Failed requests of the api stores, with buttons that fail a read and a write */
 export default error()
   .extend(({ stores: { backend } }) => ({
-    failRead: () => backend.read('/missing'),
-    failWrite: () => backend.update('/missing', {}),
+    failRead(): Promise<unknown> {
+      // Reads a path the backend does not have
+      return backend.read('/missing');
+    },
+    failWrite(): Promise<unknown> {
+      // Writes a path the backend does not have
+      return backend.update('/missing', {});
+    },
   }))
   .bindView(({ items, remove, clear, failRead, failWrite }) => (
     <section>

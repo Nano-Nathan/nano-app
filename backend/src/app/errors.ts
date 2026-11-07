@@ -1,9 +1,9 @@
 import type { ErrorRequestHandler, RequestHandler } from 'express';
-import type { ApiResponse } from '@nano-app/core';
+import type { ApiResponse, NanoObject } from '@nano-app/core';
 import type { HandlerError } from '../types/app';
 
 /** Prisma errors the request caused; their own messages name tables and columns */
-const PRISMA_ERRORS: { [sKey: string]: HandlerError } = {
+const PRISMA_ERRORS: NanoObject<HandlerError> = {
   P2025: { status: 404, message: 'Not found' },
   P2002: { status: 409, message: 'Conflict' },
   P2003: { status: 409, message: 'Conflict' },
