@@ -65,7 +65,7 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 - Up to 3 positional parameters; with more, one object (`FindOptions`).
 - A class when there is state (`Database`, `Plugin`); `abstract class` with `static` methods for stateless utilities grouped by area (`FileReader`, `Validator`). Public API is plain functions (`createRoute`, `createPlugin`).
 - `public`, `protected` or `private` on every class method and field; constructors go without.
-- Declared functions and methods state their return type (`: Promise<void>`); inline callbacks infer it.
+- Declared functions and methods state their return type (`: Promise<void>`); inline callbacks infer it, and so does the factory of a component (`list`), from the controller it returns.
 - No `any` without a comment saying why (`// any: anything can be thrown`). Prefer `unknown` and validate.
 - No type assertions (`as`): types are declared where values are born and inferred from there. Data from outside (JSON, env) gets a typed variable where it enters (`const oFiles: StoreFiles = JSON.parse(…)`). Only `as const` is allowed.
 - Types in a `types/` folder of the package, one file per area (`types/app.ts`, `types/plugin.ts`). `type`, not `interface`. `import type` for types.

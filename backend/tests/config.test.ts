@@ -1,5 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { PRIVATE_NETWORKS } from '@nano-app/core/const';
 import { mergeConfig, INITIAL_CONFIG } from '../src/app/config';
 import { boot, request } from './helpers';
 
@@ -24,17 +25,6 @@ describe('config merge', () => {
     // Checks that only helmet changed
     assert.equal(oConfig.packages?.helmet, false);
     assert.ok(oConfig.packages?.compression, 'the rest stays on');
-  });
-
-  test('a package is merged field by field with its default', () => {
-    // Sets only the rate limit maximum
-    const oConfig = mergeConfig({ packages: { rateLimit: { max: 100 } } });
-
-    // Checks that the default message stays
-    assert.deepEqual(oConfig.packages?.rateLimit, {
-      max: 100,
-      message: INITIAL_CONFIG.packages.rateLimit.message,
-    });
   });
 
   test('nested objects are merged at every level', () => {
@@ -62,7 +52,23 @@ describe('config merge', () => {
 
     // Checks that INITIAL_CONFIG was not mutated
     assert.equal(INITIAL_CONFIG.packages.helmet, true);
-    assert.deepEqual(INITIAL_CONFIG.settings, {});
+    assert.deepEqual(INITIAL_CONFIG.settings, { 'trust proxy': PRIVATE_NETWORKS });
+  });
+});
+
+describe('client IP', () => {
+  test('behind a private proxy it is the last address the proxies appended', async () => {
+    // Boots a real NanoApp with the default settings
+    const oApp = await boot({});
+
+    // Sends a request from a local proxy: a forged IP, then the one the proxy appended
+    const { body } = await request(oApp.url, '/ip', {
+      headers: { 'x-forwarded-for': '198.51.100.1, 203.0.113.1' },
+    });
+    oApp.child.kill('SIGKILL');
+
+    // Checks that Express reads the appended one
+    assert.equal(body.result, '203.0.113.1');
   });
 });
 

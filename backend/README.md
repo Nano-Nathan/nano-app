@@ -82,25 +82,33 @@ Every option is optional.
 |---|---|---|
 | `port` | `3000` | Listening port. |
 | `listener` | `() => {}` | Callback once the server is listening. |
-| `settings` | `{}` | Values for `app.set()` (e.g. `{ "trust proxy": 1 }`). |
+| `settings` | `{ "trust proxy": <private networks> }` | Values for `app.set()`: see [Client IP](#client-ip). |
 | `packages` | see below | Framework base middlewares. |
 | `mainPlugin` | `{ routesDir: "src/routes" }` | Your routes (`routesDir`, relative to `cwd`), `basePath` (e.g. `/api`, no trailing slash) and database: see [Database](#database). |
 | `plugins` | `[]` | Plugins mounted around your routes, in order: see [Plugins](#plugins). |
 
-`packages` accepts `morgan`, `cors`, `helmet`, `compression`, `rateLimit`, `express` (`express.json` options), `urlencoded` and `betterAuth` (off by default: see [Better Auth](#better-auth)). The merge is **per section**: passing one key keeps the others; pass `false` to disable one.
+`packages` accepts `morgan`, `cors`, `helmet`, `compression`, `express` (`express.json` options), `urlencoded` and `betterAuth` (off by default: see [Better Auth](#better-auth)). The merge is **per section**: passing one key keeps the others; pass `false` to disable one.
 
 `morgan` logs `:timestamp | :method :path :status` by default: `:path` is the path without its query string, so tokens sent there stay out of the logs. Set `format` with `:url` to log the full URL.
 
 ```ts
 createNanoApp({
-  settings: { 'trust proxy': 1 },
   packages: {
     cors: { origin: 'https://my-app.com' },
     helmet: false,
-    rateLimit: { windowMs: 60_000, max: 120 },
   },
 });
 ```
+
+### Client IP
+
+The [`rate-limit` plugin](../plugins/README.md) and Better Auth count each client by its IP. Behind a proxy (the frontend of `@nano-app/frontend`, nginx, a load balancer, a CDN, Tailscale Funnel), the IP of the request is the proxy's: the client's is the last one the proxies appended to `X-Forwarded-For`.
+
+By default the backend reads that header only when the request comes from loopback or a private network (`127.0.0.0/8`, `::1`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `fc00::/7`), and takes the last address that is not one of them. A request from a public IP is counted by that IP, whatever header it sends. Better Auth gets the same networks as `advanced.ipAddress.trustedProxies`.
+
+- A public proxy in front (a CDN): set its addresses in `settings['trust proxy']` (any [Express value](https://expressjs.com/en/guide/behind-proxies.html)) and in Better Auth's `advanced.ipAddress.trustedProxies`.
+- No proxy at all, or one you do not trust: `settings: { 'trust proxy': false }` and `advanced.ipAddress.trustedProxies: []`.
+- Anything that can reach the backend from a private network can choose the IP it is counted by: keep the backend reachable only from its proxies.
 
 ## Database
 
@@ -193,6 +201,7 @@ npx prisma migrate dev
 - It needs the database: `packages.betterAuth` without `mainPlugin.database.enabled` fails at startup.
 - Startup also fails if your schema lacks a model the options need (`user`, `session`, ...), naming them.
 - Its endpoints are mounted with your routes, at its `basePath` (default `/api/auth`), and stay public.
+- In production, Better Auth limits sign-in, sign-up and password reset to a few attempts per client IP (its `rateLimit`): see [Client IP](#client-ip).
 - Every route of yours and of the `after` plugins needs a session: without one, 401. The `before` plugins stay public (a landing, an about page).
 - Handlers and `onBefore` receive the session in `params.session` (`{ user, session }`).
 - Sign-up works as Better Auth sets it: with `emailAndPassword` anyone can sign up and reach your routes. Close it with `disableSignUp: true`, or check roles in your handlers.

@@ -21,6 +21,16 @@ export const OFFICIAL_PLUGINS = '@nano-app/plugins';
 export const MISSING_DATABASE_URL =
   '[nano-app] [ERROR] The DATABASE_URL environment variable is not defined.';
 
+/** Loopback and private networks: the proxies the backend trusts by default */
+export const PRIVATE_NETWORKS = [
+  '127.0.0.0/8',
+  '::1/128',
+  '10.0.0.0/8',
+  '172.16.0.0/12',
+  '192.168.0.0/16',
+  'fc00::/7',
+];
+
 // Frontend
 
 /** Whether the code runs on the server, where Next renders each component once for the HTML */

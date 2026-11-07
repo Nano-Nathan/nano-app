@@ -1,5 +1,5 @@
 import { Formatter } from '@nano-app/core';
-import { APP_NAME } from '@nano-app/core/const';
+import { APP_NAME, PRIVATE_NETWORKS } from '@nano-app/core/const';
 import type { Request } from 'express';
 import type { NanoObject } from '@nano-app/core';
 import type { NanoAppConfig } from '../types/app';
@@ -13,8 +13,10 @@ export const INITIAL_CONFIG = {
   /** Application listener */
   listener: () => {},
 
-  /** Express settings */
-  settings: {},
+  /** Express settings: the client IP comes from `X-Forwarded-For` only through private proxies */
+  settings: {
+    'trust proxy': PRIVATE_NETWORKS,
+  },
 
   /** Initial middlewares */
   packages: {
@@ -30,10 +32,6 @@ export const INITIAL_CONFIG = {
     },
     helmet: true,
     compression: true,
-    rateLimit: {
-      max: 1000,
-      message: 'Too many requests, please try again later.',
-    },
     express: {
       limit: '10kb',
     },

@@ -21,6 +21,7 @@ createNanoApp({ plugins: [health()] });
 | -------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
 | `health` | `import health from '@nano-app/plugins/health'` | `GET /health` → `{ success: true, result: { status: "ok" } }`                                                                                                                                                                             | `basePath` (default `"/health"`) |
 | `crud`   | `import crud from '@nano-app/plugins/crud'`     | On the models listed in `models` (any other answers 404): `GET` and `QUERY` on `/api/<model>{/<id>}` → a list `{ result, count }` or one record, with `QueryParams` as the body of `QUERY`; `POST /api/<model>`, `PUT` and `DELETE` on `/api/<model>/<id>` → the record created, updated or deleted. `<id>` takes the type of the model's id (`Int`, `BigInt` or `String`). With Better Auth, each method asks for a permission on the model: `read` (`GET`, `QUERY`), `create`, `update`, `delete` | `models` (the published ones), `basePath` (default `"/api"`)    |
+| `rate-limit` | `import rateLimit from '@nano-app/plugins/rate-limit'` | None: limits every request of the routes and plugins mounted after it, per client IP (see [Client IP](../backend/README.md#client-ip)). Each request spends a token of the client's bucket, which holds `capacity` and refills `refillPerSecond` tokens per second; without one it answers `429` with `message` and `Retry-After` (seconds until the next token). List it first in `plugins`. The buckets live in the memory of each process | `capacity` (default `100`), `refillPerSecond` (default `1`), `message` |
 
 What is not CRUD, such as creating a record with business logic, goes in a route of your own with its own URL: a route of yours on a `crud` URL takes every method of it.
 
@@ -122,7 +123,7 @@ At startup nano-app generates the plugin's client in `.nano-app/prisma-clients/<
 - Migrations only add: tables, nullable columns or columns with a default, indexes. Dropping or renaming takes two releases: stop using it first, remove it later.
 - The database user of the consumer needs to create tables in the plugin's `nano_*` schema.
 
-Handlers and callbacks receive that client as `params.db`. Type it with `createRoute<PrismaClient>`, passing your generated `PrismaClient`.
+Handlers and callbacks receive that client as `params.db`. Type it with `createRoute<{ db: PrismaClient }>`, passing your generated `PrismaClient`.
 
 ### What belongs in this repository
 

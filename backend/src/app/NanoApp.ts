@@ -3,7 +3,6 @@ import morgan from 'morgan';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-import rateLimit from 'express-rate-limit';
 import 'dotenv/config';
 import Plugin from '../routes/Plugin';
 import { mergeConfig } from './config';
@@ -100,11 +99,6 @@ export default class NanoApp {
     // Compression
     if (oConfig.compression) {
       this.oApp.use(compression());
-    }
-
-    // Rate Limit
-    if (oConfig.rateLimit) {
-      this.oApp.use(rateLimit(oConfig.rateLimit));
     }
 
     // JSON

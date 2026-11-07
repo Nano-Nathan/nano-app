@@ -1,9 +1,8 @@
 import { createController } from '@nano-app/frontend';
-import type { ApiError, Controller } from '@nano-app/frontend';
-import type { ErrorMethods } from '../types/error';
+import type { ApiError } from '@nano-app/frontend';
 
 /** The failed requests of every api store, from their `/error/list` */
-export default function error(): Controller<ErrorMethods> {
+export default function error() {
   return createController(({ stores }) => {
     // Takes the stores, and the errors of all of them from the newest
     const aStores = Object.values(stores);
