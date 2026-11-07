@@ -87,7 +87,7 @@ Every option is optional.
 | `mainPlugin` | `{ routesDir: "src/routes" }` | Your routes (`routesDir`, relative to `cwd`), `basePath` (e.g. `/api`, no trailing slash) and database: see [Database](#database). |
 | `plugins` | `[]` | Plugins mounted around your routes, in order: see [Plugins](#plugins). |
 
-`packages` accepts `morgan`, `cors`, `helmet`, `compression`, `rateLimit`, `express` (`express.json` options), `urlencoded` and `betterAuth` (off by default: see [Better Auth](#better-auth)). The merge is **per section**: passing one key keeps the others; pass `false` to disable one.
+`packages` accepts `morgan`, `cors`, `helmet`, `compression`, `express` (`express.json` options), `urlencoded` and `betterAuth` (off by default: see [Better Auth](#better-auth)). The merge is **per section**: passing one key keeps the others; pass `false` to disable one.
 
 `morgan` logs `:timestamp | :method :path :status` by default: `:path` is the path without its query string, so tokens sent there stay out of the logs. Set `format` with `:url` to log the full URL.
 
@@ -96,14 +96,13 @@ createNanoApp({
   packages: {
     cors: { origin: 'https://my-app.com' },
     helmet: false,
-    rateLimit: { windowMs: 60_000, max: 120 },
   },
 });
 ```
 
 ### Client IP
 
-The rate limit and Better Auth count each client by its IP. Behind a proxy (the frontend of `@nano-app/frontend`, nginx, a load balancer, a CDN, Tailscale Funnel), the IP of the request is the proxy's: the client's is the last one the proxies appended to `X-Forwarded-For`.
+The [`rate-limit` plugin](../plugins/README.md) and Better Auth count each client by its IP. Behind a proxy (the frontend of `@nano-app/frontend`, nginx, a load balancer, a CDN, Tailscale Funnel), the IP of the request is the proxy's: the client's is the last one the proxies appended to `X-Forwarded-For`.
 
 By default the backend reads that header only when the request comes from loopback or a private network (`127.0.0.0/8`, `::1`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `fc00::/7`), and takes the last address that is not one of them. A request from a public IP is counted by that IP, whatever header it sends. Better Auth gets the same networks as `advanced.ipAddress.trustedProxies`.
 
@@ -146,8 +145,8 @@ createNanoApp({ mainPlugin: { database: { enabled: true } } });
 import { createRoute } from '@nano-app/backend';
 import type { PrismaClient } from '../../.nano-app/prisma-clients/app/generated/client';
 
-export default createRoute<{ db: PrismaClient }>({
-  GET: async (_req, { db }) => ({ result: await db.user.findMany() }),
+export default createRoute<PrismaClient>({
+  GET: async (_req, { db }) => ({ result: await db!.user.findMany() }),
 });
 ```
 
@@ -161,7 +160,7 @@ export default createRoute<{ db: PrismaClient }>({
 - The client exists after the first startup: start the app once before your editor or `tsc` can import its types. In a container, `.nano-app/` must be writable.
 - Startup fails if `DATABASE_URL` is missing, the schema is not a valid PostgreSQL schema, or a table or column of a model cannot be read. The message says which: apply your schema with Prisma and start again.
 - The `nano_` prefix is reserved for the official plugins (`@nano-app/plugins`): a datasource schema of yours starting with it fails the startup.
-- Type `db` with your generated `PrismaClient` in what the app injects (`createRoute<{ db: PrismaClient }>`, see [Typed creators](#typed-creators)); otherwise it is `any`, and without an enabled database `undefined`.
+- Pass your generated `PrismaClient` to `createRoute<PrismaClient>` to type `db`; otherwise it is `any`, and without an enabled database `undefined`.
 - For several PostgreSQL schemas, declare `schemas = ["public", "billing"]` in the datasource and `@@schema("billing")` on each model; one client covers them all.
 - Prisma is loaded only when your database or a mounted plugin's is enabled.
 
@@ -312,25 +311,9 @@ GET /unknown                                        // → 404 { success: false,
 | Function | Purpose |
 |---|---|
 | `createNanoApp(config?)` | Creates and starts the app. |
-| `createRoute(route)` | Types a route file with what the app injects in its params. |
+| `createRoute(route)` | Types a route file. |
 | `createPlugin(creator)` | Types a plugin factory and its options. |
-| `createPluginCallbacks(callbacks)` | Types the callbacks of a plugin with what it injects (`createPluginCallbacks<{ db: PrismaClient }>`), e.g. to keep them in their own file. |
-
-The params of a handler or callback are what the app injects (the plugin's `options` and `db`), plus `auth`, `session` and `onBeforeResult`. Declare that type once and pass it to the creators: a param the app does not inject does not compile. Without it, any param compiles as `any`.
-
-```ts
-// src/types/app.ts
-import type { PrismaClient } from '../../.nano-app/prisma-clients/app/generated/client';
-
-export type AppDeps = { db: PrismaClient; title: string };
-```
-
-```ts
-// src/routes/notes.route.ts
-export default createRoute<AppDeps>({
-  GET: async (_req, { db, title }) => ({ result: { title, notes: await db.note.findMany() } }),
-});
-```
+| `createPluginCallbacks(callbacks)` | Types the callbacks of a plugin (`createPluginCallbacks<PrismaClient>` types `db`), e.g. to keep them in their own file. |
 
 Also exported: the `NanoApp` class that `createNanoApp` returns, the configuration types (`NanoAppConfig`, `PackagesConfig`, `PluginConfig`, `PluginStage`, `MainPluginConfig`, `DatabaseConfig`), the Express `Request` type and the HTTP contract (`ApiResponse`, `ApiPromise`, `QueryParams`, `RouteEntry`, `Handler`, `Handlers`, `NanoObject`) and the callback types (`Params`, `Callbacks`, `PluginCallbacks`).
 

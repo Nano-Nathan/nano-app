@@ -27,17 +27,6 @@ describe('config merge', () => {
     assert.ok(oConfig.packages?.compression, 'the rest stays on');
   });
 
-  test('a package is merged field by field with its default', () => {
-    // Sets only the rate limit maximum
-    const oConfig = mergeConfig({ packages: { rateLimit: { max: 100 } } });
-
-    // Checks that the default message stays
-    assert.deepEqual(oConfig.packages?.rateLimit, {
-      max: 100,
-      message: INITIAL_CONFIG.packages.rateLimit.message,
-    });
-  });
-
   test('nested objects are merged at every level', () => {
     // Sets only the morgan format and the main database flag
     const oConfig = mergeConfig({

@@ -32,10 +32,6 @@ export const INITIAL_CONFIG = {
     },
     helmet: true,
     compression: true,
-    rateLimit: {
-      max: 1000,
-      message: 'Too many requests, please try again later.',
-    },
     express: {
       limit: '10kb',
     },
