@@ -2,7 +2,6 @@ import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { boot, prisma, request } from '../helpers';
-import { AUTH_OPTIONS } from '../fixtures/auth/auth';
 import type { Booted } from '../helpers';
 
 // Better Auth suite, imported by database.test.ts: both boot the "app" client in
@@ -20,8 +19,23 @@ const fnBoot = (sSchemaPath: string) => {
   rmSync('.nano-app/prisma-clients/app', { recursive: true, force: true });
   return boot(
     {
-      packages: { betterAuth: AUTH_OPTIONS },
-      plugins: [{ name: 'public', routesDir: 'tests/fixtures/plugin-routes' }],
+      packages: { betterAuth: true },
+      plugins: [
+        { name: 'public', routesDir: 'tests/fixtures/plugin-routes' },
+        { name: 'early', basePath: '/early', routesDir: `${FIXTURES}/permission-routes` },
+        {
+          name: 'after',
+          stage: 'after',
+          basePath: '/after',
+          routesDir: 'tests/fixtures/plugin-routes',
+        },
+        {
+          name: 'permissions',
+          stage: 'after',
+          basePath: '/permissions',
+          routesDir: `${FIXTURES}/permission-routes`,
+        },
+      ],
       mainPlugin: {
         routesDir: `${FIXTURES}/routes`,
         database: { enabled: true, schemaPath: sSchemaPath },
@@ -34,7 +48,7 @@ const fnBoot = (sSchemaPath: string) => {
 describe('Better Auth without a database', () => {
   test('fails the startup', async () => {
     // Boots with Better Auth and the database off
-    const oApp = await boot({ packages: { betterAuth: AUTH_OPTIONS } }, { oEnv: ENV });
+    const oApp = await boot({ packages: { betterAuth: true } }, { oEnv: ENV });
 
     // Checks that it exits saying what to enable
     assert.equal(await oApp.exited, 1);
@@ -110,5 +124,81 @@ describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is no
     // Checks that the plugin answers without a session
     const { status } = await request(oApp.url, '/ping');
     assert.equal(status, 200);
+  });
+
+  test('a public route answers without a session, and receives it when there is one', async () => {
+    // Without a session
+    const oAnonymous = await request(oApp.url, '/open');
+    assert.equal(oAnonymous.status, 200);
+    assert.equal(oAnonymous.body.result, null);
+
+    // With the session of the sign-in
+    const oSigned = await request(oApp.url, '/open', { headers: { cookie: sCookie } });
+    assert.equal(oSigned.status, 200);
+    assert.match(oSigned.body.result, /@nano-app\.test$/);
+  });
+
+  test('the plugins mounted after the app need a session', async () => {
+    // Without a session
+    const oDenied = await request(oApp.url, '/after/ping');
+    assert.equal(oDenied.status, 401);
+
+    // With the session of the sign-in
+    const oAllowed = await request(oApp.url, '/after/ping', { headers: { cookie: sCookie } });
+    assert.equal(oAllowed.status, 200);
+  });
+
+  test('an unknown path answers 404 without a session', async () => {
+    const { status } = await request(oApp.url, '/nowhere');
+    assert.equal(status, 404);
+  });
+
+  test('a route whose public is not a boolean is discarded', async () => {
+    // Checks the warning and that it is not mounted
+    assert.match(oApp.output(), /"public" must be a boolean/);
+    const { status } = await request(oApp.url, '/bad-public', { headers: { cookie: sCookie } });
+    assert.equal(status, 404);
+  });
+
+  test('a route with permissions needs them', async () => {
+    // Without a session it still answers 401
+    const oNoSession = await request(oApp.url, '/permissions/notes');
+    assert.equal(oNoSession.status, 401);
+
+    // The role of the user, admin, has no permission on notes
+    const oDenied = await request(oApp.url, '/permissions/notes', { headers: { cookie: sCookie } });
+    assert.equal(oDenied.status, 403);
+
+    // It has the permission to list users
+    const oGranted = await request(oApp.url, '/permissions/users', {
+      headers: { cookie: sCookie },
+    });
+    assert.equal(oGranted.status, 200);
+
+    // A public route answers without checking them
+    const oPublic = await request(oApp.url, '/permissions/open');
+    assert.equal(oPublic.status, 200);
+
+    // Permissions of a method win over those of the route: it cannot read notes, but lists users
+    const oListed = await request(oApp.url, '/permissions/methods', {
+      headers: { cookie: sCookie },
+    });
+    const oCreated = await request(oApp.url, '/permissions/methods', {
+      method: 'POST',
+      headers: { cookie: sCookie },
+    });
+    assert.deepEqual([oListed.status, oCreated.status], [403, 200]);
+  });
+
+  test('without Better Auth, a route with permissions answers and warns at startup', async () => {
+    // The plugin mounted before the app has no Better Auth: it answers anyway
+    const { status } = await request(oApp.url, '/early/notes');
+    assert.equal(status, 200);
+
+    // It warned at startup that the permissions are not checked
+    assert.match(
+      oApp.output(),
+      /\/early\/notes: its permissions are not checked without Better Auth/,
+    );
   });
 });

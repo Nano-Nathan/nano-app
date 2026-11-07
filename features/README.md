@@ -6,13 +6,13 @@ Planned work on this repository, one file per feature. A file says what the feat
 |---|---|---|
 | [typed-paths](typed-paths.md) | A mistyped store path or injected resource does not compile | — |
 | [example-app](example-app.md) | An app built on the published packages builds its images | typed-paths |
-| [migrations](migrations.md) | `migrate` applies the app's and its plugins' migrations, with history | — |
-| [response-contract](response-contract.md) | A handler answers 201, 404 and 409 without throwing, and the frontend sees them | — |
-| [components-next](components-next.md) | `form` and `login` are released and the test app renders them | — |
-| [image-contract](image-contract.md) | The image contract is written and the example app meets it | migrations, example-app |
-| [automatic-crud](automatic-crud.md) | Every exposed model is REST without writing a route (1.0) | response-contract |
-| [create-nano-app](create-nano-app.md) | A generated app starts, migrates and builds its images | example-app, migrations |
+| [components-next](components-next.md) | `form` and `auth` are released and the test app renders them | — |
+| [image-contract](image-contract.md) | The image contract is written and the example app meets it | example-app |
+| [create-nano-app](create-nano-app.md) | A generated app starts, migrates and builds its images | example-app |
+| [scheduler](scheduler.md) | A job declared in the `scheduler` plugin runs on its cron, in its timezone | — |
+| [mail](mail.md) | A route sends an email through the `mail` plugin | scheduler |
 | [sse](sse.md) | The backend pushes an event and a component updates | Only when the maintainer asks |
+| [public-exposure](public-exposure.md) | An app behind Funnel has per-client rate limits, sign-in limits and security headers | — |
 
 The order of the table is the order of work. Work outside this repository (cluster, deploys, apps) is not tracked here.
 
@@ -32,6 +32,18 @@ updated: 2026-10-23
 3. Append to `## Log`, never edit earlier entries: `- 2026-10-23 · <owner> · what was done / what is missing`.
 4. A question only the maintainer can answer goes to the log, and the feature becomes `blocked`.
 5. To close: `status: review` with a summary in the log. It becomes `done` when the maintainer validates it. When the feature reaches `main`, its file is deleted; what stays true goes to the README of the package.
+
+## Breaking down a feature
+
+A large idea reaches code in small steps, each one approved by the maintainer before the next.
+
+1. Analysis: check the real state (this repository, personal-app, what can be reused) and answer briefly what exists, what is missing and what is reused.
+2. Split: propose 3 to 6 tasks, each with its "done when", and the dependency tree between them. The maintainer adjusts or approves it.
+3. Iterate: take the first task of the tree with no pending dependency. If it is still large (more than one pull request, or more than 3 decisions), split it again and show the sub-tree. Repeat until every task is simple.
+4. Define the task, before any decision: what it does (what comes in, what goes out) and its scope (what it covers, what it leaves to other tasks), with its "done when". The maintainer approves it.
+5. Decide: at most 3 decisions per message, each with options (A, B, …) and one marked as the recommendation, so the maintainer can answer in one line (`1A 2B 3A`).
+6. Implement: only the approved task, following [New development](../.claude/CLAUDE.md). Commit, push and open its pull request, then update the feature and move to the next task of the tree.
+7. Record: the tree lives in the feature's `## Modules` (task, what it does, what it depends on) and every decision in its `## Log`, so anyone resumes from the file.
 
 ## Before reporting a module
 

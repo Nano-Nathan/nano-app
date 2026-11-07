@@ -4,7 +4,7 @@
 [![plugins](https://img.shields.io/npm/v/@nano-app/plugins?label=plugins)](https://www.npmjs.com/package/@nano-app/plugins)
 [![frontend](https://img.shields.io/npm/v/@nano-app/frontend?label=frontend)](https://www.npmjs.com/package/@nano-app/frontend)
 [![components](https://img.shields.io/npm/v/@nano-app/components?label=components)](https://www.npmjs.com/package/@nano-app/components)
-[![license](https://img.shields.io/npm/l/@nano-app/backend)](./LICENSE)
+[![license](https://img.shields.io/npm/l/@nano-app/backend)](https://github.com/Nano-Nathan/nano-app/blob/main/LICENSE)
 
 File-convention framework for Node.js. In the backend you write `*.route.ts` files: `@nano-app/backend` discovers them, mounts an Express 5 server, and turns every `ApiResponse` into HTTP. In a Next.js frontend you write `*.store.ts` files and controllers: `@nano-app/frontend` keeps the UI state in stores and talks to the backend through its proxy.
 
@@ -63,7 +63,7 @@ Each package has its tests in its `tests/` folder (`frontend/tests/app` is a Nex
 
 A plugin is a directory of `*.route.ts` files plus a `createPlugin` factory. List it in `createNanoApp({ plugins })`. Nothing is mounted by default.
 
-The official ones: [`plugins/`](plugins/README.md). How to write one, and how to publish it for other people: [PLUGINS.md](PLUGINS.md).
+The official ones, how to write one, and how to publish it for other people: [`plugins/`](plugins/README.md).
 
 ## Develop
 
@@ -77,4 +77,4 @@ PostgreSQL tests run only when `DATABASE_URL` is set. See [CONTRIBUTING.md](CONT
 
 ## License
 
-[MIT](LICENSE) © Cristian Serrano.
+[MIT](https://github.com/Nano-Nathan/nano-app/blob/main/LICENSE) © Cristian Serrano.

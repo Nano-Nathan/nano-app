@@ -18,7 +18,7 @@ Path and resource mistakes show up when compiling, not at runtime.
 
 ## Out of scope
 
-The type of the controller in the view (done in `@nano-app/frontend`). The response contract ([response-contract](response-contract.md)).
+The type of the controller in the view (done in `@nano-app/frontend`). The response contract (done in `@nano-app/backend`).
 
 ## Done when
 

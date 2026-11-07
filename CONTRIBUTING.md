@@ -19,9 +19,9 @@ Set `DATABASE_URL` in a `.env` at the repository root, pointing at a disposable 
 ## What to send
 
 - Bug fixes in `backend/`, `core/`, `plugins/`, `frontend/` and `components/`: a pull request here.
-- A plugin: your own repository and npm package. See [PLUGINS.md](PLUGINS.md). Do not add `plugins/<name>` unless a maintainer asked for that plugin in an issue.
+- A plugin: your own repository and npm package. See [`plugins/README.md`](plugins/README.md#write-a-plugin). Do not add `plugins/<name>` unless a maintainer asked for that plugin in an issue.
 
-Public API, comments, and these files are English: `README.md`, `PLUGINS.md` and the README of each package.
+Public API, comments, and these files are English: `README.md` and the README of each package.
 
 ## Pull requests
 
@@ -66,4 +66,4 @@ The version lives in the git tags and on npm. Each `package.json` keeps a placeh
 
 ## License
 
-By contributing, you agree that your contribution is licensed under the [MIT License](LICENSE) of this repository.
+By contributing, you agree that your contribution is licensed under the [MIT License](https://github.com/Nano-Nathan/nano-app/blob/main/LICENSE) of this repository.
