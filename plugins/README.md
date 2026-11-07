@@ -122,7 +122,7 @@ At startup nano-app generates the plugin's client in `.nano-app/prisma-clients/<
 - Migrations only add: tables, nullable columns or columns with a default, indexes. Dropping or renaming takes two releases: stop using it first, remove it later.
 - The database user of the consumer needs to create tables in the plugin's `nano_*` schema.
 
-Handlers and callbacks receive that client as `params.db`. Type it with `createRoute<PrismaClient>`, passing your generated `PrismaClient`.
+Handlers and callbacks receive that client as `params.db`. Type it with `createRoute<{ db: PrismaClient }>`, passing your generated `PrismaClient`.
 
 ### What belongs in this repository
 
