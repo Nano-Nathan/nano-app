@@ -6,11 +6,10 @@ import assert from 'node:assert/strict';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { NanoAppProvider } from '@nano-app/frontend';
 import field from '../field';
-import { MESSAGES } from '../field/validate';
 import type { FormField } from '../types/form';
 
 // View of a field: a text input with its error
-const Input = field().bindView(({ props: { field: oField }, value, error, change }) => (
+const Input = field.bindView(({ props: { field: oField }, value, error, change }) => (
   <label>
     <input
       aria-label={oField.name}
@@ -24,6 +23,7 @@ const Input = field().bindView(({ props: { field: oField }, value, error, change
 // Fields of a sign-up: an email, a number, a password and its confirmation
 const SIGN_UP: FormField[] = [
   { name: 'email', type: 'email', required: true },
+  { name: 'phone', required: true, errorMessage: 'Your phone' },
   { name: 'age', type: 'number' },
   { name: 'password', type: 'password' },
   {
@@ -37,7 +37,7 @@ function renderFields(sForm: string, aFields: FormField[]): void {
   render(
     <NanoAppProvider>
       {aFields.map(oField => (
-        <Input key={oField.name} form={sForm} field={oField} messages={MESSAGES} />
+        <Input key={oField.name} form={sForm} field={oField} />
       ))}
     </NanoAppProvider>,
   );
@@ -72,6 +72,15 @@ describe('field', () => {
     assert.equal(screen.getByLabelText<HTMLInputElement>('age').value, 'ten');
   });
 
+  test('errorMessage replaces the message of the default rules', () => {
+    // Renders the sign-up and empties the phone
+    renderFields('signUp', SIGN_UP);
+    type('phone', '1');
+    type('phone', '');
+
+    assert.equal(errorOf('phone'), 'phone: Your phone');
+  });
+
   test('the own rule of a field receives the values of its form', () => {
     // Renders the sign-up and confirms another password
     renderFields('signUp', SIGN_UP);
@@ -88,8 +97,8 @@ describe('field', () => {
     // Renders a required field in two forms of the same tree and types in one
     render(
       <NanoAppProvider>
-        <Input form="a" field={{ name: 'one', required: true }} messages={MESSAGES} />
-        <Input form="b" field={{ name: 'two', required: true }} messages={MESSAGES} />
+        <Input form="a" field={{ name: 'one', required: true }} />
+        <Input form="b" field={{ name: 'two', required: true }} />
       </NanoAppProvider>,
     );
     type('one', 'x');
