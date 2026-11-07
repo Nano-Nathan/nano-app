@@ -21,13 +21,13 @@ const oBackend = createServer((_oReq, oRes) => {
   oRes.writeHead(200, { 'content-type': 'application/json' }).end(sAnswer);
 });
 
-// View of a select: a button that loads its options and shows them
-const Select = field().bindView(({ options, load }) => (
-  <button onClick={() => load()}>
+// View of a select: shows its options
+const Select = field().bindView(({ options }) => (
+  <output>
     {options()
       .map(oRole => `${oRole.id}:${oRole.name}`)
       .join(',')}
-  </button>
+  </output>
 ));
 
 // View of a field: a text input with its error
@@ -158,18 +158,16 @@ describe('field', () => {
     assert.equal(errorOf('price'), 'price: ok');
   });
 
-  test('options are the items of their path, read by load', async () => {
-    // Renders a select of roles: without a read it has none
+  test('options are the items of their path, read when the view mounts', async () => {
+    // Renders a select of roles
     const oRole: FormField = { name: 'role', options: { path: '/roles' } };
     render(
       <NanoAppProvider>
         <Select form="user" field={oRole} />
       </NanoAppProvider>,
     );
-    assert.equal(screen.getByRole('button').textContent, '');
 
-    // Loads the roles from the backend
-    fireEvent.click(screen.getByRole('button'));
-    await waitFor(() => assert.equal(screen.getByRole('button').textContent, '1:Admin,2:User'));
+    // Shows the roles of the backend
+    await waitFor(() => assert.equal(screen.getByRole('status').textContent, '1:Admin,2:User'));
   });
 });

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { createController } from '@nano-app/frontend';
 import { API_STORE_TYPE } from '@nano-app/core/const';
 import type { NanoObject } from '@nano-app/core/types/objects';
@@ -41,6 +42,12 @@ export default function field() {
     const sValues = `/form/${form}/values`;
     const sValue = `${sValues}/${oField.name}`;
     const sError = `/form/${form}/errors/${oField.name}`;
+
+    // Reads the items of its options from the backend when the view mounts
+    useEffect(() => {
+      if (options) oApi?.read(options.path);
+    }, []);
+
     return {
       value: () => {
         // The value kept, through the field's format when it has one
@@ -55,8 +62,6 @@ export default function field() {
       },
       // The items kept for the path of its options, as the backend gave them
       options: (): NanoObject[] => (options && oApi?.get(options.path)?.result) ?? [],
-      // Reads the items of its options from the backend
-      load: async () => options && oApi?.read(options.path),
     };
   });
 }
