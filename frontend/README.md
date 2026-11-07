@@ -93,7 +93,7 @@ export default counterController.bindView(({ stores: { app }, increment }) => (
 - A method named `props`, `stores` or `router` is hidden by the context of the same name.
 - Before its `return`, the function only keeps what it reads from the context (`const oApi = stores.backend;`). A method reaches the others with `this` (`last() { return this.items()[0]; }`), also when the view calls it alone; `this` needs the method syntax, not an arrow. `onMount` gets the same `this`.
 
-`callbacks`, first in that object, is not a method: `onMount` runs once when each bound view mounts (never on the server), to read what the view needs.
+`callbacks`, first in that object, is not a method: `onMount` runs once when each bound view mounts (never on the server), to read what the view needs. To act when a value changes, the view calls a method from a `useEffect` with that value as its dependency (see [Sessions](#sessions)); the logic stays in the method.
 
 ```ts
 export default createController(({ stores: { backend } }) => ({
@@ -259,20 +259,21 @@ A page that needs a session gets a layout bound to the session controller: it re
 // src/components/Private.tsx
 'use client';
 
-export default sessionController.bindView(({ props, stores: { backend }, load }) => {
-  const oRouter = useRouter();
-  const oSession = backend.get('/session');
-
-  useEffect(() => {
-    load();
-  }, []);
-
-  useEffect(() => {
-    if (oSession === null) oRouter.replace('/login');
-  }, [oSession]);
-
-  return oSession ? props.children : null;
-});
+export default sessionController
+  .extend(({ stores: { backend }, router }) => ({
+    callbacks: {
+      onMount(): Promise<unknown> {
+        return this.load();
+      },
+    },
+    guard(): void {
+      if (backend.get('/session') === null) router.replace('/login');
+    },
+  }))
+  .bindView(({ props, stores: { backend }, guard }) => {
+    useEffect(guard, [backend.get('/session')]);
+    return backend.get('/session') ? props.children : null;
+  });
 // app/private/layout.tsx renders <Private>{children}</Private>
 ```
 
