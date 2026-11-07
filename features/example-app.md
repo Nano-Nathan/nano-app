@@ -1,7 +1,7 @@
 ---
 status: todo
 owner: null
-depends_on: [typed-paths]
+depends_on: []
 updated: 2026-10-24
 ---
 

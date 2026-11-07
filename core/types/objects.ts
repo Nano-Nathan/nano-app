@@ -1,76 +1,73 @@
 import type { Express, Request } from 'express';
 import type { ApiPromise } from './api';
 
-// any: `DB` and `T` default to the consumer's Prisma client and data, unknown to the framework
+// any: `Deps` and `T` default to what the consumer injects and its data, unknown to the framework
 
-/** Extra params of handlers and callbacks */
-export type Params<DB = any> = Partial<
-  NanoObject & {
-    db?: DB;
-    /** Better Auth's instance, when it is on */
-    auth?: NanoObject;
-    onBeforeResult?: NanoObject;
-    /** `{ user, session }` of Better Auth, when the request has one */
-    session?: NanoObject;
-  }
->;
+/** Extra params of handlers and callbacks: what the app injects (options, `db`) and the framework adds */
+export type Params<Deps = NanoObject<any>> = Deps & {
+  /** Better Auth's instance, when it is on */
+  auth?: NanoObject;
+  onBeforeResult?: NanoObject;
+  /** `{ user, session }` of Better Auth, when the request has one */
+  session?: NanoObject;
+};
 
 /** Endpoint handler */
-export type Handler<DB> = (req: Request, params: Params<DB>) => ApiPromise;
+export type Handler<Deps> = (req: Request, params: Params<Deps>) => ApiPromise;
 
 /** A method with its own permissions, instead of those of the route */
-export type MethodEntry<DB = any> = {
-  handler: Handler<DB>;
+export type MethodEntry<Deps = NanoObject<any>> = {
+  handler: Handler<Deps>;
   /** With Better Auth on, the permissions this method needs instead of the route's */
   permissions?: NanoObject<string[]>;
 };
 
 /** Endpoint handlers, one per HTTP method: the handler, or it with its permissions */
-export type Handlers<DB = any> = {
-  GET?: Handler<DB> | MethodEntry<DB>;
-  POST?: Handler<DB> | MethodEntry<DB>;
-  PUT?: Handler<DB> | MethodEntry<DB>;
-  DELETE?: Handler<DB> | MethodEntry<DB>;
-  QUERY?: Handler<DB> | MethodEntry<DB>;
+export type Handlers<Deps = NanoObject<any>> = {
+  GET?: Handler<Deps> | MethodEntry<Deps>;
+  POST?: Handler<Deps> | MethodEntry<Deps>;
+  PUT?: Handler<Deps> | MethodEntry<Deps>;
+  DELETE?: Handler<Deps> | MethodEntry<Deps>;
+  QUERY?: Handler<Deps> | MethodEntry<Deps>;
 };
 
 /** Callback run with the params */
-export type Callback<DB> = (params: Params<DB>) => Promise<void>;
+export type Callback<Deps> = (params: Params<Deps>) => Promise<void>;
 
 /** Callback run before a method, with its request */
-export type CallbackMethod<DB> = (
+export type CallbackMethod<Deps> = (
   req: Request,
   method: string,
-  params: Params<DB>,
+  params: Params<Deps>,
 ) => Promise<NanoObject>;
 
 /** Callback run with the Express app */
-export type CallbackMount<DB> = (app: Express, params: Params<DB>) => Promise<void>;
+export type CallbackMount<Deps> = (app: Express, params: Params<Deps>) => Promise<void>;
 
 /** Callbacks of an endpoint. They never receive the app: what affects the whole app goes in the plugin's onMount */
-export type Callbacks<DB = any> = {
+export type Callbacks<Deps = NanoObject<any>> = {
   /** Run once, when the endpoint is mounted */
-  onInit?: Callback<DB>;
+  onInit?: Callback<Deps>;
   /** Run before the endpoint is executed */
-  onBefore?: CallbackMethod<DB>;
+  onBefore?: CallbackMethod<Deps>;
 };
 
 /** Callbacks of a plugin */
-export type PluginCallbacks<DB = any> = {
+export type PluginCallbacks<Deps = NanoObject<any>> = {
   /** Run once with the Express app, after its database and before its endpoints (e.g. app-level middlewares) */
-  onMount?: CallbackMount<DB>;
+  onMount?: CallbackMount<Deps>;
 };
 
 /** Entry of a route file (`*.route.ts`) */
-export type RouteEntry<DB = any> = {
+export type RouteEntry<Deps = NanoObject<any>> = {
   /** Express route expression appended to the path (e.g. `/:id`) */
   expression?: string;
   /** With Better Auth on, answers without a session; the handlers still receive it when there is one */
   public?: boolean;
   /** With Better Auth on, the permissions of its admin plugin the user needs (`{ notes: ['read'] }`) */
   permissions?: NanoObject<string[]>;
-  callbacks?: Callbacks<DB>;
-} & Handlers<DB>;
+  callbacks?: Callbacks<Deps>;
+} & Handlers<Deps>;
 
 /** Entry of a Prisma client file (`client.ts` or `client.js`)*/
 export type PrismaEntry = new (options: { adapter: unknown }) => any;

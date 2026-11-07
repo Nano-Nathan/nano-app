@@ -146,8 +146,8 @@ createNanoApp({ mainPlugin: { database: { enabled: true } } });
 import { createRoute } from '@nano-app/backend';
 import type { PrismaClient } from '../../.nano-app/prisma-clients/app/generated/client';
 
-export default createRoute<PrismaClient>({
-  GET: async (_req, { db }) => ({ result: await db!.user.findMany() }),
+export default createRoute<{ db: PrismaClient }>({
+  GET: async (_req, { db }) => ({ result: await db.user.findMany() }),
 });
 ```
 
@@ -161,7 +161,7 @@ export default createRoute<PrismaClient>({
 - The client exists after the first startup: start the app once before your editor or `tsc` can import its types. In a container, `.nano-app/` must be writable.
 - Startup fails if `DATABASE_URL` is missing, the schema is not a valid PostgreSQL schema, or a table or column of a model cannot be read. The message says which: apply your schema with Prisma and start again.
 - The `nano_` prefix is reserved for the official plugins (`@nano-app/plugins`): a datasource schema of yours starting with it fails the startup.
-- Pass your generated `PrismaClient` to `createRoute<PrismaClient>` to type `db`; otherwise it is `any`, and without an enabled database `undefined`.
+- Type `db` with your generated `PrismaClient` in what the app injects (`createRoute<{ db: PrismaClient }>`, see [Typed creators](#typed-creators)); otherwise it is `any`, and without an enabled database `undefined`.
 - For several PostgreSQL schemas, declare `schemas = ["public", "billing"]` in the datasource and `@@schema("billing")` on each model; one client covers them all.
 - Prisma is loaded only when your database or a mounted plugin's is enabled.
 
@@ -312,9 +312,25 @@ GET /unknown                                        // → 404 { success: false,
 | Function | Purpose |
 |---|---|
 | `createNanoApp(config?)` | Creates and starts the app. |
-| `createRoute(route)` | Types a route file. |
+| `createRoute(route)` | Types a route file with what the app injects in its params. |
 | `createPlugin(creator)` | Types a plugin factory and its options. |
-| `createPluginCallbacks(callbacks)` | Types the callbacks of a plugin (`createPluginCallbacks<PrismaClient>` types `db`), e.g. to keep them in their own file. |
+| `createPluginCallbacks(callbacks)` | Types the callbacks of a plugin with what it injects (`createPluginCallbacks<{ db: PrismaClient }>`), e.g. to keep them in their own file. |
+
+The params of a handler or callback are what the app injects (the plugin's `options` and `db`), plus `auth`, `session` and `onBeforeResult`. Declare that type once and pass it to the creators: a param the app does not inject does not compile. Without it, any param compiles as `any`.
+
+```ts
+// src/types/app.ts
+import type { PrismaClient } from '../../.nano-app/prisma-clients/app/generated/client';
+
+export type AppDeps = { db: PrismaClient; title: string };
+```
+
+```ts
+// src/routes/notes.route.ts
+export default createRoute<AppDeps>({
+  GET: async (_req, { db, title }) => ({ result: { title, notes: await db.note.findMany() } }),
+});
+```
 
 Also exported: the `NanoApp` class that `createNanoApp` returns, the configuration types (`NanoAppConfig`, `PackagesConfig`, `PluginConfig`, `PluginStage`, `MainPluginConfig`, `DatabaseConfig`), the Express `Request` type and the HTTP contract (`ApiResponse`, `ApiPromise`, `QueryParams`, `RouteEntry`, `Handler`, `Handlers`, `NanoObject`) and the callback types (`Params`, `Callbacks`, `PluginCallbacks`).
 
