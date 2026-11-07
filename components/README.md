@@ -36,7 +36,7 @@ export default list({ path: '/users', top: 20 }).bindView(
 - Every component is a function, also without options (`error()`): its options configure the logic once and are shared by every view bound to it, and the props of a view carry the data of each use.
 - Each call (`list({ … })`) returns a controller of `@nano-app/frontend`: bind views to it with `bindView`, and change or add methods with `extend(({ props, stores }) => ({ … }))`.
 - A component reads what it needs when its view mounts (`callbacks.onMount`): the view only renders.
-- A component gives its view only methods. Its state lives in its api store, under its name (`/list/page`): the view reads it with `get`, and the requests in progress with the store's `/busy`. Two components of the same kind on the same store share it. `form` and `field` keep theirs in the `app` store, under the form's name.
+- A component gives its view only methods. Its state lives in its api store, under its name (`/list/page`): the view reads it with `get`, and the requests in progress with the store's `/busy`. Two components of the same kind on the same store share it. `field` keeps its own in the `app` store, under the name of its form.
 - A component that reads the backend uses the store named in `store`, `api` by default (`src/stores/api.store.ts`). Without it, it renders without data and asks nothing.
 
 ## Components
@@ -44,8 +44,8 @@ export default list({ path: '/users', top: 20 }).bindView(
 | Component | Import | Options | The view receives |
 |---|---|---|---|
 | `auth` | `import auth from '@nano-app/components/auth'` | `kind` (default `'email'`), `store` (default `'api'`) | `signIn(body)`, `signUp(body)`, `signOut()`, `load()`, `navTo(url)`; in the store: `/session` |
-| `field` | `import field from '@nano-app/components/field'` | — | `value()`, `error()`, `change(value)`; props `form`, `field`, given by the form |
-| `form` | `import form from '@nano-app/components/form'` | `components`, `messages` | `fields()`, `submit(event)`, `reset()`; props `name`, `fields`, `onSubmit`; in `app`: `/form/<name>/values`, `/form/<name>/errors` |
+| `field` | `import field from '@nano-app/components/field'` | — | `value()`, `error()`, `change(value)`, `options()`, `parse(input)`, `validate(values)`; props `form`, `field`; in `app`: `/form/<form>/values`, `/form/<form>/errors` |
+| `form` | `import form from '@nano-app/components/form'` | `components` | `fields()`, `submit(event)`, `reset()`; props `name`, `fields`, `onSubmit`; in `app`: `/form/<name>` |
 | `error` | `import error from '@nano-app/components/error'` | — | `items()`, `remove(index)`, `clear()`, `last()`, `dismiss()` |
 | `list` | `import list from '@nano-app/components/list'` | `path`, `top`, `store` (default `'api'`) | `load()`, `items()`, `page()`, `query()`, `goTo(page)`, `next()`, `prev()`, `sort(field)`; in the store: `/list/page` (from 0, `undefined` until it moves), `/list/orderby` |
 
@@ -67,45 +67,58 @@ export default authController
   .bindView(({ logout }) => <button onClick={logout}>sign out</button>);
 ```
 
-`form()` builds a form from a config of fields. Write one view per field type with `field()`, give them to one `form()` in `components`, and bind one view of the form: every form is then a config, `<Form name="event" fields={EVENT_FIELDS} onSubmit={…} />`.
+`field` is the controller of a field view: bind one view per kind of input (a text, a select, a date picker) and give it the props `form` (the name of its form) and `field` (its config).
 
 ```tsx
-// src/components/Input.tsx: a field, an input of the field's type with its error
+// src/components/Input.tsx: an input of the field's type with its error
 export default field().bindView(({ props: { field: oField }, value, error, change }) => (
   <label>
     {oField.label}
-    <input type={oField.type} value={value() ?? ''} onChange={oEvent => change(oEvent.target.value)} />
+    <input
+      type={oField.type ?? 'text'}
+      disabled={oField.disabled}
+      value={value() ?? ''}
+      onChange={oEvent => change(oEvent.target.value)}
+    />
     <small>{error()}</small>
   </label>
 ));
 
-// src/controllers/form.controller.ts: once in the app
-export default form({ components: { text: Input, checkbox: Checkbox, date: DatePicker } });
-
-// src/components/Form.tsx
-export default formController.bindView(({ fields, submit }) => (
-  <form onSubmit={submit}>
-    {fields()}
-    <button>send</button>
-  </form>
-));
-
-// A form: only its config
-const EVENT_FIELDS = [
-  { name: 'title', label: 'Title', required: true },
-  { name: 'email', label: 'Contact', type: 'email', required: true },
-  { name: 'start', label: 'From', type: 'date', required: true },
-  { name: 'end', label: 'To', type: 'date', validate: (sEnd, oValues) => (sEnd < oValues.start ? 'Ends before it starts' : undefined) },
-  { name: 'isPublic', label: 'Public', type: 'checkbox' },
-];
+<Input form="signUp" field={{ name: 'email', label: 'Email', type: 'email', required: true }} />
 ```
 
-- A field is `{ name, type, required, validate }`; its other keys (`label`, `options`, a `path` to read the options of a select) pass as is to its view. `type` picks the view of `components`, the one of `text` when it has none; without both, rendering the form fails with the field's name.
-- `fields()` gives the views of the fields in the order of the config, with the props `form` (the form's name), `field` (its config) and `messages`.
-- `change(value)` keeps the value at `/form/<name>/values/<field>` as the view gives it (a text, a `Date`, a boolean) and validates the field. `submit(event)` stops the browser's submit, validates every field and calls `onSubmit(values)` only when none breaks a rule. `reset()` empties the values and errors.
-- Default rules, in order: `required` (a value missing or `''`: only whether the user must give one), then `type` `email` and `number` when there is a value, then the field's `validate(value, values)`, which returns the message or `undefined`. `messages: { required, email, number }` replaces the default messages (`Required`, `Invalid email`, `Invalid number`) for every form of the controller.
-- The browser validates native inputs (`type="email"`, `required`) before `submit` and shows its own bubbles. To show only the form's messages, with the app's style, put `noValidate` on the `<form>` of the view.
-- The form keeps only values: the errors of the backend after `onSubmit` are shown with `error`, and what comes next (`navTo`, `reset`) is up to `onSubmit`.
+- A field is `{ name, type, required, errorMessage, validate, format, parse, options }`; its other keys (`label`, `disabled`) pass as is to its view.
+- `change(value)` keeps the value at `/form/<form>/values/<name>` as the view gives it (a text, a boolean, the ISO day of a date input), a `number` field as a number when its text is that number as is (`'12'`, while `'1.'` stays a text), and validates the field: `required` (a value missing or `''`), then `type` `email` and `number` when there is a value, then the field's `validate(value, values)`, which receives the values of its form and returns the message or `undefined`. `error()` gives the message of the first rule it breaks.
+- `parse(input)` replaces what `change` keeps, and `format(value)` what `value()` gives: a price kept as `1234` and shown as `$1.234`.
+- A select takes `options: { path, store }` (`store` is `'api'` by default): the field reads `path` from the backend when its view mounts, and `options()` gives its items as the backend gave them, for the view to take the keys it shows.
+- The default rules answer `Required`, `Invalid email` or `Invalid number`; `errorMessage` replaces them for that field.
+- The browser validates native inputs (`type="email"`, `required`) and shows its own bubbles. To show only the field's messages, put `noValidate` on the `<form>` of the view.
+
+`form({ components })` renders a form from a config of fields: `components` gives the view of each field type, and the view of the form gets the props `name` (its name) and `fields` (the configs of its fields). `fields()` gives the view of each field, in their order, with the props `form` and `field`: the view of its `type`, or the one of `text` when its type has none. A field with no view and no `text` stops the render with an error. `submit(event)` stops the browser's submit, validates every field of `fields` (also the untouched ones) and keeps their messages at `/form/<name>/errors`; when none breaks a rule it calls the prop `onSubmit(values)` with the values kept and returns what it returns, otherwise `undefined`. `onSubmit` is a method of the controller of the page that renders the form, so its view only passes it. `reset()` empties the values and the errors.
+
+```tsx
+// src/components/SignUp.tsx
+export default form({ components: { text: Input, select: Select } }).bindView(
+  ({ fields, submit, reset }) => (
+    <form noValidate onSubmit={submit}>
+      {fields()}
+      <button>send</button>
+      <button type="button" onClick={reset}>
+        reset
+      </button>
+    </form>
+  ),
+);
+
+// src/components/SignUpPage.tsx: auth gives the form its sign-up
+export default authController.bindView(({ signUp }) => (
+  <SignUp
+    name="signUp"
+    fields={[{ name: 'email', type: 'email', required: true }]}
+    onSubmit={signUp}
+  />
+));
+```
 
 `error()` gathers the `/error/list` of every api store: `items()` gives all the errors (the `ApiResponse` of each failed request with its `timestamp`) from the newest, `remove(index)` removes the one at that index of `items()` from its store and `clear()` empties them all: a panel of errors uses them. `last()` gives the newest one and `dismiss()` removes it: an alert uses them.
 
