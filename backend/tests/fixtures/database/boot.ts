@@ -7,8 +7,8 @@ const oConfig: NanoObject = JSON.parse(process.env.NANO_TEST_CONFIG ?? '{}');
 
 // Better Auth's options hold functions, lost in JSON: the auth fixture's, under the test's own
 if (oConfig.packages?.betterAuth) {
-  const { AUTH_OPTIONS } = await import('../auth/auth');
-  oConfig.packages.betterAuth = { ...AUTH_OPTIONS, ...oConfig.packages.betterAuth };
+  const { default: oAuth } = await import('../auth/auth');
+  oConfig.packages.betterAuth = { ...oAuth.options, ...oConfig.packages.betterAuth };
 }
 
 createNanoApp({

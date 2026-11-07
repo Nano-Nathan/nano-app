@@ -173,20 +173,21 @@ pnpm add better-auth
 ```
 
 ```ts
-// src/auth.ts: the options, and an instance only for the Better Auth CLI
-import { betterAuth, type BetterAuthOptions } from 'better-auth';
+// src/auth.ts: the options; nano-app creates the instance, the Better Auth CLI reads `options`
+import type { BetterAuthOptions } from 'better-auth';
 
-export const authOptions = { emailAndPassword: { enabled: true } } satisfies BetterAuthOptions;
-export const auth = betterAuth(authOptions);
+export default {
+  options: { emailAndPassword: { enabled: true } } satisfies BetterAuthOptions,
+};
 ```
 
 ```ts
 // src/app.ts
 import { createNanoApp } from '@nano-app/backend';
-import { authOptions } from './auth';
+import auth from './auth';
 
 createNanoApp({
-  packages: { betterAuth: authOptions },
+  packages: { betterAuth: auth.options },
   mainPlugin: { database: { enabled: true } },
 });
 ```
@@ -212,6 +213,7 @@ npx prisma migrate dev
 - `createRoute({ public: true, ... })` answers without a session; its handlers still receive `session` when the request has one. An unknown path answers 404.
 - Its own endpoints, the plugins mounted before the app and the middlewares a plugin adds with `app.use` in `onMount` are not checked: a plugin that exposes something public says it in its README.
 - Better Auth is loaded only when it is on.
+- nano-app creates the one instance the app uses: do not call `betterAuth()` in `src/auth.ts`. The CLI's `generate` only reads `options` of its default export.
 
 ### Permissions
 
