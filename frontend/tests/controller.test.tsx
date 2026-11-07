@@ -6,12 +6,12 @@ import assert from 'node:assert/strict';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MISSING_PROVIDER } from '@nano-app/core/const';
 import createController from '../src/creators/createController';
-import { NanoAppProvider } from '../src/react/NanoAppProvider';
+import TestApp from './provider';
 import type { ReactNode } from 'react';
 
 /** Renders inside the provider, like the root layout does */
 function renderApp(oNode: ReactNode): void {
-  render(<NanoAppProvider>{oNode}</NanoAppProvider>);
+  render(<TestApp>{oNode}</TestApp>);
 }
 
 /** Renders of the counter, to check which writes render it */
@@ -115,6 +115,63 @@ describe('createController', () => {
     fireEvent.click(screen.getByText('+'));
 
     assert.ok(screen.getByText('Leo hi Leo 14'));
+  });
+
+  test('onMount runs once when the view mounts, and extend runs both in order', () => {
+    // A controller that logs its mount, extended with another log
+    const mountController = createController(({ props, stores: { app } }) => ({
+      callbacks: {
+        onMount: () => app.set('/sLog', `${app.get('/sLog') ?? ''}${props.sName}`),
+      },
+    }));
+    const Mounted = mountController.bindView(({ stores: { app } }) => (
+      <output>{app.get('/sLog')}</output>
+    ));
+    const Extended = mountController
+      .extend(({ stores: { app } }) => ({
+        callbacks: { onMount: () => app.set('/sLog', `${app.get('/sLog')}+`) },
+      }))
+      .bindView(() => null);
+
+    // Mounts the view, then the extended one
+    renderApp(
+      <>
+        <Mounted sName="a" />
+        <Extended sName="b" />
+      </>,
+    );
+
+    assert.equal(screen.getByRole('status').textContent, 'ab+');
+  });
+
+  test('a method reaches the others with this, also from an extension', () => {
+    // A controller whose last item comes from its items, and an extension with other items
+    const itemsController = createController(() => ({
+      items(): string[] {
+        return ['a', 'b'];
+      },
+      last(): string {
+        return this.items()[1];
+      },
+    }));
+    const fnView = ({ last }: { last: () => string }) => <span>{last()}</span>;
+    const Items = itemsController.bindView(fnView);
+    const Extended = itemsController
+      .extend(() => ({
+        items: () => ['c', 'd'],
+      }))
+      .bindView(fnView);
+
+    // Renders both: each view calls last alone
+    renderApp(
+      <>
+        <Items />
+        <Extended />
+      </>,
+    );
+
+    assert.ok(screen.getByText('b'));
+    assert.ok(screen.getByText('d'));
   });
 
   test('a view without NanoAppProvider fails with the fix', () => {

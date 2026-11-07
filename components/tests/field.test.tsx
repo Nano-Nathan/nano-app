@@ -5,8 +5,8 @@ import { test, describe, before, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { NanoAppProvider } from '@nano-app/frontend';
 import field from '../field';
+import TestApp from './provider';
 import type { FormField } from '../types/field';
 
 const PORT = 4201;
@@ -57,11 +57,11 @@ const SIGN_UP: FormField[] = [
 /** Renders the fields of a form inside the provider */
 function renderFields(sForm: string, aFields: FormField[]): void {
   render(
-    <NanoAppProvider>
+    <TestApp>
       {aFields.map(oField => (
         <Input key={oField.name} form={sForm} field={oField} />
       ))}
-    </NanoAppProvider>,
+    </TestApp>,
   );
 }
 
@@ -120,10 +120,10 @@ describe('field', () => {
   test('fields of two forms keep their values apart', () => {
     // Renders a required field in two forms of the same tree and types in one
     render(
-      <NanoAppProvider>
+      <TestApp>
         <Input form="a" field={{ name: 'one', required: true }} />
         <Input form="b" field={{ name: 'two', required: true }} />
-      </NanoAppProvider>,
+      </TestApp>,
     );
     type('one', 'x');
     type('one', '');
@@ -162,9 +162,9 @@ describe('field', () => {
     // Renders a select of roles
     const oRole: FormField = { name: 'role', options: { path: '/roles' } };
     render(
-      <NanoAppProvider>
+      <TestApp>
         <Select form="user" field={oRole} />
-      </NanoAppProvider>,
+      </TestApp>,
     );
 
     // Shows the roles of the backend

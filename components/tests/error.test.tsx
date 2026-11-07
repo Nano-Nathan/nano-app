@@ -5,9 +5,9 @@ import { test, describe, before, after, beforeEach, afterEach } from 'node:test'
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { NanoAppProvider } from '@nano-app/frontend';
 import { REQUEST_FAILED } from '@nano-app/core/const';
 import error from '../error';
+import TestApp from './provider';
 import type { ApiError } from '@nano-app/frontend';
 
 const PORT = 4201;
@@ -62,9 +62,9 @@ describe('error', () => {
   afterEach(cleanup);
   beforeEach(() =>
     render(
-      <NanoAppProvider>
+      <TestApp>
         <Errors />
-      </NanoAppProvider>,
+      </TestApp>,
     ),
   );
 
