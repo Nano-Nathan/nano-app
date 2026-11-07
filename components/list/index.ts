@@ -1,11 +1,10 @@
 import { createController } from '@nano-app/frontend';
 import { API_STORE_TYPE } from '@nano-app/core/const';
-import type { Controller } from '@nano-app/frontend';
 import type { ApiResponse, QueryParams } from '@nano-app/core/types/api';
-import type { ListMethods, ListOptions } from '../types/list';
+import type { ListOptions } from '../types/list';
 
 /** A paged and sortable list of a backend path; its state lives at `/list` of its api store */
-export default function list(oOptions: ListOptions): Controller<ListMethods> {
+export default function list(oOptions: ListOptions) {
   const { path, top, store = API_STORE_TYPE } = oOptions;
 
   return createController(({ stores }) => {
