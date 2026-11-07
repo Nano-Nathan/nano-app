@@ -87,7 +87,7 @@ Every option is optional.
 | `mainPlugin` | `{ routesDir: "src/routes" }` | Your routes (`routesDir`, relative to `cwd`), `basePath` (e.g. `/api`, no trailing slash) and database: see [Database](#database). |
 | `plugins` | `[]` | Plugins mounted around your routes, in order: see [Plugins](#plugins). |
 
-`packages` accepts `morgan`, `cors`, `helmet`, `compression`, `rateLimit`, `express` (`express.json` options), `urlencoded` and `betterAuth` (off by default: see [Better Auth](#better-auth)). The merge is **per section**: passing one key keeps the others; pass `false` to disable one.
+`packages` accepts `morgan`, `cors`, `helmet`, `compression`, `express` (`express.json` options), `urlencoded` and `betterAuth` (off by default: see [Better Auth](#better-auth)). The merge is **per section**: passing one key keeps the others; pass `false` to disable one.
 
 `morgan` logs `:timestamp | :method :path :status` by default: `:path` is the path without its query string, so tokens sent there stay out of the logs. Set `format` with `:url` to log the full URL.
 
@@ -96,14 +96,13 @@ createNanoApp({
   packages: {
     cors: { origin: 'https://my-app.com' },
     helmet: false,
-    rateLimit: { windowMs: 60_000, max: 120 },
   },
 });
 ```
 
 ### Client IP
 
-The rate limit and Better Auth count each client by its IP. Behind a proxy (the frontend of `@nano-app/frontend`, nginx, a load balancer, a CDN, Tailscale Funnel), the IP of the request is the proxy's: the client's is the last one the proxies appended to `X-Forwarded-For`.
+The [`rate-limit` plugin](../plugins/README.md) and Better Auth count each client by its IP. Behind a proxy (the frontend of `@nano-app/frontend`, nginx, a load balancer, a CDN, Tailscale Funnel), the IP of the request is the proxy's: the client's is the last one the proxies appended to `X-Forwarded-For`.
 
 By default the backend reads that header only when the request comes from loopback or a private network (`127.0.0.0/8`, `::1`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `fc00::/7`), and takes the last address that is not one of them. A request from a public IP is counted by that IP, whatever header it sends. Better Auth gets the same networks as `advanced.ipAddress.trustedProxies`.
 

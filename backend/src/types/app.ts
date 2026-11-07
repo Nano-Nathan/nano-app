@@ -1,5 +1,4 @@
 import type express from 'express';
-import type { Options } from 'express-rate-limit';
 import type { CorsOptions } from 'cors';
 import type { BetterAuthOptions } from 'better-auth';
 import type { NanoObject } from '@nano-app/core/types/objects';
@@ -23,8 +22,6 @@ export type PackagesConfig = {
   helmet?: boolean;
   /** Compression configuration */
   compression?: boolean;
-  /** Rate-limit configuration */
-  rateLimit?: Partial<Options> | false;
   /** express.json configuration */
   express?: Partial<Parameters<typeof express.json>[0]> | false;
   /** urlencoded configuration */
