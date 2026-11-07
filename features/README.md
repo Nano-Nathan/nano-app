@@ -4,8 +4,7 @@ Planned work on this repository, one file per feature. A file says what the feat
 
 | Feature | Done when | Depends on |
 |---|---|---|
-| [typed-paths](typed-paths.md) | A mistyped store path or injected resource does not compile | — |
-| [example-app](example-app.md) | An app built on the published packages builds its images | typed-paths |
+| [example-app](example-app.md) | An app built on the published packages builds its images | — |
 | [components-next](components-next.md) | `form` and `auth` are released and the test app renders them | — |
 | [image-contract](image-contract.md) | The image contract is written and the example app meets it | example-app |
 | [create-nano-app](create-nano-app.md) | A generated app starts, migrates and builds its images | example-app |

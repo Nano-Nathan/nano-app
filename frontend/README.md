@@ -276,5 +276,5 @@ The `backend` store declares `auth: '/api/auth'`: the backend has Better Auth wi
 - The browser never talks to the backend: only the Next server does, and the backend URL never reaches the client bundle.
 - The frontend has no credential of its own and does not depend on any backend plugin. What the backend exposes and how it is protected is decided in the backend.
 - No `glob` or `jiti` in the client bundle, and no generated files in `node_modules`: build data goes through Next's `env`.
-- Rejected, not coming back: `useStore`, `createComponent`, `StoreManager`, controllers as classes, a `set` guard during render, a static (server) mode of the creator.
+- Rejected, not coming back: typed store paths (a store's state changes with the app's flow), `useStore`, `createComponent`, `StoreManager`, controllers as classes, a `set` guard during render, a static (server) mode of the creator.
 - Not yet, until real controllers ask for it: `onInit`/`onExit` in the controller, inheritance between controllers, a debounce of the framework, dropping old reads, reading what other users change, `PATCH`, the React Compiler.
