@@ -25,7 +25,7 @@ const oBackend = createServer((_oReq, oRes) => {
 const Select = field().bindView(({ options, load }) => (
   <button onClick={() => load()}>
     {options()
-      .map(oOption => `${oOption.key}:${oOption.label}`)
+      .map(oRole => `${oRole.id}:${oRole.name}`)
       .join(',')}
   </button>
 ));
@@ -160,10 +160,7 @@ describe('field', () => {
 
   test('options are the items of their path, read by load', async () => {
     // Renders a select of roles: without a read it has none
-    const oRole: FormField = {
-      name: 'role',
-      options: { path: '/roles', key: 'id', label: 'name' },
-    };
+    const oRole: FormField = { name: 'role', options: { path: '/roles' } };
     render(
       <NanoAppProvider>
         <Select form="user" field={oRole} />

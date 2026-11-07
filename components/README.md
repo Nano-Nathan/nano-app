@@ -95,7 +95,7 @@ export default field().bindView(({ props: { field: oField }, value, error, chang
 - A field is `{ name, type, required, errorMessage, validate, format, parse, options }`; its other keys (`label`, `disabled`) pass as is to its view.
 - `change(value)` keeps the value at `/form/<form>/values/<name>` as the view gives it (a text, a boolean, the ISO day of a date input), a `number` field as a number when its text is that number as is (`'12'`, while `'1.'` stays a text), and validates the field: `required` (a value missing or `''`), then `type` `email` and `number` when there is a value, then the field's `validate(value, values)`, which receives the values of its form and returns the message or `undefined`. `error()` gives the message of the first rule it breaks.
 - `parse(input)` replaces what `change` keeps, and `format(value)` what `value()` gives: a price kept as `1234` and shown as `$1.234`.
-- A select takes `options: { path, key, label, store }` (`store` is `'api'` by default): `load()` reads `path` from the backend and `options()` gives its items as `{ key, label }`, from their keys `key` and `label`.
+- A select takes `options: { path, store }` (`store` is `'api'` by default): `load()` reads `path` from the backend and `options()` gives its items as the backend gave them, for the view to take the keys it shows.
 - The default rules answer `Required`, `Invalid email` or `Invalid number`; `errorMessage` replaces them for that field.
 - The browser validates native inputs (`type="email"`, `required`) and shows its own bubbles. To show only the field's messages, put `noValidate` on the `<form>` of the view.
 

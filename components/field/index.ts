@@ -53,11 +53,8 @@ export default function field() {
         stores.app.set(sValue, parse(oField, oInput));
         stores.app.set(sError, validate(oField, stores.app.get(sValues)));
       },
-      options: () => {
-        // The items kept for the path of its options, as a key and a label each
-        const aItems: NanoObject[] = (options && oApi?.get(options.path)?.result) ?? [];
-        return aItems.map(oItem => ({ key: oItem[options.key], label: oItem[options.label] }));
-      },
+      // The items kept for the path of its options, as the backend gave them
+      options: (): NanoObject[] => (options && oApi?.get(options.path)?.result) ?? [],
       // Reads the items of its options from the backend
       load: async () => options && oApi?.read(options.path),
     };
