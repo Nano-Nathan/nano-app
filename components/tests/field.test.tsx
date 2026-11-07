@@ -9,7 +9,7 @@ import field from '../field';
 import type { FormField } from '../types/form';
 
 // View of a field: a text input with its error
-const Input = field.bindView(({ props: { field: oField }, value, error, change }) => (
+const Input = field().bindView(({ props: { field: oField }, value, error, change }) => (
   <label>
     <input
       aria-label={oField.name}

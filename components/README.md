@@ -49,7 +49,7 @@ export default list({ path: '/users', top: 20 }).bindView(
 | Component | Import | Options | The view receives |
 |---|---|---|---|
 | `auth` | `import auth from '@nano-app/components/auth'` | `kind` (default `'email'`), `store` (default `'api'`) | `signIn(body)`, `signUp(body)`, `signOut()`, `load()`, `navTo(url)`; in the store: `/session` |
-| `field` | `import field from '@nano-app/components/field'` | — (a controller, not a function) | `value()`, `error()`, `change(value)`; props `form`, `field`; in `app`: `/form/<form>/values`, `/form/<form>/errors` |
+| `field` | `import field from '@nano-app/components/field'` | — | `value()`, `error()`, `change(value)`; props `form`, `field`; in `app`: `/form/<form>/values`, `/form/<form>/errors` |
 | `error` | `import error from '@nano-app/components/error'` | — | `items()`, `remove(index)`, `clear()`, `last()`, `dismiss()` |
 | `list` | `import list from '@nano-app/components/list'` | `path`, `top`, `store` (default `'api'`) | `load()`, `items()`, `next()`, `prev()`, `sort(field)`; in the store: `/list/page` (from 0, `undefined` until it moves), `/list/orderby` |
 
@@ -75,7 +75,7 @@ export default authController.bindView(({ signOut, navTo }) => {
 
 ```tsx
 // src/components/Input.tsx: an input of the field's type with its error
-export default field.bindView(({ props: { field: oField }, value, error, change }) => (
+export default field().bindView(({ props: { field: oField }, value, error, change }) => (
   <label>
     {oField.label}
     <input type={oField.type} value={value() ?? ''} onChange={oEvent => change(oEvent.target.value)} />
