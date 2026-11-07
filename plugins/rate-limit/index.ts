@@ -13,16 +13,16 @@ export default createPlugin(
       message = 'Too many requests, please try again later.',
     } = options ?? {};
 
-    /** Tokens of a bucket at a time, refilled since its last request up to the capacity */
-    const refill = (oBucket: Bucket, iNow: number): number =>
-      Math.min(capacity, oBucket.iTokens + ((iNow - oBucket.iTime) / 1000) * refillPerSecond);
-
     return {
       name: 'rate-limit',
       routesDir: '',
       stage: 'before',
       callbacks: {
         onMount: async oApp => {
+          // Tokens of a bucket at a time, refilled since its last request up to the capacity
+          const fnRefill = (oBucket: Bucket, iNow: number): number =>
+            Math.min(capacity, oBucket.iTokens + ((iNow - oBucket.iTime) / 1000) * refillPerSecond);
+
           // Buckets by client IP: a client with none has a full one
           const oBuckets = new Map<string, Bucket>();
 
@@ -30,7 +30,7 @@ export default createPlugin(
           setInterval(() => {
             const iNow = Date.now();
             for (const [sIp, oBucket] of oBuckets) {
-              if (refill(oBucket, iNow) >= capacity) oBuckets.delete(sIp);
+              if (fnRefill(oBucket, iNow) >= capacity) oBuckets.delete(sIp);
             }
           }, 60_000).unref();
 
@@ -39,7 +39,7 @@ export default createPlugin(
             // Refills the client's bucket
             const sIp = oReq.ip ?? '';
             const iNow = Date.now();
-            const iTokens = refill(oBuckets.get(sIp) ?? { iTokens: capacity, iTime: iNow }, iNow);
+            const iTokens = fnRefill(oBuckets.get(sIp) ?? { iTokens: capacity, iTime: iNow }, iNow);
 
             // Without a token: 429, with the seconds until the next one
             if (iTokens < 1) {
