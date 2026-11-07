@@ -1,12 +1,11 @@
 // First: Testing Library needs the DOM when it loads
 import './dom';
-import './env/field';
 import { test, describe, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { NanoAppProvider } from '@nano-app/frontend';
 import field from '../field';
-import type { FormField } from '../types/form';
+import type { FormField } from '../types/field';
 
 // View of a field: a text input with its error
 const Input = field().bindView(({ props: { field: oField }, value, error, change }) => (
