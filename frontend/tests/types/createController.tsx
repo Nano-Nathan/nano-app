@@ -42,6 +42,13 @@ oController
     return null;
   });
 
+oController.extend(() => ({
+  twice(): number {
+    // @ts-expect-error an extension reaches the controller's methods with `this`, with their types
+    return this.inc('x');
+  },
+}));
+
 oController
   .extend(() => ({
     inc(sText: string): string {

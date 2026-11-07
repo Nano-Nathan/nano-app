@@ -56,15 +56,15 @@ export default list({ path: '/users', top: 20 }).bindView(
 export default auth();
 
 // src/components/Logout.tsx
-export default authController.bindView(({ signOut, navTo }) => {
-  // Signs out and goes to the login
-  const fnSignOut = async () => {
-    const oResponse = await signOut();
-    if (oResponse?.success) navTo('/login');
-  };
-
-  return <button onClick={fnSignOut}>sign out</button>;
-});
+export default authController
+  .extend(() => ({
+    async logout(): Promise<void> {
+      // Signs out and goes to the login
+      const oResponse = await this.signOut();
+      if (oResponse?.success) this.navTo('/login');
+    },
+  }))
+  .bindView(({ logout }) => <button onClick={logout}>sign out</button>);
 ```
 
 `form()` builds a form from a config of fields. Write one view per field type with `field()`, give them to one `form()` in `components`, and bind one view of the form: every form is then a config, `<Form name="event" fields={EVENT_FIELDS} onSubmit={…} />`.
