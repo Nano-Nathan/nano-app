@@ -45,7 +45,7 @@ export default list({ path: '/users', top: 20 }).bindView(
 |---|---|---|---|
 | `auth` | `import auth from '@nano-app/components/auth'` | `kind` (default `'email'`), `store` (default `'api'`) | `signIn(body)`, `signUp(body)`, `signOut()`, `load()`, `navTo(url)`; in the store: `/session` |
 | `field` | `import field from '@nano-app/components/field'` | — | `value()`, `error()`, `change(value)`, `options()`, `parse(input)`, `validate(values)`; props `form`, `field`; in `app`: `/form/<form>/values`, `/form/<form>/errors` |
-| `form` | `import form from '@nano-app/components/form'` | `components` | `fields()`, `submit(event)`, `reset()`; props `name`, `fields`, `onSubmit`; in `app`: `/form/<name>` |
+| `form` | `import form from '@nano-app/components/form'` | `components` | `fields()`, `submit(event)`, `reset()`; `onSubmit(values)`, set with `extend`; props `name`, `fields`; in `app`: `/form/<name>` |
 | `error` | `import error from '@nano-app/components/error'` | — | `items()`, `remove(index)`, `clear()`, `last()`, `dismiss()` |
 | `list` | `import list from '@nano-app/components/list'` | `path`, `top`, `store` (default `'api'`) | `load()`, `items()`, `page()`, `query()`, `goTo(page)`, `next()`, `prev()`, `sort(field)`; in the store: `/list/page` (from 0, `undefined` until it moves), `/list/orderby` |
 
@@ -94,11 +94,23 @@ export default field().bindView(({ props: { field: oField }, value, error, chang
 - The default rules answer `Required`, `Invalid email` or `Invalid number`; `errorMessage` replaces them for that field.
 - The browser validates native inputs (`type="email"`, `required`) and shows its own bubbles. To show only the field's messages, put `noValidate` on the `<form>` of the view.
 
-`form({ components })` renders a form from a config of fields: `components` gives the view of each field type, and the view of the form gets the props `name` (its name) and `fields` (the configs of its fields). `fields()` gives the view of each field, in their order, with the props `form` and `field`: the view of its `type`, or the one of `text` when its type has none. A field with no view and no `text` stops the render with an error. `submit(event)` stops the browser's submit, validates every field of `fields` (also the untouched ones) and keeps their messages at `/form/<name>/errors`; when none breaks a rule it calls the prop `onSubmit(values)` with the values kept and returns what it returns, otherwise `undefined`. `reset()` empties the values and the errors.
+`form({ components })` renders a form from a config of fields: `components` gives the view of each field type, and the view of the form gets the props `name` (its name) and `fields` (the configs of its fields). `fields()` gives the view of each field, in their order, with the props `form` and `field`: the view of its `type`, or the one of `text` when its type has none. A field with no view and no `text` stops the render with an error. `submit(event)` stops the browser's submit, validates every field of `fields` (also the untouched ones) and keeps their messages at `/form/<name>/errors`; when none breaks a rule it calls `this.onSubmit(values)` with the values kept and returns what it returns, otherwise `undefined`. Each form sets its `onSubmit` with `extend`, so the view only renders: without one, `submit` fails with the fix. `reset()` empties the values and the errors.
 
 ```tsx
+// src/controllers/signUp.controller.ts: signs up with the values and goes home
+export default form({ components: { text: Input, select: Select } }).extend(
+  ({ stores, router }) => ({
+    async onSubmit(oValues: NanoObject): Promise<ApiResponse | undefined> {
+      // Signs up, and goes home when it worked
+      const oResponse = await stores.api.signUp('email', oValues);
+      if (oResponse?.success) router.push('/');
+      return oResponse;
+    },
+  }),
+);
+
 // src/components/SignUp.tsx
-export default form({ components: { text: Input, select: Select } }).bindView(
+export default signUpController.bindView(
   ({ fields, submit, reset }) => (
     <form noValidate onSubmit={submit}>
       {fields()}
@@ -110,11 +122,7 @@ export default form({ components: { text: Input, select: Select } }).bindView(
   ),
 );
 
-<SignUp
-  name="signUp"
-  fields={[{ name: 'email', type: 'email', required: true }]}
-  onSubmit={oValues => signUp(oValues)}
-/>
+<SignUp name="signUp" fields={[{ name: 'email', type: 'email', required: true }]} />
 ```
 
 `error()` gathers the `/error/list` of every api store: `items()` gives all the errors (the `ApiResponse` of each failed request with its `timestamp`) from the newest, `remove(index)` removes the one at that index of `items()` from its store and `clear()` empties them all: a panel of errors uses them. `last()` gives the newest one and `dismiss()` removes it: an alert uses them.

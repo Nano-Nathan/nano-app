@@ -47,8 +47,16 @@ const Field = field().bindView(({ props: { field: oField }, value, error, change
 const aSent: NanoObject[] = [];
 const aReturned: unknown[] = [];
 
+// Controller of the login: its onSubmit keeps the values and answers `sent`
+const loginController = form({ components: { text: Field } }).extend(() => ({
+  onSubmit(oValues: NanoObject): string {
+    aSent.push(oValues);
+    return 'sent';
+  },
+}));
+
 // View of the login: its fields, a submit that keeps what it returns, and a reset
-const Login = form({ components: { text: Field } }).bindView(({ fields, submit, reset }) => (
+const Login = loginController.bindView(({ fields, submit, reset }) => (
   <form onSubmit={oEvent => aReturned.push(submit(oEvent))}>
     {fields()}
     <button>send</button>
@@ -58,18 +66,11 @@ const Login = form({ components: { text: Field } }).bindView(({ fields, submit, 
   </form>
 ));
 
-/** Renders the login, whose onSubmit keeps the values and answers `sent` */
+/** Renders the login inside the provider */
 function renderLogin(): void {
   render(
     <TestApp>
-      <Login
-        name="login"
-        fields={LOGIN}
-        onSubmit={(oValues: NanoObject) => {
-          aSent.push(oValues);
-          return 'sent';
-        }}
-      />
+      <Login name="login" fields={LOGIN} />
     </TestApp>,
   );
 }
@@ -141,7 +142,7 @@ describe('form', () => {
     assert.deepEqual(aReturned, [undefined]);
   });
 
-  test('submit sends the kept values and returns what onSubmit returns', () => {
+  test('submit sends the kept values to onSubmit and returns what it returns', () => {
     // Types both fields and submits
     renderLogin();
     type('email', 'ana@mail.com');
@@ -163,5 +164,37 @@ describe('form', () => {
     // The inputs are empty and no field shows an error
     assert.equal(screen.getByLabelText<HTMLInputElement>('age').value, '');
     assert.equal(errorOf('email'), 'email: ok');
+  });
+
+  test('submit fails with the fix when the form has no onSubmit', () => {
+    // A form without its own onSubmit, whose view calls submit when its button is clicked
+    const Plain = form({ components: { text: Field } }).bindView(({ fields, submit }) => (
+      <form>
+        {fields()}
+        <button type="button" onClick={submit}>
+          send
+        </button>
+      </form>
+    ));
+    render(
+      <TestApp>
+        <Plain name="plain" fields={[{ name: 'nick' }]} />
+      </TestApp>,
+    );
+
+    // Clicks it, keeping the error the browser reports
+    const aReported: string[] = [];
+    const fnReport = (oEvent: ErrorEvent) => {
+      oEvent.preventDefault();
+      aReported.push(oEvent.error.message);
+    };
+    window.addEventListener('error', fnReport);
+    fireEvent.click(screen.getByText('send'));
+    window.removeEventListener('error', fnReport);
+
+    // Its submit threw the fix
+    assert.deepEqual(aReported, [
+      '[nano-app] [ERROR] Form "plain": it has no onSubmit. Add it: form({ components }).extend(() => ({ onSubmit(values) { … } })).',
+    ]);
   });
 });
