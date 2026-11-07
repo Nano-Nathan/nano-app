@@ -18,8 +18,12 @@ function renderApp(oNode: ReactNode): void {
 let iRenders = 0;
 
 const counterController = createController(({ props, stores: { app } }) => ({
-  increment: () => app.set('/iCount', app.get('/iCount') + 1),
-  update: (iValue: number) => {
+  increment(): void {
+    // Adds one
+    app.set('/iCount', app.get('/iCount') + 1);
+  },
+  update(iValue: number): void {
+    // Adds the value and keeps who added it
     app.set('/iCount', app.get('/iCount') + iValue);
     app.set('/sReason', `${props.sName} ${iValue}`);
   },
@@ -71,7 +75,10 @@ describe('createController', () => {
   test('several writes in one method render once, and other paths render nothing', () => {
     // Renders the counter next to a view that writes a path the counter does not read
     const Toggle = createController(({ stores: { ui } }) => ({
-      toggle: () => ui.set('/isOpen', !ui.get('/isOpen')),
+      toggle(): void {
+        // Opens or closes
+        ui.set('/isOpen', !ui.get('/isOpen'));
+      },
     })).bindView(({ toggle }) => <button onClick={toggle}>toggle</button>);
     renderApp(
       <>
@@ -92,8 +99,14 @@ describe('createController', () => {
     // Extends the counter with a method on the context and one that replaces `increment`
     const Extended = counterController
       .extend(({ props, stores: { app } }) => ({
-        increment: () => app.set('/iCount', app.get('/iCount') + 10),
-        sayHi: () => `hi ${props.sName}`,
+        increment(): void {
+          // Adds ten
+          app.set('/iCount', app.get('/iCount') + 10);
+        },
+        sayHi(): string {
+          // Greets the name of the props
+          return `hi ${props.sName}`;
+        },
       }))
       .bindView(({ props, stores: { app }, increment, update, sayHi }) => (
         <div>
@@ -121,7 +134,10 @@ describe('createController', () => {
     // A controller that logs its mount, extended with another log
     const mountController = createController(({ props, stores: { app } }) => ({
       callbacks: {
-        onMount: () => app.set('/sLog', `${app.get('/sLog') ?? ''}${props.sName}`),
+        onMount(): void {
+          // Logs the name of the props
+          app.set('/sLog', `${app.get('/sLog') ?? ''}${props.sName}`);
+        },
       },
     }));
     const Mounted = mountController.bindView(({ stores: { app } }) => (
@@ -129,7 +145,12 @@ describe('createController', () => {
     ));
     const Extended = mountController
       .extend(({ stores: { app } }) => ({
-        callbacks: { onMount: () => app.set('/sLog', `${app.get('/sLog')}+`) },
+        callbacks: {
+          onMount(): void {
+            // Logs a mark
+            app.set('/sLog', `${app.get('/sLog')}+`);
+          },
+        },
       }))
       .bindView(() => null);
 
@@ -158,7 +179,9 @@ describe('createController', () => {
     const Items = itemsController.bindView(fnView);
     const Extended = itemsController
       .extend(() => ({
-        items: () => ['c', 'd'],
+        items(): string[] {
+          return ['c', 'd'];
+        },
       }))
       .bindView(fnView);
 

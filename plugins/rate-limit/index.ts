@@ -15,8 +15,8 @@ export default createPlugin(
 
     return {
       name: 'rate-limit',
-      routesDir: '',
       stage: 'before',
+      routesDir: '',
       callbacks: {
         onMount: async oApp => {
           // Tokens of a bucket at a time, refilled since its last request up to the capacity
