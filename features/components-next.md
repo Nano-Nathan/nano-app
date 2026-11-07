@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: review
 owner: projects-thread
 depends_on: []
 updated: 2026-11-07
@@ -54,3 +54,4 @@ Styles, markup or any UI kit.
 - 2026-11-07 · projects-thread · `field-rules` merged (#100). `form-render` agreed: `form({ components })` without `messages`, props `name` and `fields`, and `fields()` throws the error of a field with no view and no `text` when it renders (the maintainer: the logic stays in the methods).
 - 2026-11-07 · projects-thread · `form-render` merged (#102). `form-submit` agreed: `onSubmit` is a prop of each use, given by a method of the controller of the page, as personal-app's `LoginController` gives `AppForm` its `submit` (the maintainer chose it over an `onSubmit` set with `extend` on each form, which would be a controller per form and could not use `auth`'s methods), and `submit(event)` returns what it returns (`undefined` when a field breaks a rule); `reset()` empties `/form/<name>`.
 - 2026-11-07 · projects-thread · `form-submit` merged (#103). `login` agreed: the test app's login is `auth` extended with `onSubmit(values)` (`signIn`, then `navTo('/private')`), which its view passes to a `Form` of `form({ components: { text: Input } })`.
+- 2026-11-07 · projects-thread · `login` merged (#106) and `feat/components-form` merged to `main` (#62): `form`, `field` and `auth` are in `main` and the test app renders them with its own views. This pull request releases `@nano-app/frontend` 0.7 (`callbacks`, `router` and `this` in `extend`, which `components` needs) and `@nano-app/components` with them.

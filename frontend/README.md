@@ -64,7 +64,7 @@ Each store reads and writes by path: `app.get('/drawer/isOpen')`, `app.set('/dra
 
 ## Controllers and views
 
-A controller holds the methods; a view binds to one controller and gets its methods, the props, the stores and `router` (Next's `useRouter()`, to navigate without hooks). Several views can bind to the same controller.
+A controller holds the methods; a view binds to one controller and gets its methods, the props, the stores and `router` (since 0.7, Next's `useRouter()`, to navigate without hooks). Several views can bind to the same controller.
 
 ```ts
 // src/controllers/counter.controller.ts
@@ -93,7 +93,7 @@ export default counterController.bindView(({ stores: { app }, increment }) => (
 - A method named `props`, `stores` or `router` is hidden by the context of the same name.
 - Before its `return`, the function only keeps what it reads from the context (`const oApi = stores.backend;`). A method reaches the others with `this` (`last() { return this.items()[0]; }`), also when the view calls it alone; `this` needs the method syntax, not an arrow. `onMount` gets the same `this`.
 
-`callbacks`, first in that object, is not a method: `onMount` runs once when each bound view mounts (never on the server), to read what the view needs. To act when a value changes, the view calls a method from a `useEffect` with that value as its dependency (see [Sessions](#sessions)); the logic stays in the method.
+`callbacks` (since 0.7), first in that object, is not a method: `onMount` runs once when each bound view mounts (never on the server), to read what the view needs. To act when a value changes, the view calls a method from a `useEffect` with that value as its dependency (see [Sessions](#sessions)); the logic stays in the method.
 
 ```ts
 export default createController(({ stores: { backend } }) => ({
