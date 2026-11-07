@@ -209,6 +209,7 @@ npx prisma migrate dev
 - `createRoute({ public: true, ... })` answers without a session; its handlers still receive `session` when the request has one. An unknown path answers 404.
 - Its own endpoints, the plugins mounted before the app and the middlewares a plugin adds with `app.use` in `onMount` are not checked: a plugin that exposes something public says it in its README.
 - Better Auth is loaded only when it is on.
+- Before 0.14.0 the options went in `packages.betterAuth`: move them to the default export of `src/auth.ts`.
 - nano-app creates the one instance the app uses: do not call `betterAuth()` in `src/auth.ts`. The CLI's `generate` only reads `options` of its default export.
 
 ### Permissions
