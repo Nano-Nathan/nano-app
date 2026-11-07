@@ -108,12 +108,16 @@ export default createController(({ stores: { backend } }) => ({
 }));
 ```
 
-`extend` returns a new controller with your methods merged over its own: a method with the same name replaces the original, the others stay, and the original controller does not change. Both `onMount` run, the original's first. Its methods receive the same context (`props`, `stores`, `router`) as the controller's.
+`extend` returns a new controller with your methods merged over its own: a method with the same name replaces the original, the others stay, and the original controller does not change. Both `onMount` run, the original's first. Its methods receive the same context (`props`, `stores`, `router`) as the controller's, and reach the controller's methods and their own with `this`.
 
 ```ts
 export default counterController.extend(({ stores: { app } }) => ({
   reset(): void {
     app.set('/iCount', 0);
+  },
+  double(): void {
+    this.increment();
+    this.increment();
   },
 }));
 ```
