@@ -144,6 +144,36 @@ describe('createController', () => {
     assert.equal(screen.getByRole('status').textContent, 'ab+');
   });
 
+  test('a method reaches the others with this, also from an extension', () => {
+    // A controller whose last item comes from its items, and an extension with other items
+    const itemsController = createController(() => ({
+      items(): string[] {
+        return ['a', 'b'];
+      },
+      last(): string {
+        return this.items()[1];
+      },
+    }));
+    const fnView = ({ last }: { last: () => string }) => <span>{last()}</span>;
+    const Items = itemsController.bindView(fnView);
+    const Extended = itemsController
+      .extend(() => ({
+        items: () => ['c', 'd'],
+      }))
+      .bindView(fnView);
+
+    // Renders both: each view calls last alone
+    renderApp(
+      <>
+        <Items />
+        <Extended />
+      </>,
+    );
+
+    assert.ok(screen.getByText('b'));
+    assert.ok(screen.getByText('d'));
+  });
+
   test('a view without NanoAppProvider fails with the fix', () => {
     // Renders outside the provider
     assert.throws(() => render(<Counter />), { message: MISSING_PROVIDER });
