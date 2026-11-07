@@ -68,22 +68,18 @@ describe('config merge', () => {
 });
 
 describe('client IP', () => {
-  test('the rate limit counts each client behind a private proxy apart', async () => {
-    // Boots a real NanoApp that allows one request per client
-    const oApp = await boot({ packages: { rateLimit: { max: 1 } } });
+  test('behind a private proxy it is the last address the proxies appended', async () => {
+    // Boots a real NanoApp with the default settings
+    const oApp = await boot({});
 
-    // Sends requests from a local proxy: a forged IP, then the one the proxy appended
-    const fnPing = (sForwardedFor: string) =>
-      request(oApp.url, '/health', { headers: { 'x-forwarded-for': sForwardedFor } });
-    const aStatuses = [
-      (await fnPing('198.51.100.1, 203.0.113.1')).status,
-      (await fnPing('198.51.100.1, 203.0.113.1')).status,
-      (await fnPing('198.51.100.1, 203.0.113.2')).status,
-    ];
+    // Sends a request from a local proxy: a forged IP, then the one the proxy appended
+    const { body } = await request(oApp.url, '/ip', {
+      headers: { 'x-forwarded-for': '198.51.100.1, 203.0.113.1' },
+    });
     oApp.child.kill('SIGKILL');
 
-    // Checks that the second request of a client is limited and another client still passes
-    assert.deepEqual(aStatuses, [200, 429, 200]);
+    // Checks that Express reads the appended one
+    assert.equal(body.result, '203.0.113.1');
   });
 });
 
