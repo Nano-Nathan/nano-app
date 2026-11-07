@@ -6,15 +6,20 @@ import type { AuthOptions } from '../types/auth';
 export default function auth(oOptions: AuthOptions = {}) {
   const { kind = 'email', store = API_STORE_TYPE } = oOptions;
 
-  return createController(({ stores, router }) => ({
-    // Better Auth's sign-in and sign-up of the kind of the options, its sign-out and its session
-    signIn: async (oBody: unknown) => stores[store]?.signIn(kind, oBody),
-    signUp: async (oBody: unknown) => stores[store]?.signUp(kind, oBody),
-    signOut: async () => stores[store]?.signOut(),
-    load: async () => stores[store]?.readSession(),
-    // Goes to a url of the app
-    navTo: (sUrl: string) => router.push(sUrl),
-    // Reads the session when the view mounts
-    callbacks: { onMount: () => stores[store]?.readSession() },
-  }));
+  return createController(({ stores, router }) => {
+    // Takes the api store of the options
+    const oApi = stores[store];
+
+    return {
+      // Better Auth's sign-in and sign-up of the kind of the options, its sign-out and its session
+      signIn: async (oBody: unknown) => oApi?.signIn(kind, oBody),
+      signUp: async (oBody: unknown) => oApi?.signUp(kind, oBody),
+      signOut: async () => oApi?.signOut(),
+      load: async () => oApi?.readSession(),
+      // Goes to a url of the app
+      navTo: (sUrl: string) => router.push(sUrl),
+      // Reads the session when the view mounts
+      callbacks: { onMount: () => oApi?.readSession() },
+    };
+  });
 }
