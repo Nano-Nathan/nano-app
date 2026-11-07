@@ -50,7 +50,7 @@ export default list({ path: '/users', top: 20 }).bindView(
 | Component | Import | Options | The view receives |
 |---|---|---|---|
 | `auth` | `import auth from '@nano-app/components/auth'` | `kind` (default `'email'`), `store` (default `'api'`) | `signIn(body)`, `signUp(body)`, `signOut()`, `load()`, `navTo(url)`; in the store: `/session` |
-| `field` | `import field from '@nano-app/components/field'` | — | `value()`, `error()`, `change(value)`; props `form`, `field`; in `app`: `/form/<form>/values`, `/form/<form>/errors` |
+| `field` | `import field from '@nano-app/components/field'` | — | `value()`, `error()`, `change(value)`, `options()`, `load()`; props `form`, `field`; in `app`: `/form/<form>/values`, `/form/<form>/errors` |
 | `error` | `import error from '@nano-app/components/error'` | — | `items()`, `remove(index)`, `clear()`, `last()`, `dismiss()` |
 | `list` | `import list from '@nano-app/components/list'` | `path`, `top`, `store` (default `'api'`) | `load()`, `items()`, `next()`, `prev()`, `sort(field)`; in the store: `/list/page` (from 0, `undefined` until it moves), `/list/orderby` |
 
@@ -79,7 +79,12 @@ export default authController.bindView(({ signOut, navTo }) => {
 export default field().bindView(({ props: { field: oField }, value, error, change }) => (
   <label>
     {oField.label}
-    <input type={oField.type} value={value() ?? ''} onChange={oEvent => change(oEvent.target.value)} />
+    <input
+      type={oField.type ?? 'text'}
+      disabled={oField.disabled}
+      value={value() ?? ''}
+      onChange={oEvent => change(oEvent.target.value)}
+    />
     <small>{error()}</small>
   </label>
 ));
@@ -87,8 +92,10 @@ export default field().bindView(({ props: { field: oField }, value, error, chang
 <Input form="signUp" field={{ name: 'email', label: 'Email', type: 'email', required: true }} />
 ```
 
-- A field is `{ name, type, required, errorMessage, validate }`; its other keys (`label`, `options`) pass as is to its view.
-- `change(value)` keeps the value at `/form/<form>/values/<name>` as the view gives it (a text, a `Date`, a boolean) and validates the field: `required` (a value missing or `''`), then `type` `email` and `number` when there is a value, then the field's `validate(value, values)`, which receives the values of its form and returns the message or `undefined`. `error()` gives the message of the first rule it breaks.
+- A field is `{ name, type, required, errorMessage, validate, format, parse, options }`; its other keys (`label`, `disabled`) pass as is to its view.
+- `change(value)` keeps the value at `/form/<form>/values/<name>` as the view gives it (a text, a boolean, the ISO day of a date input), a `number` field as a number when its text is that number as is (`'12'`, while `'1.'` stays a text), and validates the field: `required` (a value missing or `''`), then `type` `email` and `number` when there is a value, then the field's `validate(value, values)`, which receives the values of its form and returns the message or `undefined`. `error()` gives the message of the first rule it breaks.
+- `parse(input)` replaces what `change` keeps, and `format(value)` what `value()` gives: a price kept as `1234` and shown as `$1.234`.
+- A select takes `options: { path, key, label, store }` (`store` is `'api'` by default): `load()` reads `path` from the backend and `options()` gives its items as `{ key, label }`, from their keys `key` and `label`.
 - The default rules answer `Required`, `Invalid email` or `Invalid number`; `errorMessage` replaces them for that field.
 - The browser validates native inputs (`type="email"`, `required`) and shows its own bubbles. To show only the field's messages, put `noValidate` on the `<form>` of the view.
 

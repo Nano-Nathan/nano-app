@@ -32,6 +32,7 @@ Styles, markup or any UI kit.
 | Module | What it does | Depends on |
 |---|---|---|
 | `field` (`feat/components-form--field`) | `field()`: a field view's `value()`, `error()` and `change(value)` at `/form/<form>` of `app`, with the rules `required`, `email`, `number`, the field's `errorMessage` and `validate` | — |
+| `field` defaults (`feat/components-form--field-defaults`) | A `number` field keeps a number; the field's `format` and `parse`; a select's `options()` and `load()` from an api store | `field` |
 | `form` (`feat/components-form--form`) | `form({ components, messages })`: `fields()` renders a view per field type, `submit(event)` validates every field and calls `onSubmit(values)`, `reset()`; the test app's login uses it | `field` |
 
 ## Log
@@ -44,3 +45,4 @@ Styles, markup or any UI kit.
 - 2026-11-07 · projects-thread · The maintainer split `form` into the modules `field` and `form`, one pull request each to `feat/components-form`. The full version stays on `backup/components-form-full`.
 - 2026-11-07 · projects-thread · `field` is a controller, not a function; the default rules stay in it and a field's `errorMessage` replaces their message (no `messages` option). `form` is set aside until `field` is merged.
 - 2026-11-07 · projects-thread · Standard of components (#94): every component is a function that infers the controller it returns, so `field` is `field()` again, without a methods type.
+- 2026-11-07 · projects-thread · `field` merged to `feat/components-form` (#91). Defaults compared with personal-app and agreed: `label` and `disabled` need no code (they pass to the view), a `number` field keeps a number, `date` keeps the ISO day of the input, `format` and `parse` per field (the currency stays in the app), a select's `options: { path, key, label, store }` with `options()` and `load()` like `list`.
