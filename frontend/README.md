@@ -64,7 +64,7 @@ Each store reads and writes by path: `app.get('/drawer/isOpen')`, `app.set('/dra
 
 ## Controllers and views
 
-A controller holds the methods; a view binds to one controller and gets its methods, the props and the stores. Several views can bind to the same controller.
+A controller holds the methods; a view binds to one controller and gets its methods, the props, the stores and `router` (Next's `useRouter()`, to navigate without hooks). Several views can bind to the same controller.
 
 ```ts
 // src/controllers/counter.controller.ts
@@ -88,9 +88,19 @@ export default counterController.bindView(({ stores: { app }, increment }) => (
 
 - A file that calls `bindView` needs `'use client'`. A component without stores or methods is a plain React function and can stay a server component.
 - The view re-renders only when a store path it read changes.
-- A method named `props` or `stores` is hidden by the context of the same name.
+- A method named `props`, `stores` or `router` is hidden by the context of the same name.
+- Before its `return`, the function only keeps what it reads from the context (`const oApi = stores.backend;`). A method reaches the others with `this` (`last() { return this.items()[0]; }`), also when the view calls it alone; `this` needs the method syntax, not an arrow. `onMount` gets the same `this`.
 
-`extend` returns a new controller with your methods merged over its own: a method with the same name replaces the original, the others stay, and the original controller does not change. Its methods receive the same context (`props`, `stores`) as the controller's.
+`callbacks`, first in that object, is not a method: `onMount` runs once when each bound view mounts (never on the server), to read what the view needs.
+
+```ts
+export default createController(({ stores: { backend } }) => ({
+  callbacks: { onMount: () => backend.read('/users') },
+  users: () => backend.get('/users')?.result ?? [],
+}));
+```
+
+`extend` returns a new controller with your methods merged over its own: a method with the same name replaces the original, the others stay, and the original controller does not change. Both `onMount` run, the original's first. Its methods receive the same context (`props`, `stores`, `router`) as the controller's.
 
 ```ts
 export default counterController.extend(({ stores: { app } }) => ({
@@ -98,7 +108,7 @@ export default counterController.extend(({ stores: { app } }) => ({
 }));
 ```
 
-The types of a controller and its views come from `@nano-app/frontend`: `Controller`, `View`, `ComponentContext` (`props` and `stores`) and `ComponentProps`.
+The types of a controller and its views come from `@nano-app/frontend`: `Controller`, `View`, `ComponentContext` (`props`, `stores` and `router`), `ComponentProps` and `ControllerCallbacks`.
 
 ## Backend
 
@@ -126,7 +136,7 @@ An `api` store reads and writes its backend. The controllers read and write; the
 ```ts
 // src/controllers/users.controller.ts
 export default createController(({ stores: { backend } }) => ({
-  load: () => backend.read('/users'),
+  callbacks: { onMount: () => backend.read('/users') },
   add: async (sName: string) => {
     await backend.create('/users', { name: sName });
     return backend.read('/users');
@@ -136,19 +146,13 @@ export default createController(({ stores: { backend } }) => ({
 
 ```tsx
 // src/components/Users.tsx
-export default usersController.bindView(({ stores: { backend }, load, add }) => {
-  useEffect(() => {
-    load();
-  }, []);
-
-  return (
-    <ul onClick={() => add('Bruno')}>
-      {(backend.get('/users')?.result ?? []).map(oUser => (
-        <li key={oUser.id}>{oUser.name}</li>
-      ))}
-    </ul>
-  );
-});
+export default usersController.bindView(({ stores: { backend }, add }) => (
+  <ul onClick={() => add('Bruno')}>
+    {(backend.get('/users')?.result ?? []).map(oUser => (
+      <li key={oUser.id}>{oUser.name}</li>
+    ))}
+  </ul>
+));
 ```
 
 - `read(path, query?)` returns a promise of the `ApiResponse` and keeps it in the store for that path and query, over what the store had there (a field the new answer does not bring stays from the last one). The view gets it with `get(path, query?)`, and renders again when a read keeps a new one.

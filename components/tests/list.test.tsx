@@ -5,9 +5,9 @@ import { test, describe, before, after, beforeEach, afterEach } from 'node:test'
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { NanoAppProvider } from '@nano-app/frontend';
 import { API_STORE_TYPE } from '@nano-app/core/const';
 import list from '../list';
+import TestApp from './provider';
 
 const PORT = 4201;
 
@@ -75,9 +75,9 @@ describe('list', () => {
     // Renders a list of two per page
     const List = list({ path: '/users', top: 2 }).bindView(fnView);
     render(
-      <NanoAppProvider>
+      <TestApp>
         <List />
-      </NanoAppProvider>,
+      </TestApp>,
     );
     fireEvent.click(screen.getByText('load'));
     await expectNames('Ana,Beto');
@@ -97,9 +97,9 @@ describe('list', () => {
     // Renders the list and moves to the second page
     const List = list({ path: '/users', top: 2 }).bindView(fnView);
     render(
-      <NanoAppProvider>
+      <TestApp>
         <List />
-      </NanoAppProvider>,
+      </TestApp>,
     );
     fireEvent.click(screen.getByText('next'));
     await expectNames('Ciro,Dora');
@@ -117,9 +117,9 @@ describe('list', () => {
     // Renders a list of another api store
     const List = list({ path: '/users', top: 1, store: 'admin' }).bindView(fnView);
     render(
-      <NanoAppProvider>
+      <TestApp>
         <List />
-      </NanoAppProvider>,
+      </TestApp>,
     );
     fireEvent.click(screen.getByText('load'));
     await expectNames('Ana');
@@ -127,27 +127,30 @@ describe('list', () => {
     assert.equal(aRequests[0], 'QUERY /api/admin/users {"skip":0,"top":1}');
   });
 
-  test('it asks nothing until a method reads', async () => {
-    // Renders a list without loading it
+  test('reads the first page when the view mounts, and load reads it from the store', async () => {
+    // Renders a list without clicking anything
     const List = list({ path: '/users', top: 1 }).bindView(fnView);
     render(
-      <NanoAppProvider>
+      <TestApp>
         <List />
-      </NanoAppProvider>,
+      </TestApp>,
     );
+    await expectNames('Ana');
+
+    // Loads it again: the store answers without asking
+    fireEvent.click(screen.getByText('load'));
     await act(() => new Promise(fnResolve => setTimeout(fnResolve, 50)));
 
-    assert.equal(screen.getByRole('status').textContent, '');
-    assert.equal(aRequests.length, 0);
+    assert.deepEqual(aRequests, ['QUERY /api/api/users {"skip":0,"top":1}']);
   });
 
   test('without its api store it loads no items and asks nothing', async () => {
     // Renders a list of a store the app does not have
     const List = list({ path: '/users', top: 1, store: 'missing' }).bindView(fnView);
     render(
-      <NanoAppProvider>
+      <TestApp>
         <List />
-      </NanoAppProvider>,
+      </TestApp>,
     );
     fireEvent.click(screen.getByText('load'));
     await act(() => new Promise(fnResolve => setTimeout(fnResolve, 50)));

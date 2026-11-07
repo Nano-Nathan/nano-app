@@ -98,10 +98,10 @@ describe('auth', () => {
     await expectEmail('ana@nano.app');
 
     assert.equal(
-      aRequests[0],
+      aRequests[1],
       'POST /api/api/api/auth/sign-in/username {"email":"ana@nano.app","password":"secret"}',
     );
-    assert.equal(aRequests[1], 'GET /api/api/api/auth/get-session ');
+    assert.equal(aRequests[2], 'GET /api/api/api/auth/get-session ');
   });
 
   test('signUp signs up with email by default, and signOut clears the session', async () => {
@@ -115,24 +115,24 @@ describe('auth', () => {
     fireEvent.click(screen.getByText('sign out'));
     await expectEmail('none');
 
-    assert.match(aRequests[0], /^POST \/api\/api\/api\/auth\/sign-up\/email /);
-    assert.equal(aRequests[2], 'POST /api/api/api/auth/sign-out {}');
+    assert.match(aRequests[1], /^POST \/api\/api\/api\/auth\/sign-up\/email /);
+    assert.equal(aRequests[3], 'POST /api/api/api/auth/sign-out {}');
   });
 
-  test('load reads the session of the api store named in store', async () => {
-    // Renders an auth of another api store and reads its session
+  test('reads the session of the api store named in store when the view mounts', async () => {
+    // Renders an auth of another api store
     const Auth = auth({ store: 'admin' }).bindView(fnView);
     renderApp(<Auth />);
-    fireEvent.click(screen.getByText('load'));
     await waitFor(() => assert.equal(aRequests.length, 1));
 
     assert.equal(aRequests[0], 'GET /api/admin/auth/get-session ');
   });
 
-  test('navTo goes to the url with the router of the app', () => {
-    // Renders an auth and goes to the private page
+  test('navTo goes to the url with the router of the app', async () => {
+    // Renders an auth, waits for its session and goes to the private page
     const Auth = auth().bindView(fnView);
     renderApp(<Auth />);
+    await waitFor(() => assert.equal(aRequests.length, 1));
     fireEvent.click(screen.getByText('go'));
 
     assert.deepEqual(aVisited, ['/private']);

@@ -7,8 +7,8 @@ import { createServer } from 'node:http';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { REQUEST_FAILED } from '@nano-app/core/const';
 import createController from '../src/creators/createController';
-import { NanoAppProvider } from '../src/react/NanoAppProvider';
 import { count } from './helpers';
+import TestApp from './provider';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { ApiError } from '../src/types/store';
 
@@ -66,9 +66,9 @@ function renderStores(): NanoObject {
     return {};
   }).bindView(() => null);
   render(
-    <NanoAppProvider>
+    <TestApp>
       <Grab />
-    </NanoAppProvider>,
+    </TestApp>,
   );
   return oStores;
 }
@@ -104,9 +104,9 @@ describe('api store', () => {
       </div>
     ));
     render(
-      <NanoAppProvider>
+      <TestApp>
         <List />
-      </NanoAppProvider>,
+      </TestApp>,
     );
     fireEvent.click(screen.getByText('load'));
 
