@@ -26,9 +26,10 @@ export type PackagesConfig = {
   express?: Partial<Parameters<typeof express.json>[0]> | false;
   /** urlencoded configuration */
   urlencoded?: Partial<Parameters<typeof express.urlencoded>[0]> | false;
-  /** Better Auth options, without `database`: it uses the app's Prisma client. Defaults to false */
-  betterAuth?: Omit<BetterAuthOptions, 'database'> | false;
 };
+
+/** Better Auth options of `src/auth.ts`, without `database`: it uses the app's Prisma client */
+export type AuthOptions = Omit<BetterAuthOptions, 'database'>;
 
 /** Error shape thrown by the consumer handlers */
 export type HandlerError = {

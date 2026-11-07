@@ -87,7 +87,7 @@ Every option is optional.
 | `mainPlugin` | `{ routesDir: "src/routes" }` | Your routes (`routesDir`, relative to `cwd`), `basePath` (e.g. `/api`, no trailing slash) and database: see [Database](#database). |
 | `plugins` | `[]` | Plugins mounted around your routes, in order: see [Plugins](#plugins). |
 
-`packages` accepts `morgan`, `cors`, `helmet`, `compression`, `express` (`express.json` options), `urlencoded` and `betterAuth` (off by default: see [Better Auth](#better-auth)). The merge is **per section**: passing one key keeps the others; pass `false` to disable one.
+`packages` accepts `morgan`, `cors`, `helmet`, `compression`, `express` (`express.json` options) and `urlencoded`. The merge is **per section**: passing one key keeps the others; pass `false` to disable one.
 
 `morgan` logs `:timestamp | :method :path :status` by default: `:path` is the path without its query string, so tokens sent there stay out of the logs. Set `format` with `:url` to log the full URL.
 
@@ -166,14 +166,14 @@ export default createRoute<PrismaClient>({
 
 ## Better Auth
 
-Users, sign-in and sessions with [Better Auth](https://www.better-auth.com), on your database. Off until `packages.betterAuth` gets its options (everything but `database`: nano-app passes your Prisma client).
+Users, sign-in and sessions with [Better Auth](https://www.better-auth.com), on your database. On when your app has `src/auth.ts` (or the built `src/auth.js`), relative to `cwd`: its default export holds the options in `options` (everything but `database`: nano-app passes your Prisma client). Without the file it stays off.
 
 ```bash
 pnpm add better-auth
 ```
 
 ```ts
-// src/auth.ts: the options; nano-app creates the instance, the Better Auth CLI reads `options`
+// src/auth.ts: nano-app and the Better Auth CLI read `options`
 import type { BetterAuthOptions } from 'better-auth';
 
 export default {
@@ -184,22 +184,18 @@ export default {
 ```ts
 // src/app.ts
 import { createNanoApp } from '@nano-app/backend';
-import auth from './auth';
 
-createNanoApp({
-  packages: { betterAuth: auth.options },
-  mainPlugin: { database: { enabled: true } },
-});
+createNanoApp({ mainPlugin: { database: { enabled: true } } });
 ```
 
 Its tables are yours, like the rest of your schema. Add its models with its CLI, then apply them with Prisma; run both again when you change the options:
 
 ```bash
-npx auth generate --config src/auth.ts --adapter prisma --dialect postgresql --output src/prisma/schema.prisma
+npx auth generate --adapter prisma --dialect postgresql --output src/prisma/schema.prisma
 npx prisma migrate dev
 ```
 
-- It needs the database: `packages.betterAuth` without `mainPlugin.database.enabled` fails at startup.
+- It needs the database: `src/auth.ts` without `mainPlugin.database.enabled` fails at startup, and so does a file without `options`.
 - Startup also fails if your schema lacks a model the options need (`user`, `session`, ...), naming them.
 - Its endpoints are mounted with your routes, at its `basePath` (default `/api/auth`), and stay public.
 - In production, Better Auth limits sign-in, sign-up and password reset to a few attempts per client IP (its `rateLimit`): see [Client IP](#client-ip).
