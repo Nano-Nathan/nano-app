@@ -73,4 +73,32 @@ describe('withNanoApp', () => {
       process.chdir(sCwd);
     }
   });
+
+  test('every page gets the security headers, and the app can replace them', async () => {
+    // Runs from an app with its own X-Frame-Options on /embed
+    const sCwd = process.cwd();
+    process.chdir(fileURLToPath(new URL('./fixtures/app', import.meta.url)));
+
+    try {
+      const oConfig = await withNanoApp({
+        headers: async () => [
+          { source: '/embed', headers: [{ key: 'X-Frame-Options', value: 'SAMEORIGIN' }] },
+        ],
+      })();
+
+      // Checks that X-Powered-By is hidden and the security headers come before the app's own
+      const aHeaders = (await oConfig.headers?.()) ?? [];
+      assert.equal(oConfig.poweredByHeader, false);
+      assert.deepEqual(
+        aHeaders.map(oEntry => oEntry.source),
+        ['/:path*', '/embed'],
+      );
+      assert.deepEqual(
+        aHeaders[0].headers.map(oHeader => oHeader.key),
+        ['X-Content-Type-Options', 'X-Frame-Options', 'Referrer-Policy'],
+      );
+    } finally {
+      process.chdir(sCwd);
+    }
+  });
 });

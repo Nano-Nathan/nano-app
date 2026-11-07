@@ -20,6 +20,21 @@ import { withNanoApp } from '@nano-app/frontend/next';
 export default withNanoApp({});
 ```
 
+`withNanoApp` also adds `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` and `Referrer-Policy: strict-origin-when-cross-origin` to every page, and hides `X-Powered-By` (`poweredByHeader: false`). Your own `headers()` go after them, so a header with the same name replaces it; set `poweredByHeader: true` to show it again. `Content-Security-Policy` and `Strict-Transport-Security` depend on each app, so add them in your `headers()` (for the policy, see [Next's guide](https://nextjs.org/docs/app/guides/content-security-policy)) or in the proxy that serves HTTPS:
+
+```ts
+export default withNanoApp({
+  headers: async () => [
+    {
+      source: '/:path*',
+      headers: [
+        { key: 'Strict-Transport-Security', value: 'max-age=31536000' },
+      ],
+    },
+  ],
+});
+```
+
 ```tsx
 // app/layout.tsx
 import { NanoAppProvider } from '@nano-app/frontend';
