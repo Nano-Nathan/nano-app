@@ -31,7 +31,7 @@ function parse(oField: FormField, oInput: unknown): unknown {
   return isNumber ? iNumber : oInput;
 }
 
-/** A field of a form: its value and error at `/form/<form>` of the `app` store, and the items of its select */
+/** A field of a form: its value and error at `/form/<form>` of `app`, and its select items */
 export default function field() {
   return createController(({ props, stores }) => {
     // Takes the form and the field of its config, and the api store of its options
