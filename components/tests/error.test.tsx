@@ -23,8 +23,14 @@ const oBackend = createServer((oReq, oRes) => {
 // The errors of every store, the last one and buttons that fail a request on each store
 const Errors = error()
   .extend(({ stores: { api, admin } }) => ({
-    failApi: () => api.read('/users'),
-    warnAdmin: () => admin.update('/warn', {}),
+    failApi(): Promise<unknown> {
+      // Reads a path that fails
+      return api.read('/users');
+    },
+    warnAdmin(): Promise<unknown> {
+      // Writes a path that answers a warning
+      return admin.update('/warn', {});
+    },
   }))
   .bindView(({ items, remove, last, dismiss, clear, failApi, warnAdmin }) => (
     <div>

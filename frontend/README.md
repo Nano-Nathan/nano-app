@@ -71,7 +71,9 @@ A controller holds the methods; a view binds to one controller and gets its meth
 import { createController } from '@nano-app/frontend';
 
 export default createController(({ props, stores: { app } }) => ({
-  increment: () => app.set('/iCount', app.get('/iCount') + 1),
+  increment(): void {
+    app.set('/iCount', app.get('/iCount') + 1);
+  },
 }));
 ```
 
@@ -95,8 +97,14 @@ export default counterController.bindView(({ stores: { app }, increment }) => (
 
 ```ts
 export default createController(({ stores: { backend } }) => ({
-  callbacks: { onMount: () => backend.read('/users') },
-  users: () => backend.get('/users')?.result ?? [],
+  callbacks: {
+    onMount(): Promise<unknown> {
+      return backend.read('/users');
+    },
+  },
+  users(): unknown[] {
+    return backend.get('/users')?.result ?? [];
+  },
 }));
 ```
 
@@ -104,7 +112,9 @@ export default createController(({ stores: { backend } }) => ({
 
 ```ts
 export default counterController.extend(({ stores: { app } }) => ({
-  reset: () => app.set('/iCount', 0),
+  reset(): void {
+    app.set('/iCount', 0);
+  },
 }));
 ```
 
@@ -136,10 +146,17 @@ An `api` store reads and writes its backend. The controllers read and write; the
 ```ts
 // src/controllers/users.controller.ts
 export default createController(({ stores: { backend } }) => ({
-  callbacks: { onMount: () => backend.read('/users') },
-  add: async (sName: string) => {
-    await backend.create('/users', { name: sName });
+  callbacks: {
+    onMount(): Promise<unknown> {
+      return this.load();
+    },
+  },
+  load(): Promise<unknown> {
     return backend.read('/users');
+  },
+  async add(sName: string): Promise<unknown> {
+    await backend.create('/users', { name: sName });
+    return this.load();
   },
 }));
 ```
@@ -170,7 +187,7 @@ To ask only when the user stops typing, keep the text in the `app` store and rea
 ```ts
 let oTimer: ReturnType<typeof setTimeout>;
 export default createController(({ stores: { app, backend } }) => ({
-  type: (sText: string) => {
+  type(sText: string): void {
     app.set('/search/text', sText);
     clearTimeout(oTimer);
     oTimer = setTimeout(() => {
@@ -212,10 +229,15 @@ export default { type: 'api', auth: '/api/auth' };
 ```ts
 // src/controllers/session.controller.ts
 export default createController(({ stores: { backend } }) => ({
-  load: () => backend.readSession(),
-  signIn: (sEmail: string, sPassword: string) =>
-    backend.signIn('email', { email: sEmail, password: sPassword }),
-  signOut: () => backend.signOut(),
+  load(): Promise<unknown> {
+    return backend.readSession();
+  },
+  signIn(sEmail: string, sPassword: string): Promise<unknown> {
+    return backend.signIn('email', { email: sEmail, password: sPassword });
+  },
+  signOut(): Promise<unknown> {
+    return backend.signOut();
+  },
 }));
 ```
 

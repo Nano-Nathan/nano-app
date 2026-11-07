@@ -8,8 +8,8 @@ export default createPlugin((options?: { basePath?: string; models: string[] }) 
   basePath: options?.basePath ?? '/api',
   // After the app: it uses the app's database
   stage: 'after',
-  // Its routes read the published models from the options
-  options,
   // Next to this file, from the sources and from the build
   routesDir: resolve(dirname(fileURLToPath(import.meta.url)), 'routes'),
+  // Its routes read the published models from the options
+  options,
 }));
