@@ -11,7 +11,6 @@ Planned work on this repository, one file per feature. A file says what the feat
 | [scheduler](scheduler.md) | A job declared in the `scheduler` plugin runs on its cron, in its timezone | — |
 | [mail](mail.md) | A route sends an email through the `mail` plugin | scheduler |
 | [sse](sse.md) | The backend pushes an event and a component updates | Only when the maintainer asks |
-| [public-exposure](public-exposure.md) | An app behind Funnel has per-client rate limits, sign-in limits and security headers | — |
 
 The order of the table is the order of work. Work outside this repository (cluster, deploys, apps) is not tracked here.
 
