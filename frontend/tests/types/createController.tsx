@@ -43,7 +43,7 @@ oController
   });
 
 oController.extend(() => ({
-  twice(iStep: number): number {
+  twice(): number {
     // @ts-expect-error an extension reaches the controller's methods with `this`, with their types
     return this.inc('x');
   },
