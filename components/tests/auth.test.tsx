@@ -10,8 +10,6 @@ import { NanoAppProvider } from '@nano-app/frontend';
 import auth from '../auth';
 import type { ReactNode } from 'react';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
-import type { View } from '@nano-app/frontend';
-import type { AuthMethods } from '../types/auth';
 
 const PORT = 4201;
 
@@ -49,7 +47,14 @@ const oRouter: AppRouterInstance = {
 };
 
 /** View of an auth: the email of the session and its buttons */
-const fnView: View<AuthMethods> = ({ stores, signIn, signUp, signOut, load, navTo }) => (
+const fnView: Parameters<ReturnType<typeof auth>['bindView']>[0] = ({
+  stores,
+  signIn,
+  signUp,
+  signOut,
+  load,
+  navTo,
+}) => (
   <div>
     <output>{stores.api?.get('/session')?.user.email ?? 'none'}</output>
     <button onClick={() => signIn({ email: 'ana@nano.app', password: 'secret' })}>sign in</button>
