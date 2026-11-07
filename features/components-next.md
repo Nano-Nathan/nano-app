@@ -33,7 +33,10 @@ Styles, markup or any UI kit.
 |---|---|---|
 | `field` (`feat/components-form--field`) | `field()`: a field view's `value()`, `error()` and `change(value)` at `/form/<form>` of `app`, with the rules `required`, `email`, `number`, the field's `errorMessage` and `validate` | — |
 | `field` defaults (`feat/components-form--field-defaults`) | A `number` field keeps a number; the field's `format` and `parse`; a select's `options()`, read from an api store when its view mounts | `field` |
-| `form` (`feat/components-form--form`) | `form({ components, messages })`: `fields()` renders a view per field type, `submit(event)` validates every field and calls `onSubmit(values)`, `reset()`; the test app's login uses it | `field` |
+| `field-rules` (`feat/components-form--field-rules`) | The rules of a field in `FieldRules.validate(field, values)`, which `field`'s `validate` calls | `field` defaults |
+| `form-render` (`feat/components-form--form-render`) | `form({ components })`: `fields()` renders the view of each field's type, `text` when its type has none | `field` defaults |
+| `form-submit` (`feat/components-form--form-submit`) | `submit(event)` validates every field with `FieldRules` and calls `onSubmit(values)`, `reset()` empties the form | `field-rules`, `form-render` |
+| `login` (`feat/components-form--login`) | The test app's login uses `form` and `auth` | `form-submit` |
 
 ## Log
 
@@ -47,3 +50,4 @@ Styles, markup or any UI kit.
 - 2026-11-07 · projects-thread · Standard of components (#94): every component is a function that infers the controller it returns, so `field` is `field()` again, without a methods type.
 - 2026-11-07 · projects-thread · `field` merged to `feat/components-form` (#91). Defaults compared with personal-app and agreed: `label` and `disabled` need no code (they pass to the view), a `number` field keeps a number, `date` keeps the ISO day of the input, `format` and `parse` per field (the currency stays in the app), a select's `options: { path, store }`, read in `callbacks.onMount` when its view mounts (the maintainer: the view only styles), and `options()` giving the items as they are (the maintainer: the view picks their keys).
 - 2026-11-07 · projects-thread · Standard of controllers (`refactor/controller-callbacks`): the function of `createController` returns its object, with only `const` read from the context or options before the `return`, `callbacks.onMount` run when each view mounts (`extend` runs both, the original's first) and `router` in the context; `list` and `auth` read what they need on mount, and the view only renders.
+- 2026-11-07 · projects-thread · `form` split into `field-rules`, `form-render`, `form-submit` and `login`, one at a time in that order (the maintainer: no modules in parallel). `field-rules` moves the rules of `field` to `FieldRules`, so `form` validates every field with the same source.

@@ -1,11 +1,9 @@
 import { createController } from '@nano-app/frontend';
 import { API_STORE_TYPE } from '@nano-app/core/const';
+import FieldRules from './FieldRules';
 import type { ApiResponse } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { FormField } from '../types/field';
-
-/** Message of each default rule */
-const MESSAGES = { required: 'Required', email: 'Invalid email', number: 'Invalid number' };
 
 /** A field of a form: its value and error at `/form/<form>` of `app`, and its select items */
 export default function field() {
@@ -48,18 +46,8 @@ export default function field() {
         return isNumber ? iNumber : oInput;
       },
       validate(oValues: NanoObject): string | undefined {
-        // Required: a value missing or empty
-        const { name, type, required, errorMessage } = oField;
-        const oValue = oValues[name];
-        const isEmpty = [undefined, null, ''].includes(oValue);
-        if (isEmpty && required) return errorMessage ?? MESSAGES.required;
-        // Type: an email or a number, when there is a value
-        if (!isEmpty && type === 'email' && !/^[^\s@]+@[^\s@]+$/.test(oValue))
-          return errorMessage ?? MESSAGES.email;
-        if (!isEmpty && type === 'number' && Number.isNaN(Number(oValue)))
-          return errorMessage ?? MESSAGES.number;
-        // The field's own rule
-        return oField.validate?.(oValue, oValues);
+        // The message of the first rule of the field it breaks
+        return FieldRules.validate(oField, oValues);
       },
       options(): NanoObject[] {
         // The items kept for the path of its options, as the backend gave them
