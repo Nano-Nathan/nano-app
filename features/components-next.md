@@ -1,8 +1,8 @@
 ---
-status: in-progress
+status: review
 owner: projects-thread
 depends_on: []
-updated: 2026-10-27
+updated: 2026-11-07
 ---
 
 # Next components
@@ -32,3 +32,4 @@ Styles, markup or any UI kit.
 - 2026-10-27 · projects-thread · `login`, `session` and `logout` became one `auth` component: `auth({ kind, store })` gives `signIn(body)`, `signUp(body)`, `signOut()`, `load()` and `navTo(url)` (Next's `router.push`). Components connect by nesting views with props (the form gets `onSubmit`). Implemented on `feat/components-auth`.
 - 2026-10-27 · projects-thread · `auth` merged to `main` (#61). Missing: `form`.
 - 2026-10-27 · projects-thread · `form` and `field` agreed point by point: one `field()` controller for every field view, one `form({ components, messages })` that renders a view per field type (`text` by default) from the `fields` prop, state at `/form/<name>` of `app`, rules `required`, `email`, `number` and the field's `validate`. Implemented on `feat/components-form`; `required` only asks for a value, and the README recommends `noValidate` on the view.
+- 2026-11-07 · projects-thread · `main` merged into `feat/components-form` (#62); `submit` no longer returns a promise and the field view type is inlined. Waiting for the maintainer's merge.

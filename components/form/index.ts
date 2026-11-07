@@ -32,7 +32,7 @@ export default function form(oOptions: FormOptions): Controller<FormMethods> {
             messages: oMessages,
           });
         }),
-      submit: async (oEvent: FormEvent) => {
+      submit: (oEvent: FormEvent) => {
         // Stops the browser's submit
         oEvent.preventDefault();
 
@@ -48,7 +48,7 @@ export default function form(oOptions: FormOptions): Controller<FormMethods> {
 
         // Sends the values only when no field breaks a rule
         if (Object.values(oErrors).some(Boolean)) return;
-        await onSubmit(oValues);
+        onSubmit(oValues);
       },
       // Empties the values and errors
       reset: () => app.set(sPath, {}),

@@ -22,13 +22,10 @@ export type FormMessages = {
   number?: string;
 };
 
-/** A view bound to a `field` controller */
-export type FieldComponent = (props: ComponentProps) => ReactNode;
-
 /** Options of `form` */
 export type FormOptions = {
   /** View of each field type (`{ text: Input, date: DatePicker }`); `text` shows the types without one */
-  components: NanoObject<FieldComponent>;
+  components: NanoObject<(props: ComponentProps) => ReactNode>;
   /** Messages that replace the default ones */
   messages?: FormMessages;
 };
@@ -38,7 +35,7 @@ export type FormMethods = {
   /** The views of the fields of the config, in its order */
   fields(): ReactNode[];
   /** Validates every field and calls `onSubmit` with the values when all are valid */
-  submit(event: FormEvent): Promise<void>;
+  submit(event: FormEvent): void;
   /** Empties the values and errors */
   reset(): void;
 };
