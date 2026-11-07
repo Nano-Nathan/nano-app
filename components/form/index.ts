@@ -1,16 +1,20 @@
 import { createElement } from 'react';
 import { createController } from '@nano-app/frontend';
-import type { ReactNode } from 'react';
+import FieldRules from '../field/FieldRules';
+import type { FormEvent, ReactNode } from 'react';
 import type { FormField } from '../types/field';
 import type { FormOptions } from '../types/form';
 
-/** A form made from a config of fields: the view of each field's type */
+/** A form from a config of fields: their views, and their submit at `/form/<name>` of `app` */
 export default function form(oOptions: FormOptions) {
-  return createController(({ props }) => {
-    // Takes the views of the options, and the name and fields of the props
+  return createController(({ props, stores }) => {
+    // Takes the views of the options, the name, fields and submit of the props, and its paths
     const { components } = oOptions;
-    const { name } = props;
+    const { name, onSubmit } = props;
     const aFields: FormField[] = props.fields;
+    const sForm = `/form/${name}`;
+    const sValues = `${sForm}/values`;
+    const sErrors = `${sForm}/errors`;
 
     return {
       fields(): ReactNode[] {
@@ -26,6 +30,24 @@ export default function form(oOptions: FormOptions) {
           // Renders it with its form and its config
           return createElement(fnView, { key: oField.name, form: name, field: oField });
         });
+      },
+      // any: what the onSubmit of the props returns
+      submit(oEvent: FormEvent): any {
+        // Stops the browser's submit
+        oEvent.preventDefault();
+
+        // Validates every field with the values of the form and keeps their messages
+        const oValues = stores.app.get(sValues) ?? {};
+        const aErrors = aFields.map(oField => [oField.name, FieldRules.validate(oField, oValues)]);
+        stores.app.set(sErrors, Object.fromEntries(aErrors));
+
+        // Sends the values only when no field breaks a rule
+        if (aErrors.some(([, sError]) => sError)) return;
+        return onSubmit(oValues);
+      },
+      reset(): void {
+        // Empties the values and the errors
+        stores.app.set(sForm, {});
       },
     };
   });
