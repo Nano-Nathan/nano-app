@@ -1,33 +1,33 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { boot, prisma, request } from '../helpers';
 import type { Booted } from '../helpers';
 
-// Better Auth suite, imported by database.test.ts: both boot the "app" client in
-// .nano-app/prisma-clients/app, one after the other in one process
+// Better Auth suite, imported by database.test.ts: the app runs from the auth fixture
 
-const FIXTURES = 'tests/fixtures/auth';
+const FIXTURES = resolve('tests/fixtures/auth');
 const SCHEMA = `${FIXTURES}/schema.prisma`;
-const NO_AUTH_SCHEMA = 'tests/fixtures/database/schema.prisma';
+const NO_AUTH_SCHEMA = resolve('tests/fixtures/database/schema.prisma');
+const PLUGIN_ROUTES = resolve('tests/fixtures/plugin-routes');
 
 /** Env of the instance: Better Auth signs its cookies with the secret */
 const ENV = { BETTER_AUTH_SECRET: 'a-secret-only-for-the-tests-of-nano-app' };
 
 /** Boots the app with Better Auth and its rate limit on a schema, after removing its client */
 const fnBoot = (sSchemaPath: string) => {
-  rmSync('.nano-app/prisma-clients/app', { recursive: true, force: true });
+  rmSync(`${FIXTURES}/.nano-app/prisma-clients/app`, { recursive: true, force: true });
   return boot(
     {
-      packages: { betterAuth: { rateLimit: { enabled: true } } },
       plugins: [
-        { name: 'public', routesDir: 'tests/fixtures/plugin-routes' },
+        { name: 'public', routesDir: PLUGIN_ROUTES },
         { name: 'early', basePath: '/early', routesDir: `${FIXTURES}/permission-routes` },
         {
           name: 'after',
           stage: 'after',
           basePath: '/after',
-          routesDir: 'tests/fixtures/plugin-routes',
+          routesDir: PLUGIN_ROUTES,
         },
         {
           name: 'permissions',
@@ -41,18 +41,29 @@ const fnBoot = (sSchemaPath: string) => {
         database: { enabled: true, schemaPath: sSchemaPath },
       },
     },
-    { oEnv: ENV },
+    { oEnv: ENV, sCwd: FIXTURES },
   );
 };
+
+describe('Better Auth without options', () => {
+  test('fails the startup naming the file', async () => {
+    // Boots from an app whose src/auth.ts has no options
+    const oApp = await boot({}, { oEnv: ENV, sCwd: resolve('tests/fixtures/bad-auth') });
+
+    // Checks that it exits saying what the file must export
+    assert.equal(await oApp.exited, 1);
+    assert.match(oApp.output(), /src\/auth.ts must default export \{ options \}/);
+  });
+});
 
 describe('Better Auth without a database', () => {
   test('fails the startup', async () => {
     // Boots with Better Auth and the database off
-    const oApp = await boot({ packages: { betterAuth: true } }, { oEnv: ENV });
+    const oApp = await boot({}, { oEnv: ENV, sCwd: FIXTURES });
 
     // Checks that it exits saying what to enable
     assert.equal(await oApp.exited, 1);
-    assert.match(oApp.output(), /packages.betterAuth needs the database of the app/);
+    assert.match(oApp.output(), /src\/auth.ts needs the database of the app/);
   });
 });
 

@@ -1,6 +1,7 @@
 import { execFileSync, spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { createServer } from 'node:net';
+import { resolve } from 'node:path';
 import express from 'express';
 import Plugin from '../src/routes/Plugin';
 import { errorHandler, notFoundHandler } from '../src/app/errors';
@@ -113,11 +114,16 @@ export type Booted = {
 
 /**
  * Starts `fixtures/database/boot.ts` in a child process: a real NanoApp with its
- * `process.exit` on startup failure. Resolves once it prints READY or exits.
+ * `process.exit` on startup failure, run from `sCwd` (default: the backend).
+ * Resolves once it prints READY or exits.
  */
 export async function boot(
   oConfig: NanoObject,
-  { oEnv = {}, isBlockPrisma = false }: { oEnv?: NodeJS.ProcessEnv; isBlockPrisma?: boolean } = {},
+  {
+    oEnv = {},
+    isBlockPrisma = false,
+    sCwd,
+  }: { oEnv?: NodeJS.ProcessEnv; isBlockPrisma?: boolean; sCwd?: string } = {},
 ): Promise<Booted> {
   // Node flags: tsx, and the Prisma blocker when asked
   const iPort = await findFreePort();
@@ -125,11 +131,12 @@ export async function boot(
     ...(isBlockPrisma ? ['--import', './tests/fixtures/database/block-prisma.mjs'] : []),
     '--import',
     'tsx',
-    'tests/fixtures/database/boot.ts',
+    resolve('tests/fixtures/database/boot.ts'),
   ];
 
   // The config travels as an env var
   const oChild = spawn(process.execPath, aArgs, {
+    cwd: sCwd,
     env: { ...process.env, ...oEnv, NANO_TEST_CONFIG: JSON.stringify({ port: iPort, ...oConfig }) },
     stdio: ['ignore', 'pipe', 'pipe'],
   });

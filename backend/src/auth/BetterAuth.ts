@@ -1,11 +1,37 @@
+import { existsSync } from 'node:fs';
+import { FileReader } from '@nano-app/core';
 import { PRIVATE_NETWORKS } from '@nano-app/core/const';
 import type { RequestHandler } from 'express';
-import type { BetterAuthOptions } from 'better-auth';
 import type { NanoObject } from '@nano-app/core';
+import type { AuthOptions } from '../types/app';
+
+/** Files of the app's Better Auth options, relative to `cwd`: source, then built */
+const AUTH_FILES = ['src/auth.ts', 'src/auth.js'];
 
 /** Better Auth on the app's Prisma client: the instance, its handler and the session lookup */
 export default abstract class BetterAuth {
   private static oAuth?: NanoObject;
+
+  /** The options of the app's `src/auth.ts`, or undefined without it: Better Auth stays off */
+  public static async findOptions(): Promise<AuthOptions | undefined> {
+    // Finds the file
+    const sFilePath = AUTH_FILES.find(existsSync);
+    if (!sFilePath) return undefined;
+
+    // Loads its default export
+    const oFile: { options?: AuthOptions } = await FileReader.loadModule(sFilePath, {
+      default: true,
+    });
+
+    // Checks that it holds the options
+    if (!oFile?.options) {
+      throw new Error(
+        `[nano-app] [ERROR] ${sFilePath} must default export { options }: the Better Auth options.`,
+      );
+    }
+
+    return oFile.options;
+  }
 
   /** The instance, once the app's plugin created it */
   public static get(): NanoObject | undefined {
@@ -15,7 +41,7 @@ export default abstract class BetterAuth {
   /** Creates the instance on the app's client, its handler and the session lookup */
   // any: the Prisma client is generated per app, unknown to the framework
   public static async create(
-    oOptions: BetterAuthOptions,
+    oOptions: AuthOptions,
     oDb: any,
   ): Promise<{ oHandler: RequestHandler; fnSession: RequestHandler; sPath: string }> {
     // Better Auth is an optional dependency: imported only when it is on
