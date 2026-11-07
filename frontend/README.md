@@ -177,6 +177,7 @@ The proxy sends `x-api-key` with the value of `API_STRIPE_KEY_HEADER` (the name 
 - A store header wins over a browser header with the same name: the browser cannot replace or guess the key.
 - The proxy adds the key to every request to that store, from any visitor, with or without a session: anyone who reaches the app can call any path and method of that backend with it. Declare a key only for a backend whose every endpoint may be called by your visitors, and keep the rest protected there.
 - The proxy sends every header of the browser to the backend, cookies included: point a store only at a backend you trust with your users' cookies.
+- The client IP reaches the backend in `X-Forwarded-For`, which Next fills only when the request brings none. Put a proxy in front of Next that appends the client IP (nginx, a load balancer, Tailscale Funnel): with Next exposed directly, a browser that sends its own header chooses the IP it is counted by. See [Client IP](../backend/README.md#client-ip).
 - The user's own credentials (the session cookie, `Authorization`) still go as the browser sends them. Do not declare a header the user needs in the store, or every user goes with the store's value.
 - Without a `matcher`, Next runs the proxy on every request; to skip the rest, add `export const config = { matcher: '/api/:path*' };` to `proxy.ts` (Next reads it only when it is written there).
 
@@ -275,5 +276,5 @@ The `backend` store declares `auth: '/api/auth'`: the backend has Better Auth wi
 - The browser never talks to the backend: only the Next server does, and the backend URL never reaches the client bundle.
 - The frontend has no credential of its own and does not depend on any backend plugin. What the backend exposes and how it is protected is decided in the backend.
 - No `glob` or `jiti` in the client bundle, and no generated files in `node_modules`: build data goes through Next's `env`.
-- Rejected, not coming back: `useStore`, `createComponent`, `StoreManager`, controllers as classes, a `set` guard during render, a static (server) mode of the creator.
+- Rejected, not coming back: typed store paths (a store's state changes with the app's flow), `useStore`, `createComponent`, `StoreManager`, controllers as classes, a `set` guard during render, a static (server) mode of the creator.
 - Not yet, until real controllers ask for it: `onInit`/`onExit` in the controller, inheritance between controllers, a debounce of the framework, dropping old reads, reading what other users change, `PATCH`, the React Compiler.

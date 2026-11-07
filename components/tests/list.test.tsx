@@ -8,8 +8,6 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { NanoAppProvider } from '@nano-app/frontend';
 import { API_STORE_TYPE } from '@nano-app/core/const';
 import list from '../list';
-import type { View } from '@nano-app/frontend';
-import type { ListMethods } from '../types/list';
 
 const PORT = 4201;
 
@@ -41,7 +39,14 @@ const oBackend = createServer((oReq, oRes) => {
 });
 
 /** View of a list: its names, its page read from the store and its buttons */
-const fnView: View<ListMethods> = ({ stores, load, items, next, prev, sort }) => (
+const fnView: Parameters<ReturnType<typeof list>['bindView']>[0] = ({
+  stores,
+  load,
+  items,
+  next,
+  prev,
+  sort,
+}) => (
   <div>
     <output>{(items()?.result ?? []).map((oUser: User) => oUser.name).join(',')}</output>
     <button onClick={load}>load</button>
