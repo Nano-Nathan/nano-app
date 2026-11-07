@@ -1,5 +1,5 @@
 ---
-status: review
+status: in-progress
 owner: projects-thread
 depends_on: []
 updated: 2026-11-07
@@ -25,6 +25,15 @@ Styles, markup or any UI kit.
 
 `form`, `field` and `auth` are released and the test app renders them with its own views.
 
+## Modules
+
+`form` is split into modules on `feat/components-form`; each one is a pull request to it, and #62 takes it to `main`.
+
+| Module | What it does | Depends on |
+|---|---|---|
+| `field` (`feat/components-form--field`) | `field()`: a field view's `value()`, `error()` and `change(value)` at `/form/<form>` of `app`, with the rules `required`, `email`, `number` and the field's `validate` | — |
+| `form` (`feat/components-form--form`) | `form({ components, messages })`: `fields()` renders a view per field type, `submit(event)` validates every field and calls `onSubmit(values)`, `reset()`; the test app's login uses it | `field` |
+
 ## Log
 
 - 2026-10-24 · projects-thread · Split from frontend-components when `list` was released and the test app rendered it.
@@ -32,4 +41,4 @@ Styles, markup or any UI kit.
 - 2026-10-27 · projects-thread · `login`, `session` and `logout` became one `auth` component: `auth({ kind, store })` gives `signIn(body)`, `signUp(body)`, `signOut()`, `load()` and `navTo(url)` (Next's `router.push`). Components connect by nesting views with props (the form gets `onSubmit`). Implemented on `feat/components-auth`.
 - 2026-10-27 · projects-thread · `auth` merged to `main` (#61). Missing: `form`.
 - 2026-10-27 · projects-thread · `form` and `field` agreed point by point: one `field()` controller for every field view, one `form({ components, messages })` that renders a view per field type (`text` by default) from the `fields` prop, state at `/form/<name>` of `app`, rules `required`, `email`, `number` and the field's `validate`. Implemented on `feat/components-form`; `required` only asks for a value, and the README recommends `noValidate` on the view.
-- 2026-11-07 · projects-thread · `main` merged into `feat/components-form` (#62); `submit` no longer returns a promise and the field view type is inlined. Waiting for the maintainer's merge.
+- 2026-11-07 · projects-thread · The maintainer split `form` into the modules `field` and `form`, one pull request each to `feat/components-form`. The full version stays on `backup/components-form-full`.
