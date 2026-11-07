@@ -2,16 +2,15 @@ import { createElement } from 'react';
 import { createController } from '@nano-app/frontend';
 import FieldRules from '../field/FieldRules';
 import type { FormEvent, ReactNode } from 'react';
-import type { NanoObject } from '@nano-app/core/types/objects';
 import type { FormField } from '../types/field';
 import type { FormOptions } from '../types/form';
 
 /** A form from a config of fields: their views, and their submit at `/form/<name>` of `app` */
 export default function form(oOptions: FormOptions) {
   return createController(({ props, stores }) => {
-    // Takes the views of the options, the name and fields of the props, and its paths
+    // Takes the views of the options, the name, fields and submit of the props, and its paths
     const { components } = oOptions;
-    const { name } = props;
+    const { name, onSubmit } = props;
     const aFields: FormField[] = props.fields;
     const sForm = `/form/${name}`;
     const sValues = `${sForm}/values`;
@@ -32,7 +31,7 @@ export default function form(oOptions: FormOptions) {
           return createElement(fnView, { key: oField.name, form: name, field: oField });
         });
       },
-      // any: what the onSubmit of the form returns
+      // any: what the onSubmit of the props returns
       submit(oEvent: FormEvent): any {
         // Stops the browser's submit
         oEvent.preventDefault();
@@ -44,14 +43,7 @@ export default function form(oOptions: FormOptions) {
 
         // Sends the values only when no field breaks a rule
         if (aErrors.some(([, sError]) => sError)) return;
-        return this.onSubmit(oValues);
-      },
-      // any: what the onSubmit of the form's extend returns
-      onSubmit(_oValues: NanoObject): any {
-        // Fails with the fix when the form does not define it
-        throw new Error(
-          `[nano-app] [ERROR] Form "${name}": it has no onSubmit. Add it: form({ components }).extend(() => ({ onSubmit(values) { … } })).`,
-        );
+        return onSubmit(oValues);
       },
       reset(): void {
         // Empties the values and the errors
