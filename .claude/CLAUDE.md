@@ -49,7 +49,7 @@ Industry practices this repository follows. The concrete rules below win when th
 - **Least surprise**: names say what a thing does and nothing more; a function named `get` has no side effects.
 - **Least privilege**: routes private when the app has `src/auth.ts`, workflow permissions minimal, no secrets in logs.
 - **HTTP semantics**: `GET` reads and never changes state; status codes mean what the standard says (400 bad input, 401 not authenticated, 403 not allowed, 404 not found, 5xx server fault).
-- **Semantic Versioning and Conventional Commits**: a change to the public API is `feat!:`; fixes are `fix:`.
+- **Semantic Versioning and Conventional Commits**: a change that breaks the public API ends its pull request body with a `BREAKING CHANGE: <what breaks>` footer (the squash commit keeps the body; the release presets do not read `!` in the title); fixes are `fix:`.
 - **Tests describe behavior**, not implementation: they call the public API and check what a consumer sees.
 - **Boy Scout rule**: code you touch for a task follows this file when you leave it; code you do not touch stays as is.
 
