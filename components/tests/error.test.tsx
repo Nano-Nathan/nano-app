@@ -7,7 +7,7 @@ import { createServer } from 'node:http';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { REQUEST_FAILED } from '@nano-app/core/const';
 import error from '../error';
-import TestApp from './TestApp';
+import TestApp from './provider';
 import type { ApiError } from '@nano-app/frontend';
 
 const PORT = 4201;

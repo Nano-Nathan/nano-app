@@ -8,7 +8,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { REQUEST_FAILED } from '@nano-app/core/const';
 import createController from '../src/creators/createController';
 import { count } from './helpers';
-import TestApp from './TestApp';
+import TestApp from './provider';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { ApiError } from '../src/types/store';
 

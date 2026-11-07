@@ -7,7 +7,7 @@ import { createServer } from 'node:http';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { API_STORE_TYPE } from '@nano-app/core/const';
 import list from '../list';
-import TestApp from './TestApp';
+import TestApp from './provider';
 
 const PORT = 4201;
 
