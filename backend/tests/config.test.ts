@@ -24,7 +24,7 @@ describe('config merge', () => {
 
     // Checks that only helmet changed
     assert.equal(oConfig.packages?.helmet, false);
-    assert.ok(oConfig.packages?.compression, 'the rest stays on');
+    assert.ok(oConfig.packages?.cors, 'the rest stays on');
   });
 
   test('nested objects are merged at every level', () => {

@@ -31,7 +31,7 @@ export const INITIAL_CONFIG = {
       methods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE', 'QUERY'],
     },
     helmet: true,
-    compression: true,
+    compression: false,
     express: {
       limit: '10kb',
     },
