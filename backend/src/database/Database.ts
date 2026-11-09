@@ -44,9 +44,7 @@ export default abstract class Database {
     // Validates the schema before generating its client: PostgreSQL, and nano_* only for plugins
     const isPlugin = this.isOfficial(schemaPath);
     const sContent = FileReader.loadSchema(schemaPath);
-    if (!Validator.isPrisma(sContent, schemaPath, isPlugin)) {
-      throw new NanoError(`${schemaPath} is not a valid Prisma schema.`);
-    }
+    Validator.isPrisma(sContent, schemaPath, isPlugin);
 
     // Generates the client when its schema changed
     Prisma.generate(sName, schemaPath);
@@ -61,30 +59,12 @@ export default abstract class Database {
     const sClientPath = join(Prisma.dir(sName), 'generated', 'client.ts');
     const PrismaClient = await FileLoader.findPrismaClient(sClientPath);
 
-    // Instantiates the client
-    let oClient;
-    try {
-      // Instantiates it with the pg adapter
-      oClient = new PrismaClient({ adapter: this.oAdapter });
-    } catch (oError) {
-      throw new NanoError(
-        `Cannot instantiate the database "${sName}" from ${sClientPath}.`,
-        oError
-      );
-    }
+    // Instantiates the client with the pg adapter
+    const oClient = new PrismaClient({ adapter: this.oAdapter });
 
     // Checks that every model can be read: a missing table or column fails here
-    const sFix = isPlugin
-      ? 'Update the plugin or report it.'
-      : 'Apply your schema with Prisma (db push or migrations).';
     for (const [, sModel] of sContent.matchAll(/^\s*model\s+(\w+)/gm)) {
-      await oClient[`${sModel[0].toLowerCase()}${sModel.slice(1)}`]
-        .findFirst()
-        .catch((oError: unknown) => {
-          // Last line of Prisma's message: the table or column that is missing
-          const sReason = NanoError.messageOf(oError).trim().split('\n').pop();
-          throw new NanoError(`The database "${sName}" is not ready: ${sReason} ${sFix}`);
-        });
+      await oClient[`${sModel[0].toLowerCase()}${sModel.slice(1)}`].findFirst();
     }
 
     // Mounts the client

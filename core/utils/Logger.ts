@@ -10,10 +10,9 @@ export default abstract class Logger {
     console.error(Logger.message('ERROR', sText), oError);
   }
 
-  /** `[nano-app] [WARNING] <text>`; returns `false`, to discard what it warns about */
-  public static warn(sText: string): false {
+  /** `[nano-app] [WARNING] <text>` */
+  public static warn(sText: string): void {
     console.warn(Logger.message('WARNING', sText));
-    return false;
   }
 
   /** `[nano-app] [INFO] <text>` */

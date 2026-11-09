@@ -70,16 +70,12 @@ export default abstract class BetterAuth {
     this.oAuth = oAuth;
 
     // Session lookup: the session of every request that reaches it, if any; each endpoint decides whether it needs one
-    const fnSession: RequestHandler = (oReq, oRes, fnNext) => {
-      oAuth.api
-        .getSession({ headers: fromNodeHeaders(oReq.headers) })
-        .then(oSession => {
-          // The session of the request, when there is one
-          oRes.locals.session = oSession ?? undefined;
-          fnNext();
-        })
-        .catch(fnNext);
-    };
+    const fnSession: RequestHandler = (oReq, oRes, fnNext) =>
+      oAuth.api.getSession({ headers: fromNodeHeaders(oReq.headers) }).then(oSession => {
+        // The session of the request, when there is one
+        oRes.locals.session = oSession ?? undefined;
+        fnNext();
+      });
 
     return {
       oHandler: toNodeHandler(oAuth),

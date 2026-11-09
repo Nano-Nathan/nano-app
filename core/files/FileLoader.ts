@@ -1,5 +1,4 @@
 import { glob } from 'glob';
-import NanoError from '../utils/NanoError';
 import FileReader from './FileReader';
 import type { NanoObject, PrismaEntry } from '../types/objects';
 import type { FindOptions } from '../types/files';
@@ -8,14 +7,7 @@ import type { FindOptions } from '../types/files';
 export default abstract class FileLoader {
   /** Loads a generated Prisma client module (`client.ts`, or `client.js`) */
   public static async findPrismaClient(sClientPath: string): Promise<PrismaEntry> {
-    try {
-      return (await FileReader.loadModule<{ PrismaClient: PrismaEntry }>(sClientPath))
-        ?.PrismaClient;
-    } catch (oError) {
-      throw new NanoError(
-        `The Prisma client ${sClientPath} could not be loaded: ${NanoError.messageOf(oError)}`,
-      );
-    }
+    return (await FileReader.loadModule<{ PrismaClient: PrismaEntry }>(sClientPath))?.PrismaClient;
   }
 
   /** Finds `*.route.ts` (or built `.js`) files and returns `{ [subPath]: defaultExport }` */

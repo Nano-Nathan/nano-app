@@ -7,60 +7,61 @@ import Validator from '../utils/Validator';
 const STORES_DIR = fileURLToPath(new URL('./fixtures/stores', import.meta.url));
 
 describe('store files', () => {
-  test('stores are found in subfolders, named with _ for / and the invalid ones dropped', async () => {
+  test('stores are found in subfolders, named with _ for /', async () => {
     // Finds the store files of the fixtures
-    const oFound = await FileLoader.findMany({ extension: 'store', sourceDir: STORES_DIR });
-    const oFiles = Validator.validate(oFound, Validator.isStore);
+    const oFiles = await FileLoader.findMany({ extension: 'store', sourceDir: STORES_DIR });
 
-    // Checks their names and that the invalid one was dropped
+    // Checks their names and contents
     assert.deepEqual(Object.keys(oFiles).sort(), ['admin_users', 'app']);
     assert.deepEqual(oFiles.admin_users, { type: 'app', data: { aUsers: [] } });
   });
 
   test('a store must be an app or api store with object data, string headers and auth', () => {
-    // Validates one entry per rule
-    const oFiles = Validator.validate(
-      {
-        none: 'not an object',
-        kind: { type: 'other' },
-        api: { type: 'api', headers: { 'x-api-key': 'STRIPE_KEY' } },
-        headers: { type: 'api', headers: { 'x-api-key': 1 } },
-        auth: { type: 'api', auth: '/api/auth' },
-        session: { type: 'api', auth: { path: '/api/auth' } },
-        data: { type: 'app', data: 'not an object' },
-        app: { type: 'app', data: { iCount: 0 } },
-      },
-      Validator.isStore,
-    );
+    // Checks that each invalid store throws naming its file
+    const oInvalid = {
+      none: 'not an object',
+      kind: { type: 'other' },
+      headers: { type: 'api', headers: { 'x-api-key': 1 } },
+      auth: { type: 'api', auth: '/api/auth' },
+      data: { type: 'app', data: 'not an object' },
+    };
+    for (const [sName, oStore] of Object.entries(oInvalid)) {
+      assert.throws(() => Validator.isStore(oStore, sName), new RegExp(`${sName}: `), sName);
+    }
 
-    // Checks that only the valid ones stay
-    assert.deepEqual(Object.keys(oFiles), ['api', 'session', 'app']);
+    // Checks that the valid ones pass
+    const oValid = {
+      api: { type: 'api', headers: { 'x-api-key': 'STRIPE_KEY' } },
+      session: { type: 'api', auth: { path: '/api/auth' } },
+      app: { type: 'app', data: { iCount: 0 } },
+    };
+    assert.deepEqual(Validator.validate(oValid, Validator.isStore), oValid);
   });
 
   test('auth.routes need a match and a redirect with /, string roles and string actions, and no loop', () => {
-    // Validates one store per rule of its routes
+    // Checks that each invalid list of routes throws
     const fnAuth = (aRoutes: unknown): unknown => ({
       type: 'api',
       auth: { path: '/a', routes: aRoutes },
     });
-    const oFiles = Validator.validate(
-      {
-        list: fnAuth('/admin'),
-        route: fnAuth(['/admin']),
-        match: fnAuth([{ match: 'admin' }]),
-        redirect: fnAuth([{ match: '/admin', redirect: 'login' }]),
-        loop: fnAuth([{ match: '/*' }]),
-        roles: fnAuth([{ match: '/admin', roles: ['admin'] }]),
-        permissions: fnAuth([{ match: '/admin', permissions: { collections: ['read'] } }]),
-        valid: fnAuth([
-          { match: '/', redirect: '/login' },
-          { match: '/admin/*', roles: 'admin,editor', permissions: { collections: 'read,update' } },
-        ]),
-      },
-      Validator.isStore,
-    );
+    const aInvalid = [
+      '/admin',
+      ['/admin'],
+      [{ match: 'admin' }],
+      [{ match: '/admin', redirect: 'login' }],
+      [{ match: '/*' }],
+      [{ match: '/admin', roles: ['admin'] }],
+      [{ match: '/admin', permissions: { collections: ['read'] } }],
+    ];
+    for (const aRoutes of aInvalid) {
+      assert.throws(() => Validator.isStore(fnAuth(aRoutes), 'auth'), /"auth" must be/);
+    }
 
-    // Checks that only the valid one stays
-    assert.deepEqual(Object.keys(oFiles), ['valid']);
+    // Checks that valid routes pass
+    const oValid = fnAuth([
+      { match: '/', redirect: '/login' },
+      { match: '/admin/*', roles: 'admin,editor', permissions: { collections: 'read,update' } },
+    ]);
+    assert.equal(Validator.isStore(oValid, 'valid'), true);
   });
 });

@@ -45,7 +45,7 @@ export default abstract class Prisma {
     );
 
     // Generates it and remembers where it came from
-    this.run(sName, ['generate', '--schema', join(sDir, 'schema.prisma')]);
+    this.run(['generate', '--schema', join(sDir, 'schema.prisma')]);
     writeFileSync(sSourceFile, JSON.stringify({ schemaPath: sSource, hash: sHash }));
     Logger.info(`Prisma client "${sName}" generated`);
   }
@@ -80,35 +80,18 @@ export default abstract class Prisma {
     );
 
     // Applies them: in order, each once, one instance at a time (Prisma locks the database)
-    this.run(sName, ['migrate', 'deploy', '--config', sConfig], {
+    this.run(['migrate', 'deploy', '--config', sConfig], {
       NANO_APP_MIGRATION_URL: oUrl.toString(),
     });
   }
 
   /** Runs a Prisma command of the consumer's `prisma` package */
-  private static run(sName: string, aArgs: string[], oEnv: NodeJS.ProcessEnv = {}): void {
-    // Finds the CLI in the project
-    let sCli: string;
-    try {
-      sCli = createRequire(`${process.cwd()}/`).resolve('prisma/build/index.js');
-    } catch {
-      // Not resolvable: the package is not installed
-      throw new NanoError(`The database "${sName}" needs Prisma. Run \`pnpm add prisma\`.`);
-    }
-
-    // Runs it, keeping its output for the error
-    try {
-      execFileSync(process.execPath, [sCli, ...aArgs], {
-        env: { ...process.env, ...oEnv },
-        stdio: 'pipe',
-      });
-    } catch (oError) {
-      // execFileSync's error carries the command's stderr and stdout
-      const isOutput = oError instanceof Error && 'stderr' in oError && 'stdout' in oError;
-      const sOutput = isOutput ? `${oError.stderr}${oError.stdout}`.trim() : '';
-      throw new NanoError(
-        `prisma ${aArgs[0]} failed for "${sName}": ${sOutput || NanoError.messageOf(oError)}`,
-      );
-    }
+  private static run(aArgs: string[], oEnv: NodeJS.ProcessEnv = {}): void {
+    // Finds the CLI in the project and runs it; its error carries the command's output
+    const sCli = createRequire(`${process.cwd()}/`).resolve('prisma/build/index.js');
+    execFileSync(process.execPath, [sCli, ...aArgs], {
+      env: { ...process.env, ...oEnv },
+      stdio: 'pipe',
+    });
   }
 }

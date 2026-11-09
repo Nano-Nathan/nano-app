@@ -74,22 +74,23 @@ export default class Endpoint {
       const oRequestParams = { ...oParams, session: oRes.locals.session };
 
       // Checks the permissions of the method, none on a public route, then runs the onBefore callback
-      isGranted(oRequestParams, this.isPublic ? undefined : oMethod.permissions)
-        .then(isAllowed => {
-          if (!isAllowed) throw { status: 403, message: 'Forbidden' };
-          return this.oCallbacks.onBefore?.(oReq, sMethod, oRequestParams) ?? {};
-        })
-        // Runs the method
-        .then(onBeforeResult => oMethod.handler(oReq, { ...oRequestParams, onBeforeResult }))
-        // Handles the response
-        .then(oResponse => {
-          // Answers with the status of the handler, 200 by default, and its success
-          const { status, ...oBody } = oResponse;
-          const iStatus = status ?? 200;
-          oRes.status(iStatus).json({ ...oBody, success: iStatus < 400 });
-        })
-        // Forwards the error to the next error middleware
-        .catch(fnNext);
+      // A rejection reaches the error handler: Express 5 forwards it
+      return (
+        isGranted(oRequestParams, this.isPublic ? undefined : oMethod.permissions)
+          .then(isAllowed => {
+            if (!isAllowed) throw { status: 403, message: 'Forbidden' };
+            return this.oCallbacks.onBefore?.(oReq, sMethod, oRequestParams) ?? {};
+          })
+          // Runs the method
+          .then(onBeforeResult => oMethod.handler(oReq, { ...oRequestParams, onBeforeResult }))
+          // Handles the response
+          .then(oResponse => {
+            // Answers with the status of the handler, 200 by default, and its success
+            const { status, ...oBody } = oResponse;
+            const iStatus = status ?? 200;
+            oRes.status(iStatus).json({ ...oBody, success: iStatus < 400 });
+          })
+      );
     };
   }
 }
