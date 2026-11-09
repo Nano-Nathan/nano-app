@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Formatter from '@nano-app/core/utils/Formatter';
+import Logger from '@nano-app/core/utils/Logger';
 import Paths from '@nano-app/core/utils/Paths';
 import Validator from '@nano-app/core/utils/Validator';
 import { HEADERS, ROUTES } from './utils/state';
@@ -24,7 +24,7 @@ export async function proxy(oReq: NextRequest): Promise<Response> {
     return NextResponse.json(
       {
         success: false,
-        message: Formatter.message(
+        message: Logger.message(
           'ERROR',
           `The store "${sName}" needs the ${sMissing} environment variable. Define it.`,
         ),

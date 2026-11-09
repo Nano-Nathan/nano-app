@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
-import { FileReader, Formatter, Logger, NanoError } from '@nano-app/core';
+import { FileReader, Logger, NanoError } from '@nano-app/core';
 import { MISSING_DATABASE_URL } from '@nano-app/core/const';
 import type { ClientSource } from '../types/database';
 
@@ -107,7 +107,7 @@ export default abstract class Prisma {
       const isOutput = oError instanceof Error && 'stderr' in oError && 'stdout' in oError;
       const sOutput = isOutput ? `${oError.stderr}${oError.stdout}`.trim() : '';
       throw new NanoError(
-        `prisma ${aArgs[0]} failed for "${sName}": ${sOutput || Formatter.error(oError)}`,
+        `prisma ${aArgs[0]} failed for "${sName}": ${sOutput || NanoError.messageOf(oError)}`,
       );
     }
   }

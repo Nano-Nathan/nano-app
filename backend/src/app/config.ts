@@ -1,4 +1,4 @@
-import { Formatter, NanoError, Validator } from '@nano-app/core';
+import { Logger, NanoError, Validator } from '@nano-app/core';
 import { APP_NAME, PRIVATE_NETWORKS } from '@nano-app/core/const';
 import type { Request } from 'express';
 import type { NanoObject } from '@nano-app/core';
@@ -22,7 +22,7 @@ export const INITIAL_CONFIG = {
   packages: {
     morgan: {
       tokens: {
-        timestamp: () => Formatter.logDate(),
+        timestamp: () => Logger.date(),
         path: (oReq: Request) => oReq.path,
       },
       format: ':timestamp | :method :path :status',

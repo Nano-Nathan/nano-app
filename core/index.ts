@@ -6,7 +6,6 @@ export * from './types/api';
 export * from './types/files';
 export * from './types/objects';
 
-export { default as Formatter } from './utils/Formatter';
 export { default as Logger } from './utils/Logger';
 export { default as NanoError } from './utils/NanoError';
 export { default as Paths } from './utils/Paths';

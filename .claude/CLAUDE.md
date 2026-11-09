@@ -111,7 +111,7 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 - `for...of` to iterate when nothing is returned, never `.forEach` (it does not wait for `await`). `.map`, `.filter` and `.some` when they return something.
 - `async`/`await` in general. Express handlers and middlewares chain `.then()` and end in `.catch(fnNext)`.
 - Errors: invalid consumer files are warned about and skipped (one bad route does not discard the rest). The framework throws `new NanoError('…')` (`core`): Node shows it as `[nano-app] [ERROR]: …`; with a status (`new NanoError('Not found', 404)`) a handler answers it. Handlers throw a string (400), `{ status, message, warning }` or a `NanoError`.
-- Messages: on the console only through `Logger.error`, `Logger.warn` and `Logger.info`, never `console`; in a response through `Formatter.message`. The text says the file or thing, what is wrong, and the command that fixes it (``Run `pnpm add prisma`.``).
+- Messages: on the console only through `Logger.error`, `Logger.warn` and `Logger.info`, never `console`; in a response through `Logger.message`. The text says the file or thing, what is wrong, and the command that fixes it (``Run `pnpm add prisma`.``).
 
 ### Comments and format
 

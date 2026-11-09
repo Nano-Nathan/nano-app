@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { FileLoader, FileReader, Formatter, Logger, NanoError, Validator } from '@nano-app/core';
+import { FileLoader, FileReader, Logger, NanoError, Validator } from '@nano-app/core';
 import { MISSING_DATABASE_URL, OFFICIAL_PLUGINS } from '@nano-app/core/const';
 import Prisma from './Prisma';
 import type { PrismaPg } from '@prisma/adapter-pg';
@@ -68,7 +68,7 @@ export default abstract class Database {
       oClient = new PrismaClient({ adapter: this.oAdapter });
     } catch (oError) {
       throw new NanoError(
-        `Cannot instantiate the database "${sName}" from ${sClientPath}: ${Formatter.error(oError)}`,
+        `Cannot instantiate the database "${sName}" from ${sClientPath}: ${NanoError.messageOf(oError)}`,
       );
     }
 
@@ -81,7 +81,7 @@ export default abstract class Database {
         .findFirst()
         .catch((oError: unknown) => {
           // Last line of Prisma's message: the table or column that is missing
-          const sReason = Formatter.error(oError).trim().split('\n').pop();
+          const sReason = NanoError.messageOf(oError).trim().split('\n').pop();
           throw new NanoError(`The database "${sName}" is not ready: ${sReason} ${sFix}`);
         });
     }
