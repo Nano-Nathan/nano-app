@@ -1,6 +1,8 @@
 import { createRoute, isGranted, NanoError } from '@nano-app/backend';
+import Permissions from '../Permissions';
 import Query from '../Query';
 import type { ApiPromise, NanoObject, Params, Request } from '@nano-app/backend';
+import type { DataModels } from '../../types/crud';
 
 /** Permission of Better Auth that each method needs on the URL's model */
 const ACTIONS: NanoObject<string> = {
@@ -23,7 +25,7 @@ async function read(oReq: Request, { onBeforeResult }: Params): ApiPromise {
 export default createRoute({
   expression: '/:model{/:id}',
   callbacks: {
-    // The Prisma delegate of the URL's model: 404 when the app does not publish it, 403 without its permission
+    // The Prisma delegate of the URL's model: 404 when the app does not publish it, 403 without the permissions of the request
     onBefore: async (oReq, sMethod, oParams) => {
       // The URL's model and id: Express types a param as a string or a list of them
       const sModel = String(oReq.params.model);
@@ -32,9 +34,10 @@ export default createRoute({
       // Only the models the app publishes
       if (!oParams.models.includes(sModel)) throw new NanoError('Not found', 404);
 
-      // The permission of the method on the model
-      if (!(await isGranted(oParams, { [sModel]: [ACTIONS[sMethod]] })))
-        throw new NanoError('Forbidden', 403);
+      // The permission of the method on the model, and on every related model the body reaches
+      const oModels: DataModels = oParams.db._runtimeDataModel.models;
+      const oNeeded = new Permissions(oModels).of(sModel, ACTIONS[sMethod], oReq.body ?? {});
+      if (!(await isGranted(oParams, oNeeded))) throw new NanoError('Forbidden', 403);
 
       // Its Prisma delegate
       const oModel = oParams.db[sModel];

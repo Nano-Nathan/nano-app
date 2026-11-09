@@ -20,10 +20,22 @@ createNanoApp({ plugins: [health()] });
 | Plugin   | Import                                          | Endpoints                                                                                                                                                                                                                                 | Options                          |
 | -------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
 | `health` | `import health from '@nano-app/plugins/health'` | `GET /health` → `{ success: true, result: { status: "ok" } }`                                                                                                                                                                             | `basePath` (default `"/health"`) |
-| `crud`   | `import crud from '@nano-app/plugins/crud'`     | On the models listed in `models` (any other answers 404): `GET` and `QUERY` on `/api/<model>{/<id>}` → a list `{ result, count }` or one record, with `QueryParams` as the body of `QUERY`; `POST /api/<model>`, `PUT` and `DELETE` on `/api/<model>/<id>` → the record created, updated or deleted. `<id>` takes the type of the model's id (`Int`, `BigInt` or `String`). With Better Auth, each method asks for a permission on the model: `read` (`GET`, `QUERY`), `create`, `update`, `delete` | `models` (the published ones), `basePath` (default `"/api"`)    |
+| `crud`   | `import crud from '@nano-app/plugins/crud'`     | On the models listed in `models` (any other answers 404): `GET` and `QUERY` on `/api/<model>{/<id>}` → a list `{ result, count }` or one record, with `QueryParams` as the body of `QUERY`; `POST /api/<model>`, `PUT` and `DELETE` on `/api/<model>/<id>` → the record created, updated or deleted. `<id>` takes the type of the model's id (`Int`, `BigInt` or `String`). With Better Auth, each method asks for a permission on the model: `read` (`GET`, `QUERY`), `create`, `update`, `delete`, and on the related models it reaches (see [crud and related models](#crud-and-related-models)) | `models` (the published ones), `basePath` (default `"/api"`)    |
 | `rate-limit` | `import rateLimit from '@nano-app/plugins/rate-limit'` | None: limits every request of the routes and plugins mounted after it, per client IP (see [Client IP](../backend/README.md#client-ip)). Each request spends a token of the client's bucket, which holds `capacity` and refills `refillPerSecond` tokens per second; without one it answers `429` with `message` and `Retry-After` (seconds until the next token). List it first in `plugins`. The buckets live in the memory of each process | `capacity` (default `100`), `refillPerSecond` (default `1`), `message` |
 
 What is not CRUD, such as creating a record with business logic, goes in a route of your own with its own URL: a route of yours on a `crud` URL takes every method of it.
+
+### crud and related models
+
+`crud` publishes the whole CRUD of each model in `models`; the limits are the app's, through the permissions of Better Auth. A request also reaches the models related to its model, and each of them needs its own permission:
+
+- A read (`GET`, `QUERY`) needs `read` on every model its `expand`, `select`, `orderby` (`user.name`) and `filter` (also inside `AND`, `OR`, `NOT`, `some`, `every`, `none`, `is`, `isNot`) name.
+- A write (`POST`, `PUT`) needs its own action on every model its data reaches through a relation: `{ "user": { "update": { "role": "admin" } } }` needs `update` on `user`.
+- A model needs no place in `models` to be reached this way: its permission decides.
+
+**Risk: Better Auth's models.** With Better Auth, `user`, `account`, `session` and `verification` live in the app's schema and are related to its models. A role with `read` on `account` or `session` reads, through any model related to the user (`expand: "user.accounts"`), the password hashes in `account.password`, the provider tokens and the session tokens; one with `update` on `user` changes roles through a nested write.
+
+Keep them out of every role that calls `crud`: never grant `account`, `session` or `verification`, and grant `user` only to the roles that must see or change users. Better Auth's admin plugin gives the `user` role no `read` on them by default. To show some fields of a user, write a route of your own that selects only those fields.
 
 ### Layout
 

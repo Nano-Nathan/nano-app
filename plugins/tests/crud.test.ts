@@ -55,6 +55,17 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
     await oServer.close();
   });
 
+  test('the client describes its relations, as crud reads them for its permissions', () => {
+    // Reads the relation of a note to its comments in the client's runtime data model
+    const { fields } = Database.get('app')._runtimeDataModel.models.Note;
+    const oComments = fields.find(({ name }: NanoObject) => name === 'comments');
+
+    assert.deepEqual(
+      { kind: oComments.kind, type: oComments.type },
+      { kind: 'object', type: 'Comment' },
+    );
+  });
+
   test('a model out of the list answers 404', async () => {
     // Reads a model of the schema the app does not list
     const { status } = await request(oServer.url, '/api/secret');
