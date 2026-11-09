@@ -37,7 +37,7 @@
     "node": "^22.23.4 || ^24.22.1 || >=26.12.1"
   },
   "peerDependencies": {
-    "@nano-app/backend": ">=0.12.5"
+    "@nano-app/backend": ">=0.15.0"
   },
   "devDependencies": {
     "@happy-dom/global-registrator": "^21.0.4",
