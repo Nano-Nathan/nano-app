@@ -142,18 +142,19 @@ describe('list', () => {
     assert.deepEqual(aRequests, ['QUERY /api/api/users {"skip":0,"top":1}']);
   });
 
-  test('without its api store it loads no items and asks nothing', async () => {
+  test('without its api store it fails, naming the store', () => {
     // Renders a list of a store the app does not have
     const List = list({ path: '/users', top: 1, store: 'missing' }).bindView(fnView);
-    render(
-      <TestApp>
-        <List />
-      </TestApp>,
-    );
-    fireEvent.click(screen.getByText('load'));
-    await act(() => new Promise(fnResolve => setTimeout(fnResolve, 50)));
 
-    assert.equal(screen.getByRole('status').textContent, '');
-    assert.equal(aRequests.length, 0);
+    // Checks that the render stops with the store to add
+    assert.throws(
+      () =>
+        render(
+          <TestApp>
+            <List />
+          </TestApp>,
+        ),
+      { message: 'The store "missing" does not exist. Add src/stores/missing.store.ts.' },
+    );
   });
 });

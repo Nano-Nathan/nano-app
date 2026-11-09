@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { enableStaticRendering, observer } from 'mobx-react-lite';
 import { IS_SERVER } from '@nano-app/core/const';
+import NanoError from '@nano-app/core/utils/NanoError';
 import { useStores } from '../react/NanoAppProvider';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type {
@@ -31,8 +32,21 @@ function controller<M extends NanoObject & { callbacks?: ControllerCallbacks }>(
     // Each bound view is a component that re-renders when a store path it read changes
     bindView: fnView =>
       observer((oProps: ComponentProps) => {
-        // Gives the methods the props, the stores and the router of the app
-        const oContext = { props: oProps, stores: useStores(), router: useRouter() };
+        // Gives the methods the props, the stores, the router of the app and the lookup of a store
+        const oStores = useStores();
+        const oContext = {
+          props: oProps,
+          stores: oStores,
+          router: useRouter(),
+          getStore: (sName: string) => {
+            if (!oStores[sName]) {
+              throw new NanoError(
+                `The store "${sName}" does not exist. Add src/stores/${sName}.store.ts.`,
+              );
+            }
+            return oStores[sName];
+          },
+        };
         const oMethods = fnMethods(oContext);
 
         // Binds each method to the others, so `this` reaches them also when the view calls it alone

@@ -1,6 +1,6 @@
-import { createRoute, isGranted } from '@nano-app/backend';
+import { createRoute, isGranted, NanoError } from '@nano-app/backend';
 import Query from '../Query';
-import type { NanoObject } from '@nano-app/backend';
+import type { Handler, NanoObject } from '@nano-app/backend';
 
 /** Permission of Better Auth that each method needs on the URL's model */
 const ACTIONS: NanoObject<string> = {
@@ -14,6 +14,10 @@ const ACTIONS: NanoObject<string> = {
 /** Conversion of the URL's id to the type of the model's id, when it is not a string */
 const ID_TYPES: NanoObject<(sId: string) => number | bigint> = { Int: Number, BigInt: BigInt };
 
+/** Reads a list, or one record, with the `QueryParams` of the body */
+const fnRead: Handler<NanoObject> = async (oReq, { onBeforeResult }) =>
+  Query.read(onBeforeResult?.model, oReq.body ?? {}, onBeforeResult?.where);
+
 /** `GET` reads without parameters, `QUERY` with `QueryParams` as its body */
 export default createRoute({
   expression: '/:model{/:id}',
@@ -25,11 +29,11 @@ export default createRoute({
       const { id } = oReq.params;
 
       // Only the models the app publishes
-      if (!oParams.models.includes(sModel)) throw { status: 404, message: 'Not found' };
+      if (!oParams.models.includes(sModel)) throw new NanoError('Not found', 404);
 
       // The permission of the method on the model
       if (!(await isGranted(oParams, { [sModel]: [ACTIONS[sMethod]] })))
-        throw { status: 403, message: 'Forbidden' };
+        throw new NanoError('Forbidden', 403);
 
       // Its Prisma delegate
       const oModel = oParams.db[sModel];
@@ -41,10 +45,8 @@ export default createRoute({
     },
   },
   // A list of the model with its total, or one record by its id
-  GET: async (oReq, { onBeforeResult }) =>
-    Query.read(onBeforeResult?.model, oReq.body ?? {}, onBeforeResult?.where),
-  QUERY: async (oReq, { onBeforeResult }) =>
-    Query.read(onBeforeResult?.model, oReq.body ?? {}, onBeforeResult?.where),
+  GET: fnRead,
+  QUERY: fnRead,
   // Creates a record with the body as its data
   POST: async (oReq, { onBeforeResult }) => ({
     result: await onBeforeResult?.model.create({ data: oReq.body }),

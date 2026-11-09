@@ -1,4 +1,4 @@
-import { Logger } from '@nano-app/core';
+import { Logger, NanoError } from '@nano-app/core';
 import type { ErrorRequestHandler, RequestHandler } from 'express';
 import type { ApiResponse, NanoObject } from '@nano-app/core';
 import type { HandlerError } from '../types/app';
@@ -45,7 +45,7 @@ function normalize(oError: unknown): { status: number; body: ApiResponse } {
 
 /** Turns every unmatched request into a 404 for the error handler */
 export const notFoundHandler: RequestHandler = (oReq, _oRes, fnNext) => {
-  fnNext({ status: 404, message: `${oReq.path} not found` });
+  fnNext(new NanoError(`${oReq.path} not found`, 404));
 };
 
 /** Turns any error raised by a handler into an ApiResponse */

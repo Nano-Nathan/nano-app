@@ -1,4 +1,4 @@
-import { Logger } from '@nano-app/core';
+import { Logger, NanoError } from '@nano-app/core';
 import { HTTP_METHODS } from '@nano-app/core/const';
 import isGranted from '../auth/permissions';
 import type { RequestHandler } from 'express';
@@ -60,7 +60,7 @@ export default class Endpoint {
     return (oReq, oRes, fnNext) => {
       // With Better Auth on, a route needs a session unless it is public
       if (oParams.auth && !oRes.locals.session && !this.isPublic)
-        return fnNext({ status: 401, message: 'Not authenticated' });
+        return fnNext(new NanoError('Not authenticated', 401));
 
       // Finds the handler of the request method
       const sMethod = oReq.method.toUpperCase();
@@ -68,7 +68,7 @@ export default class Endpoint {
       const oMethod = sHandled && this.oMethods[sHandled];
 
       // Checks whether the method is defined
-      if (!oMethod) return fnNext({ status: 405, message: `Method ${sMethod} not implemented` });
+      if (!oMethod) return fnNext(new NanoError(`Method ${sMethod} not implemented`, 405));
 
       // The session of the request, when Better Auth found one
       const oRequestParams = { ...oParams, session: oRes.locals.session };
@@ -78,7 +78,7 @@ export default class Endpoint {
       return (
         isGranted(oRequestParams, this.isPublic ? undefined : oMethod.permissions)
           .then(isAllowed => {
-            if (!isAllowed) throw { status: 403, message: 'Forbidden' };
+            if (!isAllowed) throw new NanoError('Forbidden', 403);
             return this.oCallbacks.onBefore?.(oReq, sMethod, oRequestParams) ?? {};
           })
           // Runs the method
