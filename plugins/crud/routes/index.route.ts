@@ -1,6 +1,6 @@
 import { createRoute, isGranted, NanoError } from '@nano-app/backend';
 import Query from '../Query';
-import type { Handler, NanoObject } from '@nano-app/backend';
+import type { ApiPromise, NanoObject, Params, Request } from '@nano-app/backend';
 
 /** Permission of Better Auth that each method needs on the URL's model */
 const ACTIONS: NanoObject<string> = {
@@ -15,8 +15,9 @@ const ACTIONS: NanoObject<string> = {
 const ID_TYPES: NanoObject<(sId: string) => number | bigint> = { Int: Number, BigInt: BigInt };
 
 /** Reads a list, or one record, with the `QueryParams` of the body */
-const fnRead: Handler<NanoObject> = async (oReq, { onBeforeResult }) =>
-  Query.read(onBeforeResult?.model, oReq.body ?? {}, onBeforeResult?.where);
+async function read(oReq: Request, { onBeforeResult }: Params): ApiPromise {
+  return Query.read(onBeforeResult?.model, oReq.body ?? {}, onBeforeResult?.where);
+}
 
 /** `GET` reads without parameters, `QUERY` with `QueryParams` as its body */
 export default createRoute({
@@ -45,8 +46,8 @@ export default createRoute({
     },
   },
   // A list of the model with its total, or one record by its id
-  GET: fnRead,
-  QUERY: fnRead,
+  GET: read,
+  QUERY: read,
   // Creates a record with the body as its data
   POST: async (oReq, { onBeforeResult }) => ({
     result: await onBeforeResult?.model.create({ data: oReq.body }),
