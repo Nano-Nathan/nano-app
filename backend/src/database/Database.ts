@@ -68,7 +68,8 @@ export default abstract class Database {
       oClient = new PrismaClient({ adapter: this.oAdapter });
     } catch (oError) {
       throw new NanoError(
-        `Cannot instantiate the database "${sName}" from ${sClientPath}: ${NanoError.messageOf(oError)}`,
+        `Cannot instantiate the database "${sName}" from ${sClientPath}.`,
+        oError
       );
     }
 
