@@ -35,10 +35,15 @@ export default abstract class FileReader {
     return this.loadFile(sFilePath).replace(/\/\/.*$/gm, '');
   }
 
+  /** Body of the `datasource` block of a Prisma schema, without its braces */
+  public static datasource(sContent: string): string {
+    return sContent.match(/datasource\s+\w+\s*\{([^}]*)\}/)?.[1] ?? '';
+  }
+
   /** Schemas a Prisma schema declares in its datasource (`schemas = [...]`) */
   public static schemas(sContent: string): string[] {
     const sDeclared =
-      sContent.match(/datasource\s+\w+\s*\{[^}]*schemas\s*=\s*\[([^\]]*)\]/s)?.[1] ?? '';
+      FileReader.datasource(sContent).match(/\bschemas\s*=\s*\[([^\]]*)\]/)?.[1] ?? '';
     return [...sDeclared.matchAll(/["']([^"']+)["']/g)].map(([, sItem]) => sItem);
   }
 

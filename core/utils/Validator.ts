@@ -124,8 +124,8 @@ export default abstract class Validator {
   /** Whether a Prisma schema, without comments, is PostgreSQL and declares the schemas it may */
   public static isPrisma(sContent: string, sFilePath: string, isPlugin: boolean): boolean {
     // Checks that the datasource is PostgreSQL
-    const sProvider = sContent.match(
-      /datasource\s+\w+\s*\{[^}]*provider\s*=\s*["']([^"']+)["']/s,
+    const sProvider = FileReader.datasource(sContent).match(
+      /\bprovider\s*=\s*["']([^"']+)["']/,
     )?.[1];
     if (sProvider !== 'postgresql') {
       throw new NanoError(
