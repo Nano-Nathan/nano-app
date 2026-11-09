@@ -2,7 +2,7 @@ import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, rmSync } from 'node:fs';
 import pg from 'pg';
-import { FileLoader } from '@nano-app/core';
+import { FileLoader, FileReader, Validator } from '@nano-app/core';
 import Database from '../src/database/Database';
 import { boot, prisma, request } from './helpers';
 import './database/better-auth';
@@ -18,7 +18,6 @@ const OFFICIAL_V2_SCHEMA = `${FIXTURES}/official-v2/schema.prisma`;
 /** Generated clients (the generator `output` of each fixture schema) */
 const CLIENT = `${FIXTURES}/generated/client/client.ts`;
 const PLUGIN = `${FIXTURES}/generated/plugin/client.ts`;
-const MYSQL = `${FIXTURES}/generated/mysql/client.ts`;
 
 /** Every client lives in .nano-app/prisma-clients/<name>: removes it, so the mount generates it */
 const fnResetClient = (sName: string) => {
@@ -27,7 +26,7 @@ const fnResetClient = (sName: string) => {
 
 // The generated clients are not versioned: the suite generates them (no database involved)
 before(() => {
-  for (const sName of ['schema', 'plugin', 'mysql']) {
+  for (const sName of ['schema', 'plugin']) {
     prisma('generate', '--schema', `${FIXTURES}/${sName}.prisma`);
   }
 });
@@ -45,45 +44,36 @@ describe('client validation', () => {
     else process.env.DATABASE_URL = sUrl;
   });
 
-  test('findPrismaClient validates the schema and loads the client class', async () => {
+  test('findPrismaClient loads the client class', async () => {
     // Checks that the generated client loads as a class
-    assert.equal(typeof (await FileLoader.findPrismaClient(CLIENT, SCHEMA)), 'function');
+    assert.equal(typeof (await FileLoader.findPrismaClient(CLIENT)), 'function');
   });
 
   test('findPrismaClient fails when the client module cannot be loaded', async () => {
     // A directory instead of the module
     await assert.rejects(
-      FileLoader.findPrismaClient(`${FIXTURES}/generated/client`, SCHEMA),
-      /could not be loaded/,
+      FileLoader.findPrismaClient(`${FIXTURES}/generated/client`),
+      /Cannot find module/,
     );
 
     // A module that does not exist
-    await assert.rejects(
-      FileLoader.findPrismaClient(`${FIXTURES}/missing/client.ts`, SCHEMA),
-      /could not be loaded.*not found/,
-    );
+    await assert.rejects(FileLoader.findPrismaClient(`${FIXTURES}/missing/client.ts`), /not found/);
   });
 
-  test('the schema must be PostgreSQL; declaring schemas is optional', async () => {
+  test('the schema must be PostgreSQL; declaring schemas is optional', () => {
     // Checks that MySQL is rejected
-    await assert.rejects(
-      FileLoader.findPrismaClient(MYSQL, MYSQL_SCHEMA),
-      /not a valid Prisma schema/,
-    );
+    const fnIsValid = (sPath: string): boolean =>
+      Validator.isPrisma(FileReader.loadSchema(sPath), sPath, false);
+    assert.throws(() => fnIsValid(MYSQL_SCHEMA), /provider must be "postgresql", not "mysql"/);
 
     // Checks that a schema without `schemas` is accepted
-    assert.equal(
-      typeof (await FileLoader.findPrismaClient(CLIENT, `${FIXTURES}/no-schemas.prisma`)),
-      'function',
-    );
+    assert.equal(fnIsValid(`${FIXTURES}/no-schemas.prisma`), true);
   });
 
   test('a commented-out nano_* schema does not count', async () => {
     // Checks the validation
-    assert.equal(
-      typeof (await FileLoader.findPrismaClient(CLIENT, `${FIXTURES}/commented.prisma`)),
-      'function',
-    );
+    const sCommented = `${FIXTURES}/commented.prisma`;
+    assert.equal(Validator.isPrisma(FileReader.loadSchema(sCommented), sCommented, false), true);
 
     // Checks the mount
     fnResetClient('commented');
@@ -97,7 +87,7 @@ describe('client validation', () => {
     // Checks that the schema is rejected
     await assert.rejects(
       Database.mount('mysql', { schemaPath: MYSQL_SCHEMA }),
-      /mysql.prisma is not a valid Prisma schema/,
+      /mysql.prisma: the datasource provider must be "postgresql"/,
     );
   });
 
@@ -128,13 +118,10 @@ describe('startup without a database', () => {
       { oEnv: { DATABASE_URL: 'postgres://unused@127.0.0.1:1/unused' } },
     );
 
-    // Checks that it generated the client, then stopped at the tables with what to do
+    // Checks that it generated the client, then stopped at the tables with Prisma's error
     assert.equal(await oApp.exited, 1);
     assert.match(oApp.output(), /Prisma client "app" generated/);
-    assert.match(
-      oApp.output(),
-      /The database "app" is not ready: .* Apply your schema with Prisma/,
-    );
+    assert.match(oApp.output(), /Error trying to start the server\. PrismaClientKnownRequestError/);
     assert.ok(existsSync('.nano-app/prisma-clients/app/generated/client.ts'));
   });
 
@@ -279,10 +266,7 @@ describe('PostgreSQL', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not
     // Checks that the mount names the column
     fnResetClient('drifted');
     await Database.init();
-    await assert.rejects(
-      Database.mount('drifted', { schemaPath: SCHEMA }),
-      /The database "drifted" is not ready: .*notes.title/,
-    );
+    await assert.rejects(Database.mount('drifted', { schemaPath: SCHEMA }), /notes.title/);
 
     // Restores the consumer's schema for the other tests
     prisma('db', 'push', '--schema', SCHEMA, '--url', process.env.DATABASE_URL!);

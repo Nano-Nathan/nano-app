@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import 'dotenv/config';
+import { Logger } from '@nano-app/core';
 import BetterAuth from '../auth/BetterAuth';
 import Plugin from '../routes/Plugin';
 import { mergeConfig } from './config';
@@ -24,7 +25,7 @@ export default class NanoApp {
   }
 
   /** Starts the application */
-  private async start(): Promise<NanoApp> {
+  private async start(): Promise<void> {
     try {
       await this.initialize();
 
@@ -34,12 +35,10 @@ export default class NanoApp {
         this.oConfig.listener?.();
 
         // Startup log
-        console.log(`\n[nano-app] [INFO] Nano App running on port ${this.oConfig.port}\n`);
+        Logger.info(`Nano App running on port ${this.oConfig.port}`);
       });
-
-      return this;
     } catch (oError) {
-      console.error('[nano-app] [ERROR] Error trying to start the server.', oError);
+      Logger.error('Error trying to start the server.', oError);
       process.exit(1);
     }
   }
@@ -87,29 +86,14 @@ export default class NanoApp {
       this.oApp.use(morgan(oConfig.morgan.format));
     }
 
-    // CORS
-    if (oConfig.cors) {
-      this.oApp.use(cors(oConfig.cors));
-    }
-
-    // Helmet
-    if (oConfig.helmet) {
-      this.oApp.use(helmet());
-    }
-
-    // Compression
-    if (oConfig.compression) {
-      this.oApp.use(compression());
-    }
-
-    // JSON
-    if (oConfig.express) {
-      this.oApp.use(express.json(oConfig.express));
-    }
-
-    // URLencoded
-    if (oConfig.urlencoded) {
-      this.oApp.use(express.urlencoded(oConfig.urlencoded));
-    }
+    // The rest in order, each only when it is on
+    const aPackages = [
+      oConfig.cors && cors(oConfig.cors),
+      oConfig.helmet && helmet(),
+      oConfig.compression && compression(),
+      oConfig.express && express.json(oConfig.express),
+      oConfig.urlencoded && express.urlencoded(oConfig.urlencoded),
+    ];
+    for (const fnPackage of aPackages) if (fnPackage) this.oApp.use(fnPackage);
   }
 }

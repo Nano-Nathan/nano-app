@@ -1,9 +1,8 @@
-import { FileLoader, type NanoObject, type RouteEntry } from '@nano-app/core';
+import { FileLoader, Logger, Validator } from '@nano-app/core';
 import Endpoint from './Endpoint';
 
 /** Turns a folder of `*.route.ts` files into Express paths and endpoints */
 export default class Router {
-  private oRoutes: NanoObject<RouteEntry> = {};
   private sRoutesDir?: string;
   private sBasePath: string;
 
@@ -14,20 +13,19 @@ export default class Router {
 
   /** Loads the routes and creates one endpoint per file */
   public async mount(): Promise<{ path: string; endpoint: Endpoint }[]> {
-    // Loads the routes from the directory, when there is one
-    if (this.sRoutesDir) {
-      this.oRoutes = await FileLoader.findMany<RouteEntry>({
-        sourceDir: this.sRoutesDir,
-        extension: 'route',
-      });
-    }
+    // Without a directory there are no routes
+    if (!this.sRoutesDir) return [];
+
+    // Loads the routes of the directory; an invalid one throws
+    const oFiles = await FileLoader.findMany('route', this.sRoutesDir);
+    const oRoutes = Validator.validate(oFiles, Validator.isRoute);
 
     // Create the endpoints
-    return Object.entries(this.oRoutes).map(
+    return Object.entries(oRoutes).map(
       ([sFilePath, { expression, callbacks, public: isPublic, permissions, ...methods }]) => {
         // Create the path of endpoints
         const sPath = this.createPath(sFilePath, expression);
-        console.log(`[nano-app] [INFO] ${sPath}`);
+        Logger.info(sPath);
 
         // Create the endpoint
         return {

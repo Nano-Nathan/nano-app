@@ -124,7 +124,7 @@ describe('form', () => {
         ),
       {
         message:
-          '[nano-app] [ERROR] Form "signUp": the field "name" of type "text" has no view, and components has no "text" view to show it. Add one: form({ components: { text: Input } }).',
+          'Form "signUp": the field "name" of type "text" has no view, and components has no "text" view to show it. Add one: form({ components: { text: Input } }).',
       },
     );
   });

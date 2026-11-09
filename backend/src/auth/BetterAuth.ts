@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { FileReader } from '@nano-app/core';
+import { FileReader, NanoError, Validator } from '@nano-app/core';
 import { PRIVATE_NETWORKS } from '@nano-app/core/const';
 import type { RequestHandler } from 'express';
 import type { NanoObject } from '@nano-app/core';
@@ -24,10 +24,8 @@ export default abstract class BetterAuth {
     });
 
     // Checks that it holds the options
-    if (!oFile?.options) {
-      throw new Error(
-        `[nano-app] [ERROR] ${sFilePath} must default export { options }: the Better Auth options.`,
-      );
+    if (!Validator.isObject(oFile?.options)) {
+      throw new NanoError(`${sFilePath} must default export { options }: the Better Auth options.`);
     }
 
     return oFile.options;
@@ -53,8 +51,8 @@ export default abstract class BetterAuth {
     // Checks that the app's schema has every model these options need
     const aMissing = Object.keys(getSchema(oOptions)).filter(sModel => !oDb[sModel]);
     if (aMissing.length) {
-      throw new Error(
-        `[nano-app] [ERROR] Better Auth needs the models ${aMissing.join(', ')} in the app's schema. Run \`npx auth generate\` and apply your schema with Prisma.`,
+      throw new NanoError(
+        `Better Auth needs the models ${aMissing.join(', ')} in the app's schema. Run \`npx auth generate\` and apply your schema with Prisma.`,
       );
     }
 
@@ -72,16 +70,12 @@ export default abstract class BetterAuth {
     this.oAuth = oAuth;
 
     // Session lookup: the session of every request that reaches it, if any; each endpoint decides whether it needs one
-    const fnSession: RequestHandler = (oReq, oRes, fnNext) => {
-      oAuth.api
-        .getSession({ headers: fromNodeHeaders(oReq.headers) })
-        .then(oSession => {
-          // The session of the request, when there is one
-          oRes.locals.session = oSession ?? undefined;
-          fnNext();
-        })
-        .catch(fnNext);
-    };
+    const fnSession: RequestHandler = (oReq, oRes, fnNext) =>
+      oAuth.api.getSession({ headers: fromNodeHeaders(oReq.headers) }).then(oSession => {
+        // The session of the request, when there is one
+        oRes.locals.session = oSession ?? undefined;
+        fnNext();
+      });
 
     return {
       oHandler: toNodeHandler(oAuth),

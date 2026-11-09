@@ -138,13 +138,13 @@ describe('auth', () => {
     assert.deepEqual(aVisited, ['/private']);
   });
 
-  test('without its api store it asks nothing', async () => {
-    // Renders an auth of a store the app does not have and signs in
+  test('without its api store it fails, naming the store', () => {
+    // Renders an auth of a store the app does not have
     const Auth = auth({ store: 'missing' }).bindView(fnView);
-    renderApp(<Auth />);
-    fireEvent.click(screen.getByText('sign in'));
-    await act(() => new Promise(fnResolve => setTimeout(fnResolve, 50)));
 
-    assert.equal(aRequests.length, 0);
+    // Checks that the render stops with the store to add
+    assert.throws(() => renderApp(<Auth />), {
+      message: 'The store "missing" does not exist. Add src/stores/missing.store.ts.',
+    });
   });
 });

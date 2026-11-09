@@ -25,5 +25,8 @@ export type {
 export { default as NanoApp } from './app/NanoApp';
 export * from './app/creators';
 
+/** Error of the framework, also for handlers: `throw new NanoError('Not found', 404)` */
+export { NanoError } from '@nano-app/core';
+
 /** Permissions check by Better Auth */
 export { default as isGranted } from './auth/permissions';

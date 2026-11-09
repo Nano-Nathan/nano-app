@@ -1,6 +1,7 @@
 import { isAbsolute, resolve } from 'node:path';
 import { readFileSync, existsSync } from 'node:fs';
 import { createJiti } from 'jiti';
+import NanoError from '../utils/NanoError';
 import type { JitiResolveOptions } from 'jiti';
 
 /** Reads and loads files from disk, resolved from `cwd` */
@@ -22,7 +23,7 @@ export default abstract class FileReader {
 
     // Checks that the contents are valid
     if (!sContent) {
-      throw new Error(`[nano-app] [ERROR] The file ${sFilePath} does not have valid content.`);
+      throw new NanoError(`The file ${sFilePath} does not have valid content.`);
     }
 
     // Returns the contents
@@ -34,6 +35,18 @@ export default abstract class FileReader {
     return this.loadFile(sFilePath).replace(/\/\/.*$/gm, '');
   }
 
+  /** Body of the `datasource` block of a Prisma schema, without its braces */
+  public static datasource(sContent: string): string {
+    return sContent.match(/datasource\s+\w+\s*\{([^}]*)\}/)?.[1] ?? '';
+  }
+
+  /** Schemas a Prisma schema declares in its datasource (`schemas = [...]`) */
+  public static schemas(sContent: string): string[] {
+    const sDeclared =
+      FileReader.datasource(sContent).match(/\bschemas\s*=\s*\[([^\]]*)\]/)?.[1] ?? '';
+    return [...sDeclared.matchAll(/["']([^"']+)["']/g)].map(([, sItem]) => sItem);
+  }
+
   /** Resolves the absolute path of a file */
   public static getAbsolutePath(sFilePath: string): string {
     // Resolves the absolute path
@@ -41,7 +54,7 @@ export default abstract class FileReader {
 
     // Checks that the file exists
     if (!existsSync(sAbsolutePath)) {
-      throw new Error(`[nano-app] [ERROR] ${sFilePath} not found.`);
+      throw new NanoError(`${sFilePath} not found.`);
     }
 
     // Returns the absolute path

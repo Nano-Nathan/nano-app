@@ -164,13 +164,6 @@ describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is no
     assert.equal(status, 404);
   });
 
-  test('a route whose public is not a boolean is discarded', async () => {
-    // Checks the warning and that it is not mounted
-    assert.match(oApp.output(), /"public" must be a boolean/);
-    const { status } = await request(oApp.url, '/bad-public', { headers: { cookie: sCookie } });
-    assert.equal(status, 404);
-  });
-
   test('a route with permissions needs them', async () => {
     // Without a session it still answers 401
     const oNoSession = await request(oApp.url, '/permissions/notes');

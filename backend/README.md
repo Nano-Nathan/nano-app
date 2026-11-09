@@ -72,7 +72,7 @@ type ApiResponse<T> = {
 
 - A write returns the item as it is after it in `result`: `POST` the created item, `PUT` the updated item, `DELETE` the deleted item. The frontend keeps what an update returns.
 - Undeclared methods respond `405`.
-- An invalid file is discarded with a warning; the other routes keep working.
+- An invalid file stops the startup with its path and what is wrong.
 
 ## Configuration
 
@@ -89,7 +89,9 @@ Every option is optional.
 
 `packages` accepts `morgan`, `cors`, `helmet`, `compression`, `express` (`express.json` options) and `urlencoded`. The merge is **per section**: passing one key keeps the others; pass `false` to disable one.
 
-`morgan` logs `:timestamp | :method :path :status` by default: `:path` is the path without its query string, so tokens sent there stay out of the logs. Set `format` with `:url` to log the full URL.
+`compression` is off by default: the proxy in front of the app (an ingress, nginx) usually compresses the answers. Turn it on with `packages: { compression: true }` when nothing does.
+
+`morgan` writes a line per request to stdout, synchronously; with the access log of the proxy in front, `packages: { morgan: false }` saves that cost. It logs `:timestamp | :method :path :status` by default: `:path` is the path without its query string, so tokens sent there stay out of the logs. Set `format` with `:url` to log the full URL.
 
 ```ts
 createNanoApp({

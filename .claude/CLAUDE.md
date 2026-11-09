@@ -42,7 +42,6 @@ Industry practices this repository follows. The concrete rules below win when th
 - **Least code**: implement each change with the least code possible. Before adding anything, check whether it is needed at all; prefer reusing what exists, and no change over a small one.
 - **DRY**: one source of truth for each piece of knowledge (a rule, a message, a constant), not only for repeated lines.
 - **Single responsibility**: a function does one thing, a file has one job, a module one reason to change.
-- **Separation of concerns**: I/O (files, network, database, `console`) at the edges; the logic in between receives values and returns values, so it can be tested and read alone.
 - **Fail fast**: invalid configuration fails at startup with a clear message, not on the first request.
 - **Validate at the boundaries**: data from outside (requests, consumer files, env) is checked once where it enters; inside, types are trusted.
 - **Immutability**: `const` by default, `let` only when a value changes. Do not mutate parameters; return a new value.
@@ -60,9 +59,9 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 ### Structure
 
 - Small files with one job. A file over ~120 lines, or a function you cannot read in one screen, is a sign to split or simplify.
-- Code that repeats is extracted the second time it appears (`Validator.warn`, `Formatter.error`); no abstraction for a single use. No option, parameter or config nobody asked for.
+- Code that repeats is extracted the second time it appears (`Validator.isStringMap`, `Logger.warn`); no abstraction for a single use. No option, parameter or config nobody asked for.
 - Exported functions of `backend` and `plugins` stay even when nothing in the repo uses them: consumers may. `core` is private: what nothing uses there is deleted.
-- Up to 3 positional parameters; with more, one object (`FindOptions`).
+- Up to 3 positional parameters; with more, one object (`DatabaseConfig`).
 - A class when there is state (`Database`, `Plugin`); `abstract class` with `static` methods for stateless utilities grouped by area (`FileReader`, `Validator`). Public API is plain functions (`createRoute`, `createPlugin`).
 - The function of `createController` returns its object: `callbacks` first (`onMount` reads what the view needs), then the methods. Before the `return` only `const` that read the context or the options (`const oApi = stores[store];`, a path); no functions, hooks or effects. Logic lives in the methods: one reaches another with `this` (`last() { return this.items()[0]; }`, method syntax, never an arrow), also from `onMount`. The view renders; its only hook is a `useEffect` that calls a method when a value changes (`useEffect(guard, [backend.get('/session')]);`).
 - The object of `createRoute` goes in order: its config (`expression`, `public`, `permissions`), then `callbacks`, then the handlers (`GET`, `POST`…).
@@ -110,9 +109,9 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 - One ternary at most, never nested nor inside an `if` condition: give it a name first (`const isInvalid = isPlugin ? isPluginInvalid : isConsumerInvalid;`).
 - `??` for defaults. `||` only when `0`, `''` or `NaN` must also take the default (`message || 'Internal server error'`).
 - `for...of` to iterate when nothing is returned, never `.forEach` (it does not wait for `await`). `.map`, `.filter` and `.some` when they return something.
-- `async`/`await` in general. Express handlers and middlewares chain `.then()` and end in `.catch(fnNext)`.
-- Errors: invalid consumer files are warned about and skipped (one bad route does not discard the rest). Startup problems throw `new Error('[nano-app] [ERROR] …')`, no error classes. Handlers throw a string (400) or `{ status, message, warning }`.
-- Messages: `[nano-app] [ERROR]`, `[nano-app] [WARNING]` or `[nano-app] [INFO]`, then the file or thing, what is wrong, and the command that fixes it (``Run `pnpm add prisma`.``).
+- `async`/`await` in general. Express handlers and middlewares chain `.then()` and return the chain: Express 5 sends a rejection to the error handler.
+- Errors: an invalid consumer file throws from the `Validator` and stops the startup (or the build). No `try`/`catch` to rename or wrap an error: it reaches `NanoApp.start` as it was thrown, with its stack. The framework throws `new NanoError('…')` (`core`): Node shows it as `[nano-app] [ERROR]: …`; with a status (`new NanoError('Not found', 404)`) a handler answers it. Handlers throw a string (400), `{ status, message, warning }` or a `NanoError`.
+- Messages: on the console only through `Logger.error`, `Logger.warn` and `Logger.info`, never `console`; in a response through `Logger.message`. The text says the file or thing, what is wrong, and the command that fixes it (``Run `pnpm add prisma`.``).
 
 ### Comments and format
 

@@ -1,4 +1,4 @@
-import { Formatter } from '@nano-app/core';
+import { Logger, NanoError, Validator } from '@nano-app/core';
 import { APP_NAME, PRIVATE_NETWORKS } from '@nano-app/core/const';
 import type { Request } from 'express';
 import type { NanoObject } from '@nano-app/core';
@@ -22,7 +22,7 @@ export const INITIAL_CONFIG = {
   packages: {
     morgan: {
       tokens: {
-        timestamp: () => Formatter.logDate(),
+        timestamp: () => Logger.date(),
         path: (oReq: Request) => oReq.path,
       },
       format: ':timestamp | :method :path :status',
@@ -31,7 +31,7 @@ export const INITIAL_CONFIG = {
       methods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE', 'QUERY'],
     },
     helmet: true,
-    compression: true,
+    compression: false,
     express: {
       limit: '10kb',
     },
@@ -54,18 +54,13 @@ export const INITIAL_CONFIG = {
   plugins: [],
 } satisfies NanoAppConfig;
 
-/** Whether a value is a plain object (`{}`), the only kind merged field by field */
-function isPlainObject(oValue: unknown): oValue is NanoObject {
-  return Object.prototype.toString.call(oValue) === '[object Object]';
-}
-
 /** Merges a value over its default: plain objects key by key at every level; anything else replaces it */
 function deepMerge(oDefault: unknown, oValue: unknown): unknown {
   // Not set: the default
   if (oValue === undefined) return oDefault;
 
   // Not two plain objects (`false`, arrays, functions, primitives): the value wins
-  if (!isPlainObject(oDefault) || !isPlainObject(oValue)) return oValue;
+  if (!Validator.isObject(oDefault) || !Validator.isObject(oValue)) return oValue;
 
   // Two plain objects: each key merged with its default
   const aKeys = Object.keys({ ...oDefault, ...oValue });
@@ -74,7 +69,7 @@ function deepMerge(oDefault: unknown, oValue: unknown): unknown {
 
 /** Whether a merged configuration kept the plain object of the initial one */
 function isMergedConfig(oValue: unknown): oValue is typeof INITIAL_CONFIG {
-  return isPlainObject(oValue);
+  return Validator.isObject(oValue);
 }
 
 /** Merges the consumer configuration over the initial one; the main plugin is always named "app" */
@@ -87,7 +82,7 @@ export function mergeConfig(oConfig: NanoAppConfig = {}): NanoAppConfig &
 
   // Fails when the configuration is not an object
   if (!isMergedConfig(oMerged)) {
-    throw new Error('[nano-app] [ERROR] The configuration of createNanoApp must be an object.');
+    throw new NanoError('The configuration of createNanoApp must be an object.');
   }
 
   // Names the main plugin

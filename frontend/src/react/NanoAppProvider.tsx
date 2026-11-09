@@ -2,6 +2,7 @@
 
 import { createContext, use, useRef } from 'react';
 import { MISSING_PROVIDER } from '@nano-app/core/const';
+import NanoError from '@nano-app/core/utils/NanoError';
 import createStores from '../creators/createStores';
 import type { ReactNode } from 'react';
 import type { Stores } from '../types/store';
@@ -22,7 +23,7 @@ export function NanoAppProvider({ children }: { children: ReactNode }): ReactNod
 export function useStores(): Stores {
   // Reads the provider's stores
   const oStores = use(StoreContext);
-  if (!oStores) throw new Error(MISSING_PROVIDER);
+  if (!oStores) throw new NanoError(MISSING_PROVIDER);
 
   return oStores;
 }

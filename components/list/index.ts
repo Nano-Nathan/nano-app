@@ -14,43 +14,43 @@ export default function list(oOptions: ListOptions) {
     return {
       // Reads the current page when the view mounts
       callbacks: {
-        onMount(): Promise<ApiResponse | undefined> {
+        onMount(): Promise<ApiResponse> {
           return this.load();
         },
       },
       page(): number {
         // The page chosen by the user, from 0
-        return oApi?.get('/list/page') ?? 0;
+        return oApi.get('/list/page') ?? 0;
       },
       query(): QueryParams {
         // The query of the page and the order chosen by the user
-        return { skip: this.page() * top, top, orderby: oApi?.get('/list/orderby') };
+        return { skip: this.page() * top, top, orderby: oApi.get('/list/orderby') };
       },
-      async load(): Promise<ApiResponse | undefined> {
+      async load(): Promise<ApiResponse> {
         // Reads the current page
-        return oApi?.read(path, this.query());
+        return oApi.read(path, this.query());
       },
       items(): ApiResponse | undefined {
         // The answer kept for the current page
-        return oApi?.get(path, this.query());
+        return oApi.get(path, this.query());
       },
-      async goTo(iPage: number): Promise<ApiResponse | undefined> {
+      async goTo(iPage: number): Promise<ApiResponse> {
         // Moves to a page, never before the first one, and reads it
-        oApi?.set('/list/page', Math.max(iPage, 0));
+        oApi.set('/list/page', Math.max(iPage, 0));
         return this.load();
       },
-      async next(): Promise<ApiResponse | undefined> {
+      async next(): Promise<ApiResponse> {
         // Reads the next page
         return this.goTo(this.page() + 1);
       },
-      async prev(): Promise<ApiResponse | undefined> {
+      async prev(): Promise<ApiResponse> {
         // Reads the page before, or the first one
         return this.goTo(this.page() - 1);
       },
-      async sort(sField: string): Promise<ApiResponse | undefined> {
+      async sort(sField: string): Promise<ApiResponse> {
         // Toggles the field between ascending and descending, and reads the first page
-        const sDirection = oApi?.get('/list/orderby')?.[sField] === 'asc' ? 'desc' : 'asc';
-        oApi?.set('/list/orderby', { [sField]: sDirection });
+        const sDirection = oApi.get('/list/orderby')?.[sField] === 'asc' ? 'desc' : 'asc';
+        oApi.set('/list/orderby', { [sField]: sDirection });
         return this.goTo(0);
       },
     };
