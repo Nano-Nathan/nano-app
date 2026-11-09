@@ -1,7 +1,7 @@
 import { isAbsolute, resolve } from 'node:path';
 import { readFileSync, existsSync } from 'node:fs';
 import { createJiti } from 'jiti';
-import Formatter from '../utils/Formatter';
+import NanoError from '../utils/NanoError';
 import type { JitiResolveOptions } from 'jiti';
 
 /** Reads and loads files from disk, resolved from `cwd` */
@@ -23,9 +23,7 @@ export default abstract class FileReader {
 
     // Checks that the contents are valid
     if (!sContent) {
-      throw new Error(
-        Formatter.message('ERROR', `The file ${sFilePath} does not have valid content.`),
-      );
+      throw new NanoError(`The file ${sFilePath} does not have valid content.`);
     }
 
     // Returns the contents
@@ -51,7 +49,7 @@ export default abstract class FileReader {
 
     // Checks that the file exists
     if (!existsSync(sAbsolutePath)) {
-      throw new Error(Formatter.message('ERROR', `${sFilePath} not found.`));
+      throw new NanoError(`${sFilePath} not found.`);
     }
 
     // Returns the absolute path

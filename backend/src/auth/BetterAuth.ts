@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { FileReader, Formatter, Validator } from '@nano-app/core';
+import { FileReader, NanoError, Validator } from '@nano-app/core';
 import { PRIVATE_NETWORKS } from '@nano-app/core/const';
 import type { RequestHandler } from 'express';
 import type { NanoObject } from '@nano-app/core';
@@ -25,12 +25,7 @@ export default abstract class BetterAuth {
 
     // Checks that it holds the options
     if (!Validator.isObject(oFile?.options)) {
-      throw new Error(
-        Formatter.message(
-          'ERROR',
-          `${sFilePath} must default export { options }: the Better Auth options.`,
-        ),
-      );
+      throw new NanoError(`${sFilePath} must default export { options }: the Better Auth options.`);
     }
 
     return oFile.options;
@@ -56,11 +51,8 @@ export default abstract class BetterAuth {
     // Checks that the app's schema has every model these options need
     const aMissing = Object.keys(getSchema(oOptions)).filter(sModel => !oDb[sModel]);
     if (aMissing.length) {
-      throw new Error(
-        Formatter.message(
-          'ERROR',
-          `Better Auth needs the models ${aMissing.join(', ')} in the app's schema. Run \`npx auth generate\` and apply your schema with Prisma.`,
-        ),
+      throw new NanoError(
+        `Better Auth needs the models ${aMissing.join(', ')} in the app's schema. Run \`npx auth generate\` and apply your schema with Prisma.`,
       );
     }
 

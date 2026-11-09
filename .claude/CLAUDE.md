@@ -59,7 +59,7 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 ### Structure
 
 - Small files with one job. A file over ~120 lines, or a function you cannot read in one screen, is a sign to split or simplify.
-- Code that repeats is extracted the second time it appears (`Validator.isStringMap`, `Formatter.message`); no abstraction for a single use. No option, parameter or config nobody asked for.
+- Code that repeats is extracted the second time it appears (`Validator.isStringMap`, `Logger.warn`); no abstraction for a single use. No option, parameter or config nobody asked for.
 - Exported functions of `backend` and `plugins` stay even when nothing in the repo uses them: consumers may. `core` is private: what nothing uses there is deleted.
 - Up to 3 positional parameters; with more, one object (`FindOptions`).
 - A class when there is state (`Database`, `Plugin`); `abstract class` with `static` methods for stateless utilities grouped by area (`FileReader`, `Validator`). Public API is plain functions (`createRoute`, `createPlugin`).
@@ -110,8 +110,8 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 - `??` for defaults. `||` only when `0`, `''` or `NaN` must also take the default (`message || 'Internal server error'`).
 - `for...of` to iterate when nothing is returned, never `.forEach` (it does not wait for `await`). `.map`, `.filter` and `.some` when they return something.
 - `async`/`await` in general. Express handlers and middlewares chain `.then()` and end in `.catch(fnNext)`.
-- Errors: invalid consumer files are warned about and skipped (one bad route does not discard the rest). Startup problems throw `new Error(Formatter.message('ERROR', '…'))`, no error classes. Handlers throw a string (400) or `{ status, message, warning }`.
-- Messages: built with `Formatter.message('ERROR' | 'WARNING' | 'INFO', text)` (`[nano-app] [ERROR] …`), the text says the file or thing, what is wrong, and the command that fixes it (``Run `pnpm add prisma`.``).
+- Errors: invalid consumer files are warned about and skipped (one bad route does not discard the rest). The framework throws `new NanoError('…')` (`core`): Node shows it as `[nano-app] [ERROR]: …`; with a status (`new NanoError('Not found', 404)`) a handler answers it. Handlers throw a string (400), `{ status, message, warning }` or a `NanoError`.
+- Messages: on the console only through `Logger.error`, `Logger.warn` and `Logger.info`, never `console`; in a response through `Formatter.message`. The text says the file or thing, what is wrong, and the command that fixes it (``Run `pnpm add prisma`.``).
 
 ### Comments and format
 

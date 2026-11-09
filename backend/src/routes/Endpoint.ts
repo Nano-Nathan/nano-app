@@ -1,4 +1,4 @@
-import { Formatter } from '@nano-app/core';
+import { Logger } from '@nano-app/core';
 import { HTTP_METHODS } from '@nano-app/core/const';
 import isGranted from '../auth/permissions';
 import type { RequestHandler } from 'express';
@@ -43,11 +43,8 @@ export default class Endpoint {
   public async mount(oParams: Params, sPath: string): Promise<RequestHandler> {
     // Without Better Auth, a route with permissions answers without checking them
     if (!oParams.auth && Object.values(this.oMethods).some(({ permissions }) => permissions)) {
-      console.warn(
-        Formatter.message(
-          'WARNING',
-          `${sPath}: its permissions are not checked without Better Auth. Add src/auth.ts.`,
-        ),
+      Logger.warn(
+        `${sPath}: its permissions are not checked without Better Auth. Add src/auth.ts.`,
       );
     }
 

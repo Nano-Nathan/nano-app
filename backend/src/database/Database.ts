@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { FileLoader, FileReader, Formatter, Validator } from '@nano-app/core';
+import { FileLoader, FileReader, Formatter, Logger, NanoError, Validator } from '@nano-app/core';
 import { MISSING_DATABASE_URL, OFFICIAL_PLUGINS } from '@nano-app/core/const';
 import Prisma from './Prisma';
 import type { PrismaPg } from '@prisma/adapter-pg';
@@ -19,7 +19,7 @@ export default abstract class Database {
     // Checks the DATABASE_URL is defined
     const sUrl = process.env.DATABASE_URL;
     if (!sUrl) {
-      throw new Error(MISSING_DATABASE_URL);
+      throw new NanoError(MISSING_DATABASE_URL);
     }
 
     // Create the adapter (imported only when needed)
@@ -38,14 +38,14 @@ export default abstract class Database {
   public static async mount(sName: string, { schemaPath }: DatabaseConfig): Promise<any> {
     // Fail if trying to mount a client that already exists
     if (this.get(sName)) {
-      throw new Error(Formatter.message('ERROR', `The database "${sName}" is already mounted.`));
+      throw new NanoError(`The database "${sName}" is already mounted.`);
     }
 
     // Validates the schema before generating its client: PostgreSQL, and nano_* only for plugins
     const isPlugin = this.isOfficial(schemaPath);
     const sContent = FileReader.loadSchema(schemaPath);
     if (!Validator.isPrisma(sContent, schemaPath, isPlugin)) {
-      throw new Error(Formatter.message('ERROR', `${schemaPath} is not a valid Prisma schema.`));
+      throw new NanoError(`${schemaPath} is not a valid Prisma schema.`);
     }
 
     // Generates the client when its schema changed
@@ -67,11 +67,8 @@ export default abstract class Database {
       // Instantiates it with the pg adapter
       oClient = new PrismaClient({ adapter: this.oAdapter });
     } catch (oError) {
-      throw new Error(
-        Formatter.message(
-          'ERROR',
-          `Cannot instantiate the database "${sName}" from ${sClientPath}: ${Formatter.error(oError)}`,
-        ),
+      throw new NanoError(
+        `Cannot instantiate the database "${sName}" from ${sClientPath}: ${Formatter.error(oError)}`,
       );
     }
 
@@ -85,15 +82,13 @@ export default abstract class Database {
         .catch((oError: unknown) => {
           // Last line of Prisma's message: the table or column that is missing
           const sReason = Formatter.error(oError).trim().split('\n').pop();
-          throw new Error(
-            Formatter.message('ERROR', `The database "${sName}" is not ready: ${sReason} ${sFix}`),
-          );
+          throw new NanoError(`The database "${sName}" is not ready: ${sReason} ${sFix}`);
         });
     }
 
     // Mounts the client
     this.oClients[sName] = oClient;
-    console.log(Formatter.message('INFO', `Database "${sName}" mounted`));
+    Logger.info(`Database "${sName}" mounted`);
 
     return oClient;
   }

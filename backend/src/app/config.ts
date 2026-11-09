@@ -1,4 +1,4 @@
-import { Formatter, Validator } from '@nano-app/core';
+import { Formatter, NanoError, Validator } from '@nano-app/core';
 import { APP_NAME, PRIVATE_NETWORKS } from '@nano-app/core/const';
 import type { Request } from 'express';
 import type { NanoObject } from '@nano-app/core';
@@ -82,9 +82,7 @@ export function mergeConfig(oConfig: NanoAppConfig = {}): NanoAppConfig &
 
   // Fails when the configuration is not an object
   if (!isMergedConfig(oMerged)) {
-    throw new Error(
-      Formatter.message('ERROR', 'The configuration of createNanoApp must be an object.'),
-    );
+    throw new NanoError('The configuration of createNanoApp must be an object.');
   }
 
   // Names the main plugin

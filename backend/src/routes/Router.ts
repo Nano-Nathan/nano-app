@@ -1,4 +1,4 @@
-import { FileLoader, Formatter, Validator, type NanoObject, type RouteEntry } from '@nano-app/core';
+import { FileLoader, Logger, Validator, type NanoObject, type RouteEntry } from '@nano-app/core';
 import Endpoint from './Endpoint';
 
 /** Turns a folder of `*.route.ts` files into Express paths and endpoints */
@@ -25,7 +25,7 @@ export default class Router {
       ([sFilePath, { expression, callbacks, public: isPublic, permissions, ...methods }]) => {
         // Create the path of endpoints
         const sPath = this.createPath(sFilePath, expression);
-        console.log(Formatter.message('INFO', `${sPath}`));
+        Logger.info(`${sPath}`);
 
         // Create the endpoint
         return {

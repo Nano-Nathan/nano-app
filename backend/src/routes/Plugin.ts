@@ -1,4 +1,4 @@
-import { Formatter } from '@nano-app/core';
+import { NanoError } from '@nano-app/core';
 import { APP_NAME } from '@nano-app/core/const';
 import Router from './Router';
 import BetterAuth from '../auth/BetterAuth';
@@ -29,11 +29,8 @@ export default class Plugin {
     if (this.oAuthOptions) {
       // Checks that the database is mounted: Better Auth keeps its tables there
       if (!oDb) {
-        throw new Error(
-          Formatter.message(
-            'ERROR',
-            'src/auth.ts needs the database of the app: set mainPlugin.database.enabled to true.',
-          ),
+        throw new NanoError(
+          'src/auth.ts needs the database of the app: set mainPlugin.database.enabled to true.',
         );
       }
 

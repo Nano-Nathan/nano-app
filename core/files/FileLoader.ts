@@ -1,4 +1,5 @@
 import { glob } from 'glob';
+import NanoError from '../utils/NanoError';
 import FileReader from './FileReader';
 import Formatter from '../utils/Formatter';
 import type { NanoObject, PrismaEntry } from '../types/objects';
@@ -12,11 +13,8 @@ export default abstract class FileLoader {
       return (await FileReader.loadModule<{ PrismaClient: PrismaEntry }>(sClientPath))
         ?.PrismaClient;
     } catch (oError) {
-      throw new Error(
-        Formatter.message(
-          'ERROR',
-          `The Prisma client ${sClientPath} could not be loaded: ${Formatter.error(oError)}`,
-        ),
+      throw new NanoError(
+        `The Prisma client ${sClientPath} could not be loaded: ${Formatter.error(oError)}`,
       );
     }
   }
