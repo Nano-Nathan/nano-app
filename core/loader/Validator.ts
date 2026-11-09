@@ -1,4 +1,5 @@
-import { API_STORE_TYPE, APP_STORE_TYPE, HTTP_METHODS } from '../const';
+import { API_STORE_TYPE, APP_STORE_TYPE, DEFAULT_REDIRECT, HTTP_METHODS } from '../const';
+import Paths from '../utils/Paths';
 import type { RouteEntry, NanoObject } from '../types/objects';
 import type { FindableExtension } from '../types/loader';
 
@@ -62,7 +63,7 @@ export default abstract class Validator {
     type: typeof APP_STORE_TYPE | typeof API_STORE_TYPE;
     data?: NanoObject;
     headers?: NanoObject<string>;
-    auth?: string;
+    auth?: { path: string; routes?: NanoObject[] };
   } {
     // Checks that the default export is an object
     if (!Validator.isObject(oEntry, sFilePath)) return false;
@@ -86,9 +87,66 @@ export default abstract class Validator {
     if (isHeadersInvalid)
       return Validator.warn(sFilePath, '"headers" must be an object of strings.');
 
-    // Checks that the base path of Better Auth is a string
-    if (oEntry.auth !== undefined && typeof oEntry.auth !== 'string')
-      return Validator.warn(sFilePath, '"auth" must be a string: the base path of Better Auth.');
+    // Checks the base path of Better Auth and the routes it guards
+    if (oEntry.auth !== undefined) return Validator.isAuth(oEntry.auth, sFilePath);
+
+    return true;
+  }
+
+  /** Checks the `auth` of a store: the base path of Better Auth and the routes it guards */
+  private static isAuth(oAuth: NanoObject, sFilePath: string): boolean {
+    // Checks that it is an object with the base path of Better Auth
+    if (!oAuth || typeof oAuth.path !== 'string')
+      return Validator.warn(
+        sFilePath,
+        '"auth" must be { path, routes }: the base path of Better Auth.',
+      );
+
+    // Checks that the routes are a list
+    if (oAuth.routes !== undefined && !Array.isArray(oAuth.routes))
+      return Validator.warn(sFilePath, '"auth.routes" must be an array.');
+
+    return (oAuth.routes ?? []).every((oRoute: NanoObject) => Validator.isGuard(oRoute, sFilePath));
+  }
+
+  /** Checks a route of `auth.routes`: `{ match, redirect?, roles?, permissions? }` */
+  private static isGuard(oRoute: NanoObject, sFilePath: string): boolean {
+    // Checks that the route is an object
+    if (!oRoute || typeof oRoute !== 'object')
+      return Validator.warn(sFilePath, 'each route of "auth.routes" must be an object.');
+    const { match, redirect = DEFAULT_REDIRECT, roles, permissions } = oRoute;
+
+    // Checks that its paths start with /
+    if (typeof match !== 'string' || !match.startsWith('/'))
+      return Validator.warn(
+        sFilePath,
+        'each route of "auth.routes" needs a "match" starting with /.',
+      );
+    if (typeof redirect !== 'string' || !redirect.startsWith('/'))
+      return Validator.warn(sFilePath, `the "redirect" of "${match}" must start with /.`);
+
+    // Checks that it does not redirect to itself
+    if (Paths.matches(match, redirect))
+      return Validator.warn(
+        sFilePath,
+        `"${match}" redirects to "${redirect}", which it guards: set another "redirect".`,
+      );
+
+    // Checks that the roles are a string, as Better Auth keeps them (`admin,user`)
+    if (roles !== undefined && typeof roles !== 'string')
+      return Validator.warn(sFilePath, `the "roles" of "${match}" must be a string: "admin,user".`);
+
+    // Checks that the permissions are a string of actions per resource
+    const isPermissionsInvalid =
+      permissions !== undefined &&
+      (!permissions ||
+        typeof permissions !== 'object' ||
+        Object.values(permissions).some(sActions => typeof sActions !== 'string'));
+    if (isPermissionsInvalid)
+      return Validator.warn(
+        sFilePath,
+        `the "permissions" of "${match}" must be { resource: 'read,update' }.`,
+      );
 
     return true;
   }

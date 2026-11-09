@@ -39,6 +39,9 @@ export const IS_SERVER = typeof window === 'undefined';
 /** Env var that carries the stores to the bundle. Read as `process.env.NANO_APP_STORES`, literal */
 export const STORES_ENV = 'NANO_APP_STORES';
 
+/** Page a guarded route goes to when its `redirect` is not set */
+export const DEFAULT_REDIRECT = '/';
+
 /** Message of a failed request whose answer brings none */
 export const REQUEST_FAILED = 'Request failed';
 

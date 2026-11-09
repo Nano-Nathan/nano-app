@@ -24,8 +24,8 @@ describe('store files', () => {
         kind: { type: 'other' },
         api: { type: 'api', headers: { 'x-api-key': 'STRIPE_KEY' } },
         headers: { type: 'api', headers: { 'x-api-key': 1 } },
-        auth: { type: 'api', auth: true },
-        session: { type: 'api', auth: '/api/auth' },
+        auth: { type: 'api', auth: '/api/auth' },
+        session: { type: 'api', auth: { path: '/api/auth' } },
         data: { type: 'app', data: 'not an object' },
         app: { type: 'app', data: { iCount: 0 } },
       },
@@ -34,5 +34,32 @@ describe('store files', () => {
 
     // Checks that only the valid ones stay
     assert.deepEqual(Object.keys(oFiles), ['api', 'session', 'app']);
+  });
+
+  test('auth.routes need a match and a redirect with /, string roles and string actions, and no loop', () => {
+    // Validates one store per rule of its routes
+    const fnAuth = (aRoutes: unknown): unknown => ({
+      type: 'api',
+      auth: { path: '/a', routes: aRoutes },
+    });
+    const oFiles = Validator.validate(
+      {
+        list: fnAuth('/admin'),
+        route: fnAuth(['/admin']),
+        match: fnAuth([{ match: 'admin' }]),
+        redirect: fnAuth([{ match: '/admin', redirect: 'login' }]),
+        loop: fnAuth([{ match: '/*' }]),
+        roles: fnAuth([{ match: '/admin', roles: ['admin'] }]),
+        permissions: fnAuth([{ match: '/admin', permissions: { collections: ['read'] } }]),
+        valid: fnAuth([
+          { match: '/', redirect: '/login' },
+          { match: '/admin/*', roles: 'admin,editor', permissions: { collections: 'read,update' } },
+        ]),
+      },
+      'store',
+    );
+
+    // Checks that only the valid one stays
+    assert.deepEqual(Object.keys(oFiles), ['valid']);
   });
 });

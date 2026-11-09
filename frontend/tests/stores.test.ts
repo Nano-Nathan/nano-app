@@ -22,7 +22,7 @@ describe('store state', () => {
 
   test('createStores starts each store with its data, plus an empty app store', () => {
     // Creates the stores, as one React tree does
-    const { app, ui } = createStores();
+    const { app, ui } = createStores(() => {});
 
     assert.deepEqual(app.get('/'), {});
     assert.equal(ui.get('/busy'), false);
@@ -30,7 +30,7 @@ describe('store state', () => {
 
   test('an api store has its own state from its data, read and written by path', () => {
     // Creates the stores and writes the api store
-    const { backend } = createStores();
+    const { backend } = createStores(() => {});
     backend.set('/list/orderby', { name: 'asc' });
 
     assert.equal(backend.get('/page'), 1);

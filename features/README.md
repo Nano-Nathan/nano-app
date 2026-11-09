@@ -9,6 +9,7 @@ Planned work on this repository, one file per feature. A file says what the feat
 | [create-nano-app](create-nano-app.md) | A generated app starts, migrates and builds its images | example-app |
 | [scheduler](scheduler.md) | A job declared in the `scheduler` plugin runs on its cron, in its timezone | — |
 | [mail](mail.md) | A route sends an email through the `mail` plugin | scheduler |
+| [route-guards](route-guards.md) | The proxy guards the pages of `auth.routes` by session, roles and permissions | — |
 | [sse](sse.md) | The backend pushes an event and a component updates | Only when the maintainer asks |
 
 The order of the table is the order of work. Work outside this repository (cluster, deploys, apps) is not tracked here.

@@ -7,3 +7,4 @@ export * from './types/loader';
 export * from './types/objects';
 
 export { default as Formatter } from './utils/Formatter';
+export { default as Paths } from './utils/Paths';

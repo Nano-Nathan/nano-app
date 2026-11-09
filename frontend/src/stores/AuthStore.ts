@@ -1,17 +1,19 @@
 import { IS_SERVER } from '@nano-app/core/const';
 import ApiStore from './ApiStore';
 import type { ApiResponse } from '@nano-app/core/types/api';
-import type { NanoObject } from '@nano-app/core/types/objects';
+import type { AuthStoreOptions } from '../types/store';
 
 /** Api store of a backend with Better Auth: signs in and out, and keeps the session */
 export default class AuthStore extends ApiStore {
   private sBasePath: string;
+  private fnRefresh: () => void;
   private oSession?: ApiResponse;
 
   /** Store of the backend `API_<NAME>_URL`, with Better Auth at its base path */
-  constructor(sName: string, sBasePath: string, oData?: NanoObject) {
-    super(sName, oData);
-    this.sBasePath = sBasePath;
+  constructor(sName: string, oOptions: AuthStoreOptions) {
+    super(sName, oOptions.data);
+    this.sBasePath = oOptions.path;
+    this.fnRefresh = oOptions.refresh;
   }
 
   /** `POST <basePath>/sign-in/<kind>` (`email`...), reading the session again on success */
@@ -46,10 +48,11 @@ export default class AuthStore extends ApiStore {
 
   /** Better Auth's answer inside an `ApiResponse`; a 401 of the backend clears the session */
   protected receive(sPath: string, oRes: Response, oBody: ApiResponse): ApiResponse {
-    // Clears the session and its kept answer on a 401
+    // Clears the session and its kept answer on a 401, and refreshes the page for the proxy to guard it
     if (oRes.status === 401) {
       this.oSession = undefined;
       this.set('/session', null);
+      this.fnRefresh();
     }
 
     // Answers of the backend's own routes are already an `ApiResponse`
