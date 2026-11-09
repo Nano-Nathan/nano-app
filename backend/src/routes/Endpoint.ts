@@ -1,3 +1,4 @@
+import { Logger } from '@nano-app/core';
 import { HTTP_METHODS } from '@nano-app/core/const';
 import isGranted from '../auth/permissions';
 import type { RequestHandler } from 'express';
@@ -42,8 +43,8 @@ export default class Endpoint {
   public async mount(oParams: Params, sPath: string): Promise<RequestHandler> {
     // Without Better Auth, a route with permissions answers without checking them
     if (!oParams.auth && Object.values(this.oMethods).some(({ permissions }) => permissions)) {
-      console.warn(
-        `[nano-app] [WARNING] ${sPath}: its permissions are not checked without Better Auth. Add src/auth.ts.`,
+      Logger.warn(
+        `${sPath}: its permissions are not checked without Better Auth. Add src/auth.ts.`,
       );
     }
 
@@ -73,22 +74,23 @@ export default class Endpoint {
       const oRequestParams = { ...oParams, session: oRes.locals.session };
 
       // Checks the permissions of the method, none on a public route, then runs the onBefore callback
-      isGranted(oRequestParams, this.isPublic ? undefined : oMethod.permissions)
-        .then(isAllowed => {
-          if (!isAllowed) throw { status: 403, message: 'Forbidden' };
-          return this.oCallbacks.onBefore?.(oReq, sMethod, oRequestParams) ?? {};
-        })
-        // Runs the method
-        .then(onBeforeResult => oMethod.handler(oReq, { ...oRequestParams, onBeforeResult }))
-        // Handles the response
-        .then(oResponse => {
-          // Answers with the status of the handler, 200 by default, and its success
-          const { status, ...oBody } = oResponse;
-          const iStatus = status ?? 200;
-          oRes.status(iStatus).json({ ...oBody, success: iStatus < 400 });
-        })
-        // Forwards the error to the next error middleware
-        .catch(fnNext);
+      // A rejection reaches the error handler: Express 5 forwards it
+      return (
+        isGranted(oRequestParams, this.isPublic ? undefined : oMethod.permissions)
+          .then(isAllowed => {
+            if (!isAllowed) throw { status: 403, message: 'Forbidden' };
+            return this.oCallbacks.onBefore?.(oReq, sMethod, oRequestParams) ?? {};
+          })
+          // Runs the method
+          .then(onBeforeResult => oMethod.handler(oReq, { ...oRequestParams, onBeforeResult }))
+          // Handles the response
+          .then(oResponse => {
+            // Answers with the status of the handler, 200 by default, and its success
+            const { status, ...oBody } = oResponse;
+            const iStatus = status ?? 200;
+            oRes.status(iStatus).json({ ...oBody, success: iStatus < 400 });
+          })
+      );
     };
   }
 }

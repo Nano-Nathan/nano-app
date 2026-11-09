@@ -72,7 +72,7 @@ type ApiResponse<T> = {
 
 - A write returns the item as it is after it in `result`: `POST` the created item, `PUT` the updated item, `DELETE` the deleted item. The frontend keeps what an update returns.
 - Undeclared methods respond `405`.
-- An invalid file is discarded with a warning; the other routes keep working.
+- An invalid file stops the startup with its path and what is wrong.
 
 ## Configuration
 

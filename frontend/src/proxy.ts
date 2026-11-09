@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DEFAULT_REDIRECT } from '@nano-app/core/const';
+import Logger from '@nano-app/core/utils/Logger';
 import Paths from '@nano-app/core/utils/Paths';
-import STORE_FILES from './stores/storeFiles';
+import Validator from '@nano-app/core/utils/Validator';
+import { HEADERS, ROUTES } from './utils/state';
 import type { NanoObject } from '@nano-app/core/types/objects';
-import type { AuthRoute } from './types/store';
+import type { GuardedRoute } from './types/store';
 
 /** Sends `/api/<store>/<path>` to the backend of `<store>`, in `API_<STORE>_URL`, with its headers; guards the pages of `auth.routes` */
 export async function proxy(oReq: NextRequest): Promise<Response> {
@@ -13,22 +14,20 @@ export async function proxy(oReq: NextRequest): Promise<Response> {
   // A request outside `/api/<store>` is a page of the app
   if (sPrefix !== 'api' || !sName) return guard(oReq);
 
-  // Names the env vars of the store: its URL and one per header (`STRIPE_KEY` → `API_STRIPE_KEY_HEADER`)
+  // Names the env vars of the store: its URL and the one of each header
   const sUrlEnv = `API_${sName.toUpperCase()}_URL`;
-  const aHeaders = Object.entries(STORE_FILES[sName]?.headers ?? {}).map(([sHeader, sValue]) => [
-    sHeader,
-    `API_${sValue.toUpperCase()}_HEADER`,
-  ]);
+  const aHeaders = HEADERS.get(sName) ?? [];
 
   // Answers 500 with the first env var that is missing; their values never reach the browser
-  const sMissing = [sUrlEnv, ...aHeaders.map(([, sEnvName]) => sEnvName)].find(
-    sEnvName => !process.env[sEnvName],
-  );
+  const sMissing = Validator.missingEnv([sUrlEnv, ...aHeaders.map(([, sEnvName]) => sEnvName)]);
   if (sMissing) {
     return NextResponse.json(
       {
         success: false,
-        message: `[nano-app] [ERROR] The store "${sName}" needs the ${sMissing} environment variable. Define it.`,
+        message: Logger.message(
+          'ERROR',
+          `The store "${sName}" needs the ${sMissing} environment variable. Define it.`,
+        ),
       },
       { status: 500 },
     );
@@ -48,40 +47,30 @@ export async function proxy(oReq: NextRequest): Promise<Response> {
 
 /** Lets a page through, or sends it to the `redirect` of its route when Better Auth does not allow it */
 async function guard(oReq: NextRequest): Promise<Response> {
-  // Finds the first route of the page across the stores with `auth`
-  for (const [sName, { auth }] of Object.entries(STORE_FILES)) {
-    const oRoute = auth?.routes?.find(oItem => Paths.matches(oItem.match, oReq.nextUrl.pathname));
-    if (!auth || !oRoute) continue;
+  // Finds the first route of the page; a page without one is public
+  const oRoute = ROUTES.find(oItem => Paths.matches(oItem.match, oReq.nextUrl.pathname));
+  if (!oRoute) return NextResponse.next();
 
-    // Lets the page through when Better Auth allows it, and redirects it otherwise
-    if (await allows(oReq, `/api/${sName}${auth.path}`, oRoute)) return NextResponse.next();
-    return NextResponse.redirect(new URL(oRoute.redirect ?? DEFAULT_REDIRECT, oReq.url));
-  }
-
-  // A page without a route is public
-  return NextResponse.next();
+  // Lets the page through when Better Auth allows it, and redirects it otherwise
+  if (await allows(oReq, oRoute)) return NextResponse.next();
+  return NextResponse.redirect(new URL(oRoute.redirect, oReq.url));
 }
 
 /** Whether Better Auth allows the request: a session, any of the roles and every permission */
-async function allows(oReq: NextRequest, sAuthPath: string, oRoute: AuthRoute): Promise<boolean> {
-  const { roles, permissions } = oRoute;
+async function allows(oReq: NextRequest, oRoute: GuardedRoute): Promise<boolean> {
+  const { authPath, roles, permissions } = oRoute;
 
   // Reads the session: `null` without one
-  const oSession = await ask(oReq, `${sAuthPath}/get-session`);
+  const oSession = await ask(oReq, `${authPath}/get-session`);
   if (!oSession?.user) return false;
 
   // Needs any of the roles, separated by commas as Better Auth keeps them
   const aUserRoles: string[] = String(oSession.user.role ?? '').split(',');
-  if (roles && !roles.split(',').some(sRole => aUserRoles.includes(sRole))) return false;
+  if (roles.size && !aUserRoles.some(sRole => roles.has(sRole))) return false;
 
   // Needs every permission, checked by the admin plugin
   if (!permissions) return true;
-  const oPermissions = Object.fromEntries(
-    Object.entries(permissions).map(([sResource, sActions]) => [sResource, sActions.split(',')]),
-  );
-  const oCheck = await ask(oReq, `${sAuthPath}/admin/has-permission`, {
-    permissions: oPermissions,
-  });
+  const oCheck = await ask(oReq, `${authPath}/admin/has-permission`, { permissions });
   return oCheck?.success === true;
 }
 

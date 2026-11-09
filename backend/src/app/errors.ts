@@ -1,3 +1,4 @@
+import { Logger } from '@nano-app/core';
 import type { ErrorRequestHandler, RequestHandler } from 'express';
 import type { ApiResponse, NanoObject } from '@nano-app/core';
 import type { HandlerError } from '../types/app';
@@ -54,7 +55,7 @@ export const errorHandler: ErrorRequestHandler = (oError, _oReq, oRes, _fnNext) 
 
   // Server errors are logged in full; the response carries only the message
   if (status >= 500) {
-    console.error('[nano-app] [ERROR]', oError);
+    Logger.error('Internal server error', oError);
   }
 
   // Answers with the status and the body

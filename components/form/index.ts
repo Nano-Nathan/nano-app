@@ -1,7 +1,8 @@
 import { createElement } from 'react';
 import { createController } from '@nano-app/frontend';
+import NanoError from '@nano-app/core/utils/NanoError';
 import FieldRules from '../field/FieldRules';
-import type { FormEvent, ReactNode } from 'react';
+import type { ReactNode, SubmitEvent } from 'react';
 import type { FormField } from '../types/field';
 import type { FormOptions } from '../types/form';
 
@@ -23,8 +24,8 @@ export default function form(oOptions: FormOptions) {
           const sType = oField.type ?? 'text';
           const fnView = components[sType] ?? components.text;
           if (!fnView)
-            throw new Error(
-              `[nano-app] [ERROR] Form "${name}": the field "${oField.name}" of type "${sType}" has no view, and components has no "text" view to show it. Add one: form({ components: { text: Input } }).`,
+            throw new NanoError(
+              `Form "${name}": the field "${oField.name}" of type "${sType}" has no view, and components has no "text" view to show it. Add one: form({ components: { text: Input } }).`,
             );
 
           // Renders it with its form and its config
@@ -32,7 +33,7 @@ export default function form(oOptions: FormOptions) {
         });
       },
       // any: what the onSubmit of the props returns
-      submit(oEvent: FormEvent): any {
+      submit(oEvent: SubmitEvent<HTMLFormElement>): any {
         // Stops the browser's submit
         oEvent.preventDefault();
 

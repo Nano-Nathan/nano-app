@@ -1,5 +1,7 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import { Validator } from '@nano-app/core';
+import Router from '../src/routes/Router';
 import { startApp, request } from './helpers';
 
 describe('file path to express path', () => {
@@ -109,13 +111,17 @@ describe('routes by file convention', () => {
     assert.deepEqual(body.result, { name: 'Bruno' });
   });
 
-  test('an invalid file is discarded without taking down the other routes', async () => {
-    // Checks that the invalid route is not mounted
-    const { status } = await request(oServer.url, '/broken');
-    assert.equal(status, 404);
+  test('an invalid route file fails its mount, naming the file', async () => {
+    // Mounts a folder with a route that does not export handlers
+    const oRouter = new Router('tests/fixtures/broken-routes');
 
-    // Checks that the valid routes still answer
-    const { status: healthStatus } = await request(oServer.url, '/health');
-    assert.equal(healthStatus, 200);
+    // Checks that it throws with the file and what is wrong
+    await assert.rejects(oRouter.mount(), /\/broken: the default export is not an object/);
+  });
+
+  test('a route whose public is not a boolean fails, naming the file', () => {
+    // Checks the route of a file with a public that is not a boolean
+    const oRoute = { public: 'yes', GET: () => ({}) };
+    assert.throws(() => Validator.isRoute(oRoute, '/bad'), /\/bad: "public" must be a boolean/);
   });
 });
