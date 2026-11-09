@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DEFAULT_REDIRECT } from '@nano-app/core/const';
+import Formatter from '@nano-app/core/utils/Formatter';
 import Paths from '@nano-app/core/utils/Paths';
+import Validator from '@nano-app/core/utils/Validator';
 import STORE_FILES from './stores/storeFiles';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { AuthRoute } from './types/store';
@@ -21,14 +23,15 @@ export async function proxy(oReq: NextRequest): Promise<Response> {
   ]);
 
   // Answers 500 with the first env var that is missing; their values never reach the browser
-  const sMissing = [sUrlEnv, ...aHeaders.map(([, sEnvName]) => sEnvName)].find(
-    sEnvName => !process.env[sEnvName],
-  );
+  const sMissing = Validator.missingEnv([sUrlEnv, ...aHeaders.map(([, sEnvName]) => sEnvName)]);
   if (sMissing) {
     return NextResponse.json(
       {
         success: false,
-        message: `[nano-app] [ERROR] The store "${sName}" needs the ${sMissing} environment variable. Define it.`,
+        message: Formatter.message(
+          'ERROR',
+          `The store "${sName}" needs the ${sMissing} environment variable. Define it.`,
+        ),
       },
       { status: 500 },
     );

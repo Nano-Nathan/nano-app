@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { FileLoader, FileReader, Formatter } from '@nano-app/core';
+import { FileLoader, FileReader, Formatter, Validator } from '@nano-app/core';
 import { MISSING_DATABASE_URL, OFFICIAL_PLUGINS } from '@nano-app/core/const';
 import Prisma from './Prisma';
 import type { PrismaPg } from '@prisma/adapter-pg';
@@ -38,33 +38,28 @@ export default abstract class Database {
   public static async mount(sName: string, { schemaPath }: DatabaseConfig): Promise<any> {
     // Fail if trying to mount a client that already exists
     if (this.get(sName)) {
-      throw new Error(`[nano-app] [ERROR] The database "${sName}" is already mounted.`);
+      throw new Error(Formatter.message('ERROR', `The database "${sName}" is already mounted.`));
     }
 
-    // Official plugins' schemas use only nano_*; the others never do
+    // Validates the schema before generating its client: PostgreSQL, and nano_* only for plugins
     const isPlugin = this.isOfficial(schemaPath);
-    const aSchemas = this.declaredSchemas(schemaPath);
-    const isPluginInvalid = !aSchemas.length || aSchemas.some(sItem => !sItem.startsWith('nano_'));
-    const isConsumerInvalid = aSchemas.some(sItem => sItem.startsWith('nano_'));
-    const isInvalid = isPlugin ? isPluginInvalid : isConsumerInvalid;
-    if (isInvalid) {
-      throw new Error(
-        `[nano-app] [ERROR] ${schemaPath}: ${isPlugin ? 'a plugin declares only nano_* schemas' : 'the nano_* schemas are reserved for plugins'}.`,
-      );
+    const sContent = FileReader.loadSchema(schemaPath);
+    if (!Validator.isPrisma(sContent, schemaPath, isPlugin)) {
+      throw new Error(Formatter.message('ERROR', `${schemaPath} is not a valid Prisma schema.`));
     }
 
     // Generates the client when its schema changed
     Prisma.generate(sName, schemaPath);
 
     // An official plugin's tables are its own: nano-app migrates them
-    if (isPlugin) Prisma.migrate(sName, schemaPath, aSchemas[0]);
+    if (isPlugin) Prisma.migrate(sName, schemaPath, FileReader.schemas(sContent)[0]);
 
     // Creates the adapter when no consumer database did
     if (!this.oAdapter) await this.init();
 
-    // Loads the client and validates the schema
+    // Loads the client
     const sClientPath = join(Prisma.dir(sName), 'generated', 'client.ts');
-    const PrismaClient = await FileLoader.findPrismaClient(sClientPath, schemaPath);
+    const PrismaClient = await FileLoader.findPrismaClient(sClientPath);
 
     // Instantiates the client
     let oClient;
@@ -73,7 +68,10 @@ export default abstract class Database {
       oClient = new PrismaClient({ adapter: this.oAdapter });
     } catch (oError) {
       throw new Error(
-        `[nano-app] [ERROR] Cannot instantiate the database "${sName}" from ${sClientPath}: ${Formatter.error(oError)}`,
+        Formatter.message(
+          'ERROR',
+          `Cannot instantiate the database "${sName}" from ${sClientPath}: ${Formatter.error(oError)}`,
+        ),
       );
     }
 
@@ -81,32 +79,23 @@ export default abstract class Database {
     const sFix = isPlugin
       ? 'Update the plugin or report it.'
       : 'Apply your schema with Prisma (db push or migrations).';
-    for (const [, sModel] of FileReader.loadSchema(schemaPath).matchAll(/^\s*model\s+(\w+)/gm)) {
+    for (const [, sModel] of sContent.matchAll(/^\s*model\s+(\w+)/gm)) {
       await oClient[`${sModel[0].toLowerCase()}${sModel.slice(1)}`]
         .findFirst()
         .catch((oError: unknown) => {
           // Last line of Prisma's message: the table or column that is missing
           const sReason = Formatter.error(oError).trim().split('\n').pop();
           throw new Error(
-            `[nano-app] [ERROR] The database "${sName}" is not ready: ${sReason} ${sFix}`,
+            Formatter.message('ERROR', `The database "${sName}" is not ready: ${sReason} ${sFix}`),
           );
         });
     }
 
     // Mounts the client
     this.oClients[sName] = oClient;
-    console.log(`[nano-app] [INFO] Database "${sName}" mounted`);
+    console.log(Formatter.message('INFO', `Database "${sName}" mounted`));
 
     return oClient;
-  }
-
-  /** Schemas a Prisma schema declares in its datasource (`schemas = [...]`) */
-  private static declaredSchemas(sSchemaPath: string): string[] {
-    const sDeclared =
-      FileReader.loadSchema(sSchemaPath).match(
-        /datasource\s+\w+\s*\{[^}]*schemas\s*=\s*\[([^\]]*)\]/s,
-      )?.[1] ?? '';
-    return [...sDeclared.matchAll(/["']([^"']+)["']/g)].map(([, sItem]) => sItem);
   }
 
   /** Whether a schema ships with the official plugins: its nearest package.json is theirs */

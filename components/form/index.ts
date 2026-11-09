@@ -1,5 +1,6 @@
 import { createElement } from 'react';
 import { createController } from '@nano-app/frontend';
+import Formatter from '@nano-app/core/utils/Formatter';
 import FieldRules from '../field/FieldRules';
 import type { FormEvent, ReactNode } from 'react';
 import type { FormField } from '../types/field';
@@ -24,7 +25,10 @@ export default function form(oOptions: FormOptions) {
           const fnView = components[sType] ?? components.text;
           if (!fnView)
             throw new Error(
-              `[nano-app] [ERROR] Form "${name}": the field "${oField.name}" of type "${sType}" has no view, and components has no "text" view to show it. Add one: form({ components: { text: Input } }).`,
+              Formatter.message(
+                'ERROR',
+                `Form "${name}": the field "${oField.name}" of type "${sType}" has no view, and components has no "text" view to show it. Add one: form({ components: { text: Input } }).`,
+              ),
             );
 
           // Renders it with its form and its config

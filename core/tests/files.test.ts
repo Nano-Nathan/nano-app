@@ -9,7 +9,8 @@ const STORES_DIR = fileURLToPath(new URL('./fixtures/stores', import.meta.url));
 describe('store files', () => {
   test('stores are found in subfolders, named with _ for / and the invalid ones dropped', async () => {
     // Finds the store files of the fixtures
-    const oFiles = await FileLoader.findMany({ extension: 'store', sourceDir: STORES_DIR });
+    const oFound = await FileLoader.findMany({ extension: 'store', sourceDir: STORES_DIR });
+    const oFiles = Validator.validate(oFound, Validator.isStore);
 
     // Checks their names and that the invalid one was dropped
     assert.deepEqual(Object.keys(oFiles).sort(), ['admin_users', 'app']);
@@ -29,7 +30,7 @@ describe('store files', () => {
         data: { type: 'app', data: 'not an object' },
         app: { type: 'app', data: { iCount: 0 } },
       },
-      'store',
+      Validator.isStore,
     );
 
     // Checks that only the valid ones stay
@@ -56,7 +57,7 @@ describe('store files', () => {
           { match: '/admin/*', roles: 'admin,editor', permissions: { collections: 'read,update' } },
         ]),
       },
-      'store',
+      Validator.isStore,
     );
 
     // Checks that only the valid one stays

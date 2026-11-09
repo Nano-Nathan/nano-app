@@ -1,5 +1,10 @@
 /** Formats values for logs and messages */
 export default abstract class Formatter {
+  /** Message of the framework: `[nano-app] [<level>] <text>` */
+  public static message(sLevel: 'ERROR' | 'WARNING' | 'INFO', sText: string): string {
+    return `[nano-app] [${sLevel}] ${sText}`;
+  }
+
   /** Message of anything thrown: its `message` when it has one, else the value itself */
   public static error(oError: unknown): string {
     // An object with a `message`: its message

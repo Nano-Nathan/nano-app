@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import 'dotenv/config';
+import { Formatter } from '@nano-app/core';
 import BetterAuth from '../auth/BetterAuth';
 import Plugin from '../routes/Plugin';
 import { mergeConfig } from './config';
@@ -34,12 +35,14 @@ export default class NanoApp {
         this.oConfig.listener?.();
 
         // Startup log
-        console.log(`\n[nano-app] [INFO] Nano App running on port ${this.oConfig.port}\n`);
+        console.log(
+          `\n${Formatter.message('INFO', `Nano App running on port ${this.oConfig.port}`)}\n`,
+        );
       });
 
       return this;
     } catch (oError) {
-      console.error('[nano-app] [ERROR] Error trying to start the server.', oError);
+      console.error(Formatter.message('ERROR', 'Error trying to start the server.'), oError);
       process.exit(1);
     }
   }

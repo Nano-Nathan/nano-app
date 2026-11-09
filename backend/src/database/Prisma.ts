@@ -28,7 +28,10 @@ export default abstract class Prisma {
     // Warns when the folder holds the client of another schema
     if (oCurrent && oCurrent.schemaPath !== sSource) {
       console.warn(
-        `[nano-app] [WARNING] .nano-app/prisma-clients/${sName} has the client of ${oCurrent.schemaPath}: it is replaced by the one of ${sSource}.`,
+        Formatter.message(
+          'WARNING',
+          `.nano-app/prisma-clients/${sName} has the client of ${oCurrent.schemaPath}: it is replaced by the one of ${sSource}.`,
+        ),
       );
     }
 
@@ -47,7 +50,7 @@ export default abstract class Prisma {
     // Generates it and remembers where it came from
     this.run(sName, ['generate', '--schema', join(sDir, 'schema.prisma')]);
     writeFileSync(sSourceFile, JSON.stringify({ schemaPath: sSource, hash: sHash }));
-    console.log(`[nano-app] [INFO] Prisma client "${sName}" generated`);
+    console.log(Formatter.message('INFO', `Prisma client "${sName}" generated`));
   }
 
   /** Applies the pending migrations an official plugin ships next to its schema */
@@ -56,7 +59,7 @@ export default abstract class Prisma {
     const sMigrations = join(dirname(FileReader.getAbsolutePath(sSchemaPath)), 'migrations');
     if (!existsSync(sMigrations)) {
       throw new Error(
-        `[nano-app] [ERROR] The plugin "${sName}" ships no migrations: ${sMigrations}`,
+        Formatter.message('ERROR', `The plugin "${sName}" ships no migrations: ${sMigrations}`),
       );
     }
 
@@ -96,7 +99,10 @@ export default abstract class Prisma {
     } catch {
       // Not resolvable: the package is not installed
       throw new Error(
-        `[nano-app] [ERROR] The database "${sName}" needs Prisma. Run \`pnpm add prisma\`.`,
+        Formatter.message(
+          'ERROR',
+          `The database "${sName}" needs Prisma. Run \`pnpm add prisma\`.`,
+        ),
       );
     }
 
@@ -111,7 +117,10 @@ export default abstract class Prisma {
       const isOutput = oError instanceof Error && 'stderr' in oError && 'stdout' in oError;
       const sOutput = isOutput ? `${oError.stderr}${oError.stdout}`.trim() : '';
       throw new Error(
-        `[nano-app] [ERROR] prisma ${aArgs[0]} failed for "${sName}": ${sOutput || Formatter.error(oError)}`,
+        Formatter.message(
+          'ERROR',
+          `prisma ${aArgs[0]} failed for "${sName}": ${sOutput || Formatter.error(oError)}`,
+        ),
       );
     }
   }

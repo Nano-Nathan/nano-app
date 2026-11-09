@@ -1,3 +1,5 @@
+import Formatter from './utils/Formatter';
+
 // Global
 
 /** Name of the app: the backend's main plugin and the frontend's store of UI state, always present */
@@ -18,8 +20,10 @@ export const HTTP_METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'QUERY'] as const;
 export const OFFICIAL_PLUGINS = '@nano-app/plugins';
 
 /** Error when the database URL is missing at startup */
-export const MISSING_DATABASE_URL =
-  '[nano-app] [ERROR] The DATABASE_URL environment variable is not defined.';
+export const MISSING_DATABASE_URL = Formatter.message(
+  'ERROR',
+  'The DATABASE_URL environment variable is not defined.',
+);
 
 /** Loopback and private networks: the proxies the backend trusts by default */
 export const PRIVATE_NETWORKS = [
@@ -46,5 +50,7 @@ export const DEFAULT_REDIRECT = '/';
 export const REQUEST_FAILED = 'Request failed';
 
 /** Error of a component outside the provider */
-export const MISSING_PROVIDER =
-  '[nano-app] [ERROR] A component has no stores. Wrap the root layout with NanoAppProvider.';
+export const MISSING_PROVIDER = Formatter.message(
+  'ERROR',
+  'A component has no stores. Wrap the root layout with NanoAppProvider.',
+);
