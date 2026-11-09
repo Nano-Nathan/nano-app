@@ -6,7 +6,7 @@
   "main": "index.ts",
   "types": "index.ts",
   "dependencies": {
-    "glob": "^14.0.3",
+    "glob": "^14.0.4",
     "jiti": "^2.7.0"
   },
   "devDependencies": {
