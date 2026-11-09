@@ -61,7 +61,7 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 - Small files with one job. A file over ~120 lines, or a function you cannot read in one screen, is a sign to split or simplify.
 - Code that repeats is extracted the second time it appears (`Validator.isStringMap`, `Logger.warn`); no abstraction for a single use. No option, parameter or config nobody asked for.
 - Exported functions of `backend` and `plugins` stay even when nothing in the repo uses them: consumers may. `core` is private: what nothing uses there is deleted.
-- Up to 3 positional parameters; with more, one object (`FindOptions`).
+- Up to 3 positional parameters; with more, one object (`DatabaseConfig`).
 - A class when there is state (`Database`, `Plugin`); `abstract class` with `static` methods for stateless utilities grouped by area (`FileReader`, `Validator`). Public API is plain functions (`createRoute`, `createPlugin`).
 - The function of `createController` returns its object: `callbacks` first (`onMount` reads what the view needs), then the methods. Before the `return` only `const` that read the context or the options (`const oApi = stores[store];`, a path); no functions, hooks or effects. Logic lives in the methods: one reaches another with `this` (`last() { return this.items()[0]; }`, method syntax, never an arrow), also from `onMount`. The view renders; its only hook is a `useEffect` that calls a method when a value changes (`useEffect(guard, [backend.get('/session')]);`).
 - The object of `createRoute` goes in order: its config (`expression`, `public`, `permissions`), then `callbacks`, then the handlers (`GET`, `POST`…).

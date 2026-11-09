@@ -16,7 +16,7 @@ export default class Router {
   public async mount(): Promise<{ path: string; endpoint: Endpoint }[]> {
     // Loads the routes from the directory, when there is one, and drops the invalid ones
     if (this.sRoutesDir) {
-      const oFiles = await FileLoader.findMany({ sourceDir: this.sRoutesDir, extension: 'route' });
+      const oFiles = await FileLoader.findMany('route', this.sRoutesDir);
       this.oRoutes = Validator.validate(oFiles, Validator.isRoute);
     }
 

@@ -3,6 +3,7 @@ import FileReader from '../files/FileReader';
 import NanoError from './NanoError';
 import Paths from './Paths';
 import type { RouteEntry, NanoObject } from '../types/objects';
+import type { StoreFile } from '../types/store';
 
 const STORE_TYPES: unknown[] = [APP_STORE_TYPE, API_STORE_TYPE];
 
@@ -71,15 +72,7 @@ export default abstract class Validator {
   }
 
   /** Type guard for a `*.store.ts` entry */
-  public static isStore(
-    oEntry: unknown,
-    sFilePath: string,
-  ): oEntry is {
-    type: typeof APP_STORE_TYPE | typeof API_STORE_TYPE;
-    data?: NanoObject;
-    headers?: NanoObject<string>;
-    auth?: { path: string; routes?: NanoObject[] };
-  } {
+  public static isStore(oEntry: unknown, sFilePath: string): oEntry is StoreFile {
     // Checks that the default export is an object
     if (!Validator.isObject(oEntry))
       throw new NanoError(`${sFilePath}: the default export is not an object.`);

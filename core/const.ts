@@ -17,9 +17,6 @@ export const HTTP_METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'QUERY'] as const;
 /** Package of the official plugins: only its schemas may declare nano_* */
 export const OFFICIAL_PLUGINS = '@nano-app/plugins';
 
-/** Error when the database URL is missing at startup */
-export const MISSING_DATABASE_URL = 'The DATABASE_URL environment variable is not defined.';
-
 /** Loopback and private networks: the proxies the backend trusts by default */
 export const PRIVATE_NETWORKS = [
   '127.0.0.0/8',

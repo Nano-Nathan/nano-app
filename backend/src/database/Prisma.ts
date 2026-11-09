@@ -4,7 +4,6 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { FileReader, Logger, NanoError } from '@nano-app/core';
-import { MISSING_DATABASE_URL } from '@nano-app/core/const';
 import type { ClientSource } from '../types/database';
 
 /** Runs the consumer's Prisma CLI: generates clients and applies official plugins' migrations */
@@ -58,11 +57,8 @@ export default abstract class Prisma {
       throw new NanoError(`The plugin "${sName}" ships no migrations: ${sMigrations}`);
     }
 
-    // Checks the database URL
-    if (!process.env.DATABASE_URL) throw new NanoError(MISSING_DATABASE_URL);
-
-    // The plugin's history lives in its own schema, apart from the consumer's
-    const oUrl = new URL(process.env.DATABASE_URL);
+    // The plugin's history lives in its own schema, apart from the consumer's; Database.init checked the URL
+    const oUrl = new URL(process.env.DATABASE_URL ?? '');
     oUrl.searchParams.set('schema', sDbSchema);
 
     // A Prisma config for the deploy: the URL travels in the environment, never on disk

@@ -1,7 +1,7 @@
 import { glob } from 'glob';
 import FileReader from './FileReader';
 import type { NanoObject, PrismaEntry } from '../types/objects';
-import type { FindOptions } from '../types/files';
+import type { FindableExtension } from '../types/files';
 
 /** Finds and loads the consumer's files */
 export default abstract class FileLoader {
@@ -10,11 +10,14 @@ export default abstract class FileLoader {
     return (await FileReader.loadModule<{ PrismaClient: PrismaEntry }>(sClientPath))?.PrismaClient;
   }
 
-  /** Finds `*.route.ts` (or built `.js`) files and returns `{ [subPath]: defaultExport }` */
-  public static async findMany({ extension, sourceDir }: FindOptions): Promise<NanoObject> {
+  /** Finds `*.<extension>.ts` (or built `.js`) files in a folder (`src/<extension>s` by default) and returns `{ [subPath]: defaultExport }` */
+  public static async findMany(
+    sExtension: FindableExtension,
+    sSourceDir?: string,
+  ): Promise<NanoObject> {
     // Resolves the paths
-    const sSrcDir = (sourceDir ?? `src/${extension}s`).replace(/^\.\//, '').replace(/\/$/, '');
-    const aFilePaths = await glob(`${sSrcDir}/**/*.${extension}.{ts,js}`, {
+    const sSrcDir = (sSourceDir ?? `src/${sExtension}s`).replace(/^\.\//, '').replace(/\/$/, '');
+    const aFilePaths = await glob(`${sSrcDir}/**/*.${sExtension}.{ts,js}`, {
       posix: true,
       ignore: '**/*.d.ts',
     });
@@ -24,10 +27,10 @@ export default abstract class FileLoader {
     for (const sFilePath of aFilePaths) {
       const sFileSubPath = sFilePath
         .slice(sSrcDir.length)
-        .replace(new RegExp(`\\.${extension}\\.(ts|js)$`), '');
+        .replace(new RegExp(`\\.${sExtension}\\.(ts|js)$`), '');
       // Stores use `_` for `/` (`src/stores/admin/users.store.ts` → `admin_users`)
       const sKey =
-        extension === 'store' ? sFileSubPath.slice(1).replaceAll('/', '_') : sFileSubPath;
+        sExtension === 'store' ? sFileSubPath.slice(1).replaceAll('/', '_') : sFileSubPath;
       oEntries[sKey] = await FileReader.loadModule(sFilePath, { default: true });
     }
 

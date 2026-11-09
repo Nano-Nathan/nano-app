@@ -9,7 +9,7 @@ const STORES_DIR = fileURLToPath(new URL('./fixtures/stores', import.meta.url));
 describe('store files', () => {
   test('stores are found in subfolders, named with _ for /', async () => {
     // Finds the store files of the fixtures
-    const oFiles = await FileLoader.findMany({ extension: 'store', sourceDir: STORES_DIR });
+    const oFiles = await FileLoader.findMany('store', STORES_DIR);
 
     // Checks their names and contents
     assert.deepEqual(Object.keys(oFiles).sort(), ['admin_users', 'app']);

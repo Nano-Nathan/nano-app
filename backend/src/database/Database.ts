@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { FileLoader, FileReader, Logger, NanoError, Validator } from '@nano-app/core';
-import { MISSING_DATABASE_URL, OFFICIAL_PLUGINS } from '@nano-app/core/const';
+import { OFFICIAL_PLUGINS } from '@nano-app/core/const';
 import Prisma from './Prisma';
 import type { PrismaPg } from '@prisma/adapter-pg';
 import type { NanoObject } from '@nano-app/core';
@@ -18,9 +18,7 @@ export default abstract class Database {
   public static async init(): Promise<void> {
     // Checks the DATABASE_URL is defined
     const sUrl = process.env.DATABASE_URL;
-    if (!sUrl) {
-      throw new NanoError(MISSING_DATABASE_URL);
-    }
+    if (!sUrl) throw new NanoError('The DATABASE_URL environment variable is not defined.');
 
     // Create the adapter (imported only when needed)
     const { PrismaPg } = await import('@prisma/adapter-pg');
@@ -49,11 +47,11 @@ export default abstract class Database {
     // Generates the client when its schema changed
     Prisma.generate(sName, schemaPath);
 
+    // Creates the adapter when no consumer database did: it checks DATABASE_URL
+    if (!this.oAdapter) await this.init();
+
     // An official plugin's tables are its own: nano-app migrates them
     if (isPlugin) Prisma.migrate(sName, schemaPath, FileReader.schemas(sContent)[0]);
-
-    // Creates the adapter when no consumer database did
-    if (!this.oAdapter) await this.init();
 
     // Loads the client
     const sClientPath = join(Prisma.dir(sName), 'generated', 'client.ts');
