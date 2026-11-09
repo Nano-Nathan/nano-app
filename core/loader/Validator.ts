@@ -88,67 +88,39 @@ export default abstract class Validator {
       return Validator.warn(sFilePath, '"headers" must be an object of strings.');
 
     // Checks the base path of Better Auth and the routes it guards
-    if (oEntry.auth !== undefined) return Validator.isAuth(oEntry.auth, sFilePath);
+    if (oEntry.auth !== undefined && !Validator.isAuth(oEntry.auth))
+      return Validator.warn(
+        sFilePath,
+        '"auth" must be { path, routes }: each route { match, redirect, roles, permissions } with paths starting with /, roles as "admin,user", permissions as { resource: "read,update" }, and a redirect outside its match.',
+      );
 
     return true;
   }
 
-  /** Checks the `auth` of a store: the base path of Better Auth and the routes it guards */
-  private static isAuth(oAuth: NanoObject, sFilePath: string): boolean {
-    // Checks that it is an object with the base path of Better Auth
-    if (!oAuth || typeof oAuth.path !== 'string')
-      return Validator.warn(
-        sFilePath,
-        '"auth" must be { path, routes }: the base path of Better Auth.',
+  /** Whether `auth` has the base path of Better Auth and valid routes, none redirecting to itself */
+  private static isAuth(oAuth: NanoObject): boolean {
+    // Checks the base path and that the routes are a list
+    const aRoutes = oAuth?.routes ?? [];
+    if (typeof oAuth?.path !== 'string' || !Array.isArray(aRoutes)) return false;
+
+    // Checks each route
+    return aRoutes.every(oRoute => {
+      const { match, redirect = DEFAULT_REDIRECT, roles, permissions } = oRoute ?? {};
+      const isPermissions =
+        permissions === undefined ||
+        (!!permissions &&
+          typeof permissions === 'object' &&
+          Object.values(permissions).every(sActions => typeof sActions === 'string'));
+      return (
+        typeof match === 'string' &&
+        match.startsWith('/') &&
+        typeof redirect === 'string' &&
+        redirect.startsWith('/') &&
+        !Paths.matches(match, redirect) &&
+        (roles === undefined || typeof roles === 'string') &&
+        isPermissions
       );
-
-    // Checks that the routes are a list
-    if (oAuth.routes !== undefined && !Array.isArray(oAuth.routes))
-      return Validator.warn(sFilePath, '"auth.routes" must be an array.');
-
-    return (oAuth.routes ?? []).every((oRoute: NanoObject) => Validator.isGuard(oRoute, sFilePath));
-  }
-
-  /** Checks a route of `auth.routes`: `{ match, redirect?, roles?, permissions? }` */
-  private static isGuard(oRoute: NanoObject, sFilePath: string): boolean {
-    // Checks that the route is an object
-    if (!oRoute || typeof oRoute !== 'object')
-      return Validator.warn(sFilePath, 'each route of "auth.routes" must be an object.');
-    const { match, redirect = DEFAULT_REDIRECT, roles, permissions } = oRoute;
-
-    // Checks that its paths start with /
-    if (typeof match !== 'string' || !match.startsWith('/'))
-      return Validator.warn(
-        sFilePath,
-        'each route of "auth.routes" needs a "match" starting with /.',
-      );
-    if (typeof redirect !== 'string' || !redirect.startsWith('/'))
-      return Validator.warn(sFilePath, `the "redirect" of "${match}" must start with /.`);
-
-    // Checks that it does not redirect to itself
-    if (Paths.matches(match, redirect))
-      return Validator.warn(
-        sFilePath,
-        `"${match}" redirects to "${redirect}", which it guards: set another "redirect".`,
-      );
-
-    // Checks that the roles are a string, as Better Auth keeps them (`admin,user`)
-    if (roles !== undefined && typeof roles !== 'string')
-      return Validator.warn(sFilePath, `the "roles" of "${match}" must be a string: "admin,user".`);
-
-    // Checks that the permissions are a string of actions per resource
-    const isPermissionsInvalid =
-      permissions !== undefined &&
-      (!permissions ||
-        typeof permissions !== 'object' ||
-        Object.values(permissions).some(sActions => typeof sActions !== 'string'));
-    if (isPermissionsInvalid)
-      return Validator.warn(
-        sFilePath,
-        `the "permissions" of "${match}" must be { resource: 'read,update' }.`,
-      );
-
-    return true;
+    });
   }
 
   /** Type guard for a `.prisma` entry: the contents of the file, without comments */

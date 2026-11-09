@@ -46,25 +46,3 @@ export type ApiError = ApiResponse & {
 /** Stores of a React tree by name: a `Store` per `app` file, an `ApiStore` per `api` file */
 // any: each store is a `Store` or an `ApiStore` by its file
 export type Stores = NanoObject<any> & { [APP_NAME]: Store };
-
-/** Options of an api store with Better Auth */
-export type AuthStoreOptions = {
-  /** Base path of Better Auth in the backend */
-  path: string;
-  /** Initial state */
-  data?: NanoObject;
-  /** Refreshes the page, for the proxy to guard it again */
-  refresh: () => void;
-};
-
-/** A route of `auth.routes` as the proxy keeps it: with its store, and its roles and actions as lists */
-export type GuardedRoute = {
-  /** Name of the store with the `auth` of the route */
-  store: string;
-  /** Base path of Better Auth in the backend of the store */
-  path: string;
-  match: string;
-  redirect: string;
-  roles?: string[];
-  permissions?: NanoObject<string[]>;
-};

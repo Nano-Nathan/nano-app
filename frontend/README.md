@@ -258,7 +258,7 @@ export default createController(({ stores: { backend } }) => ({
 - `signIn(kind, body)` and `signUp(kind, body)` send `POST <path>/sign-in/<kind>` and `POST <path>/sign-up/<kind>`: `kind` is the method of Better Auth (`email`, ...), and `body` what it asks. `signOut()` sends `POST <path>/sign-out`.
 - They return Better Auth's answer inside an `ApiResponse`: `{ success, result, message }`, with `success` when the backend answered 2xx and its `message` when it failed.
 - `readSession()` asks `GET <path>/get-session` and keeps `{ user, session }` at `/session`, or `null` without a session. It answers from the store until a `signIn`, `signUp` or `signOut` succeeds, which reads it again. On the server it asks nothing and resolves with `{}`.
-- Any 401 of the store's backend sets `/session` to `null` and refreshes the page with Next's router, so the proxy guards it again; the next `readSession()` asks again.
+- Any 401 of the store's backend sets `/session` to `null`, and the next `readSession()` asks again.
 - The session lives in Better Auth's cookie, which the proxy passes as any other: a refresh reads it again with `readSession()`.
 - Better Auth checks the `Origin` of every `POST`: add the URL of the frontend to its `trustedOrigins` in the backend.
 - With two backends with Better Auth, their cookies get the same name on the frontend's domain: give one of them another `advanced.cookiePrefix`.
@@ -273,7 +273,7 @@ The proxy guards the pages of `auth.routes`; every other page is public. For eac
 - `roles`: roles of Better Auth's admin plugin, separated by commas. Any role of the user (`user.role` of the session, also separated by commas) allows it.
 - `permissions`: actions per resource of the admin plugin, separated by commas. The proxy asks `POST <path>/admin/has-permission` with them as `{ permissions: { collections: ['read', 'update'] } }`, and every one is needed. A route with `roles` and `permissions` needs both.
 - `roles` and `permissions` need the admin plugin on in the backend. Their names are not checked against it: a role or an action it does not have never allows the page.
-- The proxy reads the routes once, when it loads, and asks the backend of the store on every request of a guarded page: one request, two with `roles` and `permissions`.
+- Every request of a guarded page asks `get-session` through the proxy, and `has-permission` too when the route has `permissions`. A session that ends while a page is open is caught on the next navigation.
 
 The data stays protected by the backend: the proxy only keeps the pages from showing.
 
