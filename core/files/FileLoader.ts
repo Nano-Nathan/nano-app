@@ -1,9 +1,9 @@
 import { glob } from 'glob';
-import Validator from './Validator';
+import Validator from '../utils/Validator';
 import FileReader from './FileReader';
 import Formatter from '../utils/Formatter';
 import type { NanoObject, RouteEntry, PrismaEntry } from '../types/objects';
-import type { FindOptions } from '../types/loader';
+import type { FindOptions } from '../types/files';
 
 /** Finds, loads and validates the consumer's files */
 export default abstract class FileLoader {

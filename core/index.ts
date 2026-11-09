@@ -1,9 +1,9 @@
-export { default as FileLoader } from './loader/FileLoader';
-export { default as FileReader } from './loader/FileReader';
-export { default as Validator } from './loader/Validator';
+export { default as FileLoader } from './files/FileLoader';
+export { default as FileReader } from './files/FileReader';
+export { default as Validator } from './utils/Validator';
 
 export * from './types/api';
-export * from './types/loader';
+export * from './types/files';
 export * from './types/objects';
 
 export { default as Formatter } from './utils/Formatter';

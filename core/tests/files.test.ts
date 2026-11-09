@@ -1,8 +1,8 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
-import FileLoader from '../loader/FileLoader';
-import Validator from '../loader/Validator';
+import FileLoader from '../files/FileLoader';
+import Validator from '../utils/Validator';
 
 const STORES_DIR = fileURLToPath(new URL('./fixtures/stores', import.meta.url));
 

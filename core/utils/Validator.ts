@@ -1,7 +1,7 @@
 import { API_STORE_TYPE, APP_STORE_TYPE, DEFAULT_REDIRECT, HTTP_METHODS } from '../const';
-import Paths from '../utils/Paths';
+import Paths from './Paths';
 import type { RouteEntry, NanoObject } from '../types/objects';
-import type { FindableExtension } from '../types/loader';
+import type { FindableExtension } from '../types/files';
 
 const STORE_TYPES: unknown[] = [APP_STORE_TYPE, API_STORE_TYPE];
 
