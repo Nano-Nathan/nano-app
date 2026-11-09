@@ -34,7 +34,7 @@ export default list({ path: '/users', top: 20 }).bindView(
 ```
 
 - Every component is a function, also without options (`error()`): its options configure the logic once and are shared by every view bound to it, and the props of a view carry the data of each use.
-- Each call (`list({ … })`) returns a controller of `@nano-app/frontend`: bind views to it with `bindView`, and change or add methods with `extend(({ props, stores, getStore }) => ({ … }))`.
+- Each call (`list({ … })`) returns a controller of `@nano-app/frontend`: bind views to it with `bindView`, and change or add methods with `extend(({ props, stores }) => ({ … }))`.
 - A component reads what it needs when its view mounts (`callbacks.onMount`): the view only renders.
 - A component gives its view only methods. Its state lives in its api store, under its name (`/list/page`): the view reads it with `get`, and the requests in progress with the store's `/busy`. Two components of the same kind on the same store share it. `field` keeps its own in the `app` store, under the name of its form.
 - A component that reads the backend uses the store named in `store`, `api` by default (`src/stores/api.store.ts`). Without it, the render throws naming the store file to add.

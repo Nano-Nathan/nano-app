@@ -90,8 +90,8 @@ export default counterController.bindView(({ stores: { app }, increment }) => (
 
 - A file that calls `bindView` needs `'use client'`. A component without stores or methods is a plain React function and can stay a server component.
 - The view re-renders only when a store path it read changes.
-- The context has `props`, `stores`, `router` and `getStore(name)`, which returns a store or throws naming the store file to add. A method with one of those names is hidden by it.
-- Before its `return`, the function only keeps what it reads from the context (`const oApi = getStore('backend');`). A method reaches the others with `this` (`last() { return this.items()[0]; }`), also when the view calls it alone; `this` needs the method syntax, not an arrow. `onMount` gets the same `this`.
+- The context has `props`, `stores` and `router`; a method with one of those names is hidden by it. Reading a store the app does not have (`stores.missing`) throws naming the store file to add.
+- Before its `return`, the function only keeps what it reads from the context (`const oApi = stores.backend;`). A method reaches the others with `this` (`last() { return this.items()[0]; }`), also when the view calls it alone; `this` needs the method syntax, not an arrow. `onMount` gets the same `this`.
 
 `callbacks` (since 0.7), first in that object, is not a method: `onMount` runs once when each bound view mounts (never on the server), to read what the view needs. To act when a value changes, the view calls a method from a `useEffect` with that value as its dependency (see [Sessions](#sessions)); the logic stays in the method.
 
@@ -108,7 +108,7 @@ export default createController(({ stores: { backend } }) => ({
 }));
 ```
 
-`extend` returns a new controller with your methods merged over its own: a method with the same name replaces the original, the others stay, and the original controller does not change. Both `onMount` run, the original's first. Its methods receive the same context (`props`, `stores`, `router`, `getStore`) as the controller's, and reach the controller's methods and their own with `this`.
+`extend` returns a new controller with your methods merged over its own: a method with the same name replaces the original, the others stay, and the original controller does not change. Both `onMount` run, the original's first. Its methods receive the same context (`props`, `stores`, `router`) as the controller's, and reach the controller's methods and their own with `this`.
 
 ```ts
 export default counterController.extend(({ stores: { app } }) => ({

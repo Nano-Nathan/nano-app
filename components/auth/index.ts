@@ -7,9 +7,9 @@ import type { AuthOptions } from '../types/auth';
 export default function auth(oOptions: AuthOptions = {}) {
   const { kind = 'email', store = API_STORE_TYPE } = oOptions;
 
-  return createController(({ getStore, router }) => {
+  return createController(({ stores, router }) => {
     // Takes the api store of the options
-    const oApi = getStore(store);
+    const oApi = stores[store];
 
     return {
       // Reads the session when the view mounts

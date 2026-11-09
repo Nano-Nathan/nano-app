@@ -7,9 +7,9 @@ import type { ListOptions } from '../types/list';
 export default function list(oOptions: ListOptions) {
   const { path, top, store = API_STORE_TYPE } = oOptions;
 
-  return createController(({ getStore }) => {
+  return createController(({ stores }) => {
     // Takes the api store of the options
-    const oApi = getStore(store);
+    const oApi = stores[store];
 
     return {
       // Reads the current page when the view mounts

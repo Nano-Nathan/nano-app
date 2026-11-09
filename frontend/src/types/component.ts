@@ -12,9 +12,6 @@ export type ComponentContext = {
   props: ComponentProps;
   stores: Stores;
   router: ReturnType<typeof useRouter>;
-  /** The store of a name; fails when the app has no such store */
-  // any: each store is a `Store` or an `ApiStore` by its file
-  getStore(name: string): any;
 };
 
 /** Callbacks of a controller, run by each view bound to it */

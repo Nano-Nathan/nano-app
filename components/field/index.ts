@@ -7,12 +7,12 @@ import type { FormField } from '../types/field';
 
 /** A field of a form: its value and error at `/form/<form>` of `app`, and its select items */
 export default function field() {
-  return createController(({ props, stores, getStore }) => {
+  return createController(({ props, stores }) => {
     // Takes the form and the field of its config, the api store of its options and its paths
     const { form } = props;
     const oField: FormField = props.field;
     const { options } = oField;
-    const oApi = options && getStore(options.store ?? API_STORE_TYPE);
+    const oApi = options && stores[options.store ?? API_STORE_TYPE];
     const sValues = `/form/${form}/values`;
     const sValue = `${sValues}/${oField.name}`;
     const sError = `/form/${form}/errors/${oField.name}`;
