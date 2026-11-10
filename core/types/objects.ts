@@ -7,8 +7,6 @@ import type { ApiPromise } from './api';
 export type Params<Deps = NanoObject<any>> = Deps & {
   /** Better Auth's instance, when it is on */
   auth?: NanoObject;
-  /** Drizzle schema of the database the handlers receive as `db` */
-  schema?: NanoObject;
   onBeforeResult?: NanoObject;
   /** `{ user, session }` of Better Auth, when the request has one */
   session?: NanoObject;

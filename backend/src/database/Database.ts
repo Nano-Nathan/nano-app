@@ -11,18 +11,10 @@ export default abstract class Database {
   /** Mounted clients, by name */
   private static oClients: NanoObject = {};
 
-  /** Schemas of the mounted clients, by name */
-  private static oSchemas: NanoObject<NanoObject> = {};
-
   /** Gets a client by name */
   // any: the client is typed by the schema of each app, unknown to the framework
   public static get(sName: string): any {
     return this.oClients[sName];
-  }
-
-  /** Gets the schema of a mounted client by name */
-  public static schema(sName: string): NanoObject | undefined {
-    return this.oSchemas[sName];
   }
 
   /** Mounts the Drizzle client of a schema: the app's tables outside `nano_*`, a plugin's only in `nano_<name>` */
@@ -59,9 +51,8 @@ export default abstract class Database {
       relations: schema.relations ?? defineRelations(schema),
     });
 
-    // Mounts the client and its schema
+    // Mounts the client
     this.oClients[sName] = oClient;
-    this.oSchemas[sName] = schema;
     Logger.info(`Database "${sName}" mounted`);
     return oClient;
   }

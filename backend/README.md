@@ -58,7 +58,7 @@ export default createRoute({
 });
 ```
 
-Each handler receives `(req, params)` and returns an `ApiResponse` without `success`: its `status` is the HTTP status (`200` by default) and the framework sets `success` to `status < 400`. `params` holds the plugin's `options`, `db` and `schema` (the Drizzle client and its schema when the app or the plugin has a database, see [Database](#database); a plugin without its own gets the app's) and `onBeforeResult` (see [Callbacks](#callbacks)):
+Each handler receives `(req, params)` and returns an `ApiResponse` without `success`: its `status` is the HTTP status (`200` by default) and the framework sets `success` to `status < 400`. `params` holds the plugin's `options`, `db` (the Drizzle client when the app or the plugin has a database, see [Database](#database); a plugin without its own gets the app's) and `onBeforeResult` (see [Callbacks](#callbacks)):
 
 ```ts
 type ApiResponse<T> = {
@@ -152,7 +152,7 @@ export default createRoute({
 - One pool serves the app and every plugin with a database. It connects on its first query: a missing table fails that query, not the startup.
 - Startup fails if `DATABASE_URL` is missing.
 - The `nano_` prefix is reserved for plugins: a table of yours in a `nano_*` Postgres schema fails the startup.
-- Handlers also receive the schema as `schema`. Without a database, `db` and `schema` are `undefined`.
+- Without a database, `db` is `undefined`.
 - Drizzle and pg are loaded only when your database or a mounted plugin's is on.
 
 ## Better Auth
@@ -281,7 +281,7 @@ The endpoints of one plugin have no guaranteed order: one route's `onInit` must 
 
 Everything is mounted on one Express application, in this order: base middlewares → `before` plugins → your routes → `after` plugins → 404 → error handler.
 
-A plugin with a database passes its own `database: { schema }`, and keeps its tables in the Postgres schema `nano_<its name>`: a table elsewhere fails the startup. Two plugins with the same name and a database fail too. Without a database of its own, a plugin receives the app's `db` and `schema`. See [`@nano-app/plugins`](https://github.com/Nano-Nathan/nano-app/blob/main/plugins/README.md#database).
+A plugin with a database passes its own `database: { schema }`, and keeps its tables in the Postgres schema `nano_<its name>`: a table elsewhere fails the startup. Two plugins with the same name and a database fail too. Without a database of its own, a plugin receives the app's `db`. See [`@nano-app/plugins`](https://github.com/Nano-Nathan/nano-app/blob/main/plugins/README.md#database).
 
 ## Errors
 

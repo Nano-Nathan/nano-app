@@ -24,12 +24,11 @@ export default class Plugin {
 
     // Mounts the Drizzle client, named as the plugin; without its own, the app's
     const oDb = database ? await Database.mount(name, database) : Database.get(APP_NAME);
-    const oSchema = database?.schema ?? Database.schema(APP_NAME);
 
     // Better Auth: its endpoints stay public; past them, every request carries its session, if any
     if (this.oAuthOptions) {
-      // Checks that the database is mounted: Better Auth keeps its tables in its schema
-      if (!oSchema) {
+      // Checks that the app has a database: Better Auth keeps its tables in its schema
+      if (!database) {
         throw new NanoError(
           'src/auth.ts needs the database of the app: set mainPlugin.database.schema.',
         );
@@ -38,14 +37,14 @@ export default class Plugin {
       const { sPath, oHandler, fnSession } = await BetterAuth.create(
         this.oAuthOptions,
         oDb,
-        oSchema,
+        database.schema,
       );
       oApp.all(sPath, oHandler);
       oApp.use(fnSession);
     }
 
-    // Every callback and handler receives, read-only, the plugin's options, client, schema and Better Auth
-    const oParams = Object.freeze({ ...options, db: oDb, schema: oSchema, auth: BetterAuth.get() });
+    // Every callback and handler receives, read-only, the plugin's options, client and Better Auth
+    const oParams = Object.freeze({ ...options, db: oDb, auth: BetterAuth.get() });
 
     // Plugin setup with the app, before any of its endpoints
     await callbacks?.onMount?.(oApp, oParams);

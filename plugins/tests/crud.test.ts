@@ -33,7 +33,7 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
 
     // Mounts the app's database, then the plugin after it
     const oDb = await Database.mount('app', { schema });
-    oServer = await startApp([crud({ models: ['note', 'comment'] })]);
+    oServer = await startApp([crud({ models: ['note', 'comment'], schema })]);
 
     // Two notes of this run, the first with a comment
     const [oNote] = await oDb
