@@ -196,11 +196,11 @@ export default createController(({ stores: { app, backend } }) => ({
     clearTimeout(oTimer);
     oTimer = setTimeout(() => {
       app.set('/search/applied', sText);
-      backend.read('/users', { filter: { name: { contains: sText } } });
+      backend.read('/users', { where: { name: { ilike: `%${sText}%` } } });
     }, 300);
   },
 }));
-// The view gets backend.get('/users', { filter: { name: { contains: app.get('/search/applied') } } })
+// The view gets backend.get('/users', { where: { name: { ilike: `%${app.get('/search/applied')}%` } } })
 ```
 
 ### Headers per backend

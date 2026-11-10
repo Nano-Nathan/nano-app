@@ -1,10 +1,10 @@
 import { NanoError } from '@nano-app/backend';
 import type { ApiPromise, NanoObject, QueryParams } from '@nano-app/backend';
 
-/** Records a list answers when the request sends no `top` */
-const DEFAULT_TOP = 100;
+/** Records a list answers when the request sends no `limit` */
+const DEFAULT_LIMIT = 100;
 
-/** Reads a table of the app's Drizzle client with core's `QueryParams` */
+/** Reads a table of the app's Drizzle client with core's `QueryParams`, Drizzle's own relational query */
 export default abstract class Query {
   /** A list of the table, or one record by its id: 404 without it */
   // any: the client is typed by the schema of each app, unknown to the plugin
@@ -14,57 +14,32 @@ export default abstract class Query {
     oQuery: QueryParams,
     oId?: unknown,
   ): ApiPromise {
-    // A list: the relational query of the parameters
-    const oArgs = Query.toDrizzle(oQuery);
-    if (oId === undefined) return { result: await oDb.query[sModel].findMany(oArgs) };
+    const { where = {}, with: oWith, columns, orderBy, limit = DEFAULT_LIMIT, offset } = oQuery;
+
+    // A list: the relational query as it came
+    if (oId === undefined) {
+      const oArgs = { where, with: oWith, columns, orderBy, limit, offset };
+      return { result: await oDb.query[sModel].findMany(oArgs) };
+    }
 
     // One record by its id, with the columns and relations asked
-    const oRecord = await oDb.query[sModel].findFirst({
-      where: { id: oId },
-      columns: oArgs.columns,
-      with: oArgs.with,
-    });
+    const oRecord = await oDb.query[sModel].findFirst({ where: { id: oId }, with: oWith, columns });
     if (!oRecord) throw new NanoError('Not found', 404);
     return { result: oRecord };
   }
 
-  /** `filter` → `where`, `orderby` → `orderBy`, `top`/`skip` → `limit`/`offset`, `select` → `columns`, `expand` → `with` */
-  public static toDrizzle(oQuery: QueryParams): NanoObject {
-    const { filter, orderby, top, skip, select, expand } = oQuery;
+  /** Tables of the relations a `where` or a `with` names, at any depth */
+  public static related(oRelations: NanoObject, sTable: string, oValue: unknown): string[] {
+    // Walks arrays and objects; anything else names no relation
+    if (Array.isArray(oValue))
+      return oValue.flatMap(oItem => Query.related(oRelations, sTable, oItem));
+    if (!oValue || typeof oValue !== 'object') return [];
 
-    // Orders only by the table's own columns
-    if (Object.keys(orderby ?? {}).some(sKey => sKey.includes('.'))) {
-      throw new NanoError('"orderby" takes columns of the model, not of its relations.', 400);
-    }
-
-    return {
-      where: filter ?? {},
-      orderBy: orderby,
-      limit: top ?? DEFAULT_TOP,
-      offset: skip,
-      columns: select && Object.fromEntries(Query.list(select).map(sField => [sField, true])),
-      with: expand && Query.with(Query.list(expand)),
-    };
-  }
-
-  /** `['user', 'posts.comments']` → `{ user: true, posts: { with: { comments: true } } }` */
-  private static with(aPaths: string[]): NanoObject {
-    // The first level of each path, once
-    const aRelations = [...new Set(aPaths.map(sPath => sPath.split('.')[0]))];
-
-    // Each relation, with the rest of its paths nested
-    return Object.fromEntries(
-      aRelations.map(sRelation => {
-        const aNested = aPaths
-          .filter(sPath => sPath.startsWith(`${sRelation}.`))
-          .map(sPath => sPath.slice(sRelation.length + 1));
-        return [sRelation, aNested.length ? { with: Query.with(aNested) } : true];
-      }),
-    );
-  }
-
-  /** `"a, b"` → `['a', 'b']` */
-  private static list(sList: string): string[] {
-    return sList.split(',').map(sItem => sItem.trim());
+    // A key that is a relation adds its table and goes on inside it; any other key, inside the same table
+    return Object.entries(oValue).flatMap(([sKey, oItem]) => {
+      const sTarget = oRelations[sTable]?.relations[sKey]?.targetTableName;
+      const aInside = Query.related(oRelations, sTarget ?? sTable, oItem);
+      return sTarget ? [sTarget, ...aInside] : aInside;
+    });
   }
 }

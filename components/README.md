@@ -17,7 +17,7 @@ pnpm add @nano-app/frontend @nano-app/components
 
 import list from '@nano-app/components/list';
 
-export default list({ path: '/users', top: 20 }).bindView(
+export default list({ path: '/users', limit: 20 }).bindView(
   ({ stores: { api }, items, next, prev, sort }) => (
     <section>
       <button onClick={() => sort('name')}>name</button>
@@ -47,7 +47,7 @@ export default list({ path: '/users', top: 20 }).bindView(
 | `field` | `import field from '@nano-app/components/field'` | — | `value()`, `error()`, `change(value)`, `options()`, `parse(input)`, `validate(values)`; props `form`, `field`; in `app`: `/form/<form>/values`, `/form/<form>/errors` |
 | `form` | `import form from '@nano-app/components/form'` | `components` | `fields()`, `submit(event)`, `reset()`; props `name`, `fields`, `onSubmit`; in `app`: `/form/<name>` |
 | `error` | `import error from '@nano-app/components/error'` | — | `items()`, `remove(index)`, `clear()`, `last()`, `dismiss()` |
-| `list` | `import list from '@nano-app/components/list'` | `path`, `top`, `store` (default `'api'`) | `load()`, `items()`, `page()`, `query()`, `goTo(page)`, `next()`, `prev()`, `sort(field)`; in the store: `/list/page` (from 0, `undefined` until it moves), `/list/orderby` |
+| `list` | `import list from '@nano-app/components/list'` | `path`, `limit`, `store` (default `'api'`) | `load()`, `items()`, `page()`, `query()`, `goTo(page)`, `next()`, `prev()`, `sort(field)`; in the store: `/list/page` (from 0, `undefined` until it moves), `/list/orderBy` |
 
 `auth()` uses the [sessions](../frontend/README.md#sessions) of an api store that declares `auth`: `signIn(body)` and `signUp(body)` send `body` to Better Auth's method `kind` (`{ email, password }` for `email`), `signOut()` signs out and `load()` reads the session into `/session`, which the controller also does when its view mounts. Each one returns the store's `ApiResponse`. `navTo(url)` goes to a url of the app with the `router` of the context; the view decides when. Create the controller once and bind every view to it:
 
@@ -122,7 +122,7 @@ export default authController.bindView(({ signUp }) => (
 
 `error()` gathers the `/error/list` of every api store: `items()` gives all the errors (the `ApiResponse` of each failed request with its `timestamp`) from the newest, `remove(index)` removes the one at that index of `items()` from its store and `clear()` empties them all: a panel of errors uses them. `last()` gives the newest one and `dismiss()` removes it: an alert uses them.
 
-`load()` reads the current page of `path` with a `QUERY` (`skip`, `top`, `orderby`) through the store, and `items()` gets the `ApiResponse` it kept. The list reads its current page when its view mounts. `next`, `prev` and `sort` change the page or the order and read it. `sort` orders by one field, ascending and then descending, and goes back to the first page. `prev` stays on the first page. `page()` gives the current page (from 0), `query()` the query it reads, and `goTo(page)` moves to a page and reads it.
+`load()` reads the current page of `path` with a `QUERY` (`offset`, `limit`, `orderBy`) through the store, and `items()` gets the `ApiResponse` it kept. The list reads its current page when its view mounts. `next`, `prev` and `sort` change the page or the order and read it. `sort` orders by one field, ascending and then descending, and goes back to the first page. `prev` stays on the first page. `page()` gives the current page (from 0), `query()` the query it reads, and `goTo(page)` moves to a page and reads it.
 
 ## Layout
 

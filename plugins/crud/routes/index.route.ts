@@ -1,8 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { createRoute, isGranted, NanoError } from '@nano-app/backend';
-import Permissions from '../Permissions';
 import Query from '../Query';
-import type { ApiPromise, NanoObject, Params, Request } from '@nano-app/backend';
+import type { ApiPromise, NanoObject, Params, QueryParams, Request } from '@nano-app/backend';
 
 /** Permission of Better Auth that each method needs on the URL's table */
 const ACTIONS: NanoObject<string> = {
@@ -38,13 +37,23 @@ export default createRoute({
       const oTable = oParams.schema?.[sModel];
       if (!oParams.models.includes(sModel) || !oTable) throw new NanoError('Not found', 404);
 
+      // A read loads only direct relations: `{ user: true }`
+      const sAction = ACTIONS[sMethod];
+      const isRead = sAction === 'read';
+      const oQuery: QueryParams = isRead ? (oReq.body ?? {}) : {};
+      if (Object.values(oQuery.with ?? {}).some(oValue => oValue !== true)) {
+        throw new NanoError('"with" loads direct relations only: { user: true }.', 400);
+      }
+
       // The permission of the method on the table, and `read` on every related table a read reaches
-      const oNeeded = new Permissions(oParams.schema?.relations ?? {}).of(
-        sModel,
-        ACTIONS[sMethod],
-        oReq.body ?? {},
-      );
-      if (!(await isGranted(oParams, oNeeded))) throw new NanoError('Forbidden', 403);
+      const aRelated = Query.related(oParams.schema?.relations ?? {}, sModel, [
+        oQuery.where,
+        oQuery.with,
+      ]);
+      const aNeeded = [...aRelated.map(sTable => [sTable, ['read']]), [sModel, [sAction]]];
+      if (!(await isGranted(oParams, Object.fromEntries(aNeeded)))) {
+        throw new NanoError('Forbidden', 403);
+      }
 
       // The table and the id of the URL, if any: Postgres casts it to the type of the column
       return { model: sModel, table: oTable, id };

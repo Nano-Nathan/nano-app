@@ -18,11 +18,13 @@ export type ApiPromise<T = any> = Promise<ApiResponse<T>>;
 
 /** Query parameters, sent as the JSON body of a `QUERY` request */
 export type QueryParams = {
-  skip?: number;
-  top?: number;
-  filter?: NanoObject;
-  orderby?: NanoObject<'asc' | 'desc'>;
-  select?: string;
-  /** Relations to load, dot notation for nested ones: `"user,posts.comments"` */
-  expand?: string;
+  /** Drizzle's relational filter: `{ title: { like: 'a%' } }` */
+  where?: NanoObject;
+  /** Direct relations to load: `{ user: true }` */
+  with?: NanoObject<true>;
+  /** Columns to answer: `{ id: true, title: true }` */
+  columns?: NanoObject<boolean>;
+  orderBy?: NanoObject<'asc' | 'desc'>;
+  limit?: number;
+  offset?: number;
 };

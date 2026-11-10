@@ -5,7 +5,7 @@ import type { ListOptions } from '../types/list';
 
 /** A paged and sortable list of a backend path; its state lives at `/list` of its api store */
 export default function list(oOptions: ListOptions) {
-  const { path, top, store = API_STORE_TYPE } = oOptions;
+  const { path, limit, store = API_STORE_TYPE } = oOptions;
 
   return createController(({ stores }) => {
     // Takes the api store of the options
@@ -24,7 +24,7 @@ export default function list(oOptions: ListOptions) {
       },
       query(): QueryParams {
         // The query of the page and the order chosen by the user
-        return { skip: this.page() * top, top, orderby: oApi.get('/list/orderby') };
+        return { offset: this.page() * limit, limit, orderBy: oApi.get('/list/orderBy') };
       },
       async load(): Promise<ApiResponse> {
         // Reads the current page
@@ -49,8 +49,8 @@ export default function list(oOptions: ListOptions) {
       },
       async sort(sField: string): Promise<ApiResponse> {
         // Toggles the field between ascending and descending, and reads the first page
-        const sDirection = oApi.get('/list/orderby')?.[sField] === 'asc' ? 'desc' : 'asc';
-        oApi.set('/list/orderby', { [sField]: sDirection });
+        const sDirection = oApi.get('/list/orderBy')?.[sField] === 'asc' ? 'desc' : 'asc';
+        oApi.set('/list/orderBy', { [sField]: sDirection });
         return this.goTo(0);
       },
     };

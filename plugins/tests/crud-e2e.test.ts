@@ -67,8 +67,8 @@ describe(
       // The store of the app, as a controller gets it
       const oStore = new ApiStore('backend');
       const oQuery = {
-        filter: { title: { like: `${sTag}%` } },
-        orderby: { title: 'asc' as const },
+        where: { title: { like: `${sTag}%` } },
+        orderBy: { title: 'asc' as const },
       };
 
       // Creates two notes and reads the first
