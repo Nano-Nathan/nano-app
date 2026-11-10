@@ -8,7 +8,7 @@ import type { AuthOptions } from '../types/app';
 /** Files of the app's Better Auth options, relative to `cwd`: source, then built */
 const AUTH_FILES = ['src/auth.ts', 'src/auth.js'];
 
-/** Better Auth on the app's Prisma client: the instance, its handler and the session lookup */
+/** Better Auth on the app's Drizzle client: the instance, its handler and the session lookup */
 export default abstract class BetterAuth {
   private static oAuth?: NanoObject;
 
@@ -36,23 +36,24 @@ export default abstract class BetterAuth {
     return this.oAuth;
   }
 
-  /** Creates the instance on the app's client, its handler and the session lookup */
-  // any: the Prisma client is generated per app, unknown to the framework
+  /** Creates the instance on the app's client and schema, its handler and the session lookup */
+  // any: the client is typed by the schema of each app, unknown to the framework
   public static async create(
     oOptions: AuthOptions,
     oDb: any,
+    oSchema: NanoObject = {},
   ): Promise<{ oHandler: RequestHandler; fnSession: RequestHandler; sPath: string }> {
     // Better Auth is an optional dependency: imported only when it is on
     const { betterAuth } = await import('better-auth');
-    const { prismaAdapter } = await import('better-auth/adapters/prisma');
+    const { drizzleAdapter } = await import('better-auth/adapters/drizzle');
     const { getSchema } = await import('better-auth/db');
     const { fromNodeHeaders, toNodeHandler } = await import('better-auth/node');
 
-    // Checks that the app's schema has every model these options need
-    const aMissing = Object.keys(getSchema(oOptions)).filter(sModel => !oDb[sModel]);
+    // Checks that the app's schema has every table these options need
+    const aMissing = Object.keys(getSchema(oOptions)).filter(sModel => !oSchema[sModel]);
     if (aMissing.length) {
       throw new NanoError(
-        `Better Auth needs the models ${aMissing.join(', ')} in the app's schema. Run \`npx auth generate\` and apply your schema with Prisma.`,
+        `Better Auth needs the tables ${aMissing.join(', ')} in the app's schema. Run \`npx auth generate\` and apply your schema with drizzle-kit.`,
       );
     }
 
@@ -63,7 +64,7 @@ export default abstract class BetterAuth {
         ...oOptions.advanced,
         ipAddress: { trustedProxies: PRIVATE_NETWORKS, ...oOptions.advanced?.ipAddress },
       },
-      database: prismaAdapter(oDb, { provider: 'postgresql' }),
+      database: drizzleAdapter(oDb, { provider: 'pg', schema: oSchema }),
     });
 
     // Keeps the instance for the plugins mounted with the app or after it
