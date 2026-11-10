@@ -1,6 +1,6 @@
 ---
-status: review
-owner: claude-rhf
+status: todo
+owner: null
 depends_on: []
 updated: 2026-11-10
 ---
@@ -123,8 +123,3 @@ Branch `feat/react-hook-form` from `main`, one pull request `feat(components): f
 ## Log
 
 - 2026-11-10 · claude · Plan written from the analysis above (`form`, `field`, `FieldRules`, their tests, React Hook Form 7.91.0 docs). Waiting for the first round of decisions; module 1 starts after them.
-- 2026-11-10 · claude-rhf · Decisions: 1A (go now), 2A (`WeakMap` per tree), 3B (Standard Schema per form, `required`, `errorMessage`, `validate` and the email/number checks leave the field), 4A (`submit` returns a promise). Points of 3B: 5A (`schema` optional; without it the form sends the values kept), 6A (`onSubmit` gets the schema's output), 7A (`@hookform/resolvers/standard-schema`).
-- 2026-11-10 · claude-rhf · Spike: `createFormControl` with fields registered without elements keeps values and errors through `subscribe`, validates cross-field rules with the form's values, validates untouched fields on `handleSubmit`, returns what `onSubmit` returns (or `undefined`), and `reset` empties both. MobX keeps an observable copy, not the control.
-- 2026-11-10 · claude-rhf · Done on `feat/react-hook-form`: `components/form/forms.ts` (forms per tree, state copied to `/form/<name>` of `app`), `FieldRules` removed, `field.change` through `setValue`, `form` with `schema`, `submit` and `reset` on the control; tests and the test app's login on zod; README. Tests run in CI only, as the maintainer asked; the bundle size of `next build` before and after was not measured.
-- 2026-11-10 · claude-rhf · Review: the consumer declares only the field config, so 3B is replaced: 10A (zod methods in a `rules` key of the field), 11A (`type` names a zod constructor, `checkbox` and `date` as aliases, a text otherwise), 12A (default messages `Required`, `Invalid email`, `Invalid number`, `Invalid value`, replaced by `errorMessage`). `form` builds the zod schema from its fields (`components/form/schema.ts`); the `schema` prop goes. `required`, `errorMessage` and `validate(value, values)` stay; `submit` returning a promise is the only breaking change.
-- 2026-11-10 · claude-rhf · Review: the fields validate, not the form. Each field builds its zod schema from its config (`components/field/schema.ts`) and registers it in its form when its view mounts, through React Hook Form's `validate` rule; `field.validate(values)` stays. `form` builds and registers nothing; `@hookform/resolvers` goes. 13A: rules only check and never change the value kept (`parse` does).

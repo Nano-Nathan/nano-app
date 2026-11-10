@@ -81,61 +81,62 @@ describe('field', () => {
   after(() => oBackend.close());
   afterEach(cleanup);
 
-  test('change validates the email, the number and required', async () => {
-    // Types an invalid email, a valid one and a text in the number
+  test('change keeps the value and validates the email, the number and required', () => {
+    // Renders the sign-up and types an invalid email, a valid one and a text in the number
     renderFields('signUp', SIGN_UP);
     type('email', 'ana');
-    await waitFor(() => assert.equal(errorOf('email'), 'email: Invalid email'));
+    assert.equal(errorOf('email'), 'email: Invalid email');
     type('email', 'ana@nano.app');
-    await waitFor(() => assert.equal(errorOf('email'), 'email: ok'));
+    assert.equal(errorOf('email'), 'email: ok');
     type('age', 'ten');
-    await waitFor(() => assert.equal(errorOf('age'), 'age: Invalid number'));
+    assert.equal(errorOf('age'), 'age: Invalid number');
 
-    // Empties the required email
+    // Empties the required email; the number keeps its value
     type('email', '');
-    await waitFor(() => assert.equal(errorOf('email'), 'email: Required'));
+    assert.equal(errorOf('email'), 'email: Required');
+    assert.equal(screen.getByLabelText<HTMLInputElement>('age').value, 'ten');
   });
 
-  test('errorMessage replaces the default messages and rules map to zod methods', async () => {
-    // Empties the phone
+  test('errorMessage replaces the default messages and rules map to zod methods', () => {
+    // Renders the sign-up and empties the phone
     renderFields('signUp', SIGN_UP);
     type('phone', '1');
     type('phone', '');
-    await waitFor(() => assert.equal(errorOf('phone'), 'phone: Your phone'));
+
+    assert.equal(errorOf('phone'), 'phone: Your phone');
 
     // Breaks the nick's min with its message, then its max without one
     type('nick', 'ab');
-    await waitFor(() => assert.equal(errorOf('nick'), 'nick: Too short'));
+    assert.equal(errorOf('nick'), 'nick: Too short');
     type('nick', 'abcdef');
-    await waitFor(() => assert.equal(errorOf('nick'), 'nick: Invalid value'));
+    assert.equal(errorOf('nick'), 'nick: Invalid value');
   });
 
-  test('the own rule of a field receives the values of its form', async () => {
-    // Confirms another password, with the required fields still empty
+  test('the own rule of a field receives the values of its form', () => {
+    // Renders the sign-up and confirms another password
     renderFields('signUp', SIGN_UP);
     type('password', 'secret');
     type('confirm', 'other');
-    await waitFor(() => assert.equal(errorOf('confirm'), 'confirm: Mismatch'));
+    assert.equal(errorOf('confirm'), 'confirm: Mismatch');
 
     // Confirms the same password
     type('confirm', 'secret');
-    await waitFor(() => assert.equal(errorOf('confirm'), 'confirm: ok'));
+    assert.equal(errorOf('confirm'), 'confirm: ok');
   });
 
   test('fields of two forms keep their values apart', () => {
-    // Renders a field of the same name in two forms of the same tree and types in one
+    // Renders a required field in two forms of the same tree and types in one
     render(
       <TestApp>
-        <Input form="a" field={{ name: 'one' }} />
-        <Input form="b" field={{ name: 'one' }} />
+        <Input form="a" field={{ name: 'one', required: true }} />
+        <Input form="b" field={{ name: 'two', required: true }} />
       </TestApp>,
     );
-    const [oFirst, oSecond] = screen.getAllByLabelText<HTMLInputElement>('one');
-    fireEvent.change(oFirst, { target: { value: 'x' } });
+    type('one', 'x');
+    type('one', '');
 
-    // Only the first keeps the value
-    assert.equal(oFirst.value, 'x');
-    assert.equal(oSecond.value, '');
+    assert.equal(errorOf('one'), 'one: Required');
+    assert.equal(errorOf('two'), 'two: ok');
   });
 
   test('a number field keeps a number, and the text of one being typed', () => {
@@ -150,17 +151,19 @@ describe('field', () => {
   });
 
   test('format shows the value kept and parse keeps what the view gives', () => {
-    // Renders a price shown with its sign and kept as a number, and types one
+    // Renders a number price shown with its sign and kept as a number, and types one
     const oPrice: FormField = {
       name: 'price',
-      format: oPrice => `${typeof oPrice} $${oPrice}`,
+      type: 'number',
+      format: iPrice => `$${iPrice}`,
       parse: sPrice => Number(sPrice.replace('$', '')),
+      validate: oValue => (typeof oValue === 'number' ? undefined : 'Text'),
     };
     renderFields('pay', [oPrice]);
     type('price', '$15');
 
-    // Shows the number kept with its sign
-    assert.equal(screen.getByLabelText<HTMLInputElement>('price').value, 'number $15');
+    assert.equal(screen.getByLabelText<HTMLInputElement>('price').value, '$15');
+    assert.equal(errorOf('price'), 'price: ok');
   });
 
   test('options are the items of their path, read when the view mounts', async () => {

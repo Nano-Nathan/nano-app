@@ -3,7 +3,7 @@ import './dom';
 import './env/form';
 import { test, describe, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import field from '../field';
 import form from '../form';
 import TestApp from './provider';
@@ -58,7 +58,7 @@ const Login = form({ components: { text: Field } }).bindView(({ fields, submit, 
   </form>
 ));
 
-/** The login, whose onSubmit keeps the values and answers `sent` */
+/** Renders the login, whose onSubmit keeps the values and answers `sent` */
 function renderLogin(): void {
   render(
     <TestApp>
@@ -129,52 +129,39 @@ describe('form', () => {
     );
   });
 
-  test('submit validates every field, also the untouched ones, and does not send', async () => {
-    // Types a valid age and submits without the email
+  test('submit validates every field, also the untouched ones, and does not send', () => {
+    // Types a valid age and submits without the required email
     renderLogin();
     type('age', '30');
     fireEvent.click(screen.getByText('send'));
 
-    // The email shows its error, nothing is sent and the submit gives undefined
-    await waitFor(() => assert.equal(errorOf('email'), 'email: Required'));
+    // The email shows its error and nothing is sent
+    assert.equal(errorOf('email'), 'email: Required');
     assert.deepEqual(aSent, []);
-    assert.deepEqual(await Promise.all(aReturned), [undefined]);
+    assert.deepEqual(aReturned, [undefined]);
   });
 
-  test('submit sends the kept values and what onSubmit returns', async () => {
+  test('submit sends the kept values and returns what onSubmit returns', () => {
     // Types both fields and submits
     renderLogin();
     type('email', 'ana@mail.com');
     type('age', '30');
     fireEvent.click(screen.getByText('send'));
 
-    // Sends the email and the age as a number, and gives the answer of onSubmit
-    assert.deepEqual(await Promise.all(aReturned), ['sent']);
+    // Sends the email and the age as a number, and returns the answer of onSubmit
     assert.deepEqual(aSent, [{ email: 'ana@mail.com', age: 30 }]);
+    assert.deepEqual(aReturned, ['sent']);
   });
 
-  test('reset empties the values and the errors', async () => {
+  test('reset empties the values and the errors', () => {
     // Types an age, submits to show the email's error, then resets
     renderLogin();
     type('age', '30');
     fireEvent.click(screen.getByText('send'));
-    await waitFor(() => assert.equal(errorOf('email'), 'email: Required'));
     fireEvent.click(screen.getByText('reset'));
 
     // The inputs are empty and no field shows an error
-    await waitFor(() => assert.equal(errorOf('email'), 'email: ok'));
     assert.equal(screen.getByLabelText<HTMLInputElement>('age').value, '');
-  });
-
-  test('the same form in two trees keeps its values apart', () => {
-    // Renders the login in two trees and types the email of the first
-    renderLogin();
-    renderLogin();
-    const [oFirst, oSecond] = screen.getAllByLabelText<HTMLInputElement>('email');
-    fireEvent.change(oFirst, { target: { value: 'ana@mail.com' } });
-
-    // Only the first keeps it
-    assert.equal(oFirst.value, 'ana@mail.com');
-    assert.equal(oSecond.value, '');
+    assert.equal(errorOf('email'), 'email: ok');
   });
 });
