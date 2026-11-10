@@ -1,7 +1,7 @@
 import { boolean, pgSchema, text, timestamp } from 'drizzle-orm/pg-core';
 
-/** Schema of Better Auth's tables in the tests */
-const authTest = pgSchema('auth_test');
+/** Schema of Better Auth's tables in the tests, exported so drizzle-kit creates it */
+export const authTest = pgSchema('auth_test');
 
 /** Creation and update dates of every table */
 const DATES = {

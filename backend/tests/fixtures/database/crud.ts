@@ -1,8 +1,8 @@
 import { defineRelations } from 'drizzle-orm';
 import { integer, pgSchema, serial, text, uuid } from 'drizzle-orm/pg-core';
 
-/** Schema of the crud tests */
-const crudTest = pgSchema('crud_test');
+/** Schema of the crud tests, exported so drizzle-kit creates it */
+export const crudTest = pgSchema('crud_test');
 
 /** Notes, each with its comments */
 export const note = crudTest.table('note', {
