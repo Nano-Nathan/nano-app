@@ -64,7 +64,7 @@ An app with Better Auth, `crud` and an official plugin with tables starts on Dri
 
 ## Decisions
 
-Pending, first round:
+First round, decided 2026-11-10: 1A, 2A, 3A.
 
 1. Drizzle version.
    - **A (recommended)**: `1.0.0-rc`. Relational queries v2 (object `where`, relation filters) and the Better Auth adapter support it; nano-app reaches 1.0 on Drizzle 1.0.
@@ -88,3 +88,4 @@ Later rounds: whether `drizzle-kit` is an optional peer (as `prisma` today) or a
 ## Log
 
 - 2026-11-10 · claude · Plan written from the analysis above (Prisma inventory, Drizzle rc docs, Better Auth adapter peers). Waiting for the first round of decisions; module 1 starts after them.
+- 2026-11-10 · claude · Decisions 1A (`drizzle-orm`/`drizzle-kit` 1.0 rc), 2A (`mainPlugin.database.schemaPath` to a TS module), 3A (`crud` passes Drizzle's relational `where` through).
