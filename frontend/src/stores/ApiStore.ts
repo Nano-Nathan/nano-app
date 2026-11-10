@@ -45,7 +45,7 @@ export default class ApiStore extends Store {
     });
 
     // Keeps it for the views
-    this.keep(oResponse, sPath, oQuery);
+    this.keep(oResponse, ApiStore.key(sPath, oQuery));
     return oResponse;
   }
 
@@ -61,7 +61,7 @@ export default class ApiStore extends Store {
       top: oQuery.top,
       read: iSkip =>
         this.request(sPath, { method: 'QUERY', body: JSON.stringify({ ...oQuery, skip: iSkip }) }),
-      keep: oResponse => this.set(sKey, oResponse),
+      keep: oResponse => this.keep(oResponse, sKey),
     });
 
     // Reads the next page, or the first one
@@ -190,16 +190,15 @@ export default class ApiStore extends Store {
     // Writes it in the cache
     this.oClient.setQueryData(oKey, oData);
 
-    // Writes a read, not pages, for the views
+    // Keeps a read, not pages, for the views
     if (!oData || 'pages' in oData) return;
-    this.set(ApiStore.key(String(oKey[0]), oKey[1]), oData);
+    this.keep(oData, ApiStore.key(String(oKey[0]), oKey[1]));
   }
 
-  /** Keeps an answer at its path and query for the views, over what was there */
-  private keep(oResponse: ApiResponse, sPath: string, oQuery?: QueryParams): void {
+  /** Keeps an answer at the key of its path and query for the views, over what was there */
+  private keep(oResponse: ApiResponse, sKey: string): void {
     // Sets the answer merged over the value at its key
-    const sKey = ApiStore.key(sPath, oQuery);
-    this.set(sKey, { ...this.get(sPath, oQuery), ...oResponse });
+    this.set(sKey, { ...super.get(sKey), ...oResponse });
   }
 
   /** A path and each of its parents */

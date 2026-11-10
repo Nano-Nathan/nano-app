@@ -23,8 +23,8 @@ export default function list(oOptions: ListOptions) {
         return oApi.get('/list/page') ?? 0;
       },
       query(): QueryParams {
-        // The query of the page and the order chosen by the user
-        return { skip: this.page() * top, top, orderby: oApi.get('/list/orderby') };
+        // The query of the pages, from the current page
+        return { skip: this.page() * top, ...this.pagesQuery() };
       },
       async load(): Promise<ApiResponse> {
         // Reads the current page
@@ -43,7 +43,7 @@ export default function list(oOptions: ListOptions) {
         return oApi.get(path, this.pagesQuery());
       },
       pagesQuery(): QueryParams {
-        // The query of the pages read with `more`: every item from the first, in the chosen order
+        // The page size and the order chosen by the user, without the page
         return { top, orderby: oApi.get('/list/orderby') };
       },
       async goTo(iPage: number): Promise<ApiResponse> {
