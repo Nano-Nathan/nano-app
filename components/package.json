@@ -15,7 +15,7 @@
   ],
   "scripts": {
     "build": "tsdown",
-    "test": "tsx --test --test-concurrency=1 tests/*.test.tsx",
+    "test": "tsx --test --test-force-exit --test-concurrency=1 tests/*.test.tsx",
     "prepublishOnly": "pnpm run build"
   },
   "keywords": [
@@ -57,5 +57,8 @@
     "tsdown": "^0.23.5",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
   }
 }

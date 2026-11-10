@@ -27,9 +27,7 @@ export default withNanoApp({
   headers: async () => [
     {
       source: '/:path*',
-      headers: [
-        { key: 'Strict-Transport-Security', value: 'max-age=31536000' },
-      ],
+      headers: [{ key: 'Strict-Transport-Security', value: 'max-age=31536000' }],
     },
   ],
 });
@@ -93,7 +91,7 @@ export default counterController.bindView(({ stores: { app }, increment }) => (
 - The context has `props`, `stores` and `router`; a method with one of those names is hidden by it. Reading a store the app does not have (`stores.missing`) throws naming the store file to add.
 - Before its `return`, the function only keeps what it reads from the context (`const oApi = stores.backend;`). A method reaches the others with `this` (`last() { return this.items()[0]; }`), also when the view calls it alone; `this` needs the method syntax, not an arrow. `onMount` gets the same `this`.
 
-`callbacks` (since 0.7), first in that object, is not a method: `onMount` runs once when each bound view mounts (never on the server), to read what the view needs. To act when a value changes, the view calls a method from a `useEffect` with that value as its dependency (see [Sessions](#sessions)); the logic stays in the method.
+`callbacks` (since 0.7), first in that object, is not a method: `onMount` runs once when each bound view mounts (never on the server), to read what the view needs, and `onUnmount` once when it unmounts. To act when a value changes, the view calls a method from a `useEffect` with that value as its dependency (see [Sessions](#sessions)); the logic stays in the method.
 
 ```ts
 export default createController(({ stores: { backend } }) => ({
@@ -177,10 +175,11 @@ export default usersController.bindView(({ stores: { backend }, add }) => (
 ```
 
 - `read(path, query?)` returns a promise of the `ApiResponse` and keeps it in the store for that path and query, over what the store had there (a field the new answer does not bring stays from the last one). The view gets it with `get(path, query?)`, and renders again when a read keeps a new one.
-- Each path has a version that its writes raise. A read answers from the store while it was kept at the current version of its path; otherwise it asks the backend (`GET`, or `QUERY` with the query as JSON body). An answer that comes back after a write on its path is returned but not kept.
-- `create` (`POST <path>`), `update` (`PUT <path>`) and `delete` (`DELETE <path>`) return a promise of the `ApiResponse` and raise the version of their path and its parents (`update('/users/7')` raises `/users/7` and `/users`), so their next reads ask the backend, whatever their query. Other paths keep what they have.
-- A successful `update` also keeps its `ApiResponse` at its path, over what the store had there, with the new version of the path: its next read answers from the store. `create` and `delete` keep nothing.
-- A read or a write always resolves with an `ApiResponse`. When the backend fails it is the backend's (`success: false`, `message`); an answer that is not JSON becomes `{ success: false, message: 'Request failed', result: <the text> }`, and no answer `{ success: false, message: 'Request failed' }`.
+- A read answers from the store until a write on its path or a parent; otherwise it asks the backend (`GET`, or `QUERY` with the query as JSON body). Reads of the same path and query that are out at once send one request. A read still out when a write on its path answers is cancelled: its promise rejects with `CancelledError`. The cache runs on [TanStack Query](https://tanstack.com/query) (`@tanstack/query-core`), without its hooks.
+- `create` (`POST <path>`), `update` (`PUT <path>`) and `delete` (`DELETE <path>`) return a promise of the `ApiResponse` and, once answered, invalidate their path and its parents (`update('/users/7')` invalidates `/users/7` and `/users`), so their next reads ask the backend, whatever their query. Other paths keep what they have.
+- A successful `update` also keeps its `ApiResponse` at its path, over what the store had there: its next read answers from the store. `create` and `delete` keep nothing.
+- `more(path, query)` reads a list page after page: each call adds the next page (`QUERY` with `offset`), and `get(path, query)` gives every page read so far in one `ApiResponse`, its items in order in `result`. A page with fewer items than `query.limit` is the last one: later calls ask nothing. While a view shows them (`watch(path, query)` when it mounts, `unwatch(path, query)` when it unmounts), a write on the path reads every page again; with no view, a write only marks them old, and the next `watch` reads them all again. Do not `read` and `more` the same path and query: they keep their answer at the same place.
+- A read or a write resolves with an `ApiResponse` (a read cancelled by a write rejects). When the backend fails it is the backend's (`success: false`, `message`); an answer that is not JSON becomes `{ success: false, message: 'Request failed', result: <the text> }`, and no answer `{ success: false, message: 'Request failed' }`.
 - Each failed request adds its `ApiResponse` to the store's `/error/list` as an `ApiError`, with `message` set to `'Request failed'` when the backend brings none and `timestamp` (`Date.now()`) of when it failed. The views get it with `get('/error/list')`, or through the `error` component of `@nano-app/components`.
 - On the server (the first HTML that Next renders) `read` asks nothing and resolves with an empty `ApiResponse` (`{}`).
 - `/busy` is `true` while a request of the store is out (`backend.get('/busy') ? 'Loading…' : …`).
@@ -257,7 +256,7 @@ export default createController(({ stores: { backend } }) => ({
 
 - `signIn(kind, body)` and `signUp(kind, body)` send `POST <path>/sign-in/<kind>` and `POST <path>/sign-up/<kind>`: `kind` is the method of Better Auth (`email`, ...), and `body` what it asks. `signOut()` sends `POST <path>/sign-out`.
 - They return Better Auth's answer inside an `ApiResponse`: `{ success, result, message }`, with `success` when the backend answered 2xx and its `message` when it failed.
-- `readSession()` asks `GET <path>/get-session` and keeps `{ user, session }` at `/session`, or `null` without a session. It answers from the store until a `signIn`, `signUp` or `signOut` succeeds, which reads it again. On the server it asks nothing and resolves with `{}`.
+- `readSession()` asks `GET <path>/get-session` and keeps `{ user, session }` at `/session`, or `null` without a session. It answers from the store until a `signIn`, `signUp` or `signOut` succeeds, which reads it again; calls that are out at once send one request. On the server it asks nothing and resolves with `{}`.
 - Any 401 of the store's backend sets `/session` to `null`, and the next `readSession()` asks again.
 - The session lives in Better Auth's cookie, which the proxy passes as any other: a refresh reads it again with `readSession()`.
 - Better Auth checks the `Origin` of every `POST`: add the URL of the frontend to its `trustedOrigins` in the backend.
@@ -308,7 +307,7 @@ pnpm --filter nano-frontend-test-app build
 pnpm --filter nano-frontend-test-app start   # http://localhost:3100
 ```
 
-The `Users` component reads and writes `/users` of the `backend` store, and `UsersList` pages and sorts it with `list` of [`@nano-app/components`](../components/README.md): point it at any backend that answers `GET`, `QUERY` (`skip`, `top`, `orderby`), `POST`, `PUT` and `DELETE` on `/users` with an `ApiResponse`, and give it the key its store declares:
+The `Users` component reads and writes `/users` of the `backend` store, and `UsersList` pages and sorts it with `list` of [`@nano-app/components`](../components/README.md): point it at any backend that answers `GET`, `QUERY` (`offset`, `limit`, `orderBy`), `POST`, `PUT` and `DELETE` on `/users` with an `ApiResponse`, and give it the key its store declares:
 
 ```bash
 API_BACKEND_URL=http://localhost:3000 API_BACKEND_KEY_HEADER=dev pnpm --filter nano-frontend-test-app start
@@ -322,4 +321,4 @@ The `backend` store declares `auth: { path: '/api/auth', routes: [{ match: '/pri
 - The frontend has no credential of its own and does not depend on any backend plugin. What the backend exposes and how it is protected is decided in the backend.
 - No `glob` or `jiti` in the client bundle, and no generated files in `node_modules`: build data goes through Next's `env`.
 - Rejected, not coming back: typed store paths (a store's state changes with the app's flow), `useStore`, `createComponent`, `StoreManager`, controllers as classes, a `set` guard during render, a static (server) mode of the creator.
-- Not yet, until real controllers ask for it: `onInit`/`onExit` in the controller, inheritance between controllers, a debounce of the framework, dropping old reads, reading what other users change, `PATCH`, the React Compiler.
+- Not yet, until real controllers ask for it: `onInit` in the controller, inheritance between controllers, a debounce of the framework, dropping old reads, reading what other users change, `PATCH`, the React Compiler.

@@ -1,6 +1,6 @@
 ---
-status: todo
-owner: null
+status: review
+owner: claude
 depends_on: []
 updated: 2026-11-10
 ---
@@ -137,3 +137,10 @@ Branch `feat/tanstack-query` from `main`, one pull request `feat(frontend): cach
 ## Log
 
 - 2026-11-10 · claude · Plan written from the analysis above (`ApiStore`, its tests, `query-core` 5.107.1 docs and source). Waiting for the first round of decisions; module 1 starts after them.
+- 2026-11-10 · claude · Decision 1A (go), from the maintainer. Spike on `query-core` 5.107.1 with the sketch of the approach applied to `ApiStore`: the 40 frontend tests pass as they are, and two concurrent reads of a path send one request. In both race tests the read ends before the write's answer comes back, so they never reach the cancellation. With a slow read and a fast write: a read with no data kept rejects with `CancelledError` (today it resolves with the backend's late answer), and a read with data kept resolves with that previous data. Decision 3 has to cover the rejection.
+- 2026-11-10 · claude · Decisions 2A (one `QueryClient` per `ApiStore`), 3A (a read cancelled by a write reads again, so it always resolves with an `ApiResponse`), 4B (the session of `AuthStore` is the query `['session']`, removed by a 401 and by sign-in, sign-up and sign-out), from the maintainer.
+- 2026-11-10 · claude · Implemented on `feat/tanstack-query`: `oVersions`, `oKept` and `oSession` are gone, and `oClient` is `protected` so `AuthStore` can reach it. New tests: concurrent reads of a path and of a query send one request each; a read still out when an update answers resolves with the update's data; concurrent `readSession` calls send one request. Frontend 43/43, components 25/25, `tsc` of core, frontend, components and backend, `format:check`, and `next build` of `tests/app` pass. Client JS of the test app, gzipped: 189.3 kB before, 196.4 kB after (+7 kB). Not verified: rendering in a browser (the container has no Chromium).
+- 2026-11-10 · claude · Review of the maintainer on the pull request: no retry of a cancelled read (it rejects with `CancelledError`), no `queryKey` helper for one use, no `gcTime` (the cache may drop what nobody reads). Tests run only in CI from now on.
+- 2026-11-10 · claude · Scope grows, decided by the maintainer: `staleTime: Infinity` as the client's default; infinite pages (`more(path, query)` of the api store with an `InfiniteQueryObserver` per path and query, and `more()` and `loaded()` in `list`, always there for the view to use); optimistic `update` and `delete` (`{ optimistic: true }`), shown at the path and on the item of the same `id` in the lists of its parent, undone when the write fails. A write refetches the pages of its path (their observers are active). New files `stores/Pages.ts` and `stores/Optimistic.ts`; `ApiStore.ts` is at 216 lines.
+- 2026-11-10 · claude · Review against CLAUDE.md, decided by the maintainer: `loaded()` is `pages()` in `list`; `query()` reuses `pagesQuery()`; every write to the store goes through `keep`; `read` and `more` of the same path and query share their place in the store (documented, no code); an optimistic write also applies to a path without a parent. Pages are read again when a view shows them: the api store gets `watch(path, query)` and `unwatch(path, query)`, `list` calls them from `onMount` and the new `onUnmount` callback of `createController` (and moves them on `sort`); a write reads again the pages a view shows and only marks the others old, which the next `watch` reads again. Pages without a read page never ask on their own (`enabled` only with data).
+- 2026-11-10 · claude · Optimistic writes removed, decided by the maintainer: with the cache read again after each write they are not needed. `stores/Optimistic.ts` and `WriteOptions` are gone; `update` and `delete` are back to their signatures of `main`.

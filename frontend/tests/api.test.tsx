@@ -33,7 +33,10 @@ function answer(sMethod: string, sUrl: string, sBody: string): [string, string] 
   if (sEntity === 'html') return ['text/html', '<h1>Not found</h1>'];
   if (sEntity === 'fail') return fnJson({ success: false, message: 'Failed' });
   if (sEntity === 'orders') return fnJson({ success: true, result: [] });
-  if (sMethod === 'QUERY') return fnJson({ success: true, result: aUsers.slice(0, oBody.limit) });
+  if (sMethod === 'QUERY') {
+    const iOffset = oBody.offset ?? 0;
+    return fnJson({ success: true, result: aUsers.slice(iOffset, iOffset + oBody.limit) });
+  }
   if (sMethod === 'POST') aUsers = [...aUsers, oBody];
   if (sMethod === 'PUT') aUsers = aUsers.map(oUser => (oUser.id === Number(sId) ? oBody : oUser));
   if (sMethod === 'DELETE') aUsers = aUsers.filter(oUser => oUser.id !== Number(sId));
@@ -162,12 +165,17 @@ describe('api store', () => {
   });
 
   test('a read answered after an update does not replace its answer', async () => {
-    // Slows the backend, and renames while the read is out
-    iDelay = 100;
+    // Slows the update more than the read, and renames while the read is out
     const { backend } = renderStores();
+    iDelay = 100;
     const oRead = backend.read('/users/7');
-    await backend.update('/users/7', { id: 7, name: 'Bruno' });
+    await new Promise(fnResolve => setTimeout(fnResolve, 20));
+    iDelay = 200;
+    const oUpdate = backend.update('/users/7', { id: 7, name: 'Bruno' });
+
+    // The read answers first, then the update, and the path is read again
     await oRead;
+    await oUpdate;
     await backend.read('/users/7');
 
     assert.equal(backend.get('/users/7').result.name, 'Bruno');
@@ -201,15 +209,79 @@ describe('api store', () => {
   });
 
   test('a read answered after a write is asked again', async () => {
-    // Slows the backend, and writes while the read is out
-    iDelay = 100;
+    // Slows the delete more than the read, and deletes while the read is out
     const { backend } = renderStores();
+    iDelay = 100;
     const oRead = backend.read('/users/7');
-    await backend.delete('/users/7');
+    await new Promise(fnResolve => setTimeout(fnResolve, 20));
+    iDelay = 200;
+    const oDelete = backend.delete('/users/7');
+
+    // The read answers first, then the delete, and the path is read again
     await oRead;
+    await oDelete;
     await backend.read('/users/7');
 
     assert.equal(count(aRequests, 'GET /api/backend/users/7'), 2);
+  });
+
+  test('a read still out when a write on its path answers is cancelled', async () => {
+    // Slows the read, and answers the update before it
+    const { backend } = renderStores();
+    iDelay = 150;
+    const oRead = backend.read('/users/7');
+    await new Promise(fnResolve => setTimeout(fnResolve, 20));
+    iDelay = 0;
+    await backend.update('/users/7', { id: 7, name: 'Bruno' });
+
+    // The read rejects, and the store keeps the update's answer
+    await assert.rejects(oRead, { message: 'CancelledError' });
+    assert.equal(backend.get('/users/7').result.name, 'Bruno');
+  });
+
+  test('concurrent reads of a path and query send one request', async () => {
+    // Reads the same path twice and the same query twice, at once
+    iDelay = 50;
+    const { backend } = renderStores();
+    await Promise.all([
+      backend.read('/users'),
+      backend.read('/users'),
+      backend.read('/users', { limit: 1 }),
+      backend.read('/users', { limit: 1 }),
+    ]);
+
+    assert.equal(count(aRequests, 'GET /api/backend/users'), 1);
+    assert.equal(count(aRequests, 'QUERY /api/backend/users'), 1);
+  });
+
+  test('more adds the next page of a query, and a write reads again the pages a view shows', async () => {
+    // A view shows the pages, and reads two of one user
+    const { backend } = renderStores();
+    backend.watch('/users', { limit: 1 });
+    await backend.more('/users', { limit: 1 });
+    await backend.more('/users', { limit: 1 });
+
+    assert.deepEqual(
+      backend.get('/users', { limit: 1 }).result.map((oUser: NanoObject) => oUser.name),
+      ['Ana', 'Beto'],
+    );
+
+    // Renames the second user: both pages are read again
+    await backend.update('/users/7', { id: 7, name: 'Bruno' });
+    await waitFor(() => assert.equal(backend.get('/users', { limit: 1 }).result[1].name, 'Bruno'));
+  });
+
+  test('pages no view shows are only marked old by a write, and read again when one shows them', async () => {
+    // Reads two pages of one user without a view, and renames the second user
+    const { backend } = renderStores();
+    await backend.more('/users', { limit: 1 });
+    await backend.more('/users', { limit: 1 });
+    await backend.update('/users/7', { id: 7, name: 'Bruno' });
+
+    // The pages keep the old name until a view shows them
+    assert.equal(backend.get('/users', { limit: 1 }).result[1].name, 'Beto');
+    backend.watch('/users', { limit: 1 });
+    await waitFor(() => assert.equal(backend.get('/users', { limit: 1 }).result[1].name, 'Bruno'));
   });
 
   test('busy is true while a request is out', async () => {

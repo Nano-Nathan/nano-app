@@ -145,6 +145,38 @@ describe('list', () => {
     assert.deepEqual(aRequests, ['QUERY /api/api/users {"offset":0,"limit":1}']);
   });
 
+  test('more adds the next page to the pages read so far, until a page comes short', async () => {
+    // Renders a list whose view shows every page read with more, from pages
+    const List = list({ path: '/users', limit: 2 }).bindView(({ pages, more }) => (
+      <div>
+        <output>{(pages()?.result ?? []).map((oUser: User) => oUser.name).join(',')}</output>
+        <button onClick={more}>more</button>
+      </div>
+    ));
+    render(
+      <TestApp>
+        <List />
+      </TestApp>,
+    );
+
+    // Reads three pages: the third one has one user and is the last
+    fireEvent.click(screen.getByText('more'));
+    await expectNames('Ana,Beto');
+    fireEvent.click(screen.getByText('more'));
+    await expectNames('Ana,Beto,Ciro,Dora');
+    fireEvent.click(screen.getByText('more'));
+    await expectNames('Ana,Beto,Ciro,Dora,Eva');
+
+    // Asks for nothing after the last page
+    fireEvent.click(screen.getByText('more'));
+    await act(() => new Promise(fnResolve => setTimeout(fnResolve, 50)));
+
+    assert.equal(
+      aRequests.filter(sRequest => sRequest.startsWith('QUERY /api/api/users {"limit":2')).length,
+      3,
+    );
+  });
+
   test('without its api store it fails, naming the store', () => {
     // Renders a list of a store the app does not have
     const List = list({ path: '/users', limit: 1, store: 'missing' }).bindView(fnView);
