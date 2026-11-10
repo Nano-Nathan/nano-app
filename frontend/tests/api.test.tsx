@@ -33,7 +33,10 @@ function answer(sMethod: string, sUrl: string, sBody: string): [string, string] 
   if (sEntity === 'html') return ['text/html', '<h1>Not found</h1>'];
   if (sEntity === 'fail') return fnJson({ success: false, message: 'Failed' });
   if (sEntity === 'orders') return fnJson({ success: true, result: [] });
-  if (sMethod === 'QUERY') return fnJson({ success: true, result: aUsers.slice(0, oBody.top) });
+  if (sMethod === 'QUERY') {
+    const iSkip = oBody.skip ?? 0;
+    return fnJson({ success: true, result: aUsers.slice(iSkip, iSkip + oBody.top) });
+  }
   if (sMethod === 'POST') aUsers = [...aUsers, oBody];
   if (sMethod === 'PUT') aUsers = aUsers.map(oUser => (oUser.id === Number(sId) ? oBody : oUser));
   if (sMethod === 'DELETE') aUsers = aUsers.filter(oUser => oUser.id !== Number(sId));
