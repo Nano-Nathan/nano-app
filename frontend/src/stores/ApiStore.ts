@@ -1,12 +1,10 @@
 import { QueryClient } from '@tanstack/query-core';
 import { IS_SERVER, REQUEST_FAILED } from '@nano-app/core/const';
-import Optimistic from './Optimistic';
 import Pages from './Pages';
 import Store from './Store';
-import type { InfiniteData, QueryKey } from '@tanstack/query-core';
 import type { ApiResponse, QueryParams } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
-import type { ApiError, WriteOptions } from '../types/store';
+import type { ApiError } from '../types/store';
 
 /** Backend of an `api` store through its proxy; each read keeps its `ApiResponse` in the store */
 export default class ApiStore extends Store {
@@ -76,23 +74,13 @@ export default class ApiStore extends Store {
     return this.write('POST', sPath, oBody);
   }
 
-  /** `PUT <path>`, keeping a successful answer at its path; optimistic, shown before it */
-  public async update(
-    sPath: string,
-    oBody: unknown,
-    oOptions?: WriteOptions,
-  ): Promise<ApiResponse> {
-    // Shows the body at its path and in the lists of its parent before the answer
-    const fnUndo = oOptions?.optimistic ? this.show(sPath, oBody) : undefined;
-
+  /** `PUT <path>`, keeping a successful answer at its path */
+  public async update(sPath: string, oBody: unknown): Promise<ApiResponse> {
     // Sends the write
     const oResponse = await this.write('PUT', sPath, oBody);
 
-    // Undoes what it showed and returns a failed answer as is
-    if (!oResponse.success) {
-      fnUndo?.();
-      return oResponse;
-    }
+    // Returns a failed answer as is
+    if (!oResponse.success) return oResponse;
 
     // Keeps the answer at its path, in the cache and for the views
     this.oClient.setQueryData([sPath], oResponse);
@@ -100,15 +88,9 @@ export default class ApiStore extends Store {
     return oResponse;
   }
 
-  /** `DELETE <path>`; optimistic, its item leaves the lists of its parent before the answer */
-  public async delete(sPath: string, oOptions?: WriteOptions): Promise<ApiResponse> {
-    // Leaves its item out of the lists of its parent before the answer
-    const fnUndo = oOptions?.optimistic ? this.show(sPath) : undefined;
-
-    // Sends the write, and undoes what it showed when it fails
-    const oResponse = await this.write('DELETE', sPath);
-    if (!oResponse.success) fnUndo?.();
-    return oResponse;
+  /** `DELETE <path>` */
+  public delete(sPath: string): Promise<ApiResponse> {
+    return this.write('DELETE', sPath);
   }
 
   /** Sends a write, and cancels and invalidates the reads of its path and its parents */
@@ -178,37 +160,6 @@ export default class ApiStore extends Store {
       keep: oResponse => this.keep(oResponse, sKey),
     });
     return this.oPages[sKey];
-  }
-
-  /** Shows a write at its path and in its parent's lists before the answer; returns its undo */
-  private show(sPath: string, oItem?: unknown): () => void {
-    // Takes the reads kept of the path and of its parent
-    const sId = sPath.split('/').at(-1) ?? '';
-    const aReads = ApiStore.parents(sPath)
-      .slice(-2)
-      .flatMap(sKey =>
-        this.oClient.getQueriesData<ApiResponse | InfiniteData<ApiResponse>>({ queryKey: [sKey] }),
-      );
-
-    // Shows each one with the item, or without it
-    for (const [oKey, oData] of aReads) {
-      if (oData) this.cache(oKey, Optimistic.apply(oData, sId, oItem));
-    }
-
-    // Puts back what each one had
-    return () => {
-      for (const [oKey, oData] of aReads) this.cache(oKey, oData);
-    };
-  }
-
-  /** Writes a read in the cache, and at its path and query for the views; pages keep themselves */
-  private cache(oKey: QueryKey, oData?: ApiResponse | InfiniteData<ApiResponse>): void {
-    // Writes it in the cache
-    this.oClient.setQueryData(oKey, oData);
-
-    // Keeps a read, not pages, for the views
-    if (!oData || 'pages' in oData) return;
-    this.keep(oData, ApiStore.key(String(oKey[0]), oKey[1]));
   }
 
   /** Keeps an answer at the key of its path and query for the views, over what was there */

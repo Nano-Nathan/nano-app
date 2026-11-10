@@ -271,45 +271,6 @@ describe('api store', () => {
     await waitFor(() => assert.equal(backend.get('/users', { top: 1 }).result[1].name, 'Bruno'));
   });
 
-  test('an optimistic update shows its body at its path and in the lists of its parent at once', async () => {
-    // Reads the user and the list, then renames the user while the backend is slow
-    const { backend } = renderStores();
-    await backend.read('/users/7');
-    await backend.read('/users');
-    iDelay = 100;
-    const oUpdate = backend.update('/users/7', { id: 7, name: 'Bruno' }, { optimistic: true });
-
-    // Shows the new name before the answer
-    assert.equal(backend.get('/users/7').result.name, 'Bruno');
-    assert.equal(backend.get('/users').result[1].name, 'Bruno');
-    await oUpdate;
-  });
-
-  test('an optimistic delete leaves its item out of the lists of its parent at once', async () => {
-    // Reads the list, then deletes a user while the backend is slow
-    const { backend } = renderStores();
-    await backend.read('/users');
-    iDelay = 100;
-    const oDelete = backend.delete('/users/3', { optimistic: true });
-
-    // Shows the list without it before the answer
-    assert.deepEqual(
-      backend.get('/users').result.map((oUser: NanoObject) => oUser.id),
-      [7],
-    );
-    await oDelete;
-  });
-
-  test('a failed optimistic write puts back what the reads had', async () => {
-    // Reads a path that fails, and updates it optimistically
-    const { backend } = renderStores();
-    await backend.read('/fail');
-    await backend.update('/fail', { name: 'Bruno' }, { optimistic: true });
-
-    assert.equal(backend.get('/fail').success, false);
-    assert.equal(backend.get('/fail').result, undefined);
-  });
-
   test('busy is true while a request is out', async () => {
     // Slows the backend and reads
     iDelay = 100;

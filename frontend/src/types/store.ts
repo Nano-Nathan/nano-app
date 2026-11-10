@@ -10,12 +10,6 @@ export type ApiError = ApiResponse & {
   timestamp: number;
 };
 
-/** Options of `update` and `delete` of an api store */
-export type WriteOptions = {
-  /** Shows the write before its answer, and undoes it when it fails */
-  optimistic?: boolean;
-};
-
 /** What the pages of a list read and where they keep it */
 export type PagesConfig = {
   /** Key of the pages in the cache */
