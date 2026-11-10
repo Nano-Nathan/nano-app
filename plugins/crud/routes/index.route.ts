@@ -1,7 +1,7 @@
 import { defineRelations, eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { createRoute, isGranted, NanoError } from '@nano-app/backend';
-import type { ApiPromise, NanoObject, Params, QueryParams, Request } from '@nano-app/backend';
+import type { ApiPromise, NanoObject, Params, Request } from '@nano-app/backend';
 
 /** Permission of Better Auth that each method needs on the URL's table */
 const ACTIONS: NanoObject<string> = {
@@ -24,13 +24,7 @@ function first(aRecords: NanoObject[]): { result: NanoObject } {
 /** A list of the table, or one record by its id, with Drizzle's relational query of the body on the table alone */
 async function read(oReq: Request, { db, schema, onBeforeResult }: Params): ApiPromise {
   const { model, id } = onBeforeResult ?? {};
-  const {
-    where = {},
-    columns,
-    orderBy,
-    limit = DEFAULT_LIMIT,
-    offset,
-  }: QueryParams = oReq.body ?? {};
+  const oBody: NanoObject = oReq.body ?? {};
 
   // A client on the same pool that knows the tables but none of their relations: a query cannot leave its table
   const { relations: _oRelations, ...oTables } = schema;
@@ -38,10 +32,16 @@ async function read(oReq: Request, { db, schema, onBeforeResult }: Params): ApiP
   const oNoRelations: any = defineRelations(oTables);
   const oTableOnly = drizzle({ client: db.$client, relations: oNoRelations });
 
-  // One record by its id, or the list
+  // One record by its id, or the list: the body goes as it came, so Drizzle rejects what leaves the table
   const oQuery = oTableOnly.query[model];
-  if (id) return first(await oQuery.findMany({ where: { id }, columns, limit: 1 }));
-  return { result: await oQuery.findMany({ where, columns, orderBy, limit, offset }) };
+  if (id) return first(await oQuery.findMany({ ...oBody, where: { id }, limit: 1 }));
+  return {
+    result: await oQuery.findMany({
+      ...oBody,
+      where: oBody.where ?? {},
+      limit: oBody.limit ?? DEFAULT_LIMIT,
+    }),
+  };
 }
 
 /** `GET` reads without parameters, `QUERY` with `QueryParams` as its body */
