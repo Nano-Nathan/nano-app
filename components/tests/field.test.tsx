@@ -166,6 +166,15 @@ describe('field', () => {
     assert.equal(errorOf('price'), 'price: ok');
   });
 
+  test('a field without type is a text', () => {
+    // Renders a count without type whose parse keeps a number, and types one
+    const oCount: FormField = { name: 'count', parse: sCount => Number(sCount) };
+    renderFields('stock', [oCount]);
+    type('count', '3');
+
+    assert.equal(errorOf('count'), 'count: Invalid value');
+  });
+
   test('options are the items of their path, read when the view mounts', async () => {
     // Renders a select of roles
     const oRole: FormField = { name: 'role', options: { path: '/roles' } };

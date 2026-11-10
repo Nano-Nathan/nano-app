@@ -40,8 +40,10 @@ React Hook Form (dropped by the maintainer), schema resolvers, field arrays, asy
 2. Rules in the config: zod methods by name in a `rules` key of the field.
 3. Types: `type` names a zod constructor, with `checkbox` and `date` as aliases and a text otherwise.
 4. Rules only check and never change the value kept (`parse` does).
+5. A field without `type` is a text: a `parse` that keeps something else breaks with `Invalid value`. It breaks the public API of `@nano-app/components`, so the pull request to `main` ends with a `BREAKING CHANGE` footer.
 
 ## Log
 
 - 2026-11-10 · claude-rhf · First take on React Hook Form, with each field validating with its own zod rules.
 - 2026-11-10 · claude-zod · Review: the maintainer drops React Hook Form and keeps only zod. The branch is rewritten from `main`: `form` and `field` as on `main`, `FieldRules` on the zod schema of `schema.ts`, `react-hook-form` out of the dependencies.
+- 2026-11-10 · claude-zod · The maintainer splits it as the module `feat/react-hook-form--zod-rules` of `feat/react-hook-form` and accepts that a field without `type` validates as a text (decision 5): README, test and the `BREAKING CHANGE` footer of #123.
