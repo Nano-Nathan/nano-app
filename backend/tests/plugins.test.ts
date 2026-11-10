@@ -4,6 +4,7 @@ import express from 'express';
 import { startApp, request, boot } from './helpers';
 import Plugin from '../src/routes/Plugin';
 import { createPluginCallbacks } from '../src/app/creators';
+import * as reserved from './fixtures/database/reserved';
 
 const PLUGIN_ROUTES = 'tests/fixtures/plugin-routes';
 const CALLBACK_ROUTES = 'tests/fixtures/callback-routes';
@@ -139,15 +140,14 @@ describe('plugins', () => {
     }
   });
 
-  test("a plugin's database needs its schema", async () => {
-    // A plugin whose schema does not exist
-    const oPlugin = new Plugin({
-      name: 'missing',
-      routesDir: '',
-      database: { enabled: true, schemaPath: 'tests/fixtures/missing.prisma' },
-    });
+  test("a plugin's tables live in nano_<its name>", async () => {
+    // A plugin named "other" with a table in nano_test
+    const oPlugin = new Plugin({ name: 'other', routesDir: '', database: { schema: reserved } });
 
-    // Checks that mounting it fails saying which
-    await assert.rejects(oPlugin.mount(express()), /tests\/fixtures\/missing.prisma not found/);
+    // Checks that mounting it fails naming the table and the rule
+    await assert.rejects(
+      oPlugin.mount(express()),
+      /"nano_test.items".*keeps its tables in "nano_other"/,
+    );
   });
 });

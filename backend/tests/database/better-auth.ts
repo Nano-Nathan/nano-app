@@ -1,24 +1,23 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { rmSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { boot, prisma, request } from '../helpers';
+import { boot, push, request } from '../helpers';
+import * as authSchema from '../fixtures/auth/schema';
 import type { Booted } from '../helpers';
 
 // Better Auth suite, imported by database.test.ts: the app runs from the auth fixture
 
 const FIXTURES = resolve('tests/fixtures/auth');
-const SCHEMA = `${FIXTURES}/schema.prisma`;
-const NO_AUTH_SCHEMA = resolve('tests/fixtures/database/schema.prisma');
+const SCHEMA = `${FIXTURES}/schema.ts`;
+const NO_AUTH_SCHEMA = resolve('tests/fixtures/database/schema.ts');
 const PLUGIN_ROUTES = resolve('tests/fixtures/plugin-routes');
 
 /** Env of the instance: Better Auth signs its cookies with the secret */
 const ENV = { BETTER_AUTH_SECRET: 'a-secret-only-for-the-tests-of-nano-app' };
 
-/** Boots the app with Better Auth and its rate limit on a schema, after removing its client */
-const fnBoot = (sSchemaPath: string) => {
-  rmSync(`${FIXTURES}/.nano-app/prisma-clients/app`, { recursive: true, force: true });
-  return boot(
+/** Boots the app with Better Auth and its rate limit on the Drizzle schema of a module */
+const fnBoot = (sSchemaModule: string) =>
+  boot(
     {
       plugins: [
         { name: 'public', routesDir: PLUGIN_ROUTES },
@@ -36,14 +35,11 @@ const fnBoot = (sSchemaPath: string) => {
           routesDir: `${FIXTURES}/permission-routes`,
         },
       ],
-      mainPlugin: {
-        routesDir: `${FIXTURES}/routes`,
-        database: { enabled: true, schemaPath: sSchemaPath },
-      },
+      mainPlugin: { routesDir: `${FIXTURES}/routes` },
+      schemaModule: sSchemaModule,
     },
     { oEnv: ENV, sCwd: FIXTURES },
   );
-};
 
 describe('Better Auth without options', () => {
   test('fails the startup naming the file', async () => {
@@ -72,8 +68,8 @@ describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is no
   let sCookie: string;
 
   before(async () => {
-    // What the consumer does by hand: apply the schema with the models of Better Auth
-    prisma('db', 'push', '--schema', SCHEMA, '--url', process.env.DATABASE_URL!);
+    // What the consumer does by hand: apply the schema with the tables of Better Auth
+    await push(authSchema, ['auth_test']);
 
     // Boots with Better Auth on the app's database
     oApp = await fnBoot(SCHEMA);
@@ -84,14 +80,13 @@ describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is no
     oApp?.child.kill('SIGKILL');
   });
 
-  test('a schema without its models fails the startup with the command that adds them', async () => {
-    // Boots with a schema that has no Better Auth models
-    prisma('db', 'push', '--schema', NO_AUTH_SCHEMA, '--url', process.env.DATABASE_URL!);
+  test('a schema without its tables fails the startup with the command that adds them', async () => {
+    // Boots with a schema that has no Better Auth tables
     const oFailed = await fnBoot(NO_AUTH_SCHEMA);
 
-    // Checks that it exits naming the models and the fix
+    // Checks that it exits naming the tables and the fix
     assert.equal(await oFailed.exited, 1);
-    assert.match(oFailed.output(), /needs the models user, session, account, verification/);
+    assert.match(oFailed.output(), /needs the tables user, session, account, verification/);
     assert.match(oFailed.output(), /npx auth generate/);
   });
 

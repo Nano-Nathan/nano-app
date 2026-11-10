@@ -3,7 +3,7 @@
 import list from '@nano-app/components/list';
 
 /** Users of the backend store, five per page, sortable by name */
-export default list({ path: '/users', top: 5, store: 'backend' }).bindView(
+export default list({ path: '/users', limit: 5, store: 'backend' }).bindView(
   ({ stores: { backend }, items, next, prev, sort }) => (
     <section>
       <button onClick={() => sort('name')}>name</button>

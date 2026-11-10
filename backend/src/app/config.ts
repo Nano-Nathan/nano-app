@@ -44,10 +44,6 @@ export const INITIAL_CONFIG = {
   mainPlugin: {
     routesDir: 'src/routes',
     basePath: '',
-    database: {
-      enabled: false,
-      schemaPath: 'src/prisma/schema.prisma',
-    },
   },
 
   /** Plugins around the consumer routes */

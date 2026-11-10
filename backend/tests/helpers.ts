@@ -1,5 +1,4 @@
-import { execFileSync, spawn } from 'node:child_process';
-import { createRequire } from 'node:module';
+import { spawn } from 'node:child_process';
 import { createServer } from 'node:net';
 import { resolve } from 'node:path';
 import express from 'express';
@@ -65,13 +64,24 @@ export async function startApp(
   };
 }
 
-/** Runs the Prisma CLI of the backend's dev dependencies */
-export function prisma(...aArgs: string[]): void {
-  execFileSync(
-    process.execPath,
-    [createRequire(import.meta.url).resolve('prisma/build/index.js'), ...aArgs],
-    { stdio: 'ignore' },
-  );
+/** Drops the given Postgres schemas and pushes a Drizzle schema into them, as the consumer does with drizzle-kit */
+export async function push(oSchema: NanoObject, aSchemas: string[]): Promise<void> {
+  // A client of its own, closed once the schema is in place
+  const { pushSchema } = await import('drizzle-kit/api-postgres');
+  const { drizzle } = await import('drizzle-orm/node-postgres');
+  const oDb = drizzle(process.env.DATABASE_URL ?? '');
+
+  // Starts from empty schemas, then creates their tables
+  for (const sSchema of aSchemas) await oDb.execute(`DROP SCHEMA IF EXISTS "${sSchema}" CASCADE`);
+  const oFilter = {
+    schemas: aSchemas,
+    tables: undefined,
+    entities: undefined,
+    extensions: undefined,
+  };
+  const { apply } = await pushSchema(oSchema, oDb, oFilter);
+  await apply();
+  await oDb.$client.end();
 }
 
 /** Request helper: returns the status and the parsed body */
@@ -119,20 +129,11 @@ export type Booted = {
  */
 export async function boot(
   oConfig: NanoObject,
-  {
-    oEnv = {},
-    isBlockPrisma = false,
-    sCwd,
-  }: { oEnv?: NodeJS.ProcessEnv; isBlockPrisma?: boolean; sCwd?: string } = {},
+  { oEnv = {}, sCwd }: { oEnv?: NodeJS.ProcessEnv; sCwd?: string } = {},
 ): Promise<Booted> {
-  // Node flags: tsx, and the Prisma blocker when asked
+  // Node flags: tsx
   const iPort = await findFreePort();
-  const aArgs = [
-    ...(isBlockPrisma ? ['--import', './tests/fixtures/database/block-prisma.mjs'] : []),
-    '--import',
-    'tsx',
-    resolve('tests/fixtures/database/boot.ts'),
-  ];
+  const aArgs = ['--import', 'tsx', resolve('tests/fixtures/database/boot.ts')];
 
   // The config travels as an env var
   const oChild = spawn(process.execPath, aArgs, {

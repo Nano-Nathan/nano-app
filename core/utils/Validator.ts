@@ -1,5 +1,4 @@
 import { API_STORE_TYPE, APP_STORE_TYPE, DEFAULT_REDIRECT, HTTP_METHODS } from '../const';
-import FileReader from '../files/FileReader';
 import NanoError from './NanoError';
 import Paths from './Paths';
 import type { RouteEntry, NanoObject } from '../types/objects';
@@ -119,32 +118,5 @@ export default abstract class Validator {
         (permissions === undefined || Validator.isStringMap(permissions))
       );
     });
-  }
-
-  /** Whether a Prisma schema, without comments, is PostgreSQL and declares the schemas it may */
-  public static isPrisma(sContent: string, sFilePath: string, isPlugin: boolean): boolean {
-    // Checks that the datasource is PostgreSQL
-    const sProvider = FileReader.datasource(sContent).match(
-      /\bprovider\s*=\s*["']([^"']+)["']/,
-    )?.[1];
-    if (sProvider !== 'postgresql') {
-      throw new NanoError(
-        `${sFilePath}: the datasource provider must be "postgresql"${sProvider ? `, not "${sProvider}"` : ''}.`,
-      );
-    }
-
-    // Checks that an official plugin declares only nano_* schemas, and the others none
-    const aSchemas = FileReader.schemas(sContent);
-    const isPluginInvalid = !aSchemas.length || aSchemas.some(sItem => !sItem.startsWith('nano_'));
-    const isConsumerInvalid = aSchemas.some(sItem => sItem.startsWith('nano_'));
-    const isInvalid = isPlugin ? isPluginInvalid : isConsumerInvalid;
-    if (isInvalid) {
-      const sRule = isPlugin
-        ? 'a plugin declares only nano_* schemas'
-        : 'the nano_* schemas are reserved for plugins';
-      throw new NanoError(`${sFilePath}: ${sRule}.`);
-    }
-
-    return true;
   }
 }

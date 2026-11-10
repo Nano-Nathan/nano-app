@@ -15,7 +15,7 @@
   ],
   "scripts": {
     "build": "tsdown",
-    "test": "tsx --env-file-if-exists=../.env --test tests/*.test.ts",
+    "test": "tsx --env-file-if-exists=../.env --test --test-concurrency=1 tests/*.test.ts",
     "prepublishOnly": "pnpm run build"
   },
   "keywords": [
@@ -37,21 +37,26 @@
     "node": "^22.23.4 || ^24.22.1 || >=26.12.1"
   },
   "peerDependencies": {
-    "@nano-app/backend": ">=0.15.0"
+    "@nano-app/backend": ">=0.15.0",
+    "drizzle-orm": "^1.0.0-rc.5"
   },
   "devDependencies": {
     "@happy-dom/global-registrator": "^21.0.4",
     "@nano-app/backend": "workspace:*",
-    "@prisma/adapter-pg": "^7.10.1",
-    "@prisma/client": "^7.10.1",
     "@types/node": "^26.6.6",
     "@types/pg": "^8.23.1",
+    "drizzle-kit": "^1.0.0-rc.5",
+    "drizzle-orm": "^1.0.0-rc.5",
     "glob": "^14.0.4",
     "next": "^16.4.5",
     "pg": "^8.23.1",
-    "prisma": "^7.10.1",
     "tsdown": "^0.23.5",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
+  },
+  "peerDependenciesMeta": {
+    "drizzle-orm": {
+      "optional": true
+    }
   }
 }

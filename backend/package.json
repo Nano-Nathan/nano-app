@@ -27,7 +27,7 @@
     "plugins",
     "file-based-routing",
     "postgresql",
-    "prisma"
+    "drizzle"
   ],
   "author": "Cristian Serrano",
   "license": "MIT",
@@ -53,19 +53,15 @@
     "morgan": "^1.12.1"
   },
   "peerDependencies": {
-    "@prisma/adapter-pg": "^7.10.1",
-    "@prisma/client": "^7.10.1",
     "better-auth": "^1.7.18",
+    "drizzle-orm": "^1.0.0-rc.5",
     "pg": "^8.23.1"
   },
   "peerDependenciesMeta": {
-    "@prisma/adapter-pg": {
-      "optional": true
-    },
-    "@prisma/client": {
-      "optional": true
-    },
     "better-auth": {
+      "optional": true
+    },
+    "drizzle-orm": {
       "optional": true
     },
     "pg": {
@@ -73,8 +69,6 @@
     }
   },
   "devDependencies": {
-    "@prisma/adapter-pg": "^7.10.1",
-    "@prisma/client": "^7.10.1",
     "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
@@ -82,8 +76,9 @@
     "@types/node": "^26.6.6",
     "@types/pg": "^8.20.0",
     "better-auth": "^1.7.18",
+    "drizzle-kit": "^1.0.0-rc.5",
+    "drizzle-orm": "^1.0.0-rc.5",
     "pg": "^8.23.1",
-    "prisma": "^7.10.1",
     "tsdown": "^0.23.5",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"

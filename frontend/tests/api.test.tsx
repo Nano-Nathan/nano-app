@@ -33,7 +33,7 @@ function answer(sMethod: string, sUrl: string, sBody: string): [string, string] 
   if (sEntity === 'html') return ['text/html', '<h1>Not found</h1>'];
   if (sEntity === 'fail') return fnJson({ success: false, message: 'Failed' });
   if (sEntity === 'orders') return fnJson({ success: true, result: [] });
-  if (sMethod === 'QUERY') return fnJson({ success: true, result: aUsers.slice(0, oBody.top) });
+  if (sMethod === 'QUERY') return fnJson({ success: true, result: aUsers.slice(0, oBody.limit) });
   if (sMethod === 'POST') aUsers = [...aUsers, oBody];
   if (sMethod === 'PUT') aUsers = aUsers.map(oUser => (oUser.id === Number(sId) ? oBody : oUser));
   if (sMethod === 'DELETE') aUsers = aUsers.filter(oUser => oUser.id !== Number(sId));
@@ -92,7 +92,7 @@ describe('api store', () => {
     const oUsersController = createController(({ stores: { backend } }) => ({
       load(): Promise<unknown> {
         // Reads the users twice: without a query and with one
-        return Promise.all([backend.read('/users'), backend.read('/users', { top: 1 })]);
+        return Promise.all([backend.read('/users'), backend.read('/users', { limit: 1 })]);
       },
     }));
     const List = oUsersController.bindView(({ stores: { backend }, load }) => (
@@ -102,7 +102,7 @@ describe('api store', () => {
             <li key={oUser.id}>{oUser.name}</li>
           ))}
         </ul>
-        <p>{`first ${backend.get('/users', { top: 1 })?.result?.[0]?.name}`}</p>
+        <p>{`first ${backend.get('/users', { limit: 1 })?.result?.[0]?.name}`}</p>
         <button onClick={load}>load</button>
       </div>
     ));
