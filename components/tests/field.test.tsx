@@ -6,7 +6,6 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import field from '../field';
-import form from '../form';
 import TestApp from './provider';
 import type { FormField } from '../types/field';
 
@@ -56,21 +55,7 @@ const SIGN_UP: FormField[] = [
   },
 ];
 
-// View of a form with only its fields
-const SignUp = form({ components: { text: Input } }).bindView(({ fields }) => (
-  <form>{fields()}</form>
-));
-
-/** Renders the sign-up form with its fields */
-function renderSignUp(): void {
-  render(
-    <TestApp>
-      <SignUp name="signUp" fields={SIGN_UP} />
-    </TestApp>,
-  );
-}
-
-/** Renders the fields of a form inside the provider, without its form */
+/** Renders the fields of a form inside the provider */
 function renderFields(sForm: string, aFields: FormField[]): void {
   render(
     <TestApp>
@@ -98,7 +83,7 @@ describe('field', () => {
 
   test('change validates the email, the number and required', async () => {
     // Types an invalid email, a valid one and a text in the number
-    renderSignUp();
+    renderFields('signUp', SIGN_UP);
     type('email', 'ana');
     await waitFor(() => assert.equal(errorOf('email'), 'email: Invalid email'));
     type('email', 'ana@nano.app');
@@ -113,7 +98,7 @@ describe('field', () => {
 
   test('errorMessage replaces the default messages and rules map to zod methods', async () => {
     // Empties the phone
-    renderSignUp();
+    renderFields('signUp', SIGN_UP);
     type('phone', '1');
     type('phone', '');
     await waitFor(() => assert.equal(errorOf('phone'), 'phone: Your phone'));
@@ -127,7 +112,7 @@ describe('field', () => {
 
   test('the own rule of a field receives the values of its form', async () => {
     // Confirms another password, with the required fields still empty
-    renderSignUp();
+    renderFields('signUp', SIGN_UP);
     type('password', 'secret');
     type('confirm', 'other');
     await waitFor(() => assert.equal(errorOf('confirm'), 'confirm: Mismatch'));

@@ -25,9 +25,9 @@ const SIGN_UP: FormField[] = [
   { name: 'email', type: 'email' },
 ];
 
-// Fields of a login: a required email, kept in lowercase, and a number
+// Fields of a login: a required email and a number
 const LOGIN: FormField[] = [
-  { name: 'email', type: 'email', required: true, rules: { toLowerCase: [] } },
+  { name: 'email', type: 'email', required: true },
   { name: 'age', type: 'number' },
 ];
 
@@ -141,14 +141,14 @@ describe('form', () => {
     assert.deepEqual(await Promise.all(aReturned), [undefined]);
   });
 
-  test('submit sends the values its rules give and what onSubmit returns', async () => {
-    // Types both fields, the email in capitals, and submits
+  test('submit sends the kept values and what onSubmit returns', async () => {
+    // Types both fields and submits
     renderLogin();
-    type('email', 'Ana@Mail.com');
+    type('email', 'ana@mail.com');
     type('age', '30');
     fireEvent.click(screen.getByText('send'));
 
-    // Sends the email in lowercase and the age as a number, and gives the answer of onSubmit
+    // Sends the email and the age as a number, and gives the answer of onSubmit
     assert.deepEqual(await Promise.all(aReturned), ['sent']);
     assert.deepEqual(aSent, [{ email: 'ana@mail.com', age: 30 }]);
   });

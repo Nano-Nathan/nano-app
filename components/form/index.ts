@@ -2,7 +2,6 @@ import { createElement } from 'react';
 import { createController } from '@nano-app/frontend';
 import NanoError from '@nano-app/core/utils/NanoError';
 import control from './forms';
-import schema from './schema';
 import type { ReactNode, SubmitEvent } from 'react';
 import type { FormField } from '../types/field';
 import type { FormOptions } from '../types/form';
@@ -16,13 +15,6 @@ export default function form(oOptions: FormOptions) {
     const aFields: FormField[] = props.fields;
 
     return {
-      // Creates the form with the schema of its fields when the view mounts, and registers them all
-      callbacks: {
-        onMount(): void {
-          const oForm = control(stores, name, schema(aFields));
-          for (const oField of aFields) oForm.register(oField.name);
-        },
-      },
       fields(): ReactNode[] {
         return aFields.map(oField => {
           // Takes the view of its type, or the one of text

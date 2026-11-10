@@ -1,6 +1,7 @@
 import { createController } from '@nano-app/frontend';
 import { API_STORE_TYPE } from '@nano-app/core/const';
 import control from '../form/forms';
+import schema from './schema';
 import type { ApiResponse } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { FormField } from '../types/field';
@@ -17,9 +18,11 @@ export default function field() {
     const sError = `/form/${form}/errors/${oField.name}`;
 
     return {
-      // Reads the items of its options from the backend when the view mounts
+      // Registers its rules in its form and reads the items of its options when the view mounts
       callbacks: {
         onMount(): Promise<ApiResponse | undefined> | undefined {
+          const fnValidate = (_oValue: unknown, oValues: NanoObject) => this.validate(oValues);
+          control(stores, form).register(oField.name, { validate: fnValidate });
           return options && oApi.read(options.path);
         },
       },
@@ -33,7 +36,7 @@ export default function field() {
         return stores.app.get(sError);
       },
       change(oInput: unknown): void {
-        // Keeps the value in its form and validates it with the form's schema
+        // Keeps the value in its form and validates it with its rules
         control(stores, form).setValue(oField.name, this.parse(oInput), { shouldValidate: true });
       },
       parse(oInput: unknown): unknown {
@@ -42,6 +45,12 @@ export default function field() {
         const iNumber = Number(oInput);
         const isNumber = oField.type === 'number' && String(iNumber) === oInput;
         return isNumber ? iNumber : oInput;
+      },
+      validate(oValues: NanoObject): string | undefined {
+        // The message of the first of its zod rules it breaks, then of its own rule
+        const oValue = oValues[oField.name];
+        const oResult = schema(oField).safeParse(oValue);
+        return oResult.error?.issues[0]?.message ?? oField.validate?.(oValue, oValues);
       },
       options(): NanoObject[] {
         // The items kept for the path of its options, as the backend gave them
