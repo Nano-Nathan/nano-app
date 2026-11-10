@@ -209,12 +209,17 @@ describe('api store', () => {
   });
 
   test('a read answered after a write is asked again', async () => {
-    // Slows the backend, and writes while the read is out
-    iDelay = 100;
+    // Slows the delete more than the read, and deletes while the read is out
     const { backend } = renderStores();
+    iDelay = 100;
     const oRead = backend.read('/users/7');
-    await backend.delete('/users/7');
+    await new Promise(fnResolve => setTimeout(fnResolve, 20));
+    iDelay = 200;
+    const oDelete = backend.delete('/users/7');
+
+    // The read answers first, then the delete, and the path is read again
     await oRead;
+    await oDelete;
     await backend.read('/users/7');
 
     assert.equal(count(aRequests, 'GET /api/backend/users/7'), 2);
