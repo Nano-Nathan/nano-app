@@ -165,6 +165,39 @@ describe('createController', () => {
     assert.equal(screen.getByRole('status').textContent, 'ab+');
   });
 
+  test('onUnmount runs when the view unmounts, and extend runs both in order', () => {
+    // A controller that logs its unmount outside the stores, extended with another log
+    const aLog: string[] = [];
+    const Unmounted = createController(() => ({
+      callbacks: {
+        onUnmount(): void {
+          // Logs its own mark
+          aLog.push('a');
+        },
+      },
+    }))
+      .extend(() => ({
+        callbacks: {
+          onUnmount(): void {
+            // Logs the extension's mark
+            aLog.push('b');
+          },
+        },
+      }))
+      .bindView(() => null);
+
+    // Mounts and unmounts the view
+    const { unmount } = render(
+      <TestApp>
+        <Unmounted />
+      </TestApp>,
+    );
+    assert.deepEqual(aLog, []);
+    unmount();
+
+    assert.deepEqual(aLog, ['a', 'b']);
+  });
+
   test('a method reaches the others with this, also from an extension', () => {
     // A controller whose last item comes from its items, and an extension with other items
     const itemsController = createController(() => ({

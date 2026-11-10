@@ -41,15 +41,18 @@ function controller<M extends NanoObject & { callbacks?: ControllerCallbacks }>(
           if (typeof oMethod === 'function') oBound[sName] = oMethod.bind(oMethods);
         }
 
-        // Runs onMount once, when the view mounts
+        // Runs onMount once when the view mounts, and onUnmount when it unmounts
         useEffect(() => {
           oMethods.callbacks?.onMount?.call(oMethods);
+          return () => {
+            oMethods.callbacks?.onUnmount?.call(oMethods);
+          };
         }, []);
 
         // Renders the view with the methods; the context wins over a method with its name
         return fnView({ ...oMethods, ...oBound, ...oContext });
       }),
-    // A new controller with its methods merged over these, and both onMount run in order
+    // A new controller with its methods merged over these, and both callbacks run in order
     extend: fnExtension =>
       controller(oContext => {
         const oOwn = fnMethods(oContext);
@@ -61,6 +64,10 @@ function controller<M extends NanoObject & { callbacks?: ControllerCallbacks }>(
             onMount(): void {
               oOwn.callbacks?.onMount?.call(this);
               oExtension.callbacks?.onMount?.call(this);
+            },
+            onUnmount(): void {
+              oOwn.callbacks?.onUnmount?.call(this);
+              oExtension.callbacks?.onUnmount?.call(this);
             },
           },
         };
