@@ -95,4 +95,4 @@ Later rounds: whether `drizzle-kit` is an optional peer (as `prisma` today) or a
   - Better Auth's Drizzle adapter on the rc: sign up and sign in write and read its tables in their own schema.
   - Not covered: the advisory lock (plain Postgres, checked in module 3).
 - 2026-11-10 · claude · Module 2, round 2: the app and each plugin pass their Drizzle schema object (`database: { schema }`, `import * as schema from './db/schema'`), which replaces decision 2A of round 1 (no `schemaPath`, no file loading); 1A one shared `pg.Pool`; 2C no readiness check at startup (Drizzle and the pool are lazy: a missing table fails on its first query); 3A modules 2, 4 and 5 merged into "Backend on Drizzle", one pull request with a commit per part.
-
+- 2026-11-10 · claude · Module 2, round 3: 1A crud lists answer `{ result }`, no `count`; 2A the app's tables never use a `nano_*` schema, and a plugin's tables live only in `nano_<plugin name>`; 3A `orderby` only by the model's own columns, a dotted path answers 400.
