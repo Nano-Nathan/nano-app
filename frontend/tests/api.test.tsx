@@ -241,9 +241,10 @@ describe('api store', () => {
     assert.equal(count(aRequests, 'QUERY /api/backend/users'), 1);
   });
 
-  test('more adds the next page of a query, and a write on its path reads every page again', async () => {
-    // Reads two pages of one user
+  test('more adds the next page of a query, and a write reads again the pages a view shows', async () => {
+    // A view shows the pages, and reads two of one user
     const { backend } = renderStores();
+    backend.watch('/users', { top: 1 });
     await backend.more('/users', { top: 1 });
     await backend.more('/users', { top: 1 });
 
@@ -254,6 +255,19 @@ describe('api store', () => {
 
     // Renames the second user: both pages are read again
     await backend.update('/users/7', { id: 7, name: 'Bruno' });
+    await waitFor(() => assert.equal(backend.get('/users', { top: 1 }).result[1].name, 'Bruno'));
+  });
+
+  test('pages no view shows are only marked old by a write, and read again when one shows them', async () => {
+    // Reads two pages of one user without a view, and renames the second user
+    const { backend } = renderStores();
+    await backend.more('/users', { top: 1 });
+    await backend.more('/users', { top: 1 });
+    await backend.update('/users/7', { id: 7, name: 'Bruno' });
+
+    // The pages keep the old name until a view shows them
+    assert.equal(backend.get('/users', { top: 1 }).result[1].name, 'Beto');
+    backend.watch('/users', { top: 1 });
     await waitFor(() => assert.equal(backend.get('/users', { top: 1 }).result[1].name, 'Bruno'));
   });
 

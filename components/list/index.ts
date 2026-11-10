@@ -12,10 +12,14 @@ export default function list(oOptions: ListOptions) {
     const oApi = stores[store];
 
     return {
-      // Reads the current page when the view mounts
+      // Reads the current page when the view mounts, and shows its pages until it unmounts
       callbacks: {
         onMount(): Promise<ApiResponse> {
+          oApi.watch(path, this.pagesQuery());
           return this.load();
+        },
+        onUnmount(): void {
+          oApi.unwatch(path, this.pagesQuery());
         },
       },
       page(): number {
@@ -38,7 +42,7 @@ export default function list(oOptions: ListOptions) {
         // Adds the next page to the pages read so far, in the order chosen by the user
         return oApi.more(path, this.pagesQuery());
       },
-      loaded(): ApiResponse | undefined {
+      pages(): ApiResponse | undefined {
         // Every page read so far with `more`, its items in one list
         return oApi.get(path, this.pagesQuery());
       },
@@ -60,9 +64,13 @@ export default function list(oOptions: ListOptions) {
         return this.goTo(this.page() - 1);
       },
       async sort(sField: string): Promise<ApiResponse> {
-        // Toggles the field between ascending and descending, and reads the first page
+        // Toggles the field between ascending and descending, and shows the pages of the new order
         const sDirection = oApi.get('/list/orderby')?.[sField] === 'asc' ? 'desc' : 'asc';
+        oApi.unwatch(path, this.pagesQuery());
         oApi.set('/list/orderby', { [sField]: sDirection });
+        oApi.watch(path, this.pagesQuery());
+
+        // Reads the first page
         return this.goTo(0);
       },
     };

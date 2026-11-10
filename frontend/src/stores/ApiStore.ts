@@ -54,19 +54,21 @@ export default class ApiStore extends Store {
     // Asks nothing on the server
     if (IS_SERVER) return {};
 
-    // Creates the pages of the path and query on the first call, each one read with its `skip`
-    const sKey = ApiStore.key(sPath, oQuery);
-    this.oPages[sKey] ??= new Pages(this.oClient, {
-      key: [sPath, oQuery, 'more'],
-      top: oQuery.top,
-      read: iSkip =>
-        this.request(sPath, { method: 'QUERY', body: JSON.stringify({ ...oQuery, skip: iSkip }) }),
-      keep: oResponse => this.keep(oResponse, sKey),
-    });
-
     // Reads the next page, or the first one
-    await this.oPages[sKey].next();
+    await this.pages(sPath, oQuery).next();
     return this.get(sPath, oQuery);
+  }
+
+  /** A view shows the pages of a path and query: old ones are read again now and after each write */
+  public watch(sPath: string, oQuery: QueryParams): void {
+    // Counts one more view of the pages
+    this.pages(sPath, oQuery).watch();
+  }
+
+  /** A view no longer shows the pages of a path and query */
+  public unwatch(sPath: string, oQuery: QueryParams): void {
+    // Counts one view less of the pages
+    this.pages(sPath, oQuery).unwatch();
   }
 
   /** `POST <path>` */
@@ -114,7 +116,7 @@ export default class ApiStore extends Store {
     // Sends it
     const oResponse = await this.request(sPath, { method: sMethod, body: JSON.stringify(oBody) });
 
-    // Once answered, cancels the reads out, marks the kept ones to ask again, reads the pages again
+    // Once answered, cancels the reads out, marks them old and reads again the pages a view shows
     for (const sParent of ApiStore.parents(sPath)) {
       await this.oClient.cancelQueries({ queryKey: [sParent] });
       await this.oClient.invalidateQueries({ queryKey: [sParent] });
@@ -162,6 +164,20 @@ export default class ApiStore extends Store {
   /** `ApiResponse` of an answer of the proxy, from its JSON */
   protected receive(_sPath: string, _oRes: Response, oResponse: ApiResponse): ApiResponse {
     return oResponse;
+  }
+
+  /** Pages of a path and query, created on first use, each one read with its `skip` */
+  private pages(sPath: string, oQuery: QueryParams): Pages {
+    // Creates them once, kept at the key of the path and query
+    const sKey = ApiStore.key(sPath, oQuery);
+    this.oPages[sKey] ??= new Pages(this.oClient, {
+      key: [sPath, oQuery, 'more'],
+      top: oQuery.top,
+      read: iSkip =>
+        this.request(sPath, { method: 'QUERY', body: JSON.stringify({ ...oQuery, skip: iSkip }) }),
+      keep: oResponse => this.keep(oResponse, sKey),
+    });
+    return this.oPages[sKey];
   }
 
   /** Shows a write at its path and in its parent's lists before the answer; returns its undo */

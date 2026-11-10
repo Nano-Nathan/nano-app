@@ -143,10 +143,10 @@ describe('list', () => {
   });
 
   test('more adds the next page to the pages read so far, until a page comes short', async () => {
-    // Renders a list whose view shows every page read with more
-    const List = list({ path: '/users', top: 2 }).bindView(({ loaded, more }) => (
+    // Renders a list whose view shows every page read with more, from pages
+    const List = list({ path: '/users', top: 2 }).bindView(({ pages, more }) => (
       <div>
-        <output>{(loaded()?.result ?? []).map((oUser: User) => oUser.name).join(',')}</output>
+        <output>{(pages()?.result ?? []).map((oUser: User) => oUser.name).join(',')}</output>
         <button onClick={more}>more</button>
       </div>
     ));

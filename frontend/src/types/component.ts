@@ -18,6 +18,8 @@ export type ComponentContext = {
 export type ControllerCallbacks = {
   /** Run once, when the view mounts */
   onMount?(): unknown;
+  /** Run once, when the view unmounts */
+  onUnmount?(): void;
 };
 
 /** Renders a component with the controller's methods; the context wins over a method's name */
