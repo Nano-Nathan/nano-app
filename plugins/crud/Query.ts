@@ -1,78 +1,66 @@
+import { NanoError } from '@nano-app/backend';
 import type { ApiPromise, NanoObject, QueryParams } from '@nano-app/backend';
 
 /** Records a list answers when the request sends no `top` */
 const DEFAULT_TOP = 100;
 
-/** Reads a model of the app's Prisma client with core's `QueryParams` */
+/** Reads a table of the app's Drizzle client with core's `QueryParams` */
 export default abstract class Query {
-  /** A list of the model with its total, or one record by its `where` */
-  // any: a delegate of the consumer's Prisma client
-  public static async read(oModel: any, oQuery: QueryParams, oWhere?: NanoObject): ApiPromise {
-    // The Prisma arguments of the query
-    const oArgs = Query.toPrisma(oQuery);
+  /** A list of the table, or one record by its id: 404 without it */
+  // any: the client is typed by the schema of each app, unknown to the plugin
+  public static async read(
+    oDb: any,
+    sModel: string,
+    oQuery: QueryParams,
+    oId?: unknown,
+  ): ApiPromise {
+    // A list: the relational query of the parameters
+    const oArgs = Query.toDrizzle(oQuery);
+    if (oId === undefined) return { result: await oDb.query[sModel].findMany(oArgs) };
 
-    // One record: only its fields and relations apply
-    if (oWhere) {
-      const { select, include } = oArgs;
-      return { result: await oModel.findUniqueOrThrow({ where: oWhere, select, include }) };
-    }
-
-    // A list: the page and the total of the same filter
-    const [aRecords, iCount] = await Promise.all([
-      oModel.findMany(oArgs),
-      oModel.count({ where: oArgs.where }),
-    ]);
-    return { result: aRecords, count: iCount };
+    // One record by its id, with the columns and relations asked
+    const oRecord = await oDb.query[sModel].findFirst({
+      where: { id: oId },
+      columns: oArgs.columns,
+      with: oArgs.with,
+    });
+    if (!oRecord) throw new NanoError('Not found', 404);
+    return { result: oRecord };
   }
 
-  /** `filter` → `where`, `orderby` → `orderBy`, `top`/`skip` → `take`/`skip`, `select` and `expand` → `select` or `include` */
-  public static toPrisma(oQuery: QueryParams): NanoObject {
+  /** `filter` → `where`, `orderby` → `orderBy`, `top`/`skip` → `limit`/`offset`, `select` → `columns`, `expand` → `with` */
+  public static toDrizzle(oQuery: QueryParams): NanoObject {
     const { filter, orderby, top, skip, select, expand } = oQuery;
 
-    // Prisma does not take select and include on the same level: with select, the relations go inside it
-    const oInclude = expand ? Query.include(Query.list(expand)) : undefined;
-    const oSelect = select ? Query.fields(Query.list(select), oInclude) : undefined;
+    // Orders only by the table's own columns
+    if (Object.keys(orderby ?? {}).some(sKey => sKey.includes('.'))) {
+      throw new NanoError('"orderby" takes columns of the model, not of its relations.', 400);
+    }
 
-    // Prisma leaves out the arguments that are undefined
     return {
       where: filter,
-      orderBy:
-        orderby &&
-        Object.entries(orderby).map(([sPath, sDirection]) =>
-          Query.nest(sPath.split('.'), sDirection),
-        ),
-      take: top ?? DEFAULT_TOP,
-      skip,
-      select: oSelect,
-      include: oSelect ? undefined : oInclude,
+      orderBy: orderby,
+      limit: top ?? DEFAULT_TOP,
+      offset: skip,
+      columns: select && Object.fromEntries(Query.list(select).map(sField => [sField, true])),
+      with: expand && Query.with(Query.list(expand)),
     };
   }
 
-  /** `['user', 'name']`, `'asc'` → `{ user: { name: 'asc' } }` */
-  private static nest(aPath: string[], sValue: string): NanoObject {
-    const [sField, ...aRest] = aPath;
-    return { [sField]: aRest.length ? Query.nest(aRest, sValue) : sValue };
-  }
-
-  /** `['user', 'posts.comments']` → `{ user: true, posts: { include: { comments: true } } }` */
-  private static include(aPaths: string[]): NanoObject {
+  /** `['user', 'posts.comments']` → `{ user: true, posts: { with: { comments: true } } }` */
+  private static with(aPaths: string[]): NanoObject {
+    // The first level of each path, once
     const aRelations = [...new Set(aPaths.map(sPath => sPath.split('.')[0]))];
 
+    // Each relation, with the rest of its paths nested
     return Object.fromEntries(
       aRelations.map(sRelation => {
-        // The paths under this relation, without it
         const aNested = aPaths
           .filter(sPath => sPath.startsWith(`${sRelation}.`))
           .map(sPath => sPath.slice(sRelation.length + 1));
-
-        return [sRelation, aNested.length ? { include: Query.include(aNested) } : true];
+        return [sRelation, aNested.length ? { with: Query.with(aNested) } : true];
       }),
     );
-  }
-
-  /** `['id', 'name']` → `{ id: true, name: true }`, plus the relations to load */
-  private static fields(aFields: string[], oInclude?: NanoObject): NanoObject {
-    return { ...Object.fromEntries(aFields.map(sField => [sField, true])), ...oInclude };
   }
 
   /** `"a, b"` → `['a', 'b']` */
