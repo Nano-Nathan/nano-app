@@ -1,8 +1,9 @@
+import { defineRelations, eq } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import { createRoute, isGranted, NanoError } from '@nano-app/backend';
-import Query from '../Query';
 import type { ApiPromise, NanoObject, Params, Request } from '@nano-app/backend';
 
-/** Permission of Better Auth that each method needs on the URL's model */
+/** Permission of Better Auth that each method needs on the URL's table */
 const ACTIONS: NanoObject<string> = {
   GET: 'read',
   QUERY: 'read',
@@ -11,53 +12,71 @@ const ACTIONS: NanoObject<string> = {
   DELETE: 'delete',
 };
 
-/** Conversion of the URL's id to the type of the model's id, when it is not a string */
-const ID_TYPES: NanoObject<(sId: string) => number | bigint> = { Int: Number, BigInt: BigInt };
+/** Records a list answers when the request sends no `limit` */
+const DEFAULT_LIMIT = 100;
 
-/** Reads a list, or one record, with the `QueryParams` of the body */
-async function read(oReq: Request, { onBeforeResult }: Params): ApiPromise {
-  return Query.read(onBeforeResult?.model, oReq.body ?? {}, onBeforeResult?.where);
+/** The first record of a query or a write: 404 without it */
+function first(aRecords: NanoObject[]): { result: NanoObject } {
+  if (!aRecords[0]) throw new NanoError('Not found', 404);
+  return { result: aRecords[0] };
+}
+
+/** A list of the table, or one record by its id, with Drizzle's relational query of the body on the table alone */
+async function read(oReq: Request, { db, schema, onBeforeResult }: Params): ApiPromise {
+  const { model, id } = onBeforeResult ?? {};
+  const oBody: NanoObject = oReq.body ?? {};
+
+  // A client on the same pool that knows the tables but none of their relations: a query cannot leave its table
+  const { relations: _oRelations, ...oTables } = schema;
+  // any: the tables of each app, unknown to the plugin
+  const oNoRelations: any = defineRelations(oTables);
+  const oTableOnly = drizzle({ client: db.$client, relations: oNoRelations });
+
+  // One record by its id, or the list: the body goes as it came, so Drizzle rejects what leaves the table
+  const oQuery = oTableOnly.query[model];
+  if (id) return first(await oQuery.findMany({ ...oBody, where: { id }, limit: 1 }));
+  return {
+    result: await oQuery.findMany({
+      ...oBody,
+      where: oBody.where ?? {},
+      limit: oBody.limit ?? DEFAULT_LIMIT,
+    }),
+  };
 }
 
 /** `GET` reads without parameters, `QUERY` with `QueryParams` as its body */
 export default createRoute({
   expression: '/:model{/:id}',
   callbacks: {
-    // The Prisma delegate of the URL's model: 404 when the app does not publish it, 403 without its permission
+    // The table of the URL: 404 when the app does not publish it, 403 without its permission
     onBefore: async (oReq, sMethod, oParams) => {
-      // The URL's model and id: Express types a param as a string or a list of them
+      // The URL's table and id: Express types a param as a string or a list of them
       const sModel = String(oReq.params.model);
       const { id } = oReq.params;
 
-      // Only the models the app publishes
-      if (!oParams.models.includes(sModel)) throw new NanoError('Not found', 404);
+      // Only the tables the app publishes
+      const oTable = oParams.schema?.[sModel];
+      if (!oParams.models.includes(sModel) || !oTable) throw new NanoError('Not found', 404);
 
-      // The permission of the method on the model
-      if (!(await isGranted(oParams, { [sModel]: [ACTIONS[sMethod]] })))
+      // The permission of the method on the table
+      if (!(await isGranted(oParams, { [sModel]: [ACTIONS[sMethod]] }))) {
         throw new NanoError('Forbidden', 403);
+      }
 
-      // Its Prisma delegate
-      const oModel = oParams.db[sModel];
-      if (!id) return { model: oModel };
-
-      // With an id, its `where`, converted to the type of the model's id
-      const sId = String(id);
-      return { model: oModel, where: { id: ID_TYPES[oModel.fields.id.typeName]?.(sId) ?? sId } };
+      // The table and the id of the URL, if any: Postgres casts it to the type of the column
+      return { model: sModel, table: oTable, id };
     },
   },
-  // A list of the model with its total, or one record by its id
   GET: read,
   QUERY: read,
-  // Creates a record with the body as its data
-  POST: async (oReq, { onBeforeResult }) => ({
-    result: await onBeforeResult?.model.create({ data: oReq.body }),
-  }),
-  // Updates only the fields of the body
-  PUT: async (oReq, { onBeforeResult }) => ({
-    result: await onBeforeResult?.model.update({ where: onBeforeResult.where, data: oReq.body }),
-  }),
-  // Deletes a record and answers it
-  DELETE: async (_oReq, { onBeforeResult }) => ({
-    result: await onBeforeResult?.model.delete({ where: onBeforeResult.where }),
-  }),
+  POST: async (oReq, { db, onBeforeResult }) =>
+    first(await db.insert(onBeforeResult?.table).values(oReq.body).returning()),
+  PUT: async (oReq, { db, onBeforeResult }) => {
+    const { table, id } = onBeforeResult ?? {};
+    return first(await db.update(table).set(oReq.body).where(eq(table.id, id)).returning());
+  },
+  DELETE: async (_oReq, { db, onBeforeResult }) => {
+    const { table, id } = onBeforeResult ?? {};
+    return first(await db.delete(table).where(eq(table.id, id)).returning());
+  },
 });

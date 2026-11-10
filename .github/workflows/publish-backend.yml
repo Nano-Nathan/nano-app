@@ -87,7 +87,7 @@ jobs:
           api_key: ${{ env.NEON_API_KEY }}
           branch_name: ci/${{ github.event.pull_request.number || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
 
-      # Direct URL, not the pooled one: the suite runs `prisma db push`
+      # Direct URL, not the pooled one: the suite pushes its schemas with drizzle-kit
       - if: steps.changes.outputs.run == 'true'
         run: pnpm --filter @nano-app/backend test
         env:

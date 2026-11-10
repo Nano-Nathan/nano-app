@@ -14,9 +14,6 @@ export const HTTP_METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'QUERY'] as const;
 
 // Backend
 
-/** Package of the official plugins: only its schemas may declare nano_* */
-export const OFFICIAL_PLUGINS = '@nano-app/plugins';
-
 /** Loopback and private networks: the proxies the backend trusts by default */
 export const PRIVATE_NETWORKS = [
   '127.0.0.0/8',

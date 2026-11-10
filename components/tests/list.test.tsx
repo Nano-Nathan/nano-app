@@ -27,13 +27,16 @@ const oBackend = createServer((oReq, oRes) => {
   oReq.on('data', oChunk => (sBody += oChunk));
   oReq.on('end', () => {
     // Keeps the request, with its store
-    const { skip = 0, top, orderby = {} } = JSON.parse(sBody || '{}');
+    const { offset = 0, limit, orderBy = {} } = JSON.parse(sBody || '{}');
     aRequests.push(`${oReq.method} ${oReq.url} ${sBody}`);
 
     // Orders by name when asked, and slices the page
-    const iSign = orderby.name === 'desc' ? -1 : 1;
+    const iSign = orderBy.name === 'desc' ? -1 : 1;
     const aSorted = [...USERS].sort((oA, oB) => iSign * oA.name.localeCompare(oB.name));
-    const sAnswer = JSON.stringify({ success: true, result: aSorted.slice(skip, skip + top) });
+    const sAnswer = JSON.stringify({
+      success: true,
+      result: aSorted.slice(offset, offset + limit),
+    });
     oRes.writeHead(200, { 'content-type': 'application/json' }).end(sAnswer);
   });
 });
@@ -73,7 +76,7 @@ describe('list', () => {
 
   test('reads the first page of the path, and next and prev move between pages', async () => {
     // Renders a list of two per page
-    const List = list({ path: '/users', top: 2 }).bindView(fnView);
+    const List = list({ path: '/users', limit: 2 }).bindView(fnView);
     render(
       <TestApp>
         <List />
@@ -89,12 +92,12 @@ describe('list', () => {
     await expectNames('Ana,Beto');
 
     assert.ok(screen.getByText('page 0'));
-    assert.equal(aRequests[0], 'QUERY /api/api/users {"skip":0,"top":2}');
+    assert.equal(aRequests[0], 'QUERY /api/api/users {"offset":0,"limit":2}');
   });
 
   test('sort orders by a field, toggles its direction and goes back to the first page', async () => {
     // Renders the list and moves to the second page
-    const List = list({ path: '/users', top: 2 }).bindView(fnView);
+    const List = list({ path: '/users', limit: 2 }).bindView(fnView);
     render(
       <TestApp>
         <List />
@@ -114,7 +117,7 @@ describe('list', () => {
 
   test('reads the api store named in store', async () => {
     // Renders a list of another api store
-    const List = list({ path: '/users', top: 1, store: 'admin' }).bindView(fnView);
+    const List = list({ path: '/users', limit: 1, store: 'admin' }).bindView(fnView);
     render(
       <TestApp>
         <List />
@@ -122,12 +125,12 @@ describe('list', () => {
     );
     await expectNames('Ana');
 
-    assert.equal(aRequests[0], 'QUERY /api/admin/users {"skip":0,"top":1}');
+    assert.equal(aRequests[0], 'QUERY /api/admin/users {"offset":0,"limit":1}');
   });
 
   test('reads the first page when the view mounts, and load reads it from the store', async () => {
     // Renders a list without clicking anything
-    const List = list({ path: '/users', top: 1 }).bindView(fnView);
+    const List = list({ path: '/users', limit: 1 }).bindView(fnView);
     render(
       <TestApp>
         <List />
@@ -139,12 +142,12 @@ describe('list', () => {
     fireEvent.click(screen.getByText('load'));
     await act(() => new Promise(fnResolve => setTimeout(fnResolve, 50)));
 
-    assert.deepEqual(aRequests, ['QUERY /api/api/users {"skip":0,"top":1}']);
+    assert.deepEqual(aRequests, ['QUERY /api/api/users {"offset":0,"limit":1}']);
   });
 
   test('more adds the next page to the pages read so far, until a page comes short', async () => {
     // Renders a list whose view shows every page read with more, from pages
-    const List = list({ path: '/users', top: 2 }).bindView(({ pages, more }) => (
+    const List = list({ path: '/users', limit: 2 }).bindView(({ pages, more }) => (
       <div>
         <output>{(pages()?.result ?? []).map((oUser: User) => oUser.name).join(',')}</output>
         <button onClick={more}>more</button>
@@ -169,14 +172,14 @@ describe('list', () => {
     await act(() => new Promise(fnResolve => setTimeout(fnResolve, 50)));
 
     assert.equal(
-      aRequests.filter(sRequest => sRequest.startsWith('QUERY /api/api/users {"top":2')).length,
+      aRequests.filter(sRequest => sRequest.startsWith('QUERY /api/api/users {"limit":2')).length,
       3,
     );
   });
 
   test('without its api store it fails, naming the store', () => {
     // Renders a list of a store the app does not have
-    const List = list({ path: '/users', top: 1, store: 'missing' }).bindView(fnView);
+    const List = list({ path: '/users', limit: 1, store: 'missing' }).bindView(fnView);
 
     // Checks that the render stops with the store to add
     assert.throws(

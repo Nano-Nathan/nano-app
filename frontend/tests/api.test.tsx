@@ -34,8 +34,8 @@ function answer(sMethod: string, sUrl: string, sBody: string): [string, string] 
   if (sEntity === 'fail') return fnJson({ success: false, message: 'Failed' });
   if (sEntity === 'orders') return fnJson({ success: true, result: [] });
   if (sMethod === 'QUERY') {
-    const iSkip = oBody.skip ?? 0;
-    return fnJson({ success: true, result: aUsers.slice(iSkip, iSkip + oBody.top) });
+    const iOffset = oBody.offset ?? 0;
+    return fnJson({ success: true, result: aUsers.slice(iOffset, iOffset + oBody.limit) });
   }
   if (sMethod === 'POST') aUsers = [...aUsers, oBody];
   if (sMethod === 'PUT') aUsers = aUsers.map(oUser => (oUser.id === Number(sId) ? oBody : oUser));
@@ -95,7 +95,7 @@ describe('api store', () => {
     const oUsersController = createController(({ stores: { backend } }) => ({
       load(): Promise<unknown> {
         // Reads the users twice: without a query and with one
-        return Promise.all([backend.read('/users'), backend.read('/users', { top: 1 })]);
+        return Promise.all([backend.read('/users'), backend.read('/users', { limit: 1 })]);
       },
     }));
     const List = oUsersController.bindView(({ stores: { backend }, load }) => (
@@ -105,7 +105,7 @@ describe('api store', () => {
             <li key={oUser.id}>{oUser.name}</li>
           ))}
         </ul>
-        <p>{`first ${backend.get('/users', { top: 1 })?.result?.[0]?.name}`}</p>
+        <p>{`first ${backend.get('/users', { limit: 1 })?.result?.[0]?.name}`}</p>
         <button onClick={load}>load</button>
       </div>
     ));
@@ -246,8 +246,8 @@ describe('api store', () => {
     await Promise.all([
       backend.read('/users'),
       backend.read('/users'),
-      backend.read('/users', { top: 1 }),
-      backend.read('/users', { top: 1 }),
+      backend.read('/users', { limit: 1 }),
+      backend.read('/users', { limit: 1 }),
     ]);
 
     assert.equal(count(aRequests, 'GET /api/backend/users'), 1);
@@ -257,31 +257,31 @@ describe('api store', () => {
   test('more adds the next page of a query, and a write reads again the pages a view shows', async () => {
     // A view shows the pages, and reads two of one user
     const { backend } = renderStores();
-    backend.watch('/users', { top: 1 });
-    await backend.more('/users', { top: 1 });
-    await backend.more('/users', { top: 1 });
+    backend.watch('/users', { limit: 1 });
+    await backend.more('/users', { limit: 1 });
+    await backend.more('/users', { limit: 1 });
 
     assert.deepEqual(
-      backend.get('/users', { top: 1 }).result.map((oUser: NanoObject) => oUser.name),
+      backend.get('/users', { limit: 1 }).result.map((oUser: NanoObject) => oUser.name),
       ['Ana', 'Beto'],
     );
 
     // Renames the second user: both pages are read again
     await backend.update('/users/7', { id: 7, name: 'Bruno' });
-    await waitFor(() => assert.equal(backend.get('/users', { top: 1 }).result[1].name, 'Bruno'));
+    await waitFor(() => assert.equal(backend.get('/users', { limit: 1 }).result[1].name, 'Bruno'));
   });
 
   test('pages no view shows are only marked old by a write, and read again when one shows them', async () => {
     // Reads two pages of one user without a view, and renames the second user
     const { backend } = renderStores();
-    await backend.more('/users', { top: 1 });
-    await backend.more('/users', { top: 1 });
+    await backend.more('/users', { limit: 1 });
+    await backend.more('/users', { limit: 1 });
     await backend.update('/users/7', { id: 7, name: 'Bruno' });
 
     // The pages keep the old name until a view shows them
-    assert.equal(backend.get('/users', { top: 1 }).result[1].name, 'Beto');
-    backend.watch('/users', { top: 1 });
-    await waitFor(() => assert.equal(backend.get('/users', { top: 1 }).result[1].name, 'Bruno'));
+    assert.equal(backend.get('/users', { limit: 1 }).result[1].name, 'Beto');
+    backend.watch('/users', { limit: 1 });
+    await waitFor(() => assert.equal(backend.get('/users', { limit: 1 }).result[1].name, 'Bruno'));
   });
 
   test('busy is true while a request is out', async () => {

@@ -1,15 +1,10 @@
 import { glob } from 'glob';
 import FileReader from './FileReader';
-import type { NanoObject, PrismaEntry } from '../types/objects';
+import type { NanoObject } from '../types/objects';
 import type { FindableExtension } from '../types/files';
 
 /** Finds and loads the consumer's files */
 export default abstract class FileLoader {
-  /** Loads a generated Prisma client module (`client.ts`, or `client.js`) */
-  public static async findPrismaClient(sClientPath: string): Promise<PrismaEntry> {
-    return (await FileReader.loadModule<{ PrismaClient: PrismaEntry }>(sClientPath))?.PrismaClient;
-  }
-
   /** Finds `*.<extension>.ts` (or built `.js`) files in a folder (`src/<extension>s` by default) and returns `{ [subPath]: defaultExport }` */
   public static async findMany(
     sExtension: FindableExtension,

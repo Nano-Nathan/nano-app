@@ -28,7 +28,7 @@ export type PackagesConfig = {
   urlencoded?: Partial<Parameters<typeof express.urlencoded>[0]> | false;
 };
 
-/** Better Auth options of `src/auth.ts`, without `database`: it uses the app's Prisma client */
+/** Better Auth options of `src/auth.ts`, without `database`: it uses the app's Drizzle client */
 export type AuthOptions = Omit<BetterAuthOptions, 'database'>;
 
 /** Error shape thrown by the consumer handlers */

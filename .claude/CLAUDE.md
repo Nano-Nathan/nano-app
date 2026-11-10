@@ -74,7 +74,7 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 - Generic objects are `NanoObject` (`core/types/objects.ts`), with the value type when it is known (`NanoObject<Store>`), never `object` or `Record<string, …>`.
 - Files: PascalCase when they export a class (`FileLoader.ts`), lowercase otherwise (`creators.ts`, `config.ts`).
 - `export default` when a file exports one thing, also the official plugins (`import health from '@nano-app/plugins/health'`). Named exports for files that export several.
-- Imports in groups: Node built-ins with `node:` (`node:fs`), dependencies, `@nano-app/*`, relative files, then every `import type` in the same order. Optional dependencies are imported when needed (`await import('@prisma/adapter-pg')`), never at the top.
+- Imports in groups: Node built-ins with `node:` (`node:fs`), dependencies, `@nano-app/*`, relative files, then every `import type` in the same order. Optional dependencies are imported when needed (`await import('pg')`), never at the top.
 
 ### Names
 
@@ -89,7 +89,7 @@ Prefix by type on every internal name: local variables, parameters, class fields
 | `i` | number, integer or not | `iPort`, `iValue` |
 | `is` | boolean | `isEnabled`, `isPlugin` |
 
-A union with `null` or `undefined` takes the prefix of the other type (`sName?: string`). An unused parameter starts with `_` before its prefix (`_oRes`). A class kept in a variable stays PascalCase (`const PrismaClient = …`), as `new` expects. A callback parameter whose name is passed as is to a public field has no prefix (`.then(onBeforeResult => fnMethod(oReq, { ...oParams, onBeforeResult }))`).
+A union with `null` or `undefined` takes the prefix of the other type (`sName?: string`). An unused parameter starts with `_` before its prefix (`_oRes`). A class kept in a variable stays PascalCase (`const Pool = …`), as `new` expects. A callback parameter whose name is passed as is to a public field has no prefix (`.then(onBeforeResult => fnMethod(oReq, { ...oParams, onBeforeResult }))`).
 
 ```ts
 private static oClients: NanoObject = {};
@@ -111,7 +111,7 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 - `for...of` to iterate when nothing is returned, never `.forEach` (it does not wait for `await`). `.map`, `.filter` and `.some` when they return something.
 - `async`/`await` in general. Express handlers and middlewares chain `.then()` and return the chain: Express 5 sends a rejection to the error handler.
 - Errors: an invalid consumer file throws from the `Validator` and stops the startup (or the build). No `try`/`catch` to rename or wrap an error: it reaches `NanoApp.start` as it was thrown, with its stack. The framework throws `new NanoError('…')` (`core`): Node shows it as `[nano-app] [ERROR]: …`; with a status (`new NanoError('Not found', 404)`) a handler answers it. Handlers throw a string (400), `{ status, message, warning }` or a `NanoError`.
-- Messages: on the console only through `Logger.error`, `Logger.warn` and `Logger.info`, never `console`; in a response through `Logger.message`. The text says the file or thing, what is wrong, and the command that fixes it (``Run `pnpm add prisma`.``).
+- Messages: on the console only through `Logger.error`, `Logger.warn` and `Logger.info`, never `console`; in a response through `Logger.message`. The text says the file or thing, what is wrong, and the command that fixes it (``Run `pnpm add drizzle-orm pg`.``).
 
 ### Comments and format
 
@@ -132,7 +132,7 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 - Untrusted input (`req.body`, `req.params`, `req.query`, headers) is validated before use. SQL uses parameters (`$1`); identifiers (schema, table) come only from constants.
 - Routes are private when the app has `src/auth.ts`: only its endpoints and the plugins mounted before the app are public. Without it every route is public. A plugin that exposes something public says so in its README.
 - The error handler answers with the message of what was thrown below 500; a 5xx answers `Internal server error` and is logged in full. Framework messages never include secrets or connection strings.
-- No DDL at startup: the consumer migrates their schemas with Prisma; the startup only generates clients and checks tables. The one exception is an official plugin's reviewed, additive migrations (`migrations/` next to its schema), applied with `prisma migrate deploy` (see `plugins/README.md`).
+- No DDL at startup: the consumer applies their schemas (and those of the plugins they install) with drizzle-kit; the startup only creates the clients.
 - A new dependency needs a reason a built-in cannot cover. Install scripts run only for the packages in `allowBuilds` of `pnpm-workspace.yaml`.
 - Workflows: `permissions: contents: read` by default; `id-token: write` and `contents: write` only on release jobs. Packages are published only by CI (npm trusted publishing).
 - Report vulnerabilities as in [SECURITY.md](../SECURITY.md).

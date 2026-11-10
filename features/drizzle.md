@@ -56,11 +56,9 @@ An app with Better Auth, `crud` and an official plugin with tables starts on Dri
 | # | Task | Does | Done when | Depends on |
 |---|---|---|---|---|
 | 1 | Spike | Checks on a throwaway project the three pieces the plan rests on: `drizzle-orm`/`drizzle-kit` rc with relational queries v2, `pushSchema` of `drizzle-kit/api` filtered to one schema (data-loss report included), and Better Auth's Drizzle adapter on the rc | A short report in the log: works, breaks, or needs a workaround, per piece | — |
-| 2 | Database layer | `Database` mounts Drizzle clients from the app's TS schema; `Prisma.ts`, `findPrismaClient`, the schema text parsing and `Validator.isPrisma` go; the `nano_*` rule and readiness checks read the schema objects; Postgres error codes in the handler | The backend suites pass on Drizzle with TS fixtures | 1 |
+| 2 | Backend on Drizzle | One module (decision 3A of round 2) so every suite stays green: the database layer (the app and each plugin pass their Drizzle schema object; one `pg.Pool` from `DATABASE_URL`; `Prisma.ts`, the schema text parsing and `Validator.isPrisma` go; Postgres error codes in the handler), Better Auth on `drizzleAdapter`, and `crud` on relational queries v2 with the permissions of related models | Every backend and plugin suite passes on Drizzle with TS fixtures | 1 |
 | 3 | Plugin tables by push | An official plugin's schema is pushed at mount (advisory lock, no data loss, else stop); CLAUDE.md's DDL rule changes from "official plugins' migrations" to "official plugins' push of their `nano_*` schema" | A plugin fixture gets its tables on an empty database, a second start changes nothing, and a lossy change stops the startup | 2 |
-| 4 | Better Auth | `drizzleAdapter` and the models check on the Drizzle schema | The Better Auth suite passes | 2 |
-| 5 | crud | `QueryParams` to relational queries v2; permissions of related models from the relations metadata; no nested writes | The crud suites pass, with related-model permissions covered | 2 |
-| 6 | Docs and finance | READMEs, CLAUDE.md, the `features/` files that mention Prisma; `finance` on Drizzle with `drizzle-kit` migrations | `finance` builds and runs its guarded pages and crud on Drizzle | 3, 4, 5 |
+| 4 | Docs and finance | READMEs, CLAUDE.md, the `features/` files that mention Prisma; `finance` on Drizzle with `drizzle-kit` migrations | `finance` builds and runs its guarded pages and crud on Drizzle | 2, 3 |
 
 ## Decisions
 
@@ -96,4 +94,7 @@ Later rounds: whether `drizzle-kit` is an optional peer (as `prisma` today) or a
   - Public metadata: `getTableConfig(table).schema`, `getColumns(table)`, and the relations object (`relations.notes.relations.comments.targetTable`, kind `Many`) give what the `nano_*` rule and crud's related-model permissions need.
   - Better Auth's Drizzle adapter on the rc: sign up and sign in write and read its tables in their own schema.
   - Not covered: the advisory lock (plain Postgres, checked in module 3).
-
+- 2026-11-10 · claude · Module 2, round 2: the app and each plugin pass their Drizzle schema object (`database: { schema }`, `import * as schema from './db/schema'`), which replaces decision 2A of round 1 (no `schemaPath`, no file loading); 1A one shared `pg.Pool`; 2C no readiness check at startup (Drizzle and the pool are lazy: a missing table fails on its first query); 3A modules 2, 4 and 5 merged into "Backend on Drizzle", one pull request with a commit per part.
+- 2026-11-10 · claude · Module 2, round 3: 1A crud lists answer `{ result }`, no `count`; 2A the app's tables never use a `nano_*` schema, and a plugin's tables live only in `nano_<plugin name>`; 3A `orderby` only by the model's own columns, a dotted path answers 400.
+- 2026-11-10 · claude · Module 2 implemented on `feat/drizzle--backend`: database layer, Better Auth on `drizzleAdapter`, crud on relational queries v2 with related-table permissions. Tests run only in CI (maintainer's rule); docs and the CLAUDE.md DDL rule stay for modules 3 and 4.
+- 2026-11-10 · claude · `main` merged into `feat/drizzle` (TanStack Query api store, zod field rules). The pages of the api store and `list` follow the Drizzle `QueryParams`: `limit`, `offset` and `orderBy` instead of `top`, `skip` and `orderby`. Pull request to `main` opened with modules 1 and 2; modules 3 (plugin tables by push) and 4 (docs and `finance`) stay open.

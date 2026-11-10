@@ -1,12 +1,11 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import Database from '../../backend/src/database/Database';
-import { prisma, request, startApp } from '../../backend/tests/helpers';
+import { push, request, startApp } from '../../backend/tests/helpers';
+import * as schema from '../../backend/tests/fixtures/database/crud';
 import crud from '../crud';
 import type { NanoObject } from '@nano-app/backend';
 import type { TestResponse } from '../../backend/tests/helpers';
-
-const SCHEMA = '../backend/tests/fixtures/database/crud.prisma';
 
 /** Sends a request with a JSON body */
 function send(
@@ -30,28 +29,29 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
 
   before(async () => {
     // What the consumer does by hand: apply their schema
-    prisma('db', 'push', '--schema', SCHEMA, '--url', process.env.DATABASE_URL!);
+    await push(schema, ['crud_test']);
 
     // Mounts the app's database, then the plugin after it
-    await Database.init();
-    const oDb = await Database.mount('app', { enabled: true, schemaPath: SCHEMA });
-    oServer = await startApp([crud({ models: ['note', 'comment'] })]);
+    const oDb = await Database.mount('app', { schema });
+    oServer = await startApp([crud({ models: ['note', 'comment'], schema })]);
 
     // Two notes of this run, the first with a comment
-    const oNote = await oDb.note.create({
-      data: { title: `${sTag}-a`, comments: { create: { text: 'first' } } },
-      include: { comments: true },
-    });
-    await oDb.note.create({ data: { title: `${sTag}-b` } });
-    sCommentId = oNote.comments[0].id;
+    const [oNote] = await oDb
+      .insert(schema.note)
+      .values({ title: `${sTag}-a` })
+      .returning();
+    await oDb.insert(schema.note).values({ title: `${sTag}-b` });
+    const [oComment] = await oDb
+      .insert(schema.comment)
+      .values({ text: 'first', noteId: oNote.id })
+      .returning();
+    sCommentId = oComment.id;
     iNoteId = oNote.id;
   });
 
   after(async () => {
-    // Deletes the notes of this run, their comments with them
-    const oDb = Database.get('app');
-    await oDb.note.deleteMany({ where: { title: { startsWith: sTag } } });
-    await oDb.$disconnect();
+    // Closes the pool and the server
+    await Database.get('app').$client.end();
     await oServer.close();
   });
 
@@ -61,43 +61,36 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
     assert.equal(status, 404);
   });
 
-  test('GET lists a model with its total', async () => {
+  test('GET lists a model', async () => {
     // Reads the notes without parameters
     const { status, body } = await request(oServer.url, '/api/note');
 
-    // Checks the list and the total
+    // Checks the list
     assert.equal(status, 200);
-    assert.ok(Array.isArray(body.result));
-    assert.ok(body.count >= 2);
+    assert.ok(body.result.length >= 2);
   });
 
-  test('QUERY filters, orders, pages, selects and expands', async () => {
-    // Reads the last note of this run with its comments
+  test('QUERY filters, orders, pages and picks columns', async () => {
+    // Reads the first note of this run
     const { body } = await send('QUERY', oServer.url, '/api/note', {
-      filter: { title: { startsWith: sTag } },
-      orderby: { title: 'asc' },
-      top: 1,
-      skip: 0,
-      select: 'title',
-      expand: 'comments',
+      where: { title: { like: `${sTag}%` } },
+      orderBy: { title: 'asc' },
+      limit: 1,
+      offset: 0,
+      columns: { title: true },
     });
 
-    // Checks the page, the total of the filter and the fields
-    assert.equal(body.count, 2);
-    assert.deepEqual(Object.keys(body.result[0]), ['title', 'comments']);
-    assert.equal(body.result[0].title, `${sTag}-a`);
-    assert.equal(body.result[0].comments[0].text, 'first');
+    // Checks the page and the fields
+    assert.deepEqual(body.result, [{ title: `${sTag}-a` }]);
   });
 
-  test('QUERY reads one record by its string id, with a nested relation', async () => {
-    // Reads the comment with its note
-    const { status, body } = await send('QUERY', oServer.url, `/api/comment/${sCommentId}`, {
-      expand: 'note',
-    });
+  test('QUERY reads one record by its string id', async () => {
+    // Reads the comment
+    const { status, body } = await send('QUERY', oServer.url, `/api/comment/${sCommentId}`, {});
 
-    // Checks the record and its relation
+    // Checks the record
     assert.equal(status, 200);
-    assert.equal(body.result.note.title, `${sTag}-a`);
+    assert.equal(body.result.text, 'first');
   });
 
   test('POST creates, PUT updates the fields sent and DELETE deletes', async () => {
@@ -122,9 +115,18 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
     assert.equal(status, 404);
   });
 
-  test('Prisma errors answer their status without their message', async () => {
+  test('a query never leaves its table: a relation in where or with answers 400', async () => {
+    // Filters comments by their note, and loads the note of each one
+    const oWhere = await send('QUERY', oServer.url, '/api/comment', {
+      where: { note: { title: 'a' } },
+    });
+    const oWith = await send('QUERY', oServer.url, '/api/comment', { with: { note: true } });
+    assert.deepEqual([oWhere.status, oWith.status], [400, 400]);
+  });
+
+  test('Postgres errors answer their status without their message', async () => {
     // A comment nobody created: read, updated and deleted
-    const sPath = '/api/comment/missing';
+    const sPath = '/api/comment/00000000-0000-0000-0000-000000000000';
     const { status: iRead, body: oRead } = await request(oServer.url, sPath);
     const { status: iUpdate } = await send('PUT', oServer.url, sPath, { text: 'edited' });
     const { status: iDelete } = await request(oServer.url, sPath, { method: 'DELETE' });

@@ -22,19 +22,23 @@ export default class Plugin {
   public async mount(oApp: Express): Promise<void> {
     const { name, routesDir, basePath, database, options, callbacks } = this.oConfig;
 
-    // Mounts the Prisma client, named as the plugin; without its own, the app's
-    const oDb = database?.enabled ? await Database.mount(name, database) : Database.get(APP_NAME);
+    // Mounts the Drizzle client, named as the plugin; without its own, the app's
+    const oDb = database ? await Database.mount(name, database) : Database.get(APP_NAME);
 
     // Better Auth: its endpoints stay public; past them, every request carries its session, if any
     if (this.oAuthOptions) {
-      // Checks that the database is mounted: Better Auth keeps its tables there
-      if (!oDb) {
+      // Checks that the app has a database: Better Auth keeps its tables in its schema
+      if (!database) {
         throw new NanoError(
-          'src/auth.ts needs the database of the app: set mainPlugin.database.enabled to true.',
+          'src/auth.ts needs the database of the app: set mainPlugin.database.schema.',
         );
       }
 
-      const { sPath, oHandler, fnSession } = await BetterAuth.create(this.oAuthOptions, oDb);
+      const { sPath, oHandler, fnSession } = await BetterAuth.create(
+        this.oAuthOptions,
+        oDb,
+        database.schema,
+      );
       oApp.all(sPath, oHandler);
       oApp.use(fnSession);
     }

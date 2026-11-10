@@ -5,7 +5,7 @@ import type { ListOptions } from '../types/list';
 
 /** A paged, sortable list of a backend path, also read page after page; its state is at `/list` */
 export default function list(oOptions: ListOptions) {
-  const { path, top, store = API_STORE_TYPE } = oOptions;
+  const { path, limit, store = API_STORE_TYPE } = oOptions;
 
   return createController(({ stores }) => {
     // Takes the api store of the options
@@ -28,7 +28,7 @@ export default function list(oOptions: ListOptions) {
       },
       query(): QueryParams {
         // The query of the pages, from the current page
-        return { skip: this.page() * top, ...this.pagesQuery() };
+        return { offset: this.page() * limit, ...this.pagesQuery() };
       },
       async load(): Promise<ApiResponse> {
         // Reads the current page
@@ -48,7 +48,7 @@ export default function list(oOptions: ListOptions) {
       },
       pagesQuery(): QueryParams {
         // The page size and the order chosen by the user, without the page
-        return { top, orderby: oApi.get('/list/orderby') };
+        return { limit, orderBy: oApi.get('/list/orderBy') };
       },
       async goTo(iPage: number): Promise<ApiResponse> {
         // Moves to a page, never before the first one, and reads it
@@ -65,9 +65,9 @@ export default function list(oOptions: ListOptions) {
       },
       async sort(sField: string): Promise<ApiResponse> {
         // Toggles the field between ascending and descending, and shows the pages of the new order
-        const sDirection = oApi.get('/list/orderby')?.[sField] === 'asc' ? 'desc' : 'asc';
+        const sDirection = oApi.get('/list/orderBy')?.[sField] === 'asc' ? 'desc' : 'asc';
         oApi.unwatch(path, this.pagesQuery());
-        oApi.set('/list/orderby', { [sField]: sDirection });
+        oApi.set('/list/orderBy', { [sField]: sDirection });
         oApi.watch(path, this.pagesQuery());
 
         // Reads the first page

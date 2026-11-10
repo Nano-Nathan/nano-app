@@ -15,9 +15,9 @@ export type PagesConfig = {
   /** Key of the pages in the cache */
   key: QueryKey;
   /** Items per page: a page with fewer is the last one */
-  top?: number;
+  limit?: number;
   /** Reads the page that starts at an item */
-  read: (skip: number) => Promise<ApiResponse>;
+  read: (offset: number) => Promise<ApiResponse>;
   /** Keeps every page read in one answer */
   keep: (response: ApiResponse) => void;
 };

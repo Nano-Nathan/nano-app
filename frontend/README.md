@@ -178,7 +178,7 @@ export default usersController.bindView(({ stores: { backend }, add }) => (
 - A read answers from the store until a write on its path or a parent; otherwise it asks the backend (`GET`, or `QUERY` with the query as JSON body). Reads of the same path and query that are out at once send one request. A read still out when a write on its path answers is cancelled: its promise rejects with `CancelledError`. The cache runs on [TanStack Query](https://tanstack.com/query) (`@tanstack/query-core`), without its hooks.
 - `create` (`POST <path>`), `update` (`PUT <path>`) and `delete` (`DELETE <path>`) return a promise of the `ApiResponse` and, once answered, invalidate their path and its parents (`update('/users/7')` invalidates `/users/7` and `/users`), so their next reads ask the backend, whatever their query. Other paths keep what they have.
 - A successful `update` also keeps its `ApiResponse` at its path, over what the store had there: its next read answers from the store. `create` and `delete` keep nothing.
-- `more(path, query)` reads a list page after page: each call adds the next page (`QUERY` with `skip`), and `get(path, query)` gives every page read so far in one `ApiResponse`, its items in order in `result`. A page with fewer items than `query.top` is the last one: later calls ask nothing. While a view shows them (`watch(path, query)` when it mounts, `unwatch(path, query)` when it unmounts), a write on the path reads every page again; with no view, a write only marks them old, and the next `watch` reads them all again. Do not `read` and `more` the same path and query: they keep their answer at the same place.
+- `more(path, query)` reads a list page after page: each call adds the next page (`QUERY` with `offset`), and `get(path, query)` gives every page read so far in one `ApiResponse`, its items in order in `result`. A page with fewer items than `query.limit` is the last one: later calls ask nothing. While a view shows them (`watch(path, query)` when it mounts, `unwatch(path, query)` when it unmounts), a write on the path reads every page again; with no view, a write only marks them old, and the next `watch` reads them all again. Do not `read` and `more` the same path and query: they keep their answer at the same place.
 - A read or a write resolves with an `ApiResponse` (a read cancelled by a write rejects). When the backend fails it is the backend's (`success: false`, `message`); an answer that is not JSON becomes `{ success: false, message: 'Request failed', result: <the text> }`, and no answer `{ success: false, message: 'Request failed' }`.
 - Each failed request adds its `ApiResponse` to the store's `/error/list` as an `ApiError`, with `message` set to `'Request failed'` when the backend brings none and `timestamp` (`Date.now()`) of when it failed. The views get it with `get('/error/list')`, or through the `error` component of `@nano-app/components`.
 - On the server (the first HTML that Next renders) `read` asks nothing and resolves with an empty `ApiResponse` (`{}`).
@@ -195,11 +195,11 @@ export default createController(({ stores: { app, backend } }) => ({
     clearTimeout(oTimer);
     oTimer = setTimeout(() => {
       app.set('/search/applied', sText);
-      backend.read('/users', { filter: { name: { contains: sText } } });
+      backend.read('/users', { where: { name: { ilike: `%${sText}%` } } });
     }, 300);
   },
 }));
-// The view gets backend.get('/users', { filter: { name: { contains: app.get('/search/applied') } } })
+// The view gets backend.get('/users', { where: { name: { ilike: `%${app.get('/search/applied')}%` } } })
 ```
 
 ### Headers per backend
@@ -307,7 +307,7 @@ pnpm --filter nano-frontend-test-app build
 pnpm --filter nano-frontend-test-app start   # http://localhost:3100
 ```
 
-The `Users` component reads and writes `/users` of the `backend` store, and `UsersList` pages and sorts it with `list` of [`@nano-app/components`](../components/README.md): point it at any backend that answers `GET`, `QUERY` (`skip`, `top`, `orderby`), `POST`, `PUT` and `DELETE` on `/users` with an `ApiResponse`, and give it the key its store declares:
+The `Users` component reads and writes `/users` of the `backend` store, and `UsersList` pages and sorts it with `list` of [`@nano-app/components`](../components/README.md): point it at any backend that answers `GET`, `QUERY` (`offset`, `limit`, `orderBy`), `POST`, `PUT` and `DELETE` on `/users` with an `ApiResponse`, and give it the key its store declares:
 
 ```bash
 API_BACKEND_URL=http://localhost:3000 API_BACKEND_KEY_HEADER=dev pnpm --filter nano-frontend-test-app start

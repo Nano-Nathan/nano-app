@@ -148,15 +148,18 @@ export default class ApiStore extends Store {
     return oResponse;
   }
 
-  /** Pages of a path and query, created on first use, each one read with its `skip` */
+  /** Pages of a path and query, created on first use, each one read with its `offset` */
   private pages(sPath: string, oQuery: QueryParams): Pages {
     // Creates them once, kept at the key of the path and query
     const sKey = ApiStore.key(sPath, oQuery);
     this.oPages[sKey] ??= new Pages(this.oClient, {
       key: [sPath, oQuery, 'more'],
-      top: oQuery.top,
-      read: iSkip =>
-        this.request(sPath, { method: 'QUERY', body: JSON.stringify({ ...oQuery, skip: iSkip }) }),
+      limit: oQuery.limit,
+      read: iOffset =>
+        this.request(sPath, {
+          method: 'QUERY',
+          body: JSON.stringify({ ...oQuery, offset: iOffset }),
+        }),
       keep: oResponse => this.keep(oResponse, sKey),
     });
     return this.oPages[sKey];

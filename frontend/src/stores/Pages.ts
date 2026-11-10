@@ -3,7 +3,7 @@ import type { InfiniteData, QueryClient, QueryKey } from '@tanstack/query-core';
 import type { ApiResponse } from '@nano-app/core/types/api';
 import type { PagesConfig } from '../types/store';
 
-/** Pages of a list read one after another, from `skip` 0, kept in one answer for the views */
+/** Pages of a list read one after another, from `offset` 0, kept in one answer for the views */
 export default class Pages {
   private fnKeep: PagesConfig['keep'];
   private iViews = 0;
@@ -16,12 +16,12 @@ export default class Pages {
     number
   >;
 
-  /** Pages of a key of the cache, each one read by `read(skip)` and all of them kept by `keep` */
+  /** Pages of a key of the cache, each one read by `read(offset)` and all of them kept by `keep` */
   constructor(oClient: QueryClient, oConfig: PagesConfig) {
-    const { key, top = 0, read, keep } = oConfig;
+    const { key, limit = 0, read, keep } = oConfig;
     this.fnKeep = keep;
 
-    // Reads each page from its `skip`; a page with fewer than `top` items is the last one
+    // Reads each page from its `offset`; a page with fewer than `limit` items is the last one
     this.oObserver = new InfiniteQueryObserver<
       ApiResponse,
       Error,
@@ -35,8 +35,8 @@ export default class Pages {
       // Read again on their own only once a page was read, when a view shows them old
       enabled: oQuery => oQuery.state.data !== undefined,
       getNextPageParam: (oLast, aPages) => {
-        const isFull = top > 0 && oLast.result?.length === top;
-        return isFull ? aPages.length * top : undefined;
+        const isFull = limit > 0 && oLast.result?.length === limit;
+        return isFull ? aPages.length * limit : undefined;
       },
     });
   }

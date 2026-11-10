@@ -69,8 +69,5 @@ export type RouteEntry<Deps = NanoObject<any>> = {
   callbacks?: Callbacks<Deps>;
 } & Handlers<Deps>;
 
-/** Entry of a Prisma client file (`client.ts` or `client.js`)*/
-export type PrismaEntry = new (options: { adapter: unknown }) => any;
-
 /** Generic object */
 export type NanoObject<T = any> = Record<string, T>;
