@@ -1,3 +1,4 @@
+import { QueryClient } from '@tanstack/query-core';
 import { IS_SERVER, REQUEST_FAILED } from '@nano-app/core/const';
 import Store from './Store';
 import type { ApiResponse, QueryParams } from '@nano-app/core/types/api';
@@ -7,9 +8,12 @@ import type { ApiError } from '../types/store';
 /** Backend of an `api` store through its proxy; each read keeps its `ApiResponse` in the store */
 export default class ApiStore extends Store {
   private sName: string;
-  private oVersions: NanoObject<number> = {};
-  private oKept: NanoObject<number> = {};
   private iCount = 0;
+
+  /** Cache of the reads: each one is kept until a write on its path or a parent */
+  protected oClient = new QueryClient({
+    defaultOptions: { queries: { gcTime: Infinity, staleTime: Infinity } },
+  });
 
   /** Store of the backend `API_<NAME>_URL`, with the initial data of its file */
   constructor(sName: string, oData?: NanoObject) {
@@ -24,24 +28,22 @@ export default class ApiStore extends Store {
     return super.get(ApiStore.key(sPath, oQuery));
   }
 
-  /** `ApiResponse` of a path and query, from the store while it was kept at its path's version */
+  /** `ApiResponse` of a path and query, from the cache until a write on its path or a parent */
   public async read(sPath: string, oQuery?: QueryParams): Promise<ApiResponse> {
     // Asks nothing on the server
     if (IS_SERVER) return {};
 
-    // Returns the kept answer while it was kept at the current version of its path
-    const sKey = ApiStore.key(sPath, oQuery);
-    const iVersion = this.oVersions[sPath] ?? 0;
-    if (this.oKept[sKey] === iVersion) return this.get(sPath, oQuery);
-
-    // Asks the backend
+    // Answers from the cache, or asks the backend once for every concurrent read
     const oInit = oQuery ? { method: 'QUERY', body: JSON.stringify(oQuery) } : { method: 'GET' };
-    const oResponse = await this.request(sPath, oInit);
+    const oResponse = await this.oClient
+      .fetchQuery({
+        queryKey: ApiStore.queryKey(sPath, oQuery),
+        queryFn: () => this.request(sPath, oInit),
+      })
+      // Reads again when a write on its path cancelled it: `request` itself never rejects
+      .catch(() => this.read(sPath, oQuery));
 
-    // Returns the answer without keeping it when a write changed its path meanwhile
-    if ((this.oVersions[sPath] ?? 0) !== iVersion) return oResponse;
-
-    // Keeps the answer at its path and query, with the version of its path
+    // Keeps it for the views
     this.keep(oResponse, sPath, oQuery);
     return oResponse;
   }
@@ -51,7 +53,7 @@ export default class ApiStore extends Store {
     return this.write('POST', sPath, oBody);
   }
 
-  /** `PUT <path>`, keeping a successful answer at its path with its new version */
+  /** `PUT <path>`, keeping a successful answer at its path */
   public async update(sPath: string, oBody: unknown): Promise<ApiResponse> {
     // Sends the write
     const oResponse = await this.write('PUT', sPath, oBody);
@@ -59,7 +61,8 @@ export default class ApiStore extends Store {
     // Returns a failed answer as is
     if (!oResponse.success) return oResponse;
 
-    // Keeps the answer at its path
+    // Keeps the answer at its path, in the cache and for the views
+    this.oClient.setQueryData([sPath], oResponse);
     this.keep(oResponse, sPath);
     return oResponse;
   }
@@ -69,12 +72,15 @@ export default class ApiStore extends Store {
     return this.write('DELETE', sPath);
   }
 
-  /** Sends a write and raises the version of its path and its parents */
+  /** Sends a write, and cancels and invalidates the reads of its path and its parents */
   private async write(sMethod: string, sPath: string, oBody?: unknown): Promise<ApiResponse> {
-    // Sends it, and raises the versions once the answer is back
+    // Sends it
     const oResponse = await this.request(sPath, { method: sMethod, body: JSON.stringify(oBody) });
+
+    // Once the answer is back, cancels the reads out and marks the kept ones to ask again
     for (const sParent of ApiStore.parents(sPath)) {
-      this.oVersions[sParent] = (this.oVersions[sParent] ?? 0) + 1;
+      await this.oClient.cancelQueries({ queryKey: [sParent] });
+      await this.oClient.invalidateQueries({ queryKey: [sParent], refetchType: 'none' });
     }
     return oResponse;
   }
@@ -121,12 +127,11 @@ export default class ApiStore extends Store {
     return oResponse;
   }
 
-  /** Keeps an answer at its path and query, over what was there, with its path's version */
+  /** Keeps an answer at its path and query for the views, over what was there */
   private keep(oResponse: ApiResponse, sPath: string, oQuery?: QueryParams): void {
-    // Sets the answer merged over the value at its key, and the version it was kept with
+    // Sets the answer merged over the value at its key
     const sKey = ApiStore.key(sPath, oQuery);
     this.set(sKey, { ...this.get(sPath, oQuery), ...oResponse });
-    this.oKept[sKey] = this.oVersions[sPath] ?? 0;
   }
 
   /** A path and each of its parents */
@@ -134,6 +139,11 @@ export default class ApiStore extends Store {
     // Joins the keys of the path up to each level
     const aKeys = sPath.split('/').filter(Boolean);
     return aKeys.map((_sKey, iIndex) => `/${aKeys.slice(0, iIndex + 1).join('/')}`);
+  }
+
+  /** Key of a read in the cache: its path, with its query when it has one */
+  private static queryKey(sPath: string, oQuery?: QueryParams): unknown[] {
+    return oQuery ? [sPath, oQuery] : [sPath];
   }
 
   /** Key of a read: its path, with its query when it has one */

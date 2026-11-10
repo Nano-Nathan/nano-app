@@ -1,6 +1,6 @@
 ---
-status: todo
-owner: null
+status: review
+owner: claude
 depends_on: []
 updated: 2026-11-10
 ---
@@ -137,3 +137,6 @@ Branch `feat/tanstack-query` from `main`, one pull request `feat(frontend): cach
 ## Log
 
 - 2026-11-10 · claude · Plan written from the analysis above (`ApiStore`, its tests, `query-core` 5.107.1 docs and source). Waiting for the first round of decisions; module 1 starts after them.
+- 2026-11-10 · claude · Decision 1A (go), from the maintainer. Spike on `query-core` 5.107.1 with the sketch of the approach applied to `ApiStore`: the 40 frontend tests pass as they are, and two concurrent reads of a path send one request. In both race tests the read ends before the write's answer comes back, so they never reach the cancellation. With a slow read and a fast write: a read with no data kept rejects with `CancelledError` (today it resolves with the backend's late answer), and a read with data kept resolves with that previous data. Decision 3 has to cover the rejection.
+- 2026-11-10 · claude · Decisions 2A (one `QueryClient` per `ApiStore`), 3A (a read cancelled by a write reads again, so it always resolves with an `ApiResponse`), 4B (the session of `AuthStore` is the query `['session']`, removed by a 401 and by sign-in, sign-up and sign-out), from the maintainer.
+- 2026-11-10 · claude · Implemented on `feat/tanstack-query`: `oVersions`, `oKept` and `oSession` are gone, and `oClient` is `protected` so `AuthStore` can reach it. New tests: concurrent reads of a path and of a query send one request each; a read still out when an update answers resolves with the update's data; concurrent `readSession` calls send one request. Frontend 43/43, components 25/25, `tsc` of core, frontend, components and backend, `format:check`, and `next build` of `tests/app` pass. Client JS of the test app, gzipped: 189.3 kB before, 196.4 kB after (+7 kB). Not verified: rendering in a browser (the container has no Chromium).

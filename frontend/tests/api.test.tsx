@@ -212,6 +212,35 @@ describe('api store', () => {
     assert.equal(count(aRequests, 'GET /api/backend/users/7'), 2);
   });
 
+  test('a read still out when a write on its path answers asks again', async () => {
+    // Slows the read, and answers the update before it
+    const { backend } = renderStores();
+    iDelay = 150;
+    const oRead = backend.read('/users/7');
+    await new Promise(fnResolve => setTimeout(fnResolve, 20));
+    iDelay = 0;
+    await backend.update('/users/7', { id: 7, name: 'Bruno' });
+
+    // The read resolves with the backend's answer after the update
+    assert.equal((await oRead).result.name, 'Bruno');
+    assert.equal(backend.get('/users/7').result.name, 'Bruno');
+  });
+
+  test('concurrent reads of a path and query send one request', async () => {
+    // Reads the same path twice and the same query twice, at once
+    iDelay = 50;
+    const { backend } = renderStores();
+    await Promise.all([
+      backend.read('/users'),
+      backend.read('/users'),
+      backend.read('/users', { top: 1 }),
+      backend.read('/users', { top: 1 }),
+    ]);
+
+    assert.equal(count(aRequests, 'GET /api/backend/users'), 1);
+    assert.equal(count(aRequests, 'QUERY /api/backend/users'), 1);
+  });
+
   test('busy is true while a request is out', async () => {
     // Slows the backend and reads
     iDelay = 100;

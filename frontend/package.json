@@ -51,6 +51,7 @@
     "react": ">=19.0.0"
   },
   "dependencies": {
+    "@tanstack/query-core": "^5.107.1",
     "glob": "^14.0.4",
     "jiti": "^2.7.0",
     "mobx": "^7.1.5",

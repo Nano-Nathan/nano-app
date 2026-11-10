@@ -177,9 +177,9 @@ export default usersController.bindView(({ stores: { backend }, add }) => (
 ```
 
 - `read(path, query?)` returns a promise of the `ApiResponse` and keeps it in the store for that path and query, over what the store had there (a field the new answer does not bring stays from the last one). The view gets it with `get(path, query?)`, and renders again when a read keeps a new one.
-- Each path has a version that its writes raise. A read answers from the store while it was kept at the current version of its path; otherwise it asks the backend (`GET`, or `QUERY` with the query as JSON body). An answer that comes back after a write on its path is returned but not kept.
-- `create` (`POST <path>`), `update` (`PUT <path>`) and `delete` (`DELETE <path>`) return a promise of the `ApiResponse` and raise the version of their path and its parents (`update('/users/7')` raises `/users/7` and `/users`), so their next reads ask the backend, whatever their query. Other paths keep what they have.
-- A successful `update` also keeps its `ApiResponse` at its path, over what the store had there, with the new version of the path: its next read answers from the store. `create` and `delete` keep nothing.
+- A read answers from the store until a write on its path or a parent; otherwise it asks the backend (`GET`, or `QUERY` with the query as JSON body). Reads of the same path and query that are out at once send one request. A read still out when a write on its path answers asks again, and resolves with that answer. The cache runs on [TanStack Query](https://tanstack.com/query) (`@tanstack/query-core`), without its hooks.
+- `create` (`POST <path>`), `update` (`PUT <path>`) and `delete` (`DELETE <path>`) return a promise of the `ApiResponse` and, once answered, invalidate their path and its parents (`update('/users/7')` invalidates `/users/7` and `/users`), so their next reads ask the backend, whatever their query. Other paths keep what they have.
+- A successful `update` also keeps its `ApiResponse` at its path, over what the store had there: its next read answers from the store. `create` and `delete` keep nothing.
 - A read or a write always resolves with an `ApiResponse`. When the backend fails it is the backend's (`success: false`, `message`); an answer that is not JSON becomes `{ success: false, message: 'Request failed', result: <the text> }`, and no answer `{ success: false, message: 'Request failed' }`.
 - Each failed request adds its `ApiResponse` to the store's `/error/list` as an `ApiError`, with `message` set to `'Request failed'` when the backend brings none and `timestamp` (`Date.now()`) of when it failed. The views get it with `get('/error/list')`, or through the `error` component of `@nano-app/components`.
 - On the server (the first HTML that Next renders) `read` asks nothing and resolves with an empty `ApiResponse` (`{}`).
@@ -257,7 +257,7 @@ export default createController(({ stores: { backend } }) => ({
 
 - `signIn(kind, body)` and `signUp(kind, body)` send `POST <path>/sign-in/<kind>` and `POST <path>/sign-up/<kind>`: `kind` is the method of Better Auth (`email`, ...), and `body` what it asks. `signOut()` sends `POST <path>/sign-out`.
 - They return Better Auth's answer inside an `ApiResponse`: `{ success, result, message }`, with `success` when the backend answered 2xx and its `message` when it failed.
-- `readSession()` asks `GET <path>/get-session` and keeps `{ user, session }` at `/session`, or `null` without a session. It answers from the store until a `signIn`, `signUp` or `signOut` succeeds, which reads it again. On the server it asks nothing and resolves with `{}`.
+- `readSession()` asks `GET <path>/get-session` and keeps `{ user, session }` at `/session`, or `null` without a session. It answers from the store until a `signIn`, `signUp` or `signOut` succeeds, which reads it again; calls that are out at once send one request. On the server it asks nothing and resolves with `{}`.
 - Any 401 of the store's backend sets `/session` to `null`, and the next `readSession()` asks again.
 - The session lives in Better Auth's cookie, which the proxy passes as any other: a refresh reads it again with `readSession()`.
 - Better Auth checks the `Origin` of every `POST`: add the URL of the frontend to its `trustedOrigins` in the backend.
