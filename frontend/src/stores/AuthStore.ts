@@ -3,10 +3,12 @@ import ApiStore from './ApiStore';
 import type { ApiResponse } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
 
+/** Key of the session in the cache */
+const SESSION_KEY = ['session'];
+
 /** Api store of a backend with Better Auth: signs in and out, and keeps the session */
 export default class AuthStore extends ApiStore {
   private sBasePath: string;
-  private oSession?: ApiResponse;
 
   /** Store of the backend `API_<NAME>_URL`, with Better Auth at its base path */
   constructor(sName: string, sBasePath: string, oData?: NanoObject) {
@@ -34,12 +36,13 @@ export default class AuthStore extends ApiStore {
     // Asks nothing on the server
     if (IS_SERVER) return {};
 
-    // Returns the kept answer
-    if (this.oSession) return this.oSession;
+    // Answers from the cache, or asks the backend once for every concurrent read
+    const oResponse = await this.oClient.fetchQuery({
+      queryKey: SESSION_KEY,
+      queryFn: () => this.request(`${this.sBasePath}/get-session`, { method: 'GET' }),
+    });
 
-    // Asks the backend and keeps its answer, and its `{ user, session }` in `/session`
-    const oResponse = await this.request(`${this.sBasePath}/get-session`, { method: 'GET' });
-    this.oSession = oResponse;
+    // Keeps its `{ user, session }` in `/session`
     this.set('/session', oResponse.result ?? null);
     return oResponse;
   }
@@ -48,7 +51,7 @@ export default class AuthStore extends ApiStore {
   protected receive(sPath: string, oRes: Response, oBody: ApiResponse): ApiResponse {
     // Clears the session and its kept answer on a 401
     if (oRes.status === 401) {
-      this.oSession = undefined;
+      this.oClient.removeQueries({ queryKey: SESSION_KEY });
       this.set('/session', null);
     }
 
@@ -71,7 +74,7 @@ export default class AuthStore extends ApiStore {
     if (!oResponse.success) return oResponse;
 
     // Reads the session again
-    this.oSession = undefined;
+    this.oClient.removeQueries({ queryKey: SESSION_KEY });
     await this.readSession();
     return oResponse;
   }

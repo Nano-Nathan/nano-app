@@ -126,6 +126,14 @@ describe('auth store', () => {
     assert.equal(oStore.get('/session'), null);
   });
 
+  test('concurrent readSession send one request', async () => {
+    // Reads the session twice at once, as two views mounting together
+    const oStore = new AuthStore('backend', '/api/auth');
+    await Promise.all([oStore.readSession(), oStore.readSession()]);
+
+    assert.equal(count(aRequests, 'GET /api/backend/api/auth/get-session'), 1);
+  });
+
   test('a 401 clears the session, and the routes of the app answer as they come', async () => {
     // Signs in and reads a route behind the session
     const oStore = new AuthStore('backend', '/api/auth');
