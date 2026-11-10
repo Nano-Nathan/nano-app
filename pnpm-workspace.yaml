@@ -7,6 +7,4 @@ packages:
   - "frontend/tests/app"
   - "site"
 allowBuilds:
-  '@prisma/engines': true
   esbuild: true
-  prisma: true

@@ -3,18 +3,16 @@ import type { ErrorRequestHandler, RequestHandler } from 'express';
 import type { ApiResponse, NanoObject } from '@nano-app/core';
 import type { HandlerError } from '../types/app';
 
-/** Prisma errors the request caused; their own messages name tables and columns */
-const PRISMA_ERRORS: NanoObject<HandlerError> = {
-  P2025: { status: 404, message: 'Not found' },
-  P2002: { status: 409, message: 'Conflict' },
-  P2003: { status: 409, message: 'Conflict' },
-  PrismaClientValidationError: { status: 400, message: 'Invalid request' },
+/** Postgres errors the request caused, by their code; their own messages name tables and columns */
+const POSTGRES_ERRORS: NanoObject<HandlerError> = {
+  '23505': { status: 409, message: 'Conflict' },
+  '23503': { status: 409, message: 'Conflict' },
+  '23502': { status: 400, message: 'Invalid request' },
+  '22P02': { status: 400, message: 'Invalid request' },
 };
 
-/** Whether anything thrown is an object, read as a HandlerError or a Prisma error */
-function isHandlerError(
-  oError: unknown,
-): oError is HandlerError & { code?: string; name?: string } {
+/** Whether anything thrown is an object, read as a HandlerError or a Drizzle error with its Postgres cause */
+function isHandlerError(oError: unknown): oError is HandlerError & { cause?: { code?: string } } {
   return typeof oError === 'object' && oError !== null;
 }
 
@@ -28,8 +26,8 @@ function normalize(oError: unknown): { status: number; body: ApiResponse } {
   // An object is read as { status, message, warning }; anything else has none of them
   const oThrown = isHandlerError(oError) ? oError : {};
 
-  // A Prisma error caused by the request answers its own status, never its message
-  const { status, message, warning } = PRISMA_ERRORS[oThrown.code ?? oThrown.name ?? ''] ?? oThrown;
+  // A Postgres error caused by the request answers its own status, never its message
+  const { status, message, warning } = POSTGRES_ERRORS[oThrown.cause?.code ?? ''] ?? oThrown;
 
   // A server error never answers its message, which may carry internals: it is logged in full
   const iStatus = status ?? 500;

@@ -7,6 +7,8 @@ import type { ApiPromise } from './api';
 export type Params<Deps = NanoObject<any>> = Deps & {
   /** Better Auth's instance, when it is on */
   auth?: NanoObject;
+  /** Drizzle schema of the database the handlers receive as `db` */
+  schema?: NanoObject;
   onBeforeResult?: NanoObject;
   /** `{ user, session }` of Better Auth, when the request has one */
   session?: NanoObject;
@@ -68,9 +70,6 @@ export type RouteEntry<Deps = NanoObject<any>> = {
   permissions?: NanoObject<string[]>;
   callbacks?: Callbacks<Deps>;
 } & Handlers<Deps>;
-
-/** Entry of a Prisma client file (`client.ts` or `client.js`)*/
-export type PrismaEntry = new (options: { adapter: unknown }) => any;
 
 /** Generic object */
 export type NanoObject<T = any> = Record<string, T>;

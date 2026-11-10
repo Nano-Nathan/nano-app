@@ -1,13 +1,7 @@
-/** What `generate` remembers of a client: the schema it came from and its hash */
-export type ClientSource = { schemaPath: string; hash: string };
+import type { NanoObject } from '@nano-app/core';
 
-/** The fields of a `package.json` that the database reads */
-export type PackageJson = { name?: string };
-
-/** Database client configuration. */
+/** Database of a plugin or of the app */
 export type DatabaseConfig = {
-  /** Whether the database is enabled. Defaults to false */
-  enabled?: boolean;
-  /** Prisma schema file (`.prisma`), relative to `cwd` */
-  schemaPath: string;
+  /** Its Drizzle schema: the module of its tables, with its `relations` when it has them (`import * as schema from './db/schema'`) */
+  schema: NanoObject;
 };
