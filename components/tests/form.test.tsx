@@ -4,7 +4,6 @@ import './env/form';
 import { test, describe, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { z } from 'zod';
 import field from '../field';
 import form from '../form';
 import TestApp from './provider';
@@ -26,17 +25,11 @@ const SIGN_UP: FormField[] = [
   { name: 'email', type: 'email' },
 ];
 
-// Fields of a login: an email and a number
+// Fields of a login: a required email, kept in lowercase, and a number
 const LOGIN: FormField[] = [
-  { name: 'email', type: 'email' },
+  { name: 'email', type: 'email', required: true, rules: { toLowerCase: [] } },
   { name: 'age', type: 'number' },
 ];
-
-// Rules of the login: a valid email and an optional age
-const LOGIN_SCHEMA = z.object({
-  email: z.email('Invalid email').toLowerCase(),
-  age: z.number().optional(),
-});
 
 // View of a field with an input and its error
 const Field = field().bindView(({ props: { field: oField }, value, error, change }) => (
@@ -65,14 +58,13 @@ const Login = form({ components: { text: Field } }).bindView(({ fields, submit, 
   </form>
 ));
 
-/** The login with its schema, whose onSubmit keeps the values and answers `sent` */
+/** The login, whose onSubmit keeps the values and answers `sent` */
 function renderLogin(): void {
   render(
     <TestApp>
       <Login
         name="login"
         fields={LOGIN}
-        schema={LOGIN_SCHEMA}
         onSubmit={(oValues: NanoObject) => {
           aSent.push(oValues);
           return 'sent';
@@ -144,12 +136,12 @@ describe('form', () => {
     fireEvent.click(screen.getByText('send'));
 
     // The email shows its error, nothing is sent and the submit gives undefined
-    await waitFor(() => assert.equal(errorOf('email'), 'email: Invalid email'));
+    await waitFor(() => assert.equal(errorOf('email'), 'email: Required'));
     assert.deepEqual(aSent, []);
     assert.deepEqual(await Promise.all(aReturned), [undefined]);
   });
 
-  test('submit sends the values the schema gives and what onSubmit returns', async () => {
+  test('submit sends the values its rules give and what onSubmit returns', async () => {
     // Types both fields, the email in capitals, and submits
     renderLogin();
     type('email', 'Ana@Mail.com');
@@ -161,27 +153,12 @@ describe('form', () => {
     assert.deepEqual(aSent, [{ email: 'ana@mail.com', age: 30 }]);
   });
 
-  test('submit of a form without schema sends the values as kept', async () => {
-    // Renders the login without its schema and submits an invalid email
-    render(
-      <TestApp>
-        <Login name="open" fields={LOGIN} onSubmit={(oValues: NanoObject) => aSent.push(oValues)} />
-      </TestApp>,
-    );
-    type('email', 'ana');
-    fireEvent.click(screen.getByText('send'));
-
-    // Sends it as is, with the untouched age
-    await Promise.all(aReturned);
-    assert.deepEqual(aSent, [{ email: 'ana', age: undefined }]);
-  });
-
   test('reset empties the values and the errors', async () => {
     // Types an age, submits to show the email's error, then resets
     renderLogin();
     type('age', '30');
     fireEvent.click(screen.getByText('send'));
-    await waitFor(() => assert.equal(errorOf('email'), 'email: Invalid email'));
+    await waitFor(() => assert.equal(errorOf('email'), 'email: Required'));
     fireEvent.click(screen.getByText('reset'));
 
     // The inputs are empty and no field shows an error

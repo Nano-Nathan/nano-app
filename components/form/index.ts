@@ -2,23 +2,24 @@ import { createElement } from 'react';
 import { createController } from '@nano-app/frontend';
 import NanoError from '@nano-app/core/utils/NanoError';
 import control from './forms';
+import schema from './schema';
 import type { ReactNode, SubmitEvent } from 'react';
 import type { FormField } from '../types/field';
 import type { FormOptions } from '../types/form';
 
-/** A form from a config of fields and a schema: their views, and their submit at `/form/<name>` */
+/** A form from a config of fields: their views, and their submit at `/form/<name>` of `app` */
 export default function form(oOptions: FormOptions) {
   return createController(({ props, stores }) => {
-    // Takes the views of the options, and the name, fields, schema and submit of the props
+    // Takes the views of the options, and the name, fields and submit of the props
     const { components } = oOptions;
-    const { name, schema, onSubmit } = props;
+    const { name, onSubmit } = props;
     const aFields: FormField[] = props.fields;
 
     return {
-      // Creates the form with its schema when the view mounts, with every field, also untouched
+      // Creates the form with the schema of its fields when the view mounts, and registers them all
       callbacks: {
         onMount(): void {
-          const oForm = control(stores, name, schema);
+          const oForm = control(stores, name, schema(aFields));
           for (const oField of aFields) oForm.register(oField.name);
         },
       },
@@ -38,7 +39,7 @@ export default function form(oOptions: FormOptions) {
       },
       // any: what the onSubmit of the props returns
       submit(oEvent: SubmitEvent<HTMLFormElement>): Promise<any> {
-        // Stops the browser's submit and sends the schema's values only when no field breaks it
+        // Stops the browser's submit and sends the values only when no field breaks its rules
         return control(stores, name).handleSubmit(onSubmit)(oEvent);
       },
       reset(): void {

@@ -45,7 +45,7 @@ export default list({ path: '/users', top: 20 }).bindView(
 |---|---|---|---|
 | `auth` | `import auth from '@nano-app/components/auth'` | `kind` (default `'email'`), `store` (default `'api'`) | `signIn(body)`, `signUp(body)`, `signOut()`, `load()`, `navTo(url)`; in the store: `/session` |
 | `field` | `import field from '@nano-app/components/field'` | — | `value()`, `error()`, `change(value)`, `options()`, `parse(input)`; props `form`, `field`; in `app`: `/form/<form>/values`, `/form/<form>/errors` |
-| `form` | `import form from '@nano-app/components/form'` | `components` | `fields()`, `submit(event)`, `reset()`; props `name`, `fields`, `schema`, `onSubmit`; in `app`: `/form/<name>` |
+| `form` | `import form from '@nano-app/components/form'` | `components` | `fields()`, `submit(event)`, `reset()`; props `name`, `fields`, `onSubmit`; in `app`: `/form/<name>` |
 | `error` | `import error from '@nano-app/components/error'` | — | `items()`, `remove(index)`, `clear()`, `last()`, `dismiss()` |
 | `list` | `import list from '@nano-app/components/list'` | `path`, `top`, `store` (default `'api'`) | `load()`, `items()`, `page()`, `query()`, `goTo(page)`, `next()`, `prev()`, `sort(field)`; in the store: `/list/page` (from 0, `undefined` until it moves), `/list/orderby` |
 
@@ -84,16 +84,18 @@ export default field().bindView(({ props: { field: oField }, value, error, chang
   </label>
 ));
 
-<Input form="signUp" field={{ name: 'email', label: 'Email', type: 'email' }} />
+<Input form="signUp" field={{ name: 'email', label: 'Email', type: 'email', required: true }} />
 ```
 
-- A field is `{ name, type, format, parse, options }`; its other keys (`label`, `disabled`) pass as is to its view.
-- `change(value)` keeps the value at `/form/<form>/values/<name>` as the view gives it (a text, a boolean, the ISO day of a date input), a `number` field as a number when its text is that number as is (`'12'`, while `'1.'` stays a text), and validates it with the `schema` of its form, which sees every value of the form. `error()` gives the message the schema gives for that field. A field rendered without its `form` keeps its value and has no rules.
+- A field is `{ name, type, required, errorMessage, rules, validate, format, parse, options }`; its other keys (`label`, `disabled`) pass as is to its view.
+- `change(value)` keeps the value at `/form/<form>/values/<name>` as the view gives it (a text, a boolean, the ISO day of a date input), a `number` field as a number when its text is that number as is (`'12'`, while `'1.'` stays a text), and validates it with the rules of its form. `error()` gives the message of the rule it breaks. A field rendered without its `form` keeps its value and has no rules.
+- Its rules are a [zod](https://zod.dev) schema its `form` builds from the config: `type` names the zod type (`email`, `number`, `url`, `uuid`, `boolean`; `checkbox` is a boolean, `date` an ISO day, any other type a text), `required` breaks on a value missing or `''` (without it, an empty value passes), `rules` calls the zod methods of that type by name with their value, or their arguments in an array (`rules: { min: [3, 'Too short'], max: 20, toLowerCase: [] }`), and `validate(value, values)` runs last with the values of the form and returns the message or `undefined`.
+- The rules without their own message answer `Required`, `Invalid email`, `Invalid number` or `Invalid value`; `errorMessage` replaces them for that field.
 - `parse(input)` replaces what `change` keeps, and `format(value)` what `value()` gives: a price kept as `1234` and shown as `$1.234`.
 - A select takes `options: { path, store }` (`store` is `'api'` by default): the field reads `path` from the backend when its view mounts, and `options()` gives its items as the backend gave them, for the view to take the keys it shows.
-- The browser validates native inputs (`type="email"`) and shows its own bubbles. To show only the schema's messages, put `noValidate` on the `<form>` of the view.
+- The browser validates native inputs (`type="email"`) and shows its own bubbles. To show only the field's messages, put `noValidate` on the `<form>` of the view.
 
-`form({ components })` renders a form from a config of fields, on [React Hook Form](https://react-hook-form.com): `components` gives the view of each field type, and the view of the form gets the props `name` (its name), `fields` (the configs of its fields) and `schema` (the rules of its values: a [Standard Schema](https://standardschema.dev) such as zod, valibot or arktype, with its own messages). Each React tree keeps one form per `name`, created with its `schema` when the view mounts. `fields()` gives the view of each field, in their order, with the props `form` and `field`: the view of its `type`, or the one of `text` when its type has none. A field with no view and no `text` stops the render with an error. `submit(event)` stops the browser's submit, validates every field of `fields` with the schema (also the untouched ones) and keeps their messages at `/form/<name>/errors`; when none breaks it, it calls the prop `onSubmit(values)` with the values the schema gives (its transforms applied). It returns a promise of what `onSubmit` returns, or of `undefined` when a field breaks the schema. Without `schema`, it sends the values kept. `onSubmit` is a method of the controller of the page that renders the form, so its view only passes it. `reset()` empties the values and the errors.
+`form({ components })` renders a form from a config of fields, on [React Hook Form](https://react-hook-form.com): `components` gives the view of each field type, and the view of the form gets the props `name` (its name) and `fields` (the configs of its fields). Each React tree keeps one form per `name`, created with the rules of its fields when the view mounts. `fields()` gives the view of each field, in their order, with the props `form` and `field`: the view of its `type`, or the one of `text` when its type has none. A field with no view and no `text` stops the render with an error. `submit(event)` stops the browser's submit, validates every field of `fields` (also the untouched ones) and keeps their messages at `/form/<name>/errors`; when none breaks it, it calls the prop `onSubmit(values)` with the values its rules give (`toLowerCase` applied). It returns a promise of what `onSubmit` returns, or of `undefined` when a field breaks a rule. `onSubmit` is a method of the controller of the page that renders the form, so its view only passes it. `reset()` empties the values and the errors.
 
 ```tsx
 // src/components/SignUp.tsx
@@ -113,8 +115,7 @@ export default form({ components: { text: Input, select: Select } }).bindView(
 export default authController.bindView(({ signUp }) => (
   <SignUp
     name="signUp"
-    fields={[{ name: 'email', type: 'email' }]}
-    schema={z.object({ email: z.email('Invalid email') })}
+    fields={[{ name: 'email', type: 'email', required: true }]}
     onSubmit={signUp}
   />
 ));

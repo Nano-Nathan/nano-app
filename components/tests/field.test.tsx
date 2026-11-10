@@ -5,7 +5,6 @@ import { test, describe, before, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { z } from 'zod';
 import field from '../field';
 import form from '../form';
 import TestApp from './provider';
@@ -44,21 +43,32 @@ const Input = field().bindView(({ props: { field: oField }, value, error, change
   </label>
 ));
 
-// Fields of a sign-up: an email, a password and its confirmation
-const SIGN_UP: FormField[] = [{ name: 'email' }, { name: 'password' }, { name: 'confirm' }];
-
-// Rules of the sign-up: a valid email, and a confirmation equal to the password
-const SIGN_UP_SCHEMA = z
-  .object({ email: z.email('Invalid email'), password: z.string(), confirm: z.string() })
-  .refine(oValues => oValues.confirm === oValues.password, {
-    message: 'Mismatch',
-    path: ['confirm'],
-  });
+// Fields of a sign-up: a required email and phone, a number, a nick, a password and its repeat
+const SIGN_UP: FormField[] = [
+  { name: 'email', type: 'email', required: true },
+  { name: 'phone', required: true, errorMessage: 'Your phone' },
+  { name: 'age', type: 'number' },
+  { name: 'nick', rules: { min: [3, 'Too short'], max: 5 } },
+  { name: 'password', type: 'password' },
+  {
+    name: 'confirm',
+    validate: (sConfirm, oValues) => (sConfirm === oValues.password ? undefined : 'Mismatch'),
+  },
+];
 
 // View of a form with only its fields
 const SignUp = form({ components: { text: Input } }).bindView(({ fields }) => (
   <form>{fields()}</form>
 ));
+
+/** Renders the sign-up form with its fields */
+function renderSignUp(): void {
+  render(
+    <TestApp>
+      <SignUp name="signUp" fields={SIGN_UP} />
+    </TestApp>,
+  );
+}
 
 /** Renders the fields of a form inside the provider, without its form */
 function renderFields(sForm: string, aFields: FormField[]): void {
@@ -86,22 +96,43 @@ describe('field', () => {
   after(() => oBackend.close());
   afterEach(cleanup);
 
-  test('change validates the value with the schema and the values of its form', async () => {
-    // Renders the sign-up and types an invalid email, then a valid one
-    render(
-      <TestApp>
-        <SignUp name="signUp" fields={SIGN_UP} schema={SIGN_UP_SCHEMA} />
-      </TestApp>,
-    );
+  test('change validates the email, the number and required', async () => {
+    // Types an invalid email, a valid one and a text in the number
+    renderSignUp();
     type('email', 'ana');
     await waitFor(() => assert.equal(errorOf('email'), 'email: Invalid email'));
     type('email', 'ana@nano.app');
     await waitFor(() => assert.equal(errorOf('email'), 'email: ok'));
+    type('age', 'ten');
+    await waitFor(() => assert.equal(errorOf('age'), 'age: Invalid number'));
 
-    // Confirms another password, then the same one
+    // Empties the required email
+    type('email', '');
+    await waitFor(() => assert.equal(errorOf('email'), 'email: Required'));
+  });
+
+  test('errorMessage replaces the default messages and rules map to zod methods', async () => {
+    // Empties the phone
+    renderSignUp();
+    type('phone', '1');
+    type('phone', '');
+    await waitFor(() => assert.equal(errorOf('phone'), 'phone: Your phone'));
+
+    // Breaks the nick's min with its message, then its max without one
+    type('nick', 'ab');
+    await waitFor(() => assert.equal(errorOf('nick'), 'nick: Too short'));
+    type('nick', 'abcdef');
+    await waitFor(() => assert.equal(errorOf('nick'), 'nick: Invalid value'));
+  });
+
+  test('the own rule of a field receives the values of its form', async () => {
+    // Confirms another password, with the required fields still empty
+    renderSignUp();
     type('password', 'secret');
     type('confirm', 'other');
     await waitFor(() => assert.equal(errorOf('confirm'), 'confirm: Mismatch'));
+
+    // Confirms the same password
     type('confirm', 'secret');
     await waitFor(() => assert.equal(errorOf('confirm'), 'confirm: ok'));
   });
