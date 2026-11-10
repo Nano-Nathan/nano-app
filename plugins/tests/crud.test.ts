@@ -70,32 +70,27 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
     assert.ok(body.result.length >= 2);
   });
 
-  test('QUERY filters, orders, pages, picks columns and loads a relation', async () => {
-    // Reads the first note of this run with its comments
+  test('QUERY filters, orders, pages and picks columns', async () => {
+    // Reads the first note of this run
     const { body } = await send('QUERY', oServer.url, '/api/note', {
       where: { title: { like: `${sTag}%` } },
       orderBy: { title: 'asc' },
       limit: 1,
       offset: 0,
       columns: { title: true },
-      with: { comments: true },
     });
 
     // Checks the page and the fields
-    assert.deepEqual(Object.keys(body.result[0]), ['title', 'comments']);
-    assert.equal(body.result[0].title, `${sTag}-a`);
-    assert.equal(body.result[0].comments[0].text, 'first');
+    assert.deepEqual(body.result, [{ title: `${sTag}-a` }]);
   });
 
-  test('QUERY reads one record by its string id, with its relation', async () => {
-    // Reads the comment with its note
-    const { status, body } = await send('QUERY', oServer.url, `/api/comment/${sCommentId}`, {
-      with: { note: true },
-    });
+  test('QUERY reads one record by its string id', async () => {
+    // Reads the comment
+    const { status, body } = await send('QUERY', oServer.url, `/api/comment/${sCommentId}`, {});
 
-    // Checks the record and its relation
+    // Checks the record
     assert.equal(status, 200);
-    assert.equal(body.result.note.title, `${sTag}-a`);
+    assert.equal(body.result.text, 'first');
   });
 
   test('POST creates, PUT updates the fields sent and DELETE deletes', async () => {
@@ -120,12 +115,13 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
     assert.equal(status, 404);
   });
 
-  test('a nested relation answers 400', async () => {
-    // Loads the comments with the note of each one
-    const { status } = await send('QUERY', oServer.url, '/api/note', {
-      with: { comments: { with: { note: true } } },
+  test('a query never leaves its table: a relation in where or with answers 400', async () => {
+    // Filters comments by their note, and loads the note of each one
+    const oWhere = await send('QUERY', oServer.url, '/api/comment', {
+      where: { note: { title: 'a' } },
     });
-    assert.equal(status, 400);
+    const oWith = await send('QUERY', oServer.url, '/api/comment', { with: { note: true } });
+    assert.deepEqual([oWhere.status, oWith.status], [400, 400]);
   });
 
   test('Postgres errors answer their status without their message', async () => {

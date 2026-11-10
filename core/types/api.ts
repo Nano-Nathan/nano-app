@@ -20,8 +20,6 @@ export type ApiPromise<T = any> = Promise<ApiResponse<T>>;
 export type QueryParams = {
   /** Drizzle's relational filter: `{ title: { like: 'a%' } }` */
   where?: NanoObject;
-  /** Direct relations to load: `{ user: true }` */
-  with?: NanoObject<true>;
   /** Columns to answer: `{ id: true, title: true }` */
   columns?: NanoObject<boolean>;
   orderBy?: NanoObject<'asc' | 'desc'>;

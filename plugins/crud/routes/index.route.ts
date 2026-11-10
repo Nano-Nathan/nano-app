@@ -1,6 +1,6 @@
-import { eq } from 'drizzle-orm';
+import { defineRelations, eq } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import { createRoute, isGranted, NanoError } from '@nano-app/backend';
-import Query from '../Query';
 import type { ApiPromise, NanoObject, Params, QueryParams, Request } from '@nano-app/backend';
 
 /** Permission of Better Auth that each method needs on the URL's table */
@@ -12,22 +12,43 @@ const ACTIONS: NanoObject<string> = {
   DELETE: 'delete',
 };
 
-/** Reads a list, or one record, with the `QueryParams` of the body */
-async function read(oReq: Request, { db, onBeforeResult }: Params): ApiPromise {
-  return Query.read(db, onBeforeResult?.model, oReq.body ?? {}, onBeforeResult?.id);
-}
+/** Records a list answers when the request sends no `limit` */
+const DEFAULT_LIMIT = 100;
 
-/** The record a write returned: 404 when its id matched none */
-function written(aRecords: NanoObject[]): { result: NanoObject } {
+/** The first record of a query or a write: 404 without it */
+function first(aRecords: NanoObject[]): { result: NanoObject } {
   if (!aRecords[0]) throw new NanoError('Not found', 404);
   return { result: aRecords[0] };
+}
+
+/** A list of the table, or one record by its id, with Drizzle's relational query of the body on the table alone */
+async function read(oReq: Request, { db, schema, onBeforeResult }: Params): ApiPromise {
+  const { model, id } = onBeforeResult ?? {};
+  const {
+    where = {},
+    columns,
+    orderBy,
+    limit = DEFAULT_LIMIT,
+    offset,
+  }: QueryParams = oReq.body ?? {};
+
+  // A client on the same pool that knows the tables but none of their relations: a query cannot leave its table
+  const { relations: _oRelations, ...oTables } = schema;
+  // any: the tables of each app, unknown to the plugin
+  const oNoRelations: any = defineRelations(oTables);
+  const oTableOnly = drizzle({ client: db.$client, relations: oNoRelations });
+
+  // One record by its id, or the list
+  const oQuery = oTableOnly.query[model];
+  if (id) return first(await oQuery.findMany({ where: { id }, columns, limit: 1 }));
+  return { result: await oQuery.findMany({ where, columns, orderBy, limit, offset }) };
 }
 
 /** `GET` reads without parameters, `QUERY` with `QueryParams` as its body */
 export default createRoute({
   expression: '/:model{/:id}',
   callbacks: {
-    // The table of the URL: 404 when the app does not publish it, 403 without the permissions of the request
+    // The table of the URL: 404 when the app does not publish it, 403 without its permission
     onBefore: async (oReq, sMethod, oParams) => {
       // The URL's table and id: Express types a param as a string or a list of them
       const sModel = String(oReq.params.model);
@@ -37,21 +58,8 @@ export default createRoute({
       const oTable = oParams.schema?.[sModel];
       if (!oParams.models.includes(sModel) || !oTable) throw new NanoError('Not found', 404);
 
-      // A read loads only direct relations: `{ user: true }`
-      const sAction = ACTIONS[sMethod];
-      const isRead = sAction === 'read';
-      const oQuery: QueryParams = isRead ? (oReq.body ?? {}) : {};
-      if (Object.values(oQuery.with ?? {}).some(oValue => oValue !== true)) {
-        throw new NanoError('"with" loads direct relations only: { user: true }.', 400);
-      }
-
-      // The permission of the method on the table, and `read` on every related table a read reaches
-      const aRelated = Query.related(oParams.schema?.relations ?? {}, sModel, [
-        oQuery.where,
-        oQuery.with,
-      ]);
-      const aNeeded = [...aRelated.map(sTable => [sTable, ['read']]), [sModel, [sAction]]];
-      if (!(await isGranted(oParams, Object.fromEntries(aNeeded)))) {
+      // The permission of the method on the table
+      if (!(await isGranted(oParams, { [sModel]: [ACTIONS[sMethod]] }))) {
         throw new NanoError('Forbidden', 403);
       }
 
@@ -62,13 +70,13 @@ export default createRoute({
   GET: read,
   QUERY: read,
   POST: async (oReq, { db, onBeforeResult }) =>
-    written(await db.insert(onBeforeResult?.table).values(oReq.body).returning()),
+    first(await db.insert(onBeforeResult?.table).values(oReq.body).returning()),
   PUT: async (oReq, { db, onBeforeResult }) => {
     const { table, id } = onBeforeResult ?? {};
-    return written(await db.update(table).set(oReq.body).where(eq(table.id, id)).returning());
+    return first(await db.update(table).set(oReq.body).where(eq(table.id, id)).returning());
   },
   DELETE: async (_oReq, { db, onBeforeResult }) => {
     const { table, id } = onBeforeResult ?? {};
-    return written(await db.delete(table).where(eq(table.id, id)).returning());
+    return first(await db.delete(table).where(eq(table.id, id)).returning());
   },
 });
