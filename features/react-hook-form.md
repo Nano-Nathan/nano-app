@@ -60,6 +60,45 @@ Code balance, estimated: removes the validation of `FieldRules` and the submit a
 
 One branch and one pull request (`feat(components): …`, or with `BREAKING CHANGE` when a decision breaks the config or `submit`), unless the maintainer splits it.
 
+## Approach
+
+Branch `feat/react-hook-form` from `main`, one pull request `feat(components): form and field on React Hook Form` (with a `BREAKING CHANGE` footer when decision 3B or 4A is taken). Steps, in order:
+
+1. Spike (module 1) in a scratch test of `components/tests`, not committed: a `createFormControl` with fields registered without elements, checking the order of the rules, `validate` with the form's values, `subscribe` of values and errors, `handleSubmit` with untouched fields, and that `app.set` of the values does not hand MobX the control.
+2. `pnpm --filter @nano-app/components add react-hook-form`.
+3. A new `components/form/forms.ts` gets or creates the form of a name in a tree, and copies its state into `app`. Sketch, final names from the spike:
+
+   ```ts
+   /** Forms of each React tree, by name */
+   const FORMS = new WeakMap<Stores, NanoObject<FormControl>>();
+
+   /** Form of a name in a tree, created on first use with its values and errors copied to `app` */
+   export default function control(oStores: Stores, sName: string): FormControl {
+     // Returns the form the tree already has
+     const oForms = FORMS.get(oStores) ?? {};
+     FORMS.set(oStores, oForms);
+     if (oForms[sName]) return oForms[sName];
+
+     // Creates it and copies its values and the messages of its errors to `/form/<name>`
+     const oForm = createFormControl().formControl;
+     oForm.subscribe({
+       formState: { values: true, errors: true },
+       callback: ({ values, errors }) => {
+         oStores.app.set(`/form/${sName}/values`, values);
+         oStores.app.set(`/form/${sName}/errors`, FieldRules.messages(errors));
+       },
+     });
+     oForms[sName] = oForm;
+     return oForm;
+   }
+   ```
+
+4. `FieldRules` (decision 3A) maps a `FormField` to React Hook Form's rules instead of validating: `required` with `errorMessage ?? 'Required'`, `pattern` for `email`, and one `validate` that checks `number` and then the field's own `validate(value, values)`. A second method, `messages(errors)`, turns React Hook Form's errors into `{ <name>: message }`.
+5. `field`: `change(input)` registers the field with its rules and calls `setValue(name, this.parse(input), { shouldValidate: true })` on `control(stores, form)`. `value`, `error`, `parse`, `options` and its `onMount` stay.
+6. `form`: its `onMount` registers every field of `fields`; `submit(event)` returns `control(stores, name).handleSubmit(onSubmit)(event)` (decision 4A) and `reset()` calls the form's `reset`. `fields()` stays.
+7. Tests: `field.test.tsx` passes unchanged; `form.test.tsx` awaits `submit` when 4A is taken. A new test renders the same form name in two trees and checks that their values stay apart.
+8. README of the components (point 6), this file's log, then the checks of [Before reporting a module](README.md#before-reporting-a-module) and the bundle size of `next build` before and after.
+
 ## Decisions
 
 1. Go or no-go.

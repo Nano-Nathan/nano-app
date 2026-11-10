@@ -62,6 +62,57 @@ Code balance, estimated: removes `oVersions`, `oKept` and the version checks (ab
 
 One branch and one pull request (`feat(frontend): …`), unless the maintainer splits it.
 
+## Approach
+
+Branch `feat/tanstack-query` from `main`, one pull request `feat(frontend): cache of the api store on TanStack Query`. Steps, in order:
+
+1. Spike (module 1) in a scratch test of `frontend/tests`, not committed: `fetchQuery`, `cancelQueries`, `invalidateQueries` and `setQueryData` on a client with `gcTime: Infinity`, against the test backend of `api.test.tsx` with `iDelay`. It answers, for the two race tests, what a read cancelled by a write resolves with and how many requests it sends; the order of cancel, invalidate and `setQueryData` in `update` comes from there.
+2. `pnpm --filter @nano-app/frontend add @tanstack/query-core`.
+3. `ApiStore` changes only its cache; `request`, `receive` and `keep` stay. Sketch, final names and order from the spike:
+
+   ```ts
+   private oClient = new QueryClient({
+     defaultOptions: { queries: { gcTime: Infinity, staleTime: Infinity } },
+   });
+
+   public async read(sPath: string, oQuery?: QueryParams): Promise<ApiResponse> {
+     // Asks nothing on the server
+     if (IS_SERVER) return {};
+
+     // Answers from the cache, or asks the backend once for every concurrent read
+     const oInit = oQuery ? { method: 'QUERY', body: JSON.stringify(oQuery) } : { method: 'GET' };
+     const oResponse = await this.oClient.fetchQuery({
+       queryKey: ApiStore.queryKey(sPath, oQuery),
+       queryFn: () => this.request(sPath, oInit),
+     });
+
+     // Keeps it for the views
+     this.keep(oResponse, sPath, oQuery);
+     return oResponse;
+   }
+
+   private async write(sMethod: string, sPath: string, oBody?: unknown): Promise<ApiResponse> {
+     // Sends it, then cancels the reads out on its path and parents and marks them to ask again
+     const oResponse = await this.request(sPath, { method: sMethod, body: JSON.stringify(oBody) });
+     for (const sParent of ApiStore.parents(sPath)) {
+       await this.oClient.cancelQueries({ queryKey: [sParent] });
+       await this.oClient.invalidateQueries({ queryKey: [sParent], refetchType: 'none' });
+     }
+     return oResponse;
+   }
+
+   /** Key of a read in the cache: its path, with its query when it has one */
+   private static queryKey(sPath: string, oQuery?: QueryParams): unknown[] {
+     return oQuery ? [sPath, oQuery] : [sPath];
+   }
+   ```
+
+   - The key has no `undefined` slot: `[path, undefined]` and `[path]` hash differently, and `update` keeps its answer at `[path]`.
+   - `update`, on success, calls `this.oClient.setQueryData([sPath], oResponse)` before `keep`.
+   - `oVersions`, `oKept` and the version checks go.
+4. Tests: the two race tests of `api.test.tsx` change only as decision 3 says; a new test reads the same path twice at once and counts one request. The rest of the suite and the `components` suites pass unchanged.
+5. README of the frontend (point 7), this file's log, then the checks of [Before reporting a module](README.md#before-reporting-a-module) and the bundle size of `next build` before and after.
+
 ## Decisions
 
 1. Go or no-go.
