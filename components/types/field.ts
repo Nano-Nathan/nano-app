@@ -4,13 +4,15 @@ import type { NanoObject } from '@nano-app/core/types/objects';
 export type FormField = NanoObject & {
   /** Key of its value (`email`) */
   name: string;
-  /** `email` and `number` also validate its value, and `number` keeps a number */
+  /** Type of its view and its zod type (`email`, `number`, `url`, `checkbox`, `date`, else text) */
   type?: string;
   /** Whether the user must give it a value: missing or `''` breaks it */
   required?: boolean;
-  /** Message of the default rules it breaks, instead of `Required`, `Invalid email` or `Invalid number` */
+  /** Message of the rules without their own, instead of `Required`, `Invalid email`… */
   errorMessage?: string;
-  /** Own rule, after the default ones: the message when the value breaks it */
+  /** Zod methods of its type by name, with their value or array of values */
+  rules?: NanoObject;
+  /** Own rule, after the others: the message when the value breaks it */
   // any: the value is what the field's view gives `change`
   validate?(value: any, values: NanoObject): string | undefined;
   /** What the view shows of the value kept (`1234` → `$1.234`) */

@@ -42,11 +42,12 @@ const Input = field().bindView(({ props: { field: oField }, value, error, change
   </label>
 ));
 
-// Fields of a sign-up: an email, a number, a password and its confirmation
+// Fields of a sign-up: a required email and phone, a number, a nick, a password and its repeat
 const SIGN_UP: FormField[] = [
   { name: 'email', type: 'email', required: true },
   { name: 'phone', required: true, errorMessage: 'Your phone' },
   { name: 'age', type: 'number' },
+  { name: 'nick', rules: { min: [3, 'Too short'], max: 5 } },
   { name: 'password', type: 'password' },
   {
     name: 'confirm',
@@ -96,13 +97,19 @@ describe('field', () => {
     assert.equal(screen.getByLabelText<HTMLInputElement>('age').value, 'ten');
   });
 
-  test('errorMessage replaces the message of the default rules', () => {
+  test('errorMessage replaces the default messages and rules map to zod methods', () => {
     // Renders the sign-up and empties the phone
     renderFields('signUp', SIGN_UP);
     type('phone', '1');
     type('phone', '');
 
     assert.equal(errorOf('phone'), 'phone: Your phone');
+
+    // Breaks the nick's min with its message, then its max without one
+    type('nick', 'ab');
+    assert.equal(errorOf('nick'), 'nick: Too short');
+    type('nick', 'abcdef');
+    assert.equal(errorOf('nick'), 'nick: Invalid value');
   });
 
   test('the own rule of a field receives the values of its form', () => {
@@ -144,9 +151,10 @@ describe('field', () => {
   });
 
   test('format shows the value kept and parse keeps what the view gives', () => {
-    // Renders a price shown with its sign and kept as a number, and types one
+    // Renders a number price shown with its sign and kept as a number, and types one
     const oPrice: FormField = {
       name: 'price',
+      type: 'number',
       format: iPrice => `$${iPrice}`,
       parse: sPrice => Number(sPrice.replace('$', '')),
       validate: oValue => (typeof oValue === 'number' ? undefined : 'Text'),
@@ -156,6 +164,15 @@ describe('field', () => {
 
     assert.equal(screen.getByLabelText<HTMLInputElement>('price').value, '$15');
     assert.equal(errorOf('price'), 'price: ok');
+  });
+
+  test('a field without type is a text', () => {
+    // Renders a count without type whose parse keeps a number, and types one
+    const oCount: FormField = { name: 'count', parse: sCount => Number(sCount) };
+    renderFields('stock', [oCount]);
+    type('count', '3');
+
+    assert.equal(errorOf('count'), 'count: Invalid value');
   });
 
   test('options are the items of their path, read when the view mounts', async () => {
