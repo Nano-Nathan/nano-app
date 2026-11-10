@@ -38,7 +38,7 @@ export default abstract class Query {
     }
 
     return {
-      where: filter,
+      where: filter ?? {},
       orderBy: orderby,
       limit: top ?? DEFAULT_TOP,
       offset: skip,

@@ -15,7 +15,7 @@
   ],
   "scripts": {
     "build": "tsdown",
-    "test": "tsx --env-file-if-exists=../.env --test tests/*.test.ts",
+    "test": "tsx --env-file-if-exists=../.env --test --test-concurrency=1 tests/*.test.ts",
     "prepublishOnly": "pnpm run build"
   },
   "keywords": [
