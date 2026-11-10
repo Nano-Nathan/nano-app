@@ -28,8 +28,8 @@ export default class Plugin {
 
     // Better Auth: its endpoints stay public; past them, every request carries its session, if any
     if (this.oAuthOptions) {
-      // Checks that the database is mounted: Better Auth keeps its tables there
-      if (!oDb) {
+      // Checks that the database is mounted: Better Auth keeps its tables in its schema
+      if (!oSchema) {
         throw new NanoError(
           'src/auth.ts needs the database of the app: set mainPlugin.database.schema.',
         );

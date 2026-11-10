@@ -20,10 +20,16 @@ createNanoApp({ plugins: [health()] });
 | Plugin   | Import                                          | Endpoints                                                                                                                                                                                                                                 | Options                          |
 | -------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
 | `health` | `import health from '@nano-app/plugins/health'` | `GET /health` → `{ success: true, result: { status: "ok" } }`                                                                                                                                                                             | `basePath` (default `"/health"`) |
-| `crud`   | `import crud from '@nano-app/plugins/crud'`     | On the models listed in `models` (any other answers 404): `GET` and `QUERY` on `/api/<model>{/<id>}` → a list `{ result, count }` or one record, with `QueryParams` as the body of `QUERY`; `POST /api/<model>`, `PUT` and `DELETE` on `/api/<model>/<id>` → the record created, updated or deleted. `<id>` takes the type of the model's id (`Int`, `BigInt` or `String`). With Better Auth, each method asks for a permission on the model: `read` (`GET`, `QUERY`), `create`, `update`, `delete` | `models` (the published ones), `basePath` (default `"/api"`)    |
+| `crud`   | `import crud from '@nano-app/plugins/crud'`     | On the tables listed in `models`, by their name in the app's schema (any other answers 404): `GET` and `QUERY` on `/api/<model>{/<id>}` → a list `{ result }` or one record, with `QueryParams` as the body of `QUERY` (`filter` is Drizzle's relational `where`, `orderby` takes the table's own columns); `POST /api/<model>`, `PUT` and `DELETE` on `/api/<model>/<id>` → the record created, updated or deleted. Postgres casts `<id>` to the type of the `id` column. With Better Auth, each method asks for a permission on the table: `read` (`GET`, `QUERY`), `create`, `update`, `delete`, and a read also `read` on every related table it reaches (see [crud and related tables](#crud-and-related-tables)) | `models` (the published ones), `basePath` (default `"/api"`)    |
 | `rate-limit` | `import rateLimit from '@nano-app/plugins/rate-limit'` | None: limits every request of the routes and plugins mounted after it, per client IP (see [Client IP](../backend/README.md#client-ip)). Each request spends a token of the client's bucket, which holds `capacity` and refills `refillPerSecond` tokens per second; without one it answers `429` with `message` and `Retry-After` (seconds until the next token). List it first in `plugins`. The buckets live in the memory of each process | `capacity` (default `100`), `refillPerSecond` (default `1`), `message` |
 
 What is not CRUD, such as creating a record with business logic, goes in a route of your own with its own URL: a route of yours on a `crud` URL takes every method of it.
+
+### crud and related tables
+
+A read reaches the tables related to its table through its `filter` (at any depth, also inside `AND`, `OR` and `NOT`) and its `expand`, and needs `read` on each of them. A related table needs no place in `models`: its permission decides. A write touches only its table.
+
+**Risk: Better Auth's tables.** `user`, `account`, `session` and `verification` live in the app's schema and are related to its tables. A role with `read` on `account` or `session` reads, through any table related to the user (`expand: "user.accounts"`), the password hashes in `account.password` and the provider and session tokens. Never grant `account`, `session` or `verification` to a role that calls `crud`, and grant `user` only to the roles that must see users; to show some fields of a user, write a route of your own that selects only those.
 
 ### Layout
 
@@ -31,8 +37,7 @@ What is not CRUD, such as creating a record with business logic, goes in a route
 plugins/
 └── <name>/
     ├── index.ts        default-exports the plugin factory: the import path
-    ├── schema.prisma   its tables, when it has any
-    ├── migrations/     their migrations, applied at startup
+    ├── schema.ts       its tables, when it has any, in the Postgres schema nano_<name>
     └── routes/         *.route.ts, mounted under the plugin's basePath
 ```
 
@@ -110,20 +115,9 @@ Use MIT or Apache-2.0 if you want the plugin listed from this repo later. Open a
 
 ### Database
 
-Optional. Set `database: { enabled: true, schemaPath }` on the plugin config. The schema must be PostgreSQL. Schemas starting with `nano_` are reserved for the official plugins: a schema inside the `@nano-app/plugins` package declares only `nano_*` schemas, and every other schema declares none.
+Optional. Pass `database: { schema }` on the plugin config: the module of its Drizzle tables, with its `relations` when it has them. Its tables live in the Postgres schema `nano_<plugin name>`, which drizzle-kit creates when the module exports its `pgSchema`; a table elsewhere fails the startup.
 
-At startup nano-app generates the plugin's client in `.nano-app/prisma-clients/<name>` (again only when the schema changed) and checks that every model can be read.
-
-- **A plugin of yours, or from another package:** its tables are applied with Prisma by whoever installs it, like the app's schema.
-- **An official plugin:** nano-app also migrates it, so the consumer runs nothing. Its schema ships in `build/<name>/schema.prisma` with a `migrations/` folder next to it. At startup `prisma migrate deploy` applies the pending ones to the plugin's first `nano_*` schema, where its history (`_prisma_migrations`) lives apart from the app's. Each migration runs once, in a transaction, one instance at a time.
-
-#### Migrations of an official plugin
-
-- Every schema change ships its own `migrations/<timestamp>_<name>/migration.sql`, reviewed like code. A published migration is never edited.
-- Migrations only add: tables, nullable columns or columns with a default, indexes. Dropping or renaming takes two releases: stop using it first, remove it later.
-- The database user of the consumer needs to create tables in the plugin's `nano_*` schema.
-
-Handlers and callbacks receive that client as `params.db`. Type it with `createRoute<{ db: PrismaClient }>`, passing your generated `PrismaClient`.
+Its tables are applied with drizzle-kit by whoever installs it, like the app's schema. Handlers and callbacks receive its client as `params.db` and its schema as `params.schema`.
 
 ### What belongs in this repository
 

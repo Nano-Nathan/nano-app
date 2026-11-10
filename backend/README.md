@@ -5,7 +5,7 @@
 Preconfigured Express server with **file-convention routes** and **plugins**: it mounts the base middlewares, discovers your routes, formats every error as JSON, and groups extra endpoints in plugins.
 
 - Node.js 22.23.4, 24.22.1 or 26.12.1 and newer. ESM only.
-- Optional PostgreSQL layer through your generated Prisma client. Disabled by default: without it no database code is loaded.
+- Optional PostgreSQL layer through Drizzle. Off by default: without it no database code is loaded.
 
 ```bash
 pnpm add @nano-app/backend
@@ -58,7 +58,7 @@ export default createRoute({
 });
 ```
 
-Each handler receives `(req, params)` and returns an `ApiResponse` without `success`: its `status` is the HTTP status (`200` by default) and the framework sets `success` to `status < 400`. `params` holds the plugin's `options`, `db` (the Prisma client when a database is enabled, see [Database](#database); a plugin without its own gets the app's) and `onBeforeResult` (see [Callbacks](#callbacks)):
+Each handler receives `(req, params)` and returns an `ApiResponse` without `success`: its `status` is the HTTP status (`200` by default) and the framework sets `success` to `status < 400`. `params` holds the plugin's `options`, `db` and `schema` (the Drizzle client and its schema when the app or the plugin has a database, see [Database](#database); a plugin without its own gets the app's) and `onBeforeResult` (see [Callbacks](#callbacks)):
 
 ```ts
 type ApiResponse<T> = {
@@ -114,61 +114,50 @@ By default the backend reads that header only when the request comes from loopba
 
 ## Database
 
-Off until enabled: at startup nano-app generates the Prisma client of your schema, checks that its tables can be read and passes it to your handlers as their second parameter. **It never modifies your schemas**: applying them (`prisma db push`, `prisma migrate dev`, `prisma migrate deploy`) is up to you, with Prisma.
+Off until the app passes its schema: nano-app creates a [Drizzle](https://orm.drizzle.team) client of it on `DATABASE_URL` and passes it to your handlers as `db`. **It never modifies your schemas**: applying them (`drizzle-kit push`, `drizzle-kit generate` and `migrate`) is up to you.
 
 ```bash
-pnpm add prisma @prisma/client @prisma/adapter-pg pg   # prisma too: the startup generates the client
+pnpm add drizzle-orm pg
+pnpm add -D drizzle-kit
 ```
 
-```prisma
-// src/prisma/schema.prisma
-datasource db {
-  provider = "postgresql"
-}
+```ts
+// src/db/schema.ts
+import { pgTable, serial, text } from 'drizzle-orm/pg-core';
 
-generator client {
-  provider = "prisma-client"
-  output   = "./client"   // any value: nano-app generates in .nano-app/prisma-clients/app
-}
-
-model User {
-  id    Int    @id @default(autoincrement())
-  email String @unique
-}
+export const users = pgTable('users', {
+  id: serial().primaryKey(),
+  email: text().notNull().unique(),
+});
 ```
 
 ```ts
 // src/app.ts — DATABASE_URL comes from the environment (or a .env file)
-createNanoApp({ mainPlugin: { database: { enabled: true } } });
+import { createNanoApp } from '@nano-app/backend';
+import * as schema from './db/schema';
+
+createNanoApp({ mainPlugin: { database: { schema } } });
 ```
 
 ```ts
 // src/routes/users.route.ts
 import { createRoute } from '@nano-app/backend';
-import type { PrismaClient } from '../../.nano-app/prisma-clients/app/generated/client';
 
-export default createRoute<PrismaClient>({
-  GET: async (_req, { db }) => ({ result: await db!.user.findMany() }),
+export default createRoute({
+  GET: async (_req, { db }) => ({ result: await db.query.users.findMany() }),
 });
 ```
 
-| Option | Default | Description |
-|---|---|---|
-| `mainPlugin.database.enabled` | `false` | Generates and mounts your client at startup. |
-| `mainPlugin.database.schemaPath` | `"src/prisma/schema.prisma"` | Your single `.prisma` file; its datasource must be `postgresql`. |
-
-- Each key falls back to its default, so `{ enabled: true }` is enough with the default layout.
-- The client lives in `.nano-app/prisma-clients/app/` (add `.nano-app/` to `.gitignore`). It is generated again only when the schema changes. Do not run `prisma generate`: a second client would be out of sync.
-- The client exists after the first startup: start the app once before your editor or `tsc` can import its types. In a container, `.nano-app/` must be writable.
-- Startup fails if `DATABASE_URL` is missing, the schema is not a valid PostgreSQL schema, or a table or column of a model cannot be read. The message says which: apply your schema with Prisma and start again.
-- The `nano_` prefix is reserved for the official plugins (`@nano-app/plugins`): a datasource schema of yours starting with it fails the startup.
-- Pass your generated `PrismaClient` to `createRoute<PrismaClient>` to type `db`; otherwise it is `any`, and without an enabled database `undefined`.
-- For several PostgreSQL schemas, declare `schemas = ["public", "billing"]` in the datasource and `@@schema("billing")` on each model; one client covers them all.
-- Prisma is loaded only when your database or a mounted plugin's is enabled.
+- `database.schema` is the module of your tables: every export that is a table, and `relations` (from `defineRelations`) when you relate them. A `pgSchema` the tables use is exported too, so drizzle-kit creates it.
+- One pool serves the app and every plugin with a database. It connects on its first query: a missing table fails that query, not the startup.
+- Startup fails if `DATABASE_URL` is missing.
+- The `nano_` prefix is reserved for plugins: a table of yours in a `nano_*` Postgres schema fails the startup.
+- Handlers also receive the schema as `schema`. Without a database, `db` and `schema` are `undefined`.
+- Drizzle and pg are loaded only when your database or a mounted plugin's is on.
 
 ## Better Auth
 
-Users, sign-in and sessions with [Better Auth](https://www.better-auth.com), on your database. On when your app has `src/auth.ts` (or the built `src/auth.js`), relative to `cwd`: its default export holds the options in `options` (everything but `database`: nano-app passes your Prisma client). Without the file it stays off.
+Users, sign-in and sessions with [Better Auth](https://www.better-auth.com), on your database. On when your app has `src/auth.ts` (or the built `src/auth.js`), relative to `cwd`: its default export holds the options in `options` (everything but `database`: nano-app passes your Drizzle client and schema). Without the file it stays off.
 
 ```bash
 pnpm add better-auth
@@ -186,26 +175,26 @@ export default {
 ```ts
 // src/app.ts
 import { createNanoApp } from '@nano-app/backend';
+import * as schema from './db/schema';
 
-createNanoApp({ mainPlugin: { database: { enabled: true } } });
+createNanoApp({ mainPlugin: { database: { schema } } });
 ```
 
-Its tables are yours, like the rest of your schema. Add its models with its CLI, then apply them with Prisma; run both again when you change the options:
+Its tables are yours, like the rest of your schema. Add them with its CLI, then apply them with drizzle-kit; run both again when you change the options:
 
 ```bash
-npx auth generate --adapter prisma --dialect postgresql --output src/prisma/schema.prisma
-npx prisma migrate dev
+npx auth generate --adapter drizzle --dialect pg --output src/db/auth-schema.ts   # then export its tables from src/db/schema.ts
+pnpm drizzle-kit push
 ```
 
-- It needs the database: `src/auth.ts` without `mainPlugin.database.enabled` fails at startup, and so does a file without `options`.
-- Startup also fails if your schema lacks a model the options need (`user`, `session`, ...), naming them.
+- It needs the database: `src/auth.ts` without `mainPlugin.database.schema` fails at startup, and so does a file without `options`.
+- Startup also fails if your schema lacks a table the options need (`user`, `session`, ...), naming them.
 - Its endpoints are mounted with your routes, at its `basePath` (default `/api/auth`), and stay public.
 - In production, Better Auth limits sign-in, sign-up and password reset to a few attempts per client IP (its `rateLimit`): see [Client IP](#client-ip).
 - Every route of yours and of the `after` plugins needs a session: without one, 401. The `before` plugins stay public (a landing, an about page).
 - Handlers and `onBefore` receive the session in `params.session` (`{ user, session }`).
 - Sign-up works as Better Auth sets it: with `emailAndPassword` anyone can sign up and reach your routes. Close it with `disableSignUp: true`, or check roles in your handlers.
-- Relate your models to `User` in the same schema, as any Prisma relation. Extra user fields go in its `user.additionalFields`.
-- With several PostgreSQL schemas, add `@@schema(...)` to the generated models.
+- Relate your tables to `user` in your `relations`. Extra user fields go in its `user.additionalFields`.
 - Set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` in the environment, as Better Auth asks.
 - With it on, every route of the app and of the plugins mounted after it (`stage: 'after'`) needs a session: without one it answers 401 `Not authenticated`. The handlers receive it in `session`.
 - `createRoute({ public: true, ... })` answers without a session; its handlers still receive `session` when the request has one. An unknown path answers 404.
@@ -292,7 +281,7 @@ The endpoints of one plugin have no guaranteed order: one route's `onInit` must 
 
 Everything is mounted on one Express application, in this order: base middlewares → `before` plugins → your routes → `after` plugins → 404 → error handler.
 
-A plugin with a database follows the same rules, with its client in `.nano-app/prisma-clients/<name>`: a plugin of yours points `database.schemaPath` at its schema and you apply it with Prisma. Two plugins with the same name and a database fail at startup. If that folder holds the client of another schema from an earlier start, the startup warns and replaces it. An official plugin of `@nano-app/plugins` needs nothing from you: at startup nano-app applies its migrations to its own `nano_*` schema. See [`@nano-app/plugins`](https://github.com/Nano-Nathan/nano-app/blob/main/plugins/README.md#database).
+A plugin with a database passes its own `database: { schema }`, and keeps its tables in the Postgres schema `nano_<its name>`: a table elsewhere fails the startup. Two plugins with the same name and a database fail too. Without a database of its own, a plugin receives the app's `db` and `schema`. See [`@nano-app/plugins`](https://github.com/Nano-Nathan/nano-app/blob/main/plugins/README.md#database).
 
 ## Errors
 
@@ -302,8 +291,8 @@ The framework mounts the 404 and the error handler: an unmatched request becomes
 throw { status: 409, message: 'Already exists' };   // → 409 { success: false, warning: false, message: "Already exists" }
 throw 'Field name is required';                     // → 400 { success: false, message: "Field name is required" }
 throw new Error('boom');                            // → 500 "Internal server error", logged to stderr
-// A Prisma error the request caused answers without its message, which names tables and columns:
-// P2025 → 404 "Not found", P2002 and P2003 → 409 "Conflict", validation → 400 "Invalid request"
+// A Postgres error the request caused answers without its message, which names tables and columns:
+// 23505 and 23503 → 409 "Conflict", 23502 and 22P02 → 400 "Invalid request"
 GET /unknown                                        // → 404 { success: false, warning: false, message: "/unknown not found" }
 ```
 
@@ -314,7 +303,7 @@ GET /unknown                                        // → 404 { success: false,
 | `createNanoApp(config?)` | Creates and starts the app. |
 | `createRoute(route)` | Types a route file. |
 | `createPlugin(creator)` | Types a plugin factory and its options. |
-| `createPluginCallbacks(callbacks)` | Types the callbacks of a plugin (`createPluginCallbacks<PrismaClient>` types `db`), e.g. to keep them in their own file. |
+| `createPluginCallbacks(callbacks)` | Types the callbacks of a plugin (`createPluginCallbacks<{ db: MyDb }>` types `db`), e.g. to keep them in their own file. |
 
 Also exported: the `NanoApp` class that `createNanoApp` returns, the configuration types (`NanoAppConfig`, `PackagesConfig`, `PluginConfig`, `PluginStage`, `MainPluginConfig`, `DatabaseConfig`), the Express `Request` type and the HTTP contract (`ApiResponse`, `ApiPromise`, `QueryParams`, `RouteEntry`, `Handler`, `Handlers`, `NanoObject`) and the callback types (`Params`, `Callbacks`, `PluginCallbacks`).
 

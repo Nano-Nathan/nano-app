@@ -20,7 +20,7 @@ export default abstract class Database {
     return this.oClients[sName];
   }
 
-  /** Gets the schema of a mounted client by name, with its `relations` */
+  /** Gets the schema of a mounted client by name */
   public static schema(sName: string): NanoObject | undefined {
     return this.oSchemas[sName];
   }
@@ -54,12 +54,14 @@ export default abstract class Database {
 
     // Creates the pool once, then the client on it with the relations of the schema
     this.oPool ??= await this.pool();
-    const oRelations = schema.relations ?? defineRelations(schema);
-    const oClient = drizzle({ client: this.oPool, relations: oRelations });
+    const oClient = drizzle({
+      client: this.oPool,
+      relations: schema.relations ?? defineRelations(schema),
+    });
 
-    // Mounts the client, and its schema with its relations
+    // Mounts the client and its schema
     this.oClients[sName] = oClient;
-    this.oSchemas[sName] = { ...schema, relations: oRelations };
+    this.oSchemas[sName] = schema;
     Logger.info(`Database "${sName}" mounted`);
     return oClient;
   }

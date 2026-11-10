@@ -13,9 +13,6 @@ const ACTIONS: NanoObject<string> = {
   DELETE: 'delete',
 };
 
-/** Conversion of the URL's id to the type of the table's `id` column, by its Drizzle data type */
-const ID_TYPES: NanoObject<(sId: string) => number | bigint> = { number: Number, bigint: BigInt };
-
 /** Reads a list, or one record, with the `QueryParams` of the body */
 async function read(oReq: Request, { db, onBeforeResult }: Params): ApiPromise {
   return Query.read(db, onBeforeResult?.model, oReq.body ?? {}, onBeforeResult?.id);
@@ -49,15 +46,8 @@ export default createRoute({
       );
       if (!(await isGranted(oParams, oNeeded))) throw new NanoError('Forbidden', 403);
 
-      // An update or a delete needs the id of its record
-      const isOneRecord = sMethod === 'PUT' || sMethod === 'DELETE';
-      if (isOneRecord && !id) throw new NanoError('Not found', 404);
-      if (!id) return { model: sModel, table: oTable };
-
-      // The id, converted to the type of the table's `id` column
-      const sId = String(id);
-      const sType = String(oTable.id.dataType).split(' ')[0];
-      return { model: sModel, table: oTable, id: ID_TYPES[sType]?.(sId) ?? sId };
+      // The table and the id of the URL, if any: Postgres casts it to the type of the column
+      return { model: sModel, table: oTable, id };
     },
   },
   GET: read,

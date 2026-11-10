@@ -41,7 +41,7 @@ export default abstract class BetterAuth {
   public static async create(
     oOptions: AuthOptions,
     oDb: any,
-    oSchema: NanoObject = {},
+    oSchema: NanoObject,
   ): Promise<{ oHandler: RequestHandler; fnSession: RequestHandler; sPath: string }> {
     // Better Auth is an optional dependency: imported only when it is on
     const { betterAuth } = await import('better-auth');
