@@ -41,4 +41,22 @@ describe('rate-limit', () => {
     // Checks the three statuses
     assert.deepEqual([iFirst, iLimited, iRefilled], [200, 429, 200]);
   });
+
+  test('the addresses of an IPv6 network share one bucket', async () => {
+    // Starts an app whose clients have one request
+    const oServer = await startApp([rateLimit({ capacity: 1 }), health()]);
+
+    // Sends a request from two addresses of the same /56, behind a trusted proxy
+    const aStatuses = [];
+    for (const sIp of ['2001:db8:0:1::1', '2001:db8:0:2::1']) {
+      const oResponse = await request(oServer.url, '/health', {
+        headers: { 'X-Forwarded-For': sIp },
+      });
+      aStatuses.push(oResponse.status);
+    }
+    await oServer.close();
+
+    // Checks that the second address is limited
+    assert.deepEqual(aStatuses, [200, 429]);
+  });
 });

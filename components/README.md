@@ -43,13 +43,13 @@ export default list({ path: '/users', limit: 20 }).bindView(
 
 | Component | Import                                           | Options                                               | The view receives                                                                                                                                                                                                |
 | --------- | ------------------------------------------------ | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `auth`    | `import auth from '@nano-app/components/auth'`   | `kind` (default `'email'`), `store` (default `'api'`) | `signIn(body)`, `signUp(body)`, `signOut()`, `load()`, `navTo(url)`; in the store: `/session`                                                                                                                    |
-| `field`   | `import field from '@nano-app/components/field'` | —                                                     | `value()`, `error()`, `change(value)`, `options()`, `parse(input)`, `validate(values)`; props `form`, `field`; in `app`: `/form/<form>/values`, `/form/<form>/errors`                                            |
-| `form`    | `import form from '@nano-app/components/form'`   | `components`                                          | `fields()`, `submit(event)`, `reset()`; props `name`, `fields`, `onSubmit`; in `app`: `/form/<name>`                                                                                                             |
+| `auth`    | `import auth from '@nano-app/components/auth'`   | `kind` (default `'email'`), `store` (default `'api'`) | `signIn(body)`, `signUp(body)`, `signOut()`, `navTo(url)`; in the store: `/session`                                                                                                                    |
+| `field`   | `import field from '@nano-app/components/field'` | —                                                     | `value()`, `error()`, `change(value)`, `options()`, `parse(input)`, `validate(values)`; props `form`, `field`, `schema`; in `app`: `/form/<form>/values`, `/form/<form>/errors`                                            |
+| `form`    | `import form from '@nano-app/components/form'`   | `components`                                          | `fields()`, `submit(event)`, `reset()`; props `name`, `fields`, `schema`, `onSubmit`; in `app`: `/form/<name>`                                                                                                             |
 | `error`   | `import error from '@nano-app/components/error'` | —                                                     | `items()`, `remove(index)`, `clear()`, `last()`, `dismiss()`                                                                                                                                                     |
 | `list`    | `import list from '@nano-app/components/list'`   | `path`, `limit`, `store` (default `'api'`)            | `load()`, `items()`, `page()`, `query()`, `goTo(page)`, `next()`, `prev()`, `sort(field)`, `more()`, `pages()`, `pagesQuery()`; in the store: `/list/page` (from 0, `undefined` until it moves), `/list/orderBy` |
 
-`auth()` uses the [sessions](../frontend/README.md#sessions) of an api store that declares `auth`: `signIn(body)` and `signUp(body)` send `body` to Better Auth's method `kind` (`{ email, password }` for `email`), `signOut()` signs out and `load()` reads the session into `/session`, which the controller also does when its view mounts. Each one returns the store's `ApiResponse`. `navTo(url)` goes to a url of the app with the `router` of the context; the view decides when. Create the controller once and bind every view to it:
+`auth()` uses [Better Auth's client](../frontend/README.md#sessions) of an api store that declares `auth`: `signIn(body)` and `signUp(body)` send `body` to Better Auth's method `kind` (`{ email, password }` for `email`) and `signOut()` signs out. Each one returns Better Auth's `{ data, error }`. The store keeps the session at `/session` on its own. `navTo(url)` goes to a url of the app with the `router` of the context; the view decides when. Create the controller once and bind every view to it:
 
 ```tsx
 // src/controllers/auth.controller.ts
@@ -60,14 +60,14 @@ export default authController
   .extend(() => ({
     async logout(): Promise<void> {
       // Signs out and goes to the login
-      const oResponse = await this.signOut();
-      if (oResponse?.success) this.navTo('/login');
+      const { error } = await this.signOut();
+      if (!error) this.navTo('/login');
     },
   }))
   .bindView(({ logout }) => <button onClick={logout}>sign out</button>);
 ```
 
-`field` is the controller of a field view: bind one view per kind of input (a text, a select, a date picker) and give it the props `form` (the name of its form) and `field` (its config).
+`field` is the controller of a field view: bind one view per kind of input (a text, a select, a date picker) and give it the props `form` (the name of its form), `field` (its config) and `schema` (the schema of its form, which `form` passes on its own).
 
 ```tsx
 // src/components/Input.tsx: an input of the field's type with its error
@@ -84,19 +84,19 @@ export default field().bindView(({ props: { field: oField }, value, error, chang
   </label>
 ));
 
-<Input form="signUp" field={{ name: 'email', label: 'Email', type: 'email', required: true }} />;
+<Input form="signUp" schema={oSchema} field={{ name: 'email', label: 'Email', type: 'email' }} />;
 ```
 
-- A field is `{ name, type, required, errorMessage, rules, validate, format, parse, options }`; its other keys (`label`, `disabled`) pass as is to its view.
-- `change(value)` keeps the value at `/form/<form>/values/<name>` as the view gives it (a text, a boolean, the ISO day of a date input), a `number` field as a number when its text is that number as is (`'12'`, while `'1.'` stays a text), and validates it with its own rules. `error()` gives the message of the first rule it breaks, and `validate(values)` that message for the values of its form.
-- Its rules are a [zod](https://zod.dev) schema the field builds from its config: `type` names the zod type (`email`, `number`, `url`, `uuid`, `boolean`; `checkbox` is a boolean, `date` an ISO day, any other type a text), `required` breaks on a value missing or `''` (without it, an empty value passes), `rules` calls the zod methods of that type by name with their value, or their arguments in an array (`rules: { min: [3, 'Too short'], max: 20 }`; rules only check, they never change the value kept: `parse` does), and `validate(value, values)` runs last with the values of the form and returns the message or `undefined`.
+- A field is `{ name, type, format, parse, options }`; its other keys (`label`, `disabled`) pass as is to its view.
+- The rules are a [zod](https://zod.dev) schema of the form, written by the app: a `z.object` with the rule of each field at its key (`z.object({ email: z.email('Invalid email'), age: z.number().optional() })`). A rule between fields is a `refine` of the object with the `path` of the field that shows it. The same schema can come from the table the form writes, with [`drizzle-orm/zod`](https://orm.drizzle.team/docs/zod) (`createInsertSchema(users)`).
+- `change(value)` keeps the value at `/form/<form>/values/<name>` as the view gives it (a text, a boolean, the ISO day of a date input), an empty text as no value (`undefined`), and a `number` field as a number when its text is that number as is (`'12'`, while `'1.'` stays a text). Then it checks the values of the form with the schema and keeps the messages of this field. `error()` gives the first one, and `validate(values)` all of them for the values of its form.
+- An object rule of zod (`refine`) runs only when every field passes its own rules.
 - `parse(input)` replaces what `change` keeps, and `format(value)` what `value()` gives: a price kept as `1234` and shown as `$1.234`.
 - A select takes `options: { path, store }` (`store` is `'api'` by default): the field reads `path` from the backend when its view mounts, and `options()` gives its items as the backend gave them, for the view to take the keys it shows.
-- The rules without their own message answer `Required`, `Invalid email`, `Invalid number` or `Invalid value`; `errorMessage` replaces them for that field.
-- A field without `type` is a text, like any type zod does not name: when its `parse` keeps something else (a number, a date) it breaks with `Invalid value`, so that field names its `type` (`type: 'number'`). Before zod, a field without `type` had no type rule.
+- Without a schema a field breaks no rule.
 - The browser validates native inputs (`type="email"`, `required`) and shows its own bubbles. To show only the field's messages, put `noValidate` on the `<form>` of the view.
 
-`form({ components })` renders a form from a config of fields: `components` gives the view of each field type, and the view of the form gets the props `name` (its name) and `fields` (the configs of its fields). `fields()` gives the view of each field, in their order, with the props `form` and `field`: the view of its `type`, or the one of `text` when its type has none. A field with no view and no `text` stops the render with an error. `submit(event)` stops the browser's submit, validates every field of `fields` (also the untouched ones) and keeps their messages at `/form/<name>/errors`; when none breaks a rule it calls the prop `onSubmit(values)` with the values kept and returns what it returns, otherwise `undefined`. `onSubmit` is a method of the controller of the page that renders the form, so its view only passes it. `reset()` empties the values and the errors.
+`form({ components })` renders a form from a config of fields: `components` gives the view of each field type, and the view of the form gets the props `name` (its name), `fields` (the configs of its fields) and `schema` (the zod schema of its values). `fields()` gives the view of each field, in their order, with the props `form`, `schema` and `field`: the view of its `type`, or the one of `text` when its type has none. A field with no view and no `text` stops the render with an error. `submit(event)` stops the browser's submit, checks the values with the schema (also the untouched fields) and keeps the messages of each field at `/form/<name>/errors`; when they break no rule it calls the prop `onSubmit(values)` with the values as zod gives them (the kept ones without a schema) and returns what it returns, otherwise `undefined`. `onSubmit` is a method of the controller of the page that renders the form, so its view only passes it. `reset()` empties the values and the errors.
 
 ```tsx
 // src/components/SignUp.tsx
@@ -116,7 +116,8 @@ export default form({ components: { text: Input, select: Select } }).bindView(
 export default authController.bindView(({ signUp }) => (
   <SignUp
     name="signUp"
-    fields={[{ name: 'email', type: 'email', required: true }]}
+    fields={[{ name: 'email', type: 'email' }, { name: 'password', type: 'password' }]}
+    schema={z.object({ email: z.email(), password: z.string().min(8) })}
     onSubmit={signUp}
   />
 ));

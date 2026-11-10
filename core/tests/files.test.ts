@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import FileLoader from '../files/FileLoader';
 import Validator from '../utils/Validator';
+import { STORE } from '../utils/schemas';
 
 const STORES_DIR = fileURLToPath(new URL('./fixtures/stores', import.meta.url));
 
@@ -26,7 +27,11 @@ describe('store files', () => {
       data: { type: 'app', data: 'not an object' },
     };
     for (const [sName, oStore] of Object.entries(oInvalid)) {
-      assert.throws(() => Validator.isStore(oStore, sName), new RegExp(`${sName}: `), sName);
+      assert.throws(
+        () => Validator.validate({ [sName]: oStore }, STORE),
+        new RegExp(`${sName}:\n`),
+        sName,
+      );
     }
 
     // Checks that the valid ones pass
@@ -35,7 +40,7 @@ describe('store files', () => {
       session: { type: 'api', auth: { path: '/api/auth' } },
       app: { type: 'app', data: { iCount: 0 } },
     };
-    assert.deepEqual(Validator.validate(oValid, Validator.isStore), oValid);
+    assert.deepEqual(Validator.validate(oValid, STORE), oValid);
   });
 
   test('auth.routes need a match and a redirect with /, string roles and string actions, and no loop', () => {
@@ -54,7 +59,10 @@ describe('store files', () => {
       [{ match: '/admin', permissions: { collections: ['read'] } }],
     ];
     for (const aRoutes of aInvalid) {
-      assert.throws(() => Validator.isStore(fnAuth(aRoutes), 'auth'), /"auth" must be/);
+      assert.throws(
+        () => Validator.validate({ auth: fnAuth(aRoutes) }, STORE),
+        /auth:\n.*\n.*routes/,
+      );
     }
 
     // Checks that valid routes pass
@@ -62,6 +70,6 @@ describe('store files', () => {
       { match: '/', redirect: '/login' },
       { match: '/admin/*', roles: 'admin,editor', permissions: { collections: 'read,update' } },
     ]);
-    assert.equal(Validator.isStore(oValid, 'valid'), true);
+    assert.deepEqual(Validator.validate({ valid: oValid }, STORE), { valid: oValid });
   });
 });

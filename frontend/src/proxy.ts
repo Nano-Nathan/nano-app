@@ -1,48 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Logger from '@nano-app/core/utils/Logger';
 import Paths from '@nano-app/core/utils/Paths';
-import Validator from '@nano-app/core/utils/Validator';
 import { HEADERS, ROUTES } from './utils/state';
 import type { NanoObject } from '@nano-app/core/types/objects';
-import type { GuardedRoute } from './types/store';
+import type { GuardedRoute, ProxyTarget } from './types/store';
 
 /** Sends `/api/<store>/<path>` to the backend of `<store>`, in `API_<STORE>_URL`, with its headers; guards the pages of `auth.routes` */
 export async function proxy(oReq: NextRequest): Promise<Response> {
-  // Reads the store named after `/api` (`/api/backend/users/7` → `backend`, `users/7`)
-  const [, sPrefix, sName, ...aPath] = oReq.nextUrl.pathname.split('/');
-
   // A request outside `/api/<store>` is a page of the app
-  if (sPrefix !== 'api' || !sName) return guard(oReq);
+  const oTarget = target(oReq);
+  if (!oTarget) return guard(oReq);
 
-  // Names the env vars of the store: its URL and the one of each header
-  const sUrlEnv = `API_${sName.toUpperCase()}_URL`;
-  const aHeaders = HEADERS.get(sName) ?? [];
-
-  // Answers 500 with the first env var that is missing; their values never reach the browser
-  const sMissing = Validator.missingEnv([sUrlEnv, ...aHeaders.map(([, sEnvName]) => sEnvName)]);
-  if (sMissing) {
+  // Answers 500 with the env var that is missing; their values never reach the browser
+  if ('missing' in oTarget) {
     return NextResponse.json(
       {
         success: false,
         message: Logger.message(
           'ERROR',
-          `The store "${sName}" needs the ${sMissing} environment variable. Define it.`,
+          `The store "${oTarget.store}" needs the ${oTarget.missing} environment variable. Define it.`,
         ),
       },
       { status: 500 },
     );
   }
 
+  // Next sends the same request (method, cookies, body) to the backend and answers with what it answers
+  return NextResponse.rewrite(oTarget.url, { request: { headers: oTarget.headers } });
+}
+
+/** Where a request to `/api/<store>/<path>` goes: the URL of its backend and its headers, or the env var that is missing */
+function target(oReq: NextRequest): ProxyTarget | undefined {
+  // Reads the store named after `/api` (`/api/backend/users/7` → `backend`, `users/7`)
+  const [, sPrefix, sName, ...aPath] = oReq.nextUrl.pathname.split('/');
+  if (sPrefix !== 'api' || !sName) return undefined;
+
+  // Names the env vars of the store: its URL and the one of each header
+  const sUrlEnv = `API_${sName.toUpperCase()}_URL`;
+  const aHeaders = HEADERS.get(sName) ?? [];
+
+  // Finds the first env var that is not defined
+  const sMissing = [sUrlEnv, ...aHeaders.map(([, sEnvName]) => sEnvName)].find(
+    sEnvName => !process.env[sEnvName],
+  );
+  if (sMissing) return { store: sName, missing: sMissing };
+
   // Adds the store's headers over the browser's: the browser cannot replace them
   const oHeaders = new Headers(oReq.headers);
   for (const [sHeader, sEnvName] of aHeaders) oHeaders.set(sHeader, process.env[sEnvName] ?? '');
 
-  // Sends the same request (method, cookies, body) from the server; a redirect goes back as is
-  const sTarget = `${process.env[sUrlEnv]}/${aPath.join('/')}${oReq.nextUrl.search}`;
-  const oRes = await fetch(new Request(sTarget, oReq), { headers: oHeaders, redirect: 'manual' });
-
-  // Answers with a copy: Next adds its headers, and the ones of `fetch` are read-only
-  return new Response(oRes.body, oRes);
+  return {
+    url: `${process.env[sUrlEnv]}/${aPath.join('/')}${oReq.nextUrl.search}`,
+    headers: oHeaders,
+  };
 }
 
 /** Lets a page through, or sends it to the `redirect` of its route when Better Auth does not allow it */
@@ -74,14 +84,11 @@ async function allows(oReq: NextRequest, oRoute: GuardedRoute): Promise<boolean>
   return oCheck?.success === true;
 }
 
-/** Answer of Better Auth through this proxy, with the browser's cookie and the app's origin */
+/** Answer of Better Auth in the backend of the store, with the browser's cookie and the app's origin */
 async function ask(oReq: NextRequest, sPath: string, oBody?: unknown): Promise<NanoObject | null> {
-  // Sends a `GET`, or a `POST` with a body
-  const sMethod = oBody ? 'POST' : 'GET';
-  const oRes = await proxy(
+  // Finds the backend of the store, with the browser's cookie and the app's origin over its headers
+  const oTarget = target(
     new NextRequest(new URL(sPath, oReq.url), {
-      method: sMethod,
-      body: JSON.stringify(oBody),
       headers: {
         cookie: oReq.headers.get('cookie') ?? '',
         origin: oReq.nextUrl.origin,
@@ -89,5 +96,15 @@ async function ask(oReq: NextRequest, sPath: string, oBody?: unknown): Promise<N
       },
     }),
   );
+
+  // Without the env vars of the store nothing is allowed
+  if (!oTarget || 'missing' in oTarget) return null;
+
+  // Sends a `GET`, or a `POST` with a body
+  const oRes = await fetch(oTarget.url, {
+    method: oBody ? 'POST' : 'GET',
+    body: JSON.stringify(oBody),
+    headers: oTarget.headers,
+  });
   return oRes.json();
 }

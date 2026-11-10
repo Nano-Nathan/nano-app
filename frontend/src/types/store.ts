@@ -37,3 +37,6 @@ export type GuardedRoute = {
   /** Actions per resource, as Better Auth's `has-permission` takes them */
   permissions?: NanoObject<string[]>;
 };
+
+/** Where the proxy sends a request of a store: its backend, or the env var the store misses */
+export type ProxyTarget = { url: string; headers: Headers } | { store: string; missing: string };

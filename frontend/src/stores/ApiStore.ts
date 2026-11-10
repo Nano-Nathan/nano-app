@@ -15,7 +15,9 @@ export default class ApiStore extends Store {
   private oPages: NanoObject<Pages> = {};
 
   /** Cache of the reads: each one is kept until a write on its path or a parent */
-  protected oClient = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity } } });
+  protected oClient = new QueryClient({
+    defaultOptions: { queries: { staleTime: Infinity, gcTime: Infinity } },
+  });
 
   /** Store of the backend `API_<NAME>_URL`, with the initial data of its file */
   constructor(sName: string, oData?: NanoObject) {
@@ -107,12 +109,40 @@ export default class ApiStore extends Store {
   }
 
   /** Sends a request, keeping `/busy` while it is out and a failed answer in `/error/list` */
-  protected async request(sPath: string, oInit: RequestInit): Promise<ApiResponse> {
+  protected request(sPath: string, oInit: RequestInit): Promise<ApiResponse> {
+    return this.track(this.send(sPath, oInit));
+  }
+
+  /** Counts a request while it is out: `/busy` is true until none is left */
+  protected track<T>(oRequest: Promise<T>): Promise<T> {
     // Counts the request and sets the store busy
     this.iCount++;
     this.set('/busy', true);
 
-    // Sends it to the proxy of the store and reads its answer as an `ApiResponse`
+    // Sets the store not busy when no request is left
+    return oRequest.finally(() => {
+      this.iCount--;
+      this.set('/busy', this.iCount > 0);
+    });
+  }
+
+  /** Adds a failed answer to the errors of the store, with when it failed */
+  protected fail(oResponse: ApiResponse): void {
+    const oError: ApiError = {
+      ...oResponse,
+      message: oResponse.message || REQUEST_FAILED,
+      timestamp: Date.now(),
+    };
+    this.set('/error/list', [...(this.get('/error/list') ?? []), oError]);
+  }
+
+  /** `ApiResponse` of an answer of the proxy, from its JSON */
+  protected receive(_oRes: Response, oResponse: ApiResponse): ApiResponse {
+    return oResponse;
+  }
+
+  /** Sends a request to the proxy of the store and reads its answer as an `ApiResponse` */
+  private async send(sPath: string, oInit: RequestInit): Promise<ApiResponse> {
     let sText: string | undefined;
     let oResponse: ApiResponse = { success: false, message: REQUEST_FAILED };
     try {
@@ -121,30 +151,14 @@ export default class ApiStore extends Store {
         headers: { 'content-type': 'application/json' },
       });
       sText = await oRes.text();
-      oResponse = this.receive(sPath, oRes, JSON.parse(sText));
+      oResponse = this.receive(oRes, JSON.parse(sText));
     } catch {
       // Keeps the text of an answer that is not JSON as the result of the failed `ApiResponse`
       if (sText !== undefined) oResponse = { ...oResponse, result: sText };
     }
 
     // Adds a failed answer to the errors of the store
-    if (!oResponse.success) {
-      const oError: ApiError = {
-        ...oResponse,
-        message: oResponse.message || REQUEST_FAILED,
-        timestamp: Date.now(),
-      };
-      this.set('/error/list', [...(this.get('/error/list') ?? []), oError]);
-    }
-
-    // Sets the store not busy when no request is left
-    this.iCount--;
-    this.set('/busy', this.iCount > 0);
-    return oResponse;
-  }
-
-  /** `ApiResponse` of an answer of the proxy, from its JSON */
-  protected receive(_sPath: string, _oRes: Response, oResponse: ApiResponse): ApiResponse {
+    if (!oResponse.success) this.fail(oResponse);
     return oResponse;
   }
 

@@ -8,6 +8,7 @@ import Database from '../../backend/src/database/Database';
 import { push, startApp } from '../../backend/tests/helpers';
 import * as schema from '../../backend/tests/fixtures/database/crud';
 import { proxy } from '../../frontend/src/proxy';
+import { follow } from '../../frontend/tests/helpers';
 import ApiStore from '../../frontend/src/stores/ApiStore';
 import crud from '../crud';
 import type { IncomingMessage, ServerResponse } from 'node:http';
@@ -18,15 +19,16 @@ async function serve(oReq: IncomingMessage, oRes: ServerResponse): Promise<void>
   let sBody = '';
   for await (const oChunk of oReq) sBody += oChunk;
 
-  // Sends it through the proxy
+  // Sends it through the proxy, and its rewrite to the backend
   const { method, url, headers } = oReq;
-  const oResponse = await proxy(
+  const oInit = { method, body: sBody || undefined };
+  const oRewrite = await proxy(
     new NextRequest(`http://localhost:${APP_PORT}${url}`, {
-      method,
+      ...oInit,
       headers: { 'content-type': headers['content-type'] ?? '' },
-      body: sBody || undefined,
     }),
   );
+  const oResponse = await follow(oRewrite, oInit);
 
   // Answers with the backend's status and body
   oRes.writeHead(oResponse.status, { 'content-type': 'application/json' });

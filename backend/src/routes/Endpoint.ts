@@ -1,5 +1,4 @@
 import { Logger, NanoError } from '@nano-app/core';
-import { HTTP_METHODS } from '@nano-app/core/const';
 import isGranted from '../auth/permissions';
 import type { RequestHandler } from 'express';
 import type {
@@ -62,10 +61,9 @@ export default class Endpoint {
       if (oParams.auth && !oRes.locals.session && !this.isPublic)
         return fnNext(new NanoError('Not authenticated', 401));
 
-      // Finds the handler of the request method
-      const sMethod = oReq.method.toUpperCase();
-      const sHandled = HTTP_METHODS.find(sHttpMethod => sHttpMethod === sMethod);
-      const oMethod = sHandled && this.oMethods[sHandled];
+      // Finds the handler of the request method: a route file holds only HTTP methods
+      const sMethod = oReq.method;
+      const oMethod = this.oMethods[sMethod];
 
       // Checks whether the method is defined
       if (!oMethod) return fnNext(new NanoError(`Method ${sMethod} not implemented`, 405));

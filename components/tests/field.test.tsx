@@ -5,9 +5,11 @@ import { test, describe, before, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { z } from 'zod';
 import field from '../field';
 import TestApp from './provider';
 import type { FormField } from '../types/field';
+import type { FormSchema } from '../types/form';
 
 const PORT = 4201;
 
@@ -42,25 +44,33 @@ const Input = field().bindView(({ props: { field: oField }, value, error, change
   </label>
 ));
 
-// Fields of a sign-up: a required email and phone, a number, a nick, a password and its repeat
+// Fields of a sign-up and its schema: an email, a phone and an optional number
 const SIGN_UP: FormField[] = [
-  { name: 'email', type: 'email', required: true },
-  { name: 'phone', required: true, errorMessage: 'Your phone' },
+  { name: 'email' },
+  { name: 'phone' },
   { name: 'age', type: 'number' },
-  { name: 'nick', rules: { min: [3, 'Too short'], max: 5 } },
-  { name: 'password', type: 'password' },
-  {
-    name: 'confirm',
-    validate: (sConfirm, oValues) => (sConfirm === oValues.password ? undefined : 'Mismatch'),
-  },
 ];
+const SIGN_UP_SCHEMA = z.object({
+  email: z.email('Invalid email'),
+  phone: z.string('Required'),
+  age: z.number('Invalid number').optional(),
+});
 
-/** Renders the fields of a form inside the provider */
-function renderFields(sForm: string, aFields: FormField[]): void {
+// Fields of a password and its repeat, and their schema: a rule of the form on one of its fields
+const PASSWORDS: FormField[] = [{ name: 'password' }, { name: 'confirm' }];
+const PASSWORDS_SCHEMA = z
+  .object({ password: z.string(), confirm: z.string() })
+  .refine(({ password, confirm }) => password === confirm, {
+    path: ['confirm'],
+    error: 'Mismatch',
+  });
+
+/** Renders the fields of a form inside the provider, with the schema of the form */
+function renderFields(sForm: string, aFields: FormField[], oSchema?: FormSchema): void {
   render(
     <TestApp>
       {aFields.map(oField => (
-        <Input key={oField.name} form={sForm} field={oField} />
+        <Input key={oField.name} form={sForm} schema={oSchema} field={oField} />
       ))}
     </TestApp>,
   );
@@ -81,9 +91,9 @@ describe('field', () => {
   after(() => oBackend.close());
   afterEach(cleanup);
 
-  test('change keeps the value and validates the email, the number and required', () => {
+  test('change keeps the value and shows the message of the rule of the schema it breaks', () => {
     // Renders the sign-up and types an invalid email, a valid one and a text in the number
-    renderFields('signUp', SIGN_UP);
+    renderFields('signUp', SIGN_UP, SIGN_UP_SCHEMA);
     type('email', 'ana');
     assert.equal(errorOf('email'), 'email: Invalid email');
     type('email', 'ana@nano.app');
@@ -91,30 +101,26 @@ describe('field', () => {
     type('age', 'ten');
     assert.equal(errorOf('age'), 'age: Invalid number');
 
-    // Empties the required email; the number keeps its value
-    type('email', '');
-    assert.equal(errorOf('email'), 'email: Required');
+    // The untouched phone shows no error, and the number keeps its value
+    assert.equal(errorOf('phone'), 'phone: ok');
     assert.equal(screen.getByLabelText<HTMLInputElement>('age').value, 'ten');
   });
 
-  test('errorMessage replaces the default messages and rules map to zod methods', () => {
-    // Renders the sign-up and empties the phone
-    renderFields('signUp', SIGN_UP);
+  test('an empty text is no value: only a field the schema needs breaks', () => {
+    // Renders the sign-up, and types and empties the phone and the optional number
+    renderFields('signUp', SIGN_UP, SIGN_UP_SCHEMA);
     type('phone', '1');
     type('phone', '');
+    type('age', '1');
+    type('age', '');
 
-    assert.equal(errorOf('phone'), 'phone: Your phone');
-
-    // Breaks the nick's min with its message, then its max without one
-    type('nick', 'ab');
-    assert.equal(errorOf('nick'), 'nick: Too short');
-    type('nick', 'abcdef');
-    assert.equal(errorOf('nick'), 'nick: Invalid value');
+    assert.equal(errorOf('phone'), 'phone: Required');
+    assert.equal(errorOf('age'), 'age: ok');
   });
 
-  test('the own rule of a field receives the values of its form', () => {
-    // Renders the sign-up and confirms another password
-    renderFields('signUp', SIGN_UP);
+  test('a rule of the schema on the whole form shows at the field of its path', () => {
+    // Renders the passwords and confirms another one
+    renderFields('passwords', PASSWORDS, PASSWORDS_SCHEMA);
     type('password', 'secret');
     type('confirm', 'other');
     assert.equal(errorOf('confirm'), 'confirm: Mismatch');
@@ -125,11 +131,11 @@ describe('field', () => {
   });
 
   test('fields of two forms keep their values apart', () => {
-    // Renders a required field in two forms of the same tree and types in one
+    // Renders a field in two forms of the same tree, each with its schema, and empties one
     render(
       <TestApp>
-        <Input form="a" field={{ name: 'one', required: true }} />
-        <Input form="b" field={{ name: 'two', required: true }} />
+        <Input form="a" schema={z.object({ one: z.string('Required') })} field={{ name: 'one' }} />
+        <Input form="b" schema={z.object({ two: z.string('Required') })} field={{ name: 'two' }} />
       </TestApp>,
     );
     type('one', 'x');
@@ -151,28 +157,26 @@ describe('field', () => {
   });
 
   test('format shows the value kept and parse keeps what the view gives', () => {
-    // Renders a number price shown with its sign and kept as a number, and types one
+    // Renders a price shown with its sign and kept as a number, and types one
     const oPrice: FormField = {
       name: 'price',
-      type: 'number',
       format: iPrice => `$${iPrice}`,
       parse: sPrice => Number(sPrice.replace('$', '')),
-      validate: oValue => (typeof oValue === 'number' ? undefined : 'Text'),
     };
-    renderFields('pay', [oPrice]);
+    renderFields('pay', [oPrice], z.object({ price: z.number('Text') }));
     type('price', '$15');
 
     assert.equal(screen.getByLabelText<HTMLInputElement>('price').value, '$15');
     assert.equal(errorOf('price'), 'price: ok');
   });
 
-  test('a field without type is a text', () => {
-    // Renders a count without type whose parse keeps a number, and types one
-    const oCount: FormField = { name: 'count', parse: sCount => Number(sCount) };
-    renderFields('stock', [oCount]);
+  test('a field of a form without a schema breaks no rule', () => {
+    // Renders a field without a schema, and types and empties it
+    renderFields('stock', [{ name: 'count' }]);
     type('count', '3');
+    type('count', '');
 
-    assert.equal(errorOf('count'), 'count: Invalid value');
+    assert.equal(errorOf('count'), 'count: ok');
   });
 
   test('options are the items of their path, read when the view mounts', async () => {

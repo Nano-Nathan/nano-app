@@ -1,5 +1,7 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import { createInsertSchema } from 'drizzle-orm/zod';
+import { z } from 'zod';
 import Database from '../../backend/src/database/Database';
 import { push, request, startApp } from '../../backend/tests/helpers';
 import * as schema from '../../backend/tests/fixtures/database/crud';
@@ -33,7 +35,14 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
 
     // Mounts the app's database, then the plugin after it
     const oDb = await Database.mount('app', { schema });
-    oServer = await startApp([crud({ models: ['note', 'comment'], schema })]);
+    // The app checks the comments: what a `POST` sends, and how many a `QUERY` asks for
+    const oSchemas = {
+      insert: createInsertSchema(schema.comment),
+      query: z.looseObject({ limit: z.number().max(50).optional() }),
+    };
+    oServer = await startApp([
+      crud({ models: ['note', 'comment'], schema, schemas: { comment: oSchemas } }),
+    ]);
 
     // Two notes of this run, the first with a comment
     const [oNote] = await oDb
@@ -113,6 +122,17 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
     assert.deepEqual(oUpdated.result, { ...oCreated.result, text: 'edited' });
     assert.equal(oDeleted.result.text, 'edited');
     assert.equal(status, 404);
+  });
+
+  test('a body that breaks the schema of the app answers 400 with the field and the rule', async () => {
+    // Creates a comment whose text is a number, and asks for more comments than the app allows
+    const oInsert = await send('POST', oServer.url, '/api/comment', { text: 1, noteId: iNoteId });
+    const oQuery = await send('QUERY', oServer.url, '/api/comment', { limit: 51 });
+
+    // Checks that both name their field
+    assert.deepEqual([oInsert.status, oQuery.status], [400, 400]);
+    assert.match(oInsert.body.message, /^text: /);
+    assert.match(oQuery.body.message, /^limit: /);
   });
 
   test('a query never leaves its table: a relation in where or with answers 400', async () => {

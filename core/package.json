@@ -7,7 +7,8 @@
   "types": "index.ts",
   "dependencies": {
     "glob": "^14.0.4",
-    "jiti": "^2.7.0"
+    "jiti": "^2.7.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",

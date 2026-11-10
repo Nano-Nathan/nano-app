@@ -1,3 +1,4 @@
+import { ipKeyGenerator } from 'express-rate-limit';
 import { createPlugin } from '@nano-app/backend';
 import type { Bucket } from '../types/rate-limit';
 
@@ -23,7 +24,7 @@ export default createPlugin(
           const fnRefill = (oBucket: Bucket, iNow: number): number =>
             Math.min(capacity, oBucket.iTokens + ((iNow - oBucket.iTime) / 1000) * refillPerSecond);
 
-          // Buckets by client IP: a client with none has a full one
+          // Buckets by client: a client with none has a full one
           const oBuckets = new Map<string, Bucket>();
 
           // Every minute, forgets the buckets that are full again
@@ -36,8 +37,8 @@ export default createPlugin(
 
           // Spends a token of the client on each request
           oApp.use((oReq, oRes, fnNext) => {
-            // Refills the client's bucket
-            const sIp = oReq.ip ?? '';
+            // Refills the client's bucket: an IPv6 client is its /56 network, not one of its addresses
+            const sIp = ipKeyGenerator(oReq.ip ?? '');
             const iNow = Date.now();
             const iTokens = fnRefill(oBuckets.get(sIp) ?? { iTokens: capacity, iTime: iNow }, iNow);
 

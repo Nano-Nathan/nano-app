@@ -30,7 +30,7 @@ export default class NanoApp {
       await this.initialize();
 
       // Init server
-      this.oApp.listen(Number(this.oConfig.port), () => {
+      this.oApp.listen(this.oConfig.port, () => {
         // Runs the consumer listener
         this.oConfig.listener?.();
 
@@ -77,7 +77,7 @@ export default class NanoApp {
   }
 
   /** Adds the packages according to the configuration */
-  private setPackages(oConfig: PackagesConfig = {}): void {
+  private setPackages(oConfig: PackagesConfig): void {
     // Morgan
     if (oConfig.morgan) {
       for (const [sKey, fnToken] of Object.entries(oConfig.morgan.tokens ?? {})) {

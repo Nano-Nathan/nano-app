@@ -38,7 +38,8 @@
   },
   "peerDependencies": {
     "@nano-app/backend": ">=0.15.0",
-    "drizzle-orm": "^1.0.0-rc.5"
+    "drizzle-orm": "^1.0.0-rc.5",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@happy-dom/global-registrator": "^21.0.4",
@@ -52,11 +53,18 @@
     "pg": "^8.23.1",
     "tsdown": "^0.23.5",
     "tsx": "^4.23.15",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "zod": "^4.6.7"
   },
   "peerDependenciesMeta": {
     "drizzle-orm": {
       "optional": true
+    },
+    "zod": {
+      "optional": true
     }
+  },
+  "dependencies": {
+    "express-rate-limit": "^8.7.3"
   }
 }

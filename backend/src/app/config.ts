@@ -10,9 +10,6 @@ export const INITIAL_CONFIG = {
   /** Application port */
   port: 3000,
 
-  /** Application listener */
-  listener: () => {},
-
   /** Express settings: the client IP comes from `X-Forwarded-For` only through private proxies */
   settings: {
     'trust proxy': PRIVATE_NETWORKS,
@@ -70,7 +67,7 @@ function isMergedConfig(oValue: unknown): oValue is typeof INITIAL_CONFIG {
 
 /** Merges the consumer configuration over the initial one; the main plugin is always named "app" */
 export function mergeConfig(oConfig: NanoAppConfig = {}): NanoAppConfig &
-  Required<Pick<NanoAppConfig, 'settings' | 'plugins' | 'packages'>> & {
+  Required<Pick<NanoAppConfig, 'port' | 'settings' | 'plugins' | 'packages'>> & {
     mainPlugin: PluginConfig;
   } {
   // Every level keeps its default where the consumer set nothing
