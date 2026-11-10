@@ -1,6 +1,6 @@
 ---
-status: todo
-owner: null
+status: in-progress
+owner: claude
 depends_on: []
 updated: 2026-11-10
 ---
@@ -30,7 +30,7 @@ What exists today (all Prisma 7):
 What Drizzle gives, checked in its docs and packages (2026-11-10):
 
 - `drizzle-orm` `1.0.0-rc.5` (`latest` is `0.45.4`): relational queries v2 with object `where`, relation filters and `with`; public metadata (`getTableConfig`, `getColumns`, the relations object). No nested writes: several tables are written in a transaction.
-- `drizzle-kit` `1.0.0-rc.5`: `push` applies the diff between a TypeScript schema and the database; `drizzle-kit/api` exports `pushSchema(schema, db, schemaFilters)` returning `{ hasDataLoss, warnings, statementsToExecute, apply }`, with no prompts.
+- `drizzle-kit` `1.0.0-rc.5`: `push` applies the diff between a TypeScript schema and the database; `drizzle-kit/api-postgres` exports `pushSchema(schema, db, { schemas })` returning `{ sqlStatements, hints, apply }`, with no prompts. A change that loses data or is ambiguous (rename or create) throws `MissingHintsError` with `missingHints` instead of applying.
 - `@better-auth/drizzle-adapter` 1.7.18: peer `drizzle-orm ^0.45.2 || >=1.0.0-rc.1`.
 
 What is reused: the plugin and route model, `Database` as the registry of clients by name, the `nano_*` rule, the error handler, the crud permissions per method.
@@ -89,3 +89,11 @@ Later rounds: whether `drizzle-kit` is an optional peer (as `prisma` today) or a
 
 - 2026-11-10 · claude · Plan written from the analysis above (Prisma inventory, Drizzle rc docs, Better Auth adapter peers). Waiting for the first round of decisions; module 1 starts after them.
 - 2026-11-10 · claude · Decisions 1A (`drizzle-orm`/`drizzle-kit` 1.0 rc), 2A (`mainPlugin.database.schemaPath` to a TS module), 3A (`crud` passes Drizzle's relational `where` through).
+- 2026-11-10 · claude · Module 1 (spike) done, on a throwaway project with `drizzle-orm`/`drizzle-kit` `1.0.0-rc.5`, `better-auth` 1.7.18 and the disposable database. Works, no workaround needed:
+  - Push of a `pgSchema('nano_spike')` filtered with `{ schemas: ['nano_spike'] }`: the first run creates the schema, tables and foreign key; the second returns 0 statements; the other schemas of the database are not touched.
+  - Dropping a column of a non-empty table throws `MissingHintsError` (`confirm_data_loss`, `non_empty`, the schema, table and column) and applies nothing: the startup can stop with that list.
+  - Relational queries v2: `findMany({ where: { comments: { text: { like: 'h%' } } }, with: { comments: true } })` filters by the relation and loads it.
+  - Public metadata: `getTableConfig(table).schema`, `getColumns(table)`, and the relations object (`relations.notes.relations.comments.targetTable`, kind `Many`) give what the `nano_*` rule and crud's related-model permissions need.
+  - Better Auth's Drizzle adapter on the rc: sign up and sign in write and read its tables in their own schema.
+  - Not covered: the advisory lock (plain Postgres, checked in module 3).
+
