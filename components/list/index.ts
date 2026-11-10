@@ -3,7 +3,7 @@ import { API_STORE_TYPE } from '@nano-app/core/const';
 import type { ApiResponse, QueryParams } from '@nano-app/core/types/api';
 import type { ListOptions } from '../types/list';
 
-/** A paged and sortable list of a backend path; its state lives at `/list` of its api store */
+/** A paged, sortable list of a backend path, also read page after page; its state is at `/list` */
 export default function list(oOptions: ListOptions) {
   const { path, top, store = API_STORE_TYPE } = oOptions;
 
@@ -33,6 +33,18 @@ export default function list(oOptions: ListOptions) {
       items(): ApiResponse | undefined {
         // The answer kept for the current page
         return oApi.get(path, this.query());
+      },
+      async more(): Promise<ApiResponse> {
+        // Adds the next page to the pages read so far, in the order chosen by the user
+        return oApi.more(path, this.pagesQuery());
+      },
+      loaded(): ApiResponse | undefined {
+        // Every page read so far with `more`, its items in one list
+        return oApi.get(path, this.pagesQuery());
+      },
+      pagesQuery(): QueryParams {
+        // The query of the pages read with `more`: every item from the first, in the chosen order
+        return { top, orderby: oApi.get('/list/orderby') };
       },
       async goTo(iPage: number): Promise<ApiResponse> {
         // Moves to a page, never before the first one, and reads it

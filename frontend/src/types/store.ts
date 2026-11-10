@@ -1,3 +1,4 @@
+import type { QueryKey } from '@tanstack/query-core';
 import type { APP_NAME } from '@nano-app/core/const';
 import type { ApiResponse } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
@@ -7,6 +8,24 @@ import type Store from '../stores/Store';
 export type ApiError = ApiResponse & {
   /** Milliseconds since the epoch, from `Date.now()` */
   timestamp: number;
+};
+
+/** Options of `update` and `delete` of an api store */
+export type WriteOptions = {
+  /** Shows the write before its answer, and undoes it when it fails */
+  optimistic?: boolean;
+};
+
+/** What the pages of a list read and where they keep it */
+export type PagesConfig = {
+  /** Key of the pages in the cache */
+  key: QueryKey;
+  /** Items per page: a page with fewer is the last one */
+  top?: number;
+  /** Reads the page that starts at an item */
+  read: (skip: number) => Promise<ApiResponse>;
+  /** Keeps every page read in one answer */
+  keep: (response: ApiResponse) => void;
 };
 
 /** Stores of a React tree by name: a `Store` per `app` file, an `ApiStore` per `api` file */

@@ -212,7 +212,7 @@ describe('api store', () => {
     assert.equal(count(aRequests, 'GET /api/backend/users/7'), 2);
   });
 
-  test('a read still out when a write on its path answers asks again', async () => {
+  test('a read still out when a write on its path answers is cancelled', async () => {
     // Slows the read, and answers the update before it
     const { backend } = renderStores();
     iDelay = 150;
@@ -221,8 +221,8 @@ describe('api store', () => {
     iDelay = 0;
     await backend.update('/users/7', { id: 7, name: 'Bruno' });
 
-    // The read resolves with the backend's answer after the update
-    assert.equal((await oRead).result.name, 'Bruno');
+    // The read rejects, and the store keeps the update's answer
+    await assert.rejects(oRead, { message: 'CancelledError' });
     assert.equal(backend.get('/users/7').result.name, 'Bruno');
   });
 
@@ -239,6 +239,61 @@ describe('api store', () => {
 
     assert.equal(count(aRequests, 'GET /api/backend/users'), 1);
     assert.equal(count(aRequests, 'QUERY /api/backend/users'), 1);
+  });
+
+  test('more adds the next page of a query, and a write on its path reads every page again', async () => {
+    // Reads two pages of one user
+    const { backend } = renderStores();
+    await backend.more('/users', { top: 1 });
+    await backend.more('/users', { top: 1 });
+
+    assert.deepEqual(
+      backend.get('/users', { top: 1 }).result.map((oUser: NanoObject) => oUser.name),
+      ['Ana', 'Beto'],
+    );
+
+    // Renames the second user: both pages are read again
+    await backend.update('/users/7', { id: 7, name: 'Bruno' });
+    await waitFor(() => assert.equal(backend.get('/users', { top: 1 }).result[1].name, 'Bruno'));
+  });
+
+  test('an optimistic update shows its body at its path and in the lists of its parent at once', async () => {
+    // Reads the user and the list, then renames the user while the backend is slow
+    const { backend } = renderStores();
+    await backend.read('/users/7');
+    await backend.read('/users');
+    iDelay = 100;
+    const oUpdate = backend.update('/users/7', { id: 7, name: 'Bruno' }, { optimistic: true });
+
+    // Shows the new name before the answer
+    assert.equal(backend.get('/users/7').result.name, 'Bruno');
+    assert.equal(backend.get('/users').result[1].name, 'Bruno');
+    await oUpdate;
+  });
+
+  test('an optimistic delete leaves its item out of the lists of its parent at once', async () => {
+    // Reads the list, then deletes a user while the backend is slow
+    const { backend } = renderStores();
+    await backend.read('/users');
+    iDelay = 100;
+    const oDelete = backend.delete('/users/3', { optimistic: true });
+
+    // Shows the list without it before the answer
+    assert.deepEqual(
+      backend.get('/users').result.map((oUser: NanoObject) => oUser.id),
+      [7],
+    );
+    await oDelete;
+  });
+
+  test('a failed optimistic write puts back what the reads had', async () => {
+    // Reads a path that fails, and updates it optimistically
+    const { backend } = renderStores();
+    await backend.read('/fail');
+    await backend.update('/fail', { name: 'Bruno' }, { optimistic: true });
+
+    assert.equal(backend.get('/fail').success, false);
+    assert.equal(backend.get('/fail').result, undefined);
   });
 
   test('busy is true while a request is out', async () => {
