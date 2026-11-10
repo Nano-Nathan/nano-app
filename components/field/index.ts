@@ -1,6 +1,6 @@
 import { createController } from '@nano-app/frontend';
 import { API_STORE_TYPE } from '@nano-app/core/const';
-import FieldRules from './FieldRules';
+import control from '../form/forms';
 import type { ApiResponse } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { FormField } from '../types/field';
@@ -13,8 +13,7 @@ export default function field() {
     const oField: FormField = props.field;
     const { options } = oField;
     const oApi = options && stores[options.store ?? API_STORE_TYPE];
-    const sValues = `/form/${form}/values`;
-    const sValue = `${sValues}/${oField.name}`;
+    const sValue = `/form/${form}/values/${oField.name}`;
     const sError = `/form/${form}/errors/${oField.name}`;
 
     return {
@@ -34,9 +33,8 @@ export default function field() {
         return stores.app.get(sError);
       },
       change(oInput: unknown): void {
-        // Keeps the value and the message of the first rule it breaks
-        stores.app.set(sValue, this.parse(oInput));
-        stores.app.set(sError, this.validate(stores.app.get(sValues)));
+        // Keeps the value in its form and validates it with the form's schema
+        control(stores, form).setValue(oField.name, this.parse(oInput), { shouldValidate: true });
       },
       parse(oInput: unknown): unknown {
         // The field's own parse, or a number when a number field's text is that number as is
@@ -44,10 +42,6 @@ export default function field() {
         const iNumber = Number(oInput);
         const isNumber = oField.type === 'number' && String(iNumber) === oInput;
         return isNumber ? iNumber : oInput;
-      },
-      validate(oValues: NanoObject): string | undefined {
-        // The message of the first rule of the field it breaks
-        return FieldRules.validate(oField, oValues);
       },
       options(): NanoObject[] {
         // The items kept for the path of its options, as the backend gave them

@@ -1,13 +1,20 @@
 'use client';
 
+import { z } from 'zod';
 import authController from '../controllers/auth.controller';
 import Form from './Form';
 
 /** Fields of the sign-in */
 const LOGIN = [
-  { name: 'email', type: 'email', required: true },
-  { name: 'password', type: 'password', required: true },
+  { name: 'email', type: 'email' },
+  { name: 'password', type: 'password' },
 ];
+
+/** Rules of the sign-in: a valid email and a password */
+const LOGIN_SCHEMA = z.object({
+  email: z.email('Invalid email'),
+  password: z.string('Required').min(1, 'Required'),
+});
 
 /** Sign-in form: goes to the private page once signed in */
 export default authController
@@ -20,4 +27,6 @@ export default authController
       if (oResponse?.success) this.navTo('/private');
     },
   }))
-  .bindView(({ onSubmit }) => <Form name="login" fields={LOGIN} onSubmit={onSubmit} />);
+  .bindView(({ onSubmit }) => (
+    <Form name="login" fields={LOGIN} schema={LOGIN_SCHEMA} onSubmit={onSubmit} />
+  ));

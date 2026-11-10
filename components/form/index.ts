@@ -1,23 +1,27 @@
 import { createElement } from 'react';
 import { createController } from '@nano-app/frontend';
 import NanoError from '@nano-app/core/utils/NanoError';
-import FieldRules from '../field/FieldRules';
+import control from './forms';
 import type { ReactNode, SubmitEvent } from 'react';
 import type { FormField } from '../types/field';
 import type { FormOptions } from '../types/form';
 
-/** A form from a config of fields: their views, and their submit at `/form/<name>` of `app` */
+/** A form from a config of fields and a schema: their views, and their submit at `/form/<name>` */
 export default function form(oOptions: FormOptions) {
   return createController(({ props, stores }) => {
-    // Takes the views of the options, the name, fields and submit of the props, and its paths
+    // Takes the views of the options, and the name, fields, schema and submit of the props
     const { components } = oOptions;
-    const { name, onSubmit } = props;
+    const { name, schema, onSubmit } = props;
     const aFields: FormField[] = props.fields;
-    const sForm = `/form/${name}`;
-    const sValues = `${sForm}/values`;
-    const sErrors = `${sForm}/errors`;
 
     return {
+      // Creates the form with its schema when the view mounts, with every field, also untouched
+      callbacks: {
+        onMount(): void {
+          const oForm = control(stores, name, schema);
+          for (const oField of aFields) oForm.register(oField.name);
+        },
+      },
       fields(): ReactNode[] {
         return aFields.map(oField => {
           // Takes the view of its type, or the one of text
@@ -33,22 +37,13 @@ export default function form(oOptions: FormOptions) {
         });
       },
       // any: what the onSubmit of the props returns
-      submit(oEvent: SubmitEvent<HTMLFormElement>): any {
-        // Stops the browser's submit
-        oEvent.preventDefault();
-
-        // Validates every field with the values of the form and keeps their messages
-        const oValues = stores.app.get(sValues) ?? {};
-        const aErrors = aFields.map(oField => [oField.name, FieldRules.validate(oField, oValues)]);
-        stores.app.set(sErrors, Object.fromEntries(aErrors));
-
-        // Sends the values only when no field breaks a rule
-        if (aErrors.some(([, sError]) => sError)) return;
-        return onSubmit(oValues);
+      submit(oEvent: SubmitEvent<HTMLFormElement>): Promise<any> {
+        // Stops the browser's submit and sends the schema's values only when no field breaks it
+        return control(stores, name).handleSubmit(onSubmit)(oEvent);
       },
       reset(): void {
         // Empties the values and the errors
-        stores.app.set(sForm, {});
+        control(stores, name).reset();
       },
     };
   });

@@ -5,7 +5,9 @@ import { test, describe, before, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { z } from 'zod';
 import field from '../field';
+import form from '../form';
 import TestApp from './provider';
 import type { FormField } from '../types/field';
 
@@ -42,19 +44,23 @@ const Input = field().bindView(({ props: { field: oField }, value, error, change
   </label>
 ));
 
-// Fields of a sign-up: an email, a number, a password and its confirmation
-const SIGN_UP: FormField[] = [
-  { name: 'email', type: 'email', required: true },
-  { name: 'phone', required: true, errorMessage: 'Your phone' },
-  { name: 'age', type: 'number' },
-  { name: 'password', type: 'password' },
-  {
-    name: 'confirm',
-    validate: (sConfirm, oValues) => (sConfirm === oValues.password ? undefined : 'Mismatch'),
-  },
-];
+// Fields of a sign-up: an email, a password and its confirmation
+const SIGN_UP: FormField[] = [{ name: 'email' }, { name: 'password' }, { name: 'confirm' }];
 
-/** Renders the fields of a form inside the provider */
+// Rules of the sign-up: a valid email, and a confirmation equal to the password
+const SIGN_UP_SCHEMA = z
+  .object({ email: z.email('Invalid email'), password: z.string(), confirm: z.string() })
+  .refine(oValues => oValues.confirm === oValues.password, {
+    message: 'Mismatch',
+    path: ['confirm'],
+  });
+
+// View of a form with only its fields
+const SignUp = form({ components: { text: Input } }).bindView(({ fields }) => (
+  <form>{fields()}</form>
+));
+
+/** Renders the fields of a form inside the provider, without its form */
 function renderFields(sForm: string, aFields: FormField[]): void {
   render(
     <TestApp>
@@ -80,56 +86,40 @@ describe('field', () => {
   after(() => oBackend.close());
   afterEach(cleanup);
 
-  test('change keeps the value and validates the email, the number and required', () => {
-    // Renders the sign-up and types an invalid email, a valid one and a text in the number
-    renderFields('signUp', SIGN_UP);
+  test('change validates the value with the schema and the values of its form', async () => {
+    // Renders the sign-up and types an invalid email, then a valid one
+    render(
+      <TestApp>
+        <SignUp name="signUp" fields={SIGN_UP} schema={SIGN_UP_SCHEMA} />
+      </TestApp>,
+    );
     type('email', 'ana');
-    assert.equal(errorOf('email'), 'email: Invalid email');
+    await waitFor(() => assert.equal(errorOf('email'), 'email: Invalid email'));
     type('email', 'ana@nano.app');
-    assert.equal(errorOf('email'), 'email: ok');
-    type('age', 'ten');
-    assert.equal(errorOf('age'), 'age: Invalid number');
+    await waitFor(() => assert.equal(errorOf('email'), 'email: ok'));
 
-    // Empties the required email; the number keeps its value
-    type('email', '');
-    assert.equal(errorOf('email'), 'email: Required');
-    assert.equal(screen.getByLabelText<HTMLInputElement>('age').value, 'ten');
-  });
-
-  test('errorMessage replaces the message of the default rules', () => {
-    // Renders the sign-up and empties the phone
-    renderFields('signUp', SIGN_UP);
-    type('phone', '1');
-    type('phone', '');
-
-    assert.equal(errorOf('phone'), 'phone: Your phone');
-  });
-
-  test('the own rule of a field receives the values of its form', () => {
-    // Renders the sign-up and confirms another password
-    renderFields('signUp', SIGN_UP);
+    // Confirms another password, then the same one
     type('password', 'secret');
     type('confirm', 'other');
-    assert.equal(errorOf('confirm'), 'confirm: Mismatch');
-
-    // Confirms the same password
+    await waitFor(() => assert.equal(errorOf('confirm'), 'confirm: Mismatch'));
     type('confirm', 'secret');
-    assert.equal(errorOf('confirm'), 'confirm: ok');
+    await waitFor(() => assert.equal(errorOf('confirm'), 'confirm: ok'));
   });
 
   test('fields of two forms keep their values apart', () => {
-    // Renders a required field in two forms of the same tree and types in one
+    // Renders a field of the same name in two forms of the same tree and types in one
     render(
       <TestApp>
-        <Input form="a" field={{ name: 'one', required: true }} />
-        <Input form="b" field={{ name: 'two', required: true }} />
+        <Input form="a" field={{ name: 'one' }} />
+        <Input form="b" field={{ name: 'one' }} />
       </TestApp>,
     );
-    type('one', 'x');
-    type('one', '');
+    const [oFirst, oSecond] = screen.getAllByLabelText<HTMLInputElement>('one');
+    fireEvent.change(oFirst, { target: { value: 'x' } });
 
-    assert.equal(errorOf('one'), 'one: Required');
-    assert.equal(errorOf('two'), 'two: ok');
+    // Only the first keeps the value
+    assert.equal(oFirst.value, 'x');
+    assert.equal(oSecond.value, '');
   });
 
   test('a number field keeps a number, and the text of one being typed', () => {
@@ -147,15 +137,14 @@ describe('field', () => {
     // Renders a price shown with its sign and kept as a number, and types one
     const oPrice: FormField = {
       name: 'price',
-      format: iPrice => `$${iPrice}`,
+      format: oPrice => `${typeof oPrice} $${oPrice}`,
       parse: sPrice => Number(sPrice.replace('$', '')),
-      validate: oValue => (typeof oValue === 'number' ? undefined : 'Text'),
     };
     renderFields('pay', [oPrice]);
     type('price', '$15');
 
-    assert.equal(screen.getByLabelText<HTMLInputElement>('price').value, '$15');
-    assert.equal(errorOf('price'), 'price: ok');
+    // Shows the number kept with its sign
+    assert.equal(screen.getByLabelText<HTMLInputElement>('price').value, 'number $15');
   });
 
   test('options are the items of their path, read when the view mounts', async () => {
