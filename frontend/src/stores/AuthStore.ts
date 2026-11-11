@@ -4,7 +4,7 @@ import ApiStore from './ApiStore';
 import type { ApiResponse } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
 
-/** Api store of a backend with Better Auth: signs in and out with its client, and keeps the session */
+/** Api store of a backend with Better Auth: sends its requests with its client, and keeps the session */
 export default class AuthStore extends ApiStore {
   /** Better Auth's client through the proxy of the store; only in the browser */
   private oAuth?: ReturnType<typeof createAuthClient>;
@@ -32,19 +32,16 @@ export default class AuthStore extends ApiStore {
     oAuth.useSession.subscribe(({ data }) => this.set('/session', data));
   }
 
-  /** `POST <basePath>/sign-in/<kind>` (`email`...), reading the session again on success */
-  public signIn(sKind: string, oBody: unknown): Promise<ApiResponse> {
-    return this.post(`/sign-in/${sKind}`, oBody);
-  }
+  /** `POST <basePath><path>` of Better Auth (`/sign-in/email`, `/sign-out`, `/request-password-reset`), its answer inside an `ApiResponse` */
+  public async post(sPath: string, oBody: unknown = {}): Promise<ApiResponse> {
+    // Asks nothing on the server
+    if (!this.oAuth) return {};
 
-  /** `POST <basePath>/sign-up/<kind>`, reading the session again on success */
-  public signUp(sKind: string, oBody: unknown): Promise<ApiResponse> {
-    return this.post(`/sign-up/${sKind}`, oBody);
-  }
-
-  /** `POST <basePath>/sign-out`, reading the session again on success */
-  public signOut(): Promise<ApiResponse> {
-    return this.post('/sign-out', {});
+    // Sends it with Better Auth's client; a failed answer goes to the errors of the store with its message
+    const { data, error } = await this.oAuth.$fetch(sPath, { method: 'POST', body: oBody });
+    const oResponse = { success: !error, result: data, message: error?.message };
+    if (error) this.fail(oResponse);
+    return oResponse;
   }
 
   /** A 401 of the backend reads the session again: it is over */
@@ -52,17 +49,5 @@ export default class AuthStore extends ApiStore {
     // Asks the client for the session again
     if (oRes.status === 401) this.oAuth?.$store.notify('$sessionSignal');
     return oBody;
-  }
-
-  /** Sends a `POST` with Better Auth's client and wraps its answer in an `ApiResponse` */
-  private async post(sPath: string, oBody: unknown): Promise<ApiResponse> {
-    // Asks nothing on the server
-    if (!this.oAuth) return {};
-
-    // Sends it; a failed answer goes to the errors of the store with Better Auth's message
-    const { data, error } = await this.oAuth.$fetch(sPath, { method: 'POST', body: oBody });
-    const oResponse = { success: !error, result: data, message: error?.message };
-    if (error) this.fail(oResponse);
-    return oResponse;
   }
 }

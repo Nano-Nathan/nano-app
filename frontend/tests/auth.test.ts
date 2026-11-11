@@ -84,22 +84,25 @@ describe('auth store', () => {
     isSignedIn = false;
   });
 
-  test('an api store with auth signs in, and one without it does not', async () => {
+  test('an api store with auth posts to Better Auth, and one without it does not', async () => {
     // Creates the stores: an api store with auth and one without
     const { backend, payments } = createStores();
 
-    assert.equal(typeof backend.signIn, 'function');
-    assert.equal(payments.signIn, undefined);
+    assert.equal(typeof backend.post, 'function');
+    assert.equal(payments.post, undefined);
 
     // Waits for the session the store with auth reads
     await waitFor(() => assert.equal(count(aRequests, SESSION), 1));
   });
 
-  test('the store reads the session when it is created, and again after a signIn', async () => {
+  test('the store reads the session when it is created, and again after a sign-in', async () => {
     // Creates the store without a session, and signs in
     const oStore = await createStore();
     assert.equal(oStore.get('/session'), null);
-    const oResponse = await oStore.signIn('email', { email: 'ana@nano.app', password: 'secret' });
+    const oResponse = await oStore.post('/sign-in/email', {
+      email: 'ana@nano.app',
+      password: 'secret',
+    });
 
     // Checks the answer of Better Auth inside an `ApiResponse`, and the session kept
     assert.deepEqual(oResponse, {
@@ -110,10 +113,13 @@ describe('auth store', () => {
     await waitFor(() => assert.deepEqual(oStore.get('/session')?.user, { email: 'ana@nano.app' }));
   });
 
-  test('a failed signIn returns the message of Better Auth, keeps it in the errors and no session', async () => {
+  test('a failed sign-in returns the message of Better Auth, keeps it in the errors and no session', async () => {
     // Signs in with a wrong password
     const oStore = await createStore();
-    const oResponse = await oStore.signIn('email', { email: 'ana@nano.app', password: 'wrong' });
+    const oResponse = await oStore.post('/sign-in/email', {
+      email: 'ana@nano.app',
+      password: 'wrong',
+    });
 
     assert.equal(oResponse.success, false);
     assert.equal(oResponse.message, 'Invalid email or password');
@@ -122,12 +128,12 @@ describe('auth store', () => {
     assert.equal(oStore.get('/busy'), false);
   });
 
-  test('signOut clears the session', async () => {
+  test('a sign-out clears the session', async () => {
     // Signs in, waits for the session and signs out
     const oStore = await createStore();
-    await oStore.signIn('email', { email: 'ana@nano.app', password: 'secret' });
+    await oStore.post('/sign-in/email', { email: 'ana@nano.app', password: 'secret' });
     await waitFor(() => assert.ok(oStore.get('/session')));
-    await oStore.signOut();
+    await oStore.post('/sign-out');
 
     await waitFor(() => assert.equal(oStore.get('/session'), null));
   });
@@ -135,7 +141,7 @@ describe('auth store', () => {
   test('a 401 reads the session again, and the routes of the app answer as they come', async () => {
     // Signs in and reads a route behind the session
     const oStore = await createStore();
-    await oStore.signIn('email', { email: 'ana@nano.app', password: 'secret' });
+    await oStore.post('/sign-in/email', { email: 'ana@nano.app', password: 'secret' });
     await waitFor(() => assert.ok(oStore.get('/session')));
 
     assert.deepEqual(await oStore.read('/users'), {

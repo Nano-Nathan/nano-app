@@ -37,15 +37,11 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
     const oDb = await Database.mount('app', { schema });
     // The app checks the comments: what a `POST` sends, and how many a `QUERY` asks for
     const oValidation = {
-      insert: createInsertSchema(schema.comment),
-      query: z.looseObject({ limit: z.number().max(50).optional() }),
+      create: createInsertSchema(schema.comment),
+      read: z.looseObject({ limit: z.number().max(50).optional() }),
     };
     oServer = await startApp([
-      crud({
-        models: ['note', 'comment'],
-        dbSchema: schema,
-        validations: { comment: oValidation },
-      }),
+      crud({ models: ['note', 'comment'], validations: { comment: oValidation } }),
     ]);
 
     // Two notes of this run, the first with a comment
@@ -139,13 +135,17 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
     assert.match(oQuery.body.message, /^limit: /);
   });
 
-  test('a query never leaves its table: a relation in where or with answers 400', async () => {
-    // Filters comments by their note, and loads the note of each one
-    const oWhere = await send('QUERY', oServer.url, '/api/comment', {
-      where: { note: { title: 'a' } },
+  test('a query filters by a relation and loads it', async () => {
+    // Reads the comments of the first note of this run, each with its note
+    const { status, body } = await send('QUERY', oServer.url, '/api/comment', {
+      where: { note: { title: `${sTag}-a` } },
+      with: { note: true },
     });
-    const oWith = await send('QUERY', oServer.url, '/api/comment', { with: { note: true } });
-    assert.deepEqual([oWhere.status, oWith.status], [400, 400]);
+
+    // Checks the comment and the note it brings
+    assert.equal(status, 200);
+    assert.equal(body.result[0].text, 'first');
+    assert.equal(body.result[0].note.title, `${sTag}-a`);
   });
 
   test('Postgres errors answer their status without their message', async () => {

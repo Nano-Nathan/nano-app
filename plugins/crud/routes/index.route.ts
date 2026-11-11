@@ -1,10 +1,8 @@
-import { defineRelations, eq } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { eq } from 'drizzle-orm';
 import { createRoute, isGranted, NanoError } from '@nano-app/backend';
 import type { ApiPromise, NanoObject, Params, Request } from '@nano-app/backend';
-import type { ZodType } from 'zod';
 
-/** Permission of Better Auth that each method needs on the URL's table */
+/** Action of each method on the URL's table: the permission of Better Auth it needs and the validation of its body */
 const ACTIONS: NanoObject<string> = {
   GET: 'read',
   QUERY: 'read',
@@ -22,81 +20,58 @@ function first(aRecords: NanoObject[]): { result: NanoObject } {
   return { result: aRecords[0] };
 }
 
-/** A body as its validation gives it, or as it came without one: 400 with what zod says when it breaks a rule */
-// any: the body is the consumer's, unknown to the plugin
-function parse(oValidation: ZodType | undefined, oBody: unknown): any {
-  // Without a validation of the app, the body goes as it came
-  if (!oValidation) return oBody;
+/** A list of the table, or one record by its id, with Drizzle's relational query of the body */
+async function read(_oReq: Request, { db, onBeforeResult }: Params): ApiPromise {
+  const { model, id, body } = onBeforeResult ?? {};
 
-  // Answers the first rule it breaks, with its field
-  const oResult = oValidation.safeParse(oBody);
-  if (oResult.success) return oResult.data;
-  const { path, message } = oResult.error.issues[0];
-  throw new NanoError([...path, message].join(': '), 400);
-}
+  // One record by its id
+  if (id) return first(await db.query[model].findMany({ ...body, where: { id }, limit: 1 }));
 
-/** A list of the table, or one record by its id, with Drizzle's relational query of the body on the table alone */
-async function read(oReq: Request, { db, dbSchema, onBeforeResult }: Params): ApiPromise {
-  const { model, id, validations } = onBeforeResult ?? {};
-  const oBody: NanoObject = parse(validations.query, oReq.body ?? {});
-
-  // A client on the same pool that knows the tables but none of their relations: a query cannot leave its table
-  const { relations: _oRelations, ...oTables } = dbSchema;
-  // any: the tables of each app, unknown to the plugin
-  const oNoRelations: any = defineRelations(oTables);
-  const oTableOnly = drizzle({ client: db.$client, relations: oNoRelations });
-
-  // One record by its id, or the list: the body goes as it came, so Drizzle rejects what leaves the table
-  const oQuery = oTableOnly.query[model];
-  if (id) return first(await oQuery.findMany({ ...oBody, where: { id }, limit: 1 }));
-  return {
-    result: await oQuery.findMany({
-      ...oBody,
-      where: oBody.where ?? {},
-      limit: oBody.limit ?? DEFAULT_LIMIT,
-    }),
-  };
+  // The list, with the default limit when the body brings none
+  const aRecords = await db.query[model].findMany({ ...body, limit: body.limit ?? DEFAULT_LIMIT });
+  return { result: aRecords };
 }
 
 /** `GET` reads without parameters, `QUERY` with `QueryParams` as its body */
 export default createRoute({
   expression: '/:model{/:id}',
   callbacks: {
-    // The table of the URL: 404 when the app does not publish it, 403 without its permission
+    // The table of the URL and the body of the request: 404 when the app does not publish it, 403 without its permission, 400 when the body breaks its validation
     onBefore: async (oReq, sMethod, oParams) => {
-      // The URL's table and id: Express types a param as a string or a list of them
+      // The URL's table and the action of the method: Express types a param as a string or a list of them
       const sModel = String(oReq.params.model);
-      const { id } = oReq.params;
+      const sAction = ACTIONS[sMethod];
 
-      // Only the tables the app publishes
-      const oTable = oParams.dbSchema?.[sModel];
+      // Only the tables the app publishes, as its client knows them
+      const oTable = oParams.db._.relations[sModel]?.table;
       if (!oParams.models.includes(sModel) || !oTable) throw new NanoError('Not found', 404);
 
-      // The permission of the method on the table
-      if (!(await isGranted(oParams, { [sModel]: [ACTIONS[sMethod]] }))) {
+      // The permission of the action on the table
+      if (!(await isGranted(oParams, { [sModel]: [sAction] }))) {
         throw new NanoError('Forbidden', 403);
       }
 
-      // The table, the id of the URL, if any (Postgres casts it to the type of the column), and the app's validations
-      return {
-        model: sModel,
-        table: oTable,
-        id,
-        validations: oParams.validations?.[sModel] ?? {},
-      };
+      // The body as the validation of the action gives it, answering the first rule it breaks with its field
+      const oBody = oReq.body ?? {};
+      const oResult = oParams.validations?.[sModel]?.[sAction]?.safeParse(oBody);
+      if (oResult?.error) {
+        const { path, message } = oResult.error.issues[0];
+        throw new NanoError([...path, message].join(': '), 400);
+      }
+
+      // The id of the URL, if any: Postgres casts it to the type of the column
+      return { model: sModel, table: oTable, id: oReq.params.id, body: oResult?.data ?? oBody };
     },
   },
   GET: read,
   QUERY: read,
-  POST: async (oReq, { db, onBeforeResult }) => {
-    const { table, validations } = onBeforeResult ?? {};
-    const oData = parse(validations.insert, oReq.body);
-    return first(await db.insert(table).values(oData).returning());
+  POST: async (_oReq, { db, onBeforeResult }) => {
+    const { table, body } = onBeforeResult ?? {};
+    return first(await db.insert(table).values(body).returning());
   },
-  PUT: async (oReq, { db, onBeforeResult }) => {
-    const { table, id, validations } = onBeforeResult ?? {};
-    const oData = parse(validations.update, oReq.body);
-    return first(await db.update(table).set(oData).where(eq(table.id, id)).returning());
+  PUT: async (_oReq, { db, onBeforeResult }) => {
+    const { table, id, body } = onBeforeResult ?? {};
+    return first(await db.update(table).set(body).where(eq(table.id, id)).returning());
   },
   DELETE: async (_oReq, { db, onBeforeResult }) => {
     const { table, id } = onBeforeResult ?? {};

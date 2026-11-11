@@ -14,15 +14,15 @@ export default function auth(oOptions: AuthOptions = {}) {
     return {
       async signIn(oBody: unknown): Promise<ApiResponse> {
         // Better Auth's sign-in of the kind of the options
-        return oApi.signIn(kind, oBody);
+        return oApi.post(`/sign-in/${kind}`, oBody);
       },
       async signUp(oBody: unknown): Promise<ApiResponse> {
         // Better Auth's sign-up of the kind of the options
-        return oApi.signUp(kind, oBody);
+        return oApi.post(`/sign-up/${kind}`, oBody);
       },
       async signOut(): Promise<ApiResponse> {
         // Better Auth's sign-out
-        return oApi.signOut();
+        return oApi.post('/sign-out');
       },
       navTo(sUrl: string): void {
         // Goes to a url of the app
