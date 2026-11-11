@@ -1,7 +1,7 @@
 # Runs the suites of the backend and the plugins on Bun instead of Node.js:
 # - pull request that touches backend/, core/, plugins/ or this file: `test-bun`.
 #   It is not a required check: Node.js is the runtime the packages are released for.
-# `bun test` runs the same `node:test` files as `pnpm test`.
+# `bun test` runs the same `node:test` files as `pnpm test`, one process per file as Node.js does.
 name: Bun
 
 on:
@@ -63,7 +63,9 @@ jobs:
       # Direct URL, not the pooled one: the suites push their schemas with drizzle-kit
       - name: Backend suite on Bun
         working-directory: backend
-        run: bun test ./tests/*.test.ts ../core/tests/*.test.ts
+        run: |
+          for sFile in ./tests/*.test.ts ../core/tests/*.test.ts; do bun test "$sFile" || iFailed=1; done
+          exit "${iFailed:-0}"
         env:
           DATABASE_URL: ${{ steps.neon.outputs.db_url }}
 
@@ -71,7 +73,9 @@ jobs:
       - name: Plugins suite on Bun
         if: always() && steps.neon.conclusion != 'failure'
         working-directory: plugins
-        run: bun test ./tests/*.test.ts
+        run: |
+          for sFile in ./tests/*.test.ts; do bun test "$sFile" || iFailed=1; done
+          exit "${iFailed:-0}"
         env:
           DATABASE_URL: ${{ steps.neon.outputs.db_url }}
 
