@@ -24,7 +24,7 @@ export default class Store {
     const sLast = aKeys.pop();
     if (!sLast) return;
 
-    // Walks down the parents, creating them, and writes the last key in one MobX action
+    // Creates the missing parents and writes the last key
     runInAction(() => {
       const oParent = aKeys.reduce((oLevel, sKey) => {
         // Reads the level back: MobX stores an observable copy, not the `{}` assigned

@@ -4,6 +4,7 @@ import './env/form';
 import { test, describe, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { z } from 'zod';
 import field from '../field';
 import form from '../form';
 import TestApp from './provider';
@@ -25,10 +26,10 @@ const SIGN_UP: FormField[] = [
   { name: 'email', type: 'email' },
 ];
 
-// Fields of a login: a required email and a number
+// Fields of a login, each with its validation: an email and an optional number
 const LOGIN: FormField[] = [
-  { name: 'email', type: 'email', required: true },
-  { name: 'age', type: 'number' },
+  { name: 'email', validation: z.email('Required') },
+  { name: 'age', type: 'number', validation: z.number().optional() },
 ];
 
 // View of a field with an input and its error
@@ -130,7 +131,7 @@ describe('form', () => {
   });
 
   test('submit validates every field, also the untouched ones, and does not send', () => {
-    // Types a valid age and submits without the required email
+    // Types a valid age and submits without the email its validation needs
     renderLogin();
     type('age', '30');
     fireEvent.click(screen.getByText('send'));

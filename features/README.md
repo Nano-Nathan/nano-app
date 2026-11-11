@@ -1,6 +1,6 @@
 # Features
 
-Planned work on this repository, one file per feature. A file says what the feature has to do, what it leaves out, when it is done and where it stands, so any agent can pick it up from here. Read [`.claude/CLAUDE.md`](../.claude/CLAUDE.md) first: it defines the branch of each development, the modules when the maintainer splits a feature, and the approval point by point.
+Planned work on this repository, one file per feature. A file says what the feature has to do, what it leaves out, when it is done and where it stands, so any agent can pick it up from here. Read [`CONTRIBUTING.md`](../CONTRIBUTING.md) first: it defines the branch of each development, the modules when the maintainer splits a feature, and the approval point by point. The code follows [`.claude/CLAUDE.md`](../.claude/CLAUDE.md).
 
 | Feature | Done when | Depends on |
 |---|---|---|
@@ -11,7 +11,7 @@ Planned work on this repository, one file per feature. A file says what the feat
 | [mail](mail.md) | A route sends an email through the `mail` plugin | scheduler |
 | [drizzle](drizzle.md) | An app with Better Auth, `crud` and an official plugin with tables runs on Drizzle, with no generated client and no plugin migration files | — |
 | [tanstack-query](tanstack-query.md) | The api store's cache runs on `@tanstack/query-core` and two concurrent reads of a path send one request | — |
-| [zod-rules](zod-rules.md) | Each field validates with zod rules built from its config | — |
+| [reuse-libraries](reuse-libraries.md) | crud, the auth store, the proxy, the validator and the forms run on zod, Better Auth's client and Next's rewrite instead of own code | — |
 | [sse](sse.md) | The backend pushes an event and a component updates | Only when the maintainer asks |
 
 The order of the table is the order of work. Work outside this repository (cluster, deploys, apps) is not tracked here.

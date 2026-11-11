@@ -1,4 +1,5 @@
 import { FileLoader, Logger, Validator } from '@nano-app/core';
+import { ROUTE } from '@nano-app/core/utils/validations';
 import Endpoint from './Endpoint';
 
 /** Turns a folder of `*.route.ts` files into Express paths and endpoints */
@@ -18,7 +19,7 @@ export default class Router {
 
     // Loads the routes of the directory; an invalid one throws
     const oFiles = await FileLoader.findMany('route', this.sRoutesDir);
-    const oRoutes = Validator.validate(oFiles, Validator.isRoute);
+    const oRoutes = Validator.validate(oFiles, ROUTE);
 
     // Create the endpoints
     return Object.entries(oRoutes).map(

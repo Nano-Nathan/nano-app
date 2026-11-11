@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { NextRequest } from 'next/server';
 import { proxy } from '../src/proxy';
+import { follow } from './helpers';
 import type { NanoObject } from '@nano-app/core/types/objects';
 
 const PORT = 4100;
@@ -54,12 +55,13 @@ const oBackend = createServer((oReq, oRes) => {
   });
 });
 
-/** Runs the proxy on a request to the app */
-function send(
+/** Runs the proxy on a request to the app, and sends its rewrite to the backend as Next does */
+async function send(
   sPath: string,
-  oInit?: ConstructorParameters<typeof NextRequest>[1],
+  oInit: { method?: string; headers?: NanoObject<string>; body?: string } = {},
 ): Promise<Response> {
-  return proxy(new NextRequest(`http://localhost:3100${sPath}`, oInit));
+  const oRes = await proxy(new NextRequest(`http://localhost:3100${sPath}`, oInit));
+  return follow(oRes, { method: oInit.method, body: oInit.body });
 }
 
 describe('proxy', () => {

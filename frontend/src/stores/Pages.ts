@@ -21,7 +21,7 @@ export default class Pages {
     const { key, limit = 0, read, keep } = oConfig;
     this.fnKeep = keep;
 
-    // Reads each page from its `offset`; a page with fewer than `limit` items is the last one
+    // Reads each page from its `offset`, until one is not full
     this.oObserver = new InfiniteQueryObserver<
       ApiResponse,
       Error,

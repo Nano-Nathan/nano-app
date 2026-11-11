@@ -1,5 +1,4 @@
 import { Logger, NanoError } from '@nano-app/core';
-import { HTTP_METHODS } from '@nano-app/core/const';
 import isGranted from '../auth/permissions';
 import type { RequestHandler } from 'express';
 import type {
@@ -26,7 +25,7 @@ export default class Endpoint {
       permissions,
     }: Pick<RouteEntry, 'callbacks' | 'public' | 'permissions'>,
   ) {
-    // Each method with its handler and permissions: its own, or else those of the route
+    // Each method with its permissions, or those of the route
     this.oMethods = Object.fromEntries(
       Object.entries(oMethods).map(([sMethod, oMethod]) => [
         sMethod,
@@ -62,10 +61,9 @@ export default class Endpoint {
       if (oParams.auth && !oRes.locals.session && !this.isPublic)
         return fnNext(new NanoError('Not authenticated', 401));
 
-      // Finds the handler of the request method
-      const sMethod = oReq.method.toUpperCase();
-      const sHandled = HTTP_METHODS.find(sHttpMethod => sHttpMethod === sMethod);
-      const oMethod = sHandled && this.oMethods[sHandled];
+      // Finds the handler of the request method: a route file holds only HTTP methods
+      const sMethod = oReq.method;
+      const oMethod = this.oMethods[sMethod];
 
       // Checks whether the method is defined
       if (!oMethod) return fnNext(new NanoError(`Method ${sMethod} not implemented`, 405));
@@ -73,7 +71,7 @@ export default class Endpoint {
       // The session of the request, when Better Auth found one
       const oRequestParams = { ...oParams, session: oRes.locals.session };
 
-      // Checks the permissions of the method, none on a public route, then runs the onBefore callback
+      // Checks the permissions, then runs onBefore
       // A rejection reaches the error handler: Express 5 forwards it
       return (
         isGranted(oRequestParams, this.isPublic ? undefined : oMethod.permissions)

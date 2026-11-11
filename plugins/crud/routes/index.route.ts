@@ -1,9 +1,8 @@
-import { defineRelations, eq } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { eq } from 'drizzle-orm';
 import { createRoute, isGranted, NanoError } from '@nano-app/backend';
 import type { ApiPromise, NanoObject, Params, Request } from '@nano-app/backend';
 
-/** Permission of Better Auth that each method needs on the URL's table */
+/** Action of each method: its permission of Better Auth and the validation of its body */
 const ACTIONS: NanoObject<string> = {
   GET: 'read',
   QUERY: 'read',
@@ -21,59 +20,62 @@ function first(aRecords: NanoObject[]): { result: NanoObject } {
   return { result: aRecords[0] };
 }
 
-/** A list of the table, or one record by its id, with Drizzle's relational query of the body on the table alone */
-async function read(oReq: Request, { db, schema, onBeforeResult }: Params): ApiPromise {
-  const { model, id } = onBeforeResult ?? {};
-  const oBody: NanoObject = oReq.body ?? {};
+/** Every record of a query */
+function list(aRecords: NanoObject[]): { result: NanoObject[] } {
+  return { result: aRecords };
+}
 
-  // A client on the same pool that knows the tables but none of their relations: a query cannot leave its table
-  const { relations: _oRelations, ...oTables } = schema;
-  // any: the tables of each app, unknown to the plugin
-  const oNoRelations: any = defineRelations(oTables);
-  const oTableOnly = drizzle({ client: db.$client, relations: oNoRelations });
+/** A list of the table, or one record by its id, with Drizzle's relational query of the body */
+async function read(_oReq: Request, { db, onBeforeResult }: Params): ApiPromise {
+  const { model, page, answer, body } = onBeforeResult ?? {};
 
-  // One record by its id, or the list: the body goes as it came, so Drizzle rejects what leaves the table
-  const oQuery = oTableOnly.query[model];
-  if (id) return first(await oQuery.findMany({ ...oBody, where: { id }, limit: 1 }));
-  return {
-    result: await oQuery.findMany({
-      ...oBody,
-      where: oBody.where ?? {},
-      limit: oBody.limit ?? DEFAULT_LIMIT,
-    }),
-  };
+  // Reads with the default limit, the body and the id over them
+  return answer(await db.query[model].findMany({ limit: DEFAULT_LIMIT, ...body, ...page }));
 }
 
 /** `GET` reads without parameters, `QUERY` with `QueryParams` as its body */
 export default createRoute({
   expression: '/:model{/:id}',
   callbacks: {
-    // The table of the URL: 404 when the app does not publish it, 403 without its permission
+    // The table, the id and the validated body of the request
     onBefore: async (oReq, sMethod, oParams) => {
-      // The URL's table and id: Express types a param as a string or a list of them
+      // The table of the URL and the action of the method
       const sModel = String(oReq.params.model);
+      const sAction = ACTIONS[sMethod];
       const { id } = oReq.params;
 
       // Only the tables the app publishes
-      const oTable = oParams.schema?.[sModel];
+      const oTable = oParams.dbSchema[sModel];
       if (!oParams.models.includes(sModel) || !oTable) throw new NanoError('Not found', 404);
 
-      // The permission of the method on the table
-      if (!(await isGranted(oParams, { [sModel]: [ACTIONS[sMethod]] }))) {
+      // The permission of the action on the table
+      if (!(await isGranted(oParams, { [sModel]: [sAction] }))) {
         throw new NanoError('Forbidden', 403);
       }
 
-      // The table and the id of the URL, if any: Postgres casts it to the type of the column
-      return { model: sModel, table: oTable, id };
+      // The body as its validation gives it, or as it came
+      const oBody = oReq.body ?? {};
+      const oValidation = oParams.validations?.[sModel]?.[sAction];
+      const oResult = oValidation?.safeParse(oBody) ?? { data: oBody };
+      if (oResult.error) {
+        const { path, message } = oResult.error.issues[0];
+        throw new NanoError([...path, message].join(': '), 400);
+      }
+
+      // A read of an id answers its record; without it, the list
+      const oRead = id ? { page: { where: { id }, limit: 1 }, answer: first } : { answer: list };
+      return { model: sModel, table: oTable, id, body: oResult.data, ...oRead };
     },
   },
   GET: read,
   QUERY: read,
-  POST: async (oReq, { db, onBeforeResult }) =>
-    first(await db.insert(onBeforeResult?.table).values(oReq.body).returning()),
-  PUT: async (oReq, { db, onBeforeResult }) => {
-    const { table, id } = onBeforeResult ?? {};
-    return first(await db.update(table).set(oReq.body).where(eq(table.id, id)).returning());
+  POST: async (_oReq, { db, onBeforeResult }) => {
+    const { table, body } = onBeforeResult ?? {};
+    return first(await db.insert(table).values(body).returning());
+  },
+  PUT: async (_oReq, { db, onBeforeResult }) => {
+    const { table, id, body } = onBeforeResult ?? {};
+    return first(await db.update(table).set(body).where(eq(table.id, id)).returning());
   },
   DELETE: async (_oReq, { db, onBeforeResult }) => {
     const { table, id } = onBeforeResult ?? {};

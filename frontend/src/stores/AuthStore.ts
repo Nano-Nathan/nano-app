@@ -1,81 +1,53 @@
+import { createAuthClient } from 'better-auth/client';
 import { IS_SERVER } from '@nano-app/core/const';
 import ApiStore from './ApiStore';
 import type { ApiResponse } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
 
-/** Key of the session in the cache */
-const SESSION_KEY = ['session'];
-
-/** Api store of a backend with Better Auth: signs in and out, and keeps the session */
+/** Api store of a backend with Better Auth: sends its requests with its client, and keeps the session */
 export default class AuthStore extends ApiStore {
-  private sBasePath: string;
+  /** Better Auth's client through the proxy of the store; only in the browser */
+  private oAuth?: ReturnType<typeof createAuthClient>;
 
   /** Store of the backend `API_<NAME>_URL`, with Better Auth at its base path */
   constructor(sName: string, sBasePath: string, oData?: NanoObject) {
     super(sName, oData);
-    this.sBasePath = sBasePath;
+
+    // The server renders without a session
+    if (IS_SERVER) return;
+
+    // Creates the client: its requests count in `/busy`
+    const oAuth = createAuthClient({
+      baseURL: `${location.origin}/api/${sName}${sBasePath}`,
+      fetchOptions: {
+        customFetchImpl: (oInput, oInit) => this.track(fetch(oInput, oInit)),
+        onSuccess: ({ request }) => {
+          if (/\/sign-(in|up|out)/.test(String(request.url))) oAuth.$store.notify('$sessionSignal');
+        },
+      },
+    });
+    this.oAuth = oAuth;
+
+    // Keeps the session of the client in `/session`
+    oAuth.useSession.subscribe(({ data }) => this.set('/session', data));
   }
 
-  /** `POST <basePath>/sign-in/<kind>` (`email`...), reading the session again on success */
-  public signIn(sKind: string, oBody: unknown): Promise<ApiResponse> {
-    return this.post(`/sign-in/${sKind}`, oBody);
-  }
-
-  /** `POST <basePath>/sign-up/<kind>`, reading the session again on success */
-  public signUp(sKind: string, oBody: unknown): Promise<ApiResponse> {
-    return this.post(`/sign-up/${sKind}`, oBody);
-  }
-
-  /** `POST <basePath>/sign-out`, reading the session again on success */
-  public signOut(): Promise<ApiResponse> {
-    return this.post('/sign-out', {});
-  }
-
-  /** `GET <basePath>/get-session` into `/session`, kept until the next sign-in, -up or -out */
-  public async readSession(): Promise<ApiResponse> {
+  /** `POST <basePath><path>` of Better Auth (`/sign-in/email`), as an `ApiResponse` */
+  public async post(sPath: string, oBody: unknown = {}): Promise<ApiResponse> {
     // Asks nothing on the server
-    if (IS_SERVER) return {};
+    if (!this.oAuth) return {};
 
-    // Answers from the cache, or asks the backend once for every concurrent read
-    const oResponse = await this.oClient.fetchQuery({
-      queryKey: SESSION_KEY,
-      queryFn: () => this.request(`${this.sBasePath}/get-session`, { method: 'GET' }),
-    });
-
-    // Keeps its `{ user, session }` in `/session`
-    this.set('/session', oResponse.result ?? null);
+    // Sends it; a failed answer goes to the errors
+    const { data, error } = await this.oAuth.$fetch(sPath, { method: 'POST', body: oBody });
+    const oResponse = { success: !error, result: data, message: error?.message };
+    if (error) this.fail(oResponse);
     return oResponse;
   }
 
-  /** Better Auth's answer inside an `ApiResponse`; a 401 of the backend clears the session */
-  protected receive(sPath: string, oRes: Response, oBody: ApiResponse): ApiResponse {
-    // Clears the session and its kept answer on a 401
-    if (oRes.status === 401) {
-      this.oClient.removeQueries({ queryKey: SESSION_KEY });
-      this.set('/session', null);
-    }
-
-    // Answers of the backend's own routes are already an `ApiResponse`
-    if (!sPath.startsWith(`${this.sBasePath}/`)) return oBody;
-
-    // Wraps the answer of Better Auth, with its message
-    return { success: oRes.ok, result: oBody, message: oBody?.message };
-  }
-
-  /** Sends a `POST` to Better Auth and, on success, reads the session again */
-  private async post(sPath: string, oBody: unknown): Promise<ApiResponse> {
-    // Sends it
-    const oResponse = await this.request(`${this.sBasePath}${sPath}`, {
-      method: 'POST',
-      body: JSON.stringify(oBody),
-    });
-
-    // Returns a failed answer as is
-    if (!oResponse.success) return oResponse;
-
-    // Reads the session again
-    this.oClient.removeQueries({ queryKey: SESSION_KEY });
-    await this.readSession();
-    return oResponse;
+  /** A 401 of the backend reads the session again: it is over */
+  protected receive(oRes: Response, oBody: ApiResponse): ApiResponse {
+    // Asks the client for the session again
+    if (oRes.status === 401) this.oAuth?.$store.notify('$sessionSignal');
+    return oBody;
   }
 }

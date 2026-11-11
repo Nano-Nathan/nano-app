@@ -17,7 +17,7 @@ export default abstract class Database {
     return this.oClients[sName];
   }
 
-  /** Mounts the Drizzle client of a schema: the app's tables outside `nano_*`, a plugin's only in `nano_<name>` */
+  /** Mounts the Drizzle client of a schema, checking the `nano_*` rule of its tables */
   // any: the client is typed by the schema of each app, unknown to the framework
   public static async mount(sName: string, { schema }: DatabaseConfig): Promise<any> {
     // Fails when the name already has a client
@@ -28,18 +28,23 @@ export default abstract class Database {
     const { getTableConfig, PgTable } = await import('drizzle-orm/pg-core');
     const { drizzle } = await import('drizzle-orm/node-postgres');
 
-    // Checks the Postgres schema of each table: none `nano_*` for the app, `nano_<name>` for a plugin
+    // Checks the Postgres schema of each table
     const sOwn = `nano_${sName}`;
-    const isApp = sName === APP_NAME;
+    const { breaks, rule } =
+      sName === APP_NAME
+        ? {
+            breaks: (sSchema: string) => sSchema.startsWith('nano_'),
+            rule: 'the nano_* schemas are reserved for plugins',
+          }
+        : {
+            breaks: (sSchema: string) => sSchema !== sOwn,
+            rule: `a plugin keeps its tables in "${sOwn}"`,
+          };
     for (const oTable of Object.values(schema).filter(oValue => is(oValue, PgTable))) {
       const { name, schema: sSchema = 'public' } = getTableConfig(oTable);
-      const isInvalid = isApp ? sSchema.startsWith('nano_') : sSchema !== sOwn;
-      if (isInvalid) {
-        const sRule = isApp
-          ? 'the nano_* schemas are reserved for plugins'
-          : `a plugin keeps its tables in "${sOwn}"`;
+      if (breaks(sSchema)) {
         throw new NanoError(
-          `The database "${sName}": table "${sSchema}.${name}" breaks the rule, ${sRule}.`,
+          `The database "${sName}": table "${sSchema}.${name}" breaks the rule, ${rule}.`,
         );
       }
     }

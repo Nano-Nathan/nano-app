@@ -1,0 +1,45 @@
+---
+status: review
+owner: claude
+depends_on: []
+updated: 2026-11-10
+---
+
+# Reuse the libraries instead of own code
+
+## Goal
+
+Where nano-app wrote by hand something its libraries already give (zod, Better Auth's client, Next's rewrite, TanStack Query), it uses the library: less code to maintain and no gaps a hand-made copy leaves. The framework does not decide the security of an app: it gives the consumer the place to do it.
+
+## Scope
+
+- `plugins/crud`: `validations` per model and action (`read`, `create`, `update`), zod schemas of the app; a body that breaks one answers 400. Nothing is checked without them. Its `schema` option is now `dbSchema`. A query runs on the app's client, so it reaches related tables.
+- `plugins/rate-limit`: the token bucket stays (a fixed window lets a client spend two windows around its edge). An IPv6 client is its `/56` network, with `ipKeyGenerator` of `express-rate-limit`.
+- `frontend` `AuthStore`: one `post(path, body)` on Better Auth's client (`createAuthClient`), private to the store, for every `POST` of Better Auth; the store keeps the session of the client at `/session`. `readSession` goes: the session is read when the app starts.
+- `frontend` proxy: `/api/<store>/…` is a `NextResponse.rewrite` with the headers of the store, instead of a `fetch` and a copy of its answer. The guard of the pages asks Better Auth with a `fetch` to the backend.
+- `core` `Validator`: route and store files are checked with zod schemas (`ROUTE`, `STORE`); a route file with an unknown key stops the startup.
+- `components` forms: each field takes its `validation`, a zod schema; `required`, `rules`, `errorMessage` and `validate` of a field go. A rule between fields goes in the `onSubmit` of the form.
+- `frontend` `ApiStore`: `gcTime: Infinity`, so a read is kept until a write, as the README says.
+- Small cleanups: redundant defaults of `config.ts`, direct method lookup in `Endpoint`, `import.meta.dirname` in `health` and `crud`.
+- `.claude/CLAUDE.md` holds only the code guidelines and the clean core; the rules of the repository and the planning of a development moved to `CONTRIBUTING.md`.
+
+Out of scope: the other endpoints of Better Auth (social, password reset) from the store; `/busy` from TanStack's `isFetching()`.
+
+## Decisions
+
+Decided 2026-11-10: A1, B1, C1, D1.
+
+- A. crud validation. **A1**: only what the app passes in `schemas`. A2: by default with the schema generated from each table.
+- B. IPv6 key of `rate-limit`. **B1**: `ipKeyGenerator` of `express-rate-limit`. B2: the whole address, documented.
+- C. Form schema. C1: one `schema` of the form. **C2**: a zod schema per field (`validation`), chosen in the review of the pull request over C1.
+- D. Read cache. **D1**: `gcTime: Infinity`. D2: TanStack's 5 minutes, and fix the README.
+
+## Log
+
+- 2026-11-10 · claude · Plan approved by the maintainer with A1, B1, C1, D1; `rate-limit` keeps its token bucket by the maintainer's decision.
+- 2026-11-10 · claude · Implemented on `refactor/reuse-libraries`. Not done, with its reason: `/busy` from `isFetching()` needs the writes moved to TanStack mutations, which is more code than the counter it replaces. Replaces `zod-rules` (rules by name in the field config). Tests run in CI.
+- 2026-11-11 · claude · Review of the maintainer on the pull request: the client of Better Auth is private to `AuthStore`, which keeps `signIn(kind, body)`, `signUp` and `signOut` answering an `ApiResponse`; each field has its `validation` and its one error message, the form takes no schema; crud's options are `dbSchema` and `validations`; the default `app` store wins over the app's file again (the cleanup had changed it); `CLAUDE.md` reduced to code guidelines. Still open for the maintainer: the strict route files and the session read when the app starts.
+- 2026-11-11 · claude · The maintainer decides the two open points by the least code: the route files stay strict (it is what lets `Endpoint` look a method up directly) and the session is read when the app starts (the store only listens to the client). Pass of the repository against `CLAUDE.md`: `HTTP_METHODS` deleted from `core` (nothing used it), `MainPluginConfig` derived from `PluginConfig`, a stale Prisma comment fixed. Left as is: the type guards of `config.ts` and `errors.ts` (they check what they say), and the Prisma entries of `.gitignore` and `pnpm-workspace.yaml` (module 4 of `drizzle`).
+- 2026-11-11 · claude · Second review of the maintainer: the requests of an api store moved to `RequestStore`; `AuthStore` keeps one `post(path, body)` instead of `signIn`, `signUp` and `signOut`; crud, after personal-app's `Entities`: reads on the app's client (relations allowed, decision A: the app limits them with its `read` validation), the body validated once in `onBefore`, validations by action, and no `dbSchema` (the tables come from `db._.relations`, which Drizzle 1.0 rc exposes). The cache of crud's client is gone: creating it took 0.009 ms.
+- 2026-11-11 · claude · Third review of the maintainer: crud takes its tables from the `dbSchema` option again (no reading of `db._`, private to Drizzle's client), and its read builds the query and calls `findMany` once. `CLAUDE.md` gains both rules.
+- 2026-11-11 · claude · Fourth review of the maintainer: comments shortened in every source (a few words, under 80 columns) and a pass for conditions and calls written twice: crud decides in `onBefore` how a read is paged and answered; `NanoApp` mounts every plugin in one loop and the app's plugin finds its Better Auth options itself; `Database` picks the rule of a name once; `ApiStore.read` and `field` decide once. Left as is: `Endpoint` asks twice whether the route is public (deciding it once changes the warning of a public route with permissions), and `onBeforeResult ?? {}` in crud's handlers (the type of `Params` makes it optional).

@@ -202,6 +202,9 @@ importers:
       morgan:
         specifier: ^1.12.1
         version: 1.12.1(supports-color@7.2.0)
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
     devDependencies:
       '@types/compression':
         specifier: ^1.8.1
@@ -300,6 +303,9 @@ importers:
       jiti:
         specifier: ^2.7.0
         version: 2.7.0
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
     devDependencies:
       '@types/express':
         specifier: ^5.0.6
@@ -319,6 +325,9 @@ importers:
       '@tanstack/query-core':
         specifier: ^5.107.1
         version: 5.107.1
+      better-auth:
+        specifier: ^1.7.18
+        version: 1.7.18(@prisma/client@7.10.1(prisma@7.10.1(@types/node@26.6.6)(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@7.0.2))(typescript@7.0.2))(drizzle-kit@1.0.0-rc.5-ab785fc)(drizzle-orm@1.0.0-rc.5-ab785fc(@electric-sql/pglite@0.4.3)(@types/pg@8.23.1)(mysql2@3.24.4(@types/node@26.6.6))(pg@8.23.1)(postgres@3.4.7)(valibot@1.4.2(typescript@7.0.2))(zod@4.6.7))(mysql2@3.24.4(@types/node@26.6.6))(next@16.4.5(@types/node@26.6.6)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(pg@8.23.1)(prisma@7.10.1(@types/node@26.6.6)(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@7.0.2))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(vue@3.5.45(typescript@7.0.2))
       glob:
         specifier: ^14.0.4
         version: 14.0.4
@@ -331,6 +340,9 @@ importers:
       mobx-react-lite:
         specifier: ^5.1.2
         version: 5.1.2(mobx@7.1.5)(react@19.3.1)
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
     devDependencies:
       '@happy-dom/global-registrator':
         specifier: ^21.0.3
@@ -398,6 +410,10 @@ importers:
         version: 7.0.2
 
   plugins:
+    dependencies:
+      express-rate-limit:
+        specifier: ^8.7.3
+        version: 8.7.3(express@5.3.0(supports-color@7.2.0))(supports-color@7.2.0)
     devDependencies:
       '@happy-dom/global-registrator':
         specifier: ^21.0.4
@@ -435,6 +451,9 @@ importers:
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
 
   site:
     devDependencies:
@@ -3096,6 +3115,12 @@ packages:
     resolution: {integrity: sha512-9Be3ZoN4LmYR90tUoVu2te2BsbzHfhJyfEiAVfz7N5/zv+jduIfLrV2xdQXOHbaD6KgpGdO9PRPM1Y4Q9QkPkA==}
     engines: {node: ^18.19.0 || >=20.5.0}
 
+  express-rate-limit@8.7.3:
+    resolution: {integrity: sha512-zPLqDI2f0gV2WmGnacLf9XSSqn4VldRyP5LCzOwx0BKH40mO6+2PCFkoSsRO2jePx87/Kf6NUF6P2QOTKXHbQA==}
+    engines: {node: '>= 16'}
+    peerDependencies:
+      express: '>= 4.11'
+
   express@5.3.0:
     resolution: {integrity: sha512-qCqy1xSoaugxOD4IVHb1ZWdkvCF2W3aE2okKouWj8VwJ+ztskSiXoBnCSJqfKT+cVPJhuJqe9YLbY425+Zh00g==}
     engines: {node: '>= 18'}
@@ -3374,6 +3399,10 @@ packages:
   internmap@2.0.3:
     resolution: {integrity: sha512-5Hh7Y1wQbvY5ooGgPbDaL5iYLAPzMTUrjMulskHLH6wnv/A+1q5rgEaiuqEjB+oxGXIVZs1FF+R/KPN3ZSQYYg==}
     engines: {node: '>=12'}
+
+  ip-address@10.7.6:
+    resolution: {integrity: sha512-00LYkM6byILa9eQIx6qoaXCM40xTLd56AZ4vyaPW3YTyb49VZYPo5xsiAq4tuQ54GH4R7gVdYScJ1B7B77PuTg==}
+    engines: {node: '>= 12'}
 
   ipaddr.js@1.9.1:
     resolution: {integrity: sha512-0KI/607xoxSToH7GjN1FfSbLoU0+btTicjsQSWQlh/hZykN8KpmMf7uYwPW3R+akZ6R/w18ZlXSHBYXiYUPO3g==}
@@ -7050,6 +7079,14 @@ snapshots:
       strip-final-newline: 4.0.0
       yoctocolors: 2.2.0
 
+  express-rate-limit@8.7.3(express@5.3.0(supports-color@7.2.0))(supports-color@7.2.0):
+    dependencies:
+      debug: 4.4.3(supports-color@7.2.0)
+      express: 5.3.0(supports-color@7.2.0)
+      ip-address: 10.7.6
+    transitivePeerDependencies:
+      - supports-color
+
   express@5.3.0(supports-color@7.2.0):
     dependencies:
       accepts: 2.0.0
@@ -7384,6 +7421,8 @@ snapshots:
 
   internmap@2.0.3:
     optional: true
+
+  ip-address@10.7.6: {}
 
   ipaddr.js@1.9.1: {}
 

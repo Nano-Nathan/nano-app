@@ -1,7 +1,7 @@
 import { createElement } from 'react';
 import { createController } from '@nano-app/frontend';
 import NanoError from '@nano-app/core/utils/NanoError';
-import FieldRules from '../field/FieldRules';
+import validate from '../field/validate';
 import type { ReactNode, SubmitEvent } from 'react';
 import type { FormField } from '../types/field';
 import type { FormOptions } from '../types/form';
@@ -9,7 +9,7 @@ import type { FormOptions } from '../types/form';
 /** A form from a config of fields: their views, and their submit at `/form/<name>` of `app` */
 export default function form(oOptions: FormOptions) {
   return createController(({ props, stores }) => {
-    // Takes the views of the options, the name, fields and submit of the props, and its paths
+    // Takes the views, the props of the form and its paths
     const { components } = oOptions;
     const { name, onSubmit } = props;
     const aFields: FormField[] = props.fields;
@@ -37,9 +37,12 @@ export default function form(oOptions: FormOptions) {
         // Stops the browser's submit
         oEvent.preventDefault();
 
-        // Validates every field with the values of the form and keeps their messages
+        // Validates every field with its value and keeps their messages
         const oValues = stores.app.get(sValues) ?? {};
-        const aErrors = aFields.map(oField => [oField.name, FieldRules.validate(oField, oValues)]);
+        const aErrors = aFields.map(oField => [
+          oField.name,
+          validate(oField, oValues[oField.name]),
+        ]);
         stores.app.set(sErrors, Object.fromEntries(aErrors));
 
         // Sends the values only when no field breaks a rule

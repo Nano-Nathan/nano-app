@@ -1,4 +1,4 @@
-/** Error of the framework: Node shows it as `[nano-app] [ERROR]: <message>`, and a handler answers its status */
+/** Error of the framework, with the status a handler answers */
 export default class NanoError extends Error {
   public status?: number;
 

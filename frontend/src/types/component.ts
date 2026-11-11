@@ -31,7 +31,7 @@ export type View<M extends NanoObject> = (
 export type Controller<M extends NanoObject> = {
   /** Creates a component that renders the view with the controller's methods */
   bindView(view: View<M>): (props: ComponentProps) => ReactNode;
-  /** Creates a controller with these methods merged over its own: a method with the same name wins, `this` reaches both, and both `onMount` run */
+  /** Creates a controller with these methods over its own; both `onMount` run */
   extend<E extends NanoObject>(
     methods: (context: ComponentContext) => E & ThisType<Omit<M, keyof E> & E>,
   ): Controller<Omit<M, keyof E> & E>;

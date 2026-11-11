@@ -22,6 +22,7 @@ export default defineConfig({
       ...Object.keys(pkg.peerDependencies ?? {}),
       /^react\//,
       /^next\//,
+      /^better-auth\//,
     ],
   },
 });

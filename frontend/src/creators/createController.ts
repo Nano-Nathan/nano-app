@@ -28,14 +28,14 @@ function controller<M extends NanoObject & { callbacks?: ControllerCallbacks }>(
   fnMethods: (context: ComponentContext) => M,
 ): Controller<M> {
   return {
-    // Each bound view is a component that re-renders when a store path it read changes
+    // Each bound view re-renders when a path it read changes
     bindView: fnView =>
       observer((oProps: ComponentProps) => {
         // Gives the methods the props, the stores and the router of the app
         const oContext = { props: oProps, stores: useStores(), router: useRouter() };
         const oMethods = fnMethods(oContext);
 
-        // Binds each method to the others, so `this` reaches them also when the view calls it alone
+        // Binds each method, so `this` reaches the others
         const oBound: NanoObject = {};
         for (const [sName, oMethod] of Object.entries(oMethods)) {
           if (typeof oMethod === 'function') oBound[sName] = oMethod.bind(oMethods);
@@ -49,10 +49,10 @@ function controller<M extends NanoObject & { callbacks?: ControllerCallbacks }>(
           };
         }, []);
 
-        // Renders the view with the methods; the context wins over a method with its name
+        // Renders the view: the context wins over a method
         return fnView({ ...oMethods, ...oBound, ...oContext });
       }),
-    // A new controller with its methods merged over these, and both callbacks run in order
+    // A new controller with its methods over these
     extend: fnExtension =>
       controller(oContext => {
         const oOwn = fnMethods(oContext);

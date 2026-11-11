@@ -1,20 +1,14 @@
+import type { ZodType } from 'zod';
 import type { NanoObject } from '@nano-app/core/types/objects';
 
 /** A field of a form's config; the keys the field does not use pass as is to its view */
 export type FormField = NanoObject & {
   /** Key of its value (`email`) */
   name: string;
-  /** Type of its view and its zod type (`email`, `number`, `url`, `checkbox`, `date`, else text) */
+  /** Type of its view (`text` by default); a `number` keeps its text as a number */
   type?: string;
-  /** Whether the user must give it a value: missing or `''` breaks it */
-  required?: boolean;
-  /** Message of the rules without their own, instead of `Required`, `Invalid email`… */
-  errorMessage?: string;
-  /** Zod methods of its type by name, with their value or array of values */
-  rules?: NanoObject;
-  /** Own rule, after the others: the message when the value breaks it */
-  // any: the value is what the field's view gives `change`
-  validate?(value: any, values: NanoObject): string | undefined;
+  /** Rules of its value, a zod schema (`z.email()`); a rule between fields goes in the `onSubmit` of the form */
+  validation?: ZodType;
   /** What the view shows of the value kept (`1234` → `$1.234`) */
   // any: the value is what `change` kept
   format?(value: any): unknown;

@@ -124,7 +124,7 @@ The types of a controller and its views come from `@nano-app/frontend`: `Control
 
 ## Backend
 
-A store of type `api` connects the app to a backend. The browser never talks to the backend: it calls `/api/<store>/...` on the Next server, and the proxy sends the request there.
+A store of type `api` connects the app to a backend. The browser never talks to the backend: it calls `/api/<store>/...` on the Next server, and the proxy sends the request there. The proxy is a [rewrite](https://nextjs.org/docs/app/api-reference/functions/next-response#rewrite) of Next: Next sends the request to the backend and answers with what it answers.
 
 ```ts
 // src/stores/backend.store.ts
@@ -242,23 +242,21 @@ export default {
 ```ts
 // src/controllers/session.controller.ts
 export default createController(({ stores: { backend } }) => ({
-  load(): Promise<unknown> {
-    return backend.readSession();
-  },
   signIn(sEmail: string, sPassword: string): Promise<unknown> {
-    return backend.signIn('email', { email: sEmail, password: sPassword });
+    return backend.post('/sign-in/email', { email: sEmail, password: sPassword });
   },
   signOut(): Promise<unknown> {
-    return backend.signOut();
+    return backend.post('/sign-out');
   },
 }));
 ```
 
-- `signIn(kind, body)` and `signUp(kind, body)` send `POST <path>/sign-in/<kind>` and `POST <path>/sign-up/<kind>`: `kind` is the method of Better Auth (`email`, ...), and `body` what it asks. `signOut()` sends `POST <path>/sign-out`.
-- They return Better Auth's answer inside an `ApiResponse`: `{ success, result, message }`, with `success` when the backend answered 2xx and its `message` when it failed.
-- `readSession()` asks `GET <path>/get-session` and keeps `{ user, session }` at `/session`, or `null` without a session. It answers from the store until a `signIn`, `signUp` or `signOut` succeeds, which reads it again; calls that are out at once send one request. On the server it asks nothing and resolves with `{}`.
-- Any 401 of the store's backend sets `/session` to `null`, and the next `readSession()` asks again.
-- The session lives in Better Auth's cookie, which the proxy passes as any other: a refresh reads it again with `readSession()`.
+- `post(path, body)` sends `POST <auth.path><path>` to Better Auth: `/sign-in/email`, `/sign-up/email`, `/sign-out`, `/sign-in/social` (`{ provider, callbackURL }`: the browser goes to the provider), `/request-password-reset`, and the endpoints of the plugins the backend has (`/sign-in/username`, `/sign-in/magic-link`).
+- It returns Better Auth's answer inside an `ApiResponse`: `{ success, result, message }`, with its `message` when it failed. A failed answer also goes to `/error/list`.
+- It runs on [Better Auth's client](https://www.better-auth.com/docs/concepts/client), which only the store uses, through the proxy.
+- The store keeps `{ user, session }` at `/session`, or `null` without a session: it reads it when the app starts, and again after a sign-in, a sign-up or a sign-out of any kind, and when the tab gets the focus back, as the client does.
+- Any 401 of the store's backend reads the session again.
+- The session lives in Better Auth's cookie, which the proxy passes as any other.
 - Better Auth checks the `Origin` of every `POST`: add the URL of the frontend to its `trustedOrigins` in the backend.
 - With two backends with Better Auth, their cookies get the same name on the frontend's domain: give one of them another `advanced.cookiePrefix`.
 

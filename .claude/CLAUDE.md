@@ -2,53 +2,29 @@
 
 pnpm monorepo: `core/` (private, inlined into the backend, frontend and components), `backend/` (`@nano-app/backend`), `plugins/` (`@nano-app/plugins`), `frontend/` (`@nano-app/frontend`), `components/` (`@nano-app/components`). Read the README of the package you touch before changing it.
 
-## Workflow
+This file holds the code guidelines. Branches, pull requests, releases and how a development is planned and approved are in [CONTRIBUTING.md](../CONTRIBUTING.md); planned features in [`features/`](../features/README.md).
 
-- Before writing or showing any code, read this file again; before pushing, check the whole diff against every rule of it. Never skip it.
-- pnpm only: `pnpm install`, `pnpm test`, `pnpm build`, `pnpm --filter <package> <script>`. Never npm or npx.
-- Tests: `node:test` run with tsx. `DATABASE_URL` comes from the root `.env` (a disposable Neon database; the suites drop schemas).
-- Branches have a descriptive name of what they do (`feat/<topic>`, `fix/<topic>`, `refactor/<topic>`, `docs/<topic>`), never ids or generated names. Work on the existing branch of the topic when there is one.
-- Every change reaches `main` through a pull request. Its title is a Conventional Commit: it decides the release of each touched package.
-- By default, every development (a feature, a fix, a refactor) lives on one branch from `main` and reaches `main` in one pull request. Never split it into module branches on your own.
-- Only when the maintainer says a feature is split into modules (a large one, like `frontend`): it lives on a feature branch from `main` (`feat/<feature>`), linked to an issue when there is one. Each module gets its own branch from the up-to-date feature branch (`feat/<feature>--<module>`, `--` because a branch cannot also be a folder of branches) and a pull request to the feature branch. The next module starts only after that pull request is merged. When the feature is done, one pull request takes the feature branch to `main`, and its title decides the release.
-- Planned features live in `features/`, one file per feature, with its scope, status and log. Read `features/README.md` before taking one.
-- When `main` moves during a feature split into modules, merge `main` into the feature branch; never rebase it, module branches start from it.
-- Agents commit and push their work to its branch, and always open its pull request: to the feature branch for a module, to `main` otherwise.
-- Agents never add a `Co-authored-by` trailer (for themselves or another agent) to commits or pull requests: co-authorship is added by hand by the maintainer.
+Before writing or showing any code, read this file again; before pushing, check the whole diff against it.
 
-## New development: plan, implement after approval
-
-How the framework behaves (what it does with a request, a config, an error, a plugin, the database; what it accepts, rejects, stores or returns) is the maintainer's decision. Code style is not: follow this file without asking.
-
-A development is planned and reviewed as a whole, on its one branch. When the maintainer splits a feature into modules, each module is planned and reviewed on its own, one at a time (for stores: loading the files, creating the stores, reading and writing them, using them in React). The steps below apply to the development, or to each module when there are modules.
-
-1. Before writing any code, list what it will do, point by point. Each point says what and how, in plain words: what comes in, what happens to it, what goes out, and what it reuses from `core/` or existing code.
-2. When a point hides a decision (a default, an edge case, an error, where the code lives), give two or three options with their cost and mark one as the recommendation.
-3. The maintainer answers point by point. Adjust the points and list again only what changed.
-4. Implement only when every point has the maintainer's OK. Then commit, push and open the pull request: to `main`, or to the feature branch for a module, and the next module starts after it is merged.
-5. The tests, the README of the package and the feature file in `features/` follow the final decisions, not the first proposal: when a point changes during the review, update them in the same branch.
-
-Reuse and extend what exists (`core/` loaders, validators, utils) before writing new code, and keep each change to the smallest code that does the job.
-
-A large idea is first broken into tasks and a dependency tree: see [Breaking down a feature](../features/README.md#breaking-down-a-feature).
-
-## Principles
-
-Industry practices this repository follows. The concrete rules below win when they are more specific.
+## Clean core
 
 - **A framework for others**: every feature is general, never shaped for one app or one plugin. The consumer gets a small, easy layer (`createRoute`, `createPlugin`, one config object) and the framework does the work behind it. Convention over configuration: a file in the right folder works without registering it.
-- **Only what is needed**: add exactly what the task requires. No option, default, fallback, retry or `try`/`catch` nobody asked for; when something is missing, fail with a clear message instead of guessing. General does not mean speculative: generalize what exists, do not build for cases nobody has.
-- **KISS and YAGNI**: the simplest solution for today's need. No code for a future that has not arrived.
-- **Least code**: implement each change with the least code possible. Before adding anything, check whether it is needed at all; prefer reusing what exists, and no change over a small one.
-- **DRY**: one source of truth for each piece of knowledge (a rule, a message, a constant), not only for repeated lines.
-- **Single responsibility**: a function does one thing, a file has one job, a module one reason to change.
-- **Fail fast**: invalid configuration fails at startup with a clear message, not on the first request.
+- **The consumer owns the app**: the security and the rules of an app (what a body may bring, how many records a list answers) are the consumer's. The framework gives the place to set them and never decides them.
+- **Least code**: add exactly what the task needs, with the least code possible. No option, default, fallback, retry or `try`/`catch` nobody asked for, and no code for a case nobody has. Prefer reusing what exists, and no change over a small one.
+- **Reuse before writing**: before writing anything, check whether an installed dependency (zod, Drizzle, TanStack Query, Better Auth, Express, Next) or `core/` already gives it; when none does, whether a tool that already exists (a library, a CLI, a feature of the platform) solves the problem. A hand-made copy is more code to maintain and leaves the gaps the tool closed.
+- **A new dependency** needs a reason a built-in or an installed one cannot cover.
+- **A cleanup never changes behavior**: a refactor or a simplification leaves what the framework accepts, rejects, stores and answers as it was. A change of behavior, however small, goes to the plan as a decision before any code.
+- **Behavior is the maintainer's decision**: what the framework does with a request, a config, an error, a plugin or the database. Code style is not: follow this file without asking.
+- **`core/` is private**: what nothing uses there is deleted. Exported functions of `backend` and `plugins` stay even when nothing in the repo uses them: consumers may.
+- **DRY**: one source of truth for each piece of knowledge (a rule, a message, a constant). Code that repeats is extracted the second time it appears (`Logger.warn`), and two branches that make the same call with other arguments build the arguments and call once; no abstraction for a single use.
+- **Single responsibility**: a function does one thing, a file has one job. A file over ~120 lines, or a function you cannot read in one screen, is a sign to split or simplify.
+- **Fail fast**: invalid configuration fails at startup with a clear message, not on the first request. When something is missing, fail instead of guessing.
 - **Validate at the boundaries**: data from outside (requests, consumer files, env) is checked once where it enters; inside, types are trusted.
 - **Immutability**: `const` by default, `let` only when a value changes. Do not mutate parameters; return a new value.
+- **No private members**: never read what an object keeps for itself (`db._`, a field with `_`). What a piece of code needs comes in as an option or a parameter.
+- **A condition once**: a function tests each condition one time. When two places need its answer, decide both there (`const oRead = id ? { page, answer: first } : { answer: list };`).
 - **Least surprise**: names say what a thing does and nothing more; a function named `get` has no side effects.
-- **Least privilege**: routes private when the app has `src/auth.ts`, workflow permissions minimal, no secrets in logs.
 - **HTTP semantics**: `GET` reads and never changes state; status codes mean what the standard says (400 bad input, 401 not authenticated, 403 not allowed, 404 not found, 5xx server fault).
-- **Semantic Versioning and Conventional Commits**: a change that breaks the public API ends its pull request body with a `BREAKING CHANGE: <what breaks>` footer (the squash commit keeps the body; the release presets do not read `!` in the title); fixes are `fix:`.
 - **Tests describe behavior**, not implementation: they call the public API and check what a consumer sees.
 - **Boy Scout rule**: code you touch for a task follows this file when you leave it; code you do not touch stays as is.
 
@@ -58,9 +34,6 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 
 ### Structure
 
-- Small files with one job. A file over ~120 lines, or a function you cannot read in one screen, is a sign to split or simplify.
-- Code that repeats is extracted the second time it appears (`Validator.isStringMap`, `Logger.warn`); no abstraction for a single use. No option, parameter or config nobody asked for.
-- Exported functions of `backend` and `plugins` stay even when nothing in the repo uses them: consumers may. `core` is private: what nothing uses there is deleted.
 - Up to 3 positional parameters; with more, one object (`DatabaseConfig`).
 - A class when there is state (`Database`, `Plugin`); `abstract class` with `static` methods for stateless utilities grouped by area (`FileReader`, `Validator`). Public API is plain functions (`createRoute`, `createPlugin`).
 - The function of `createController` returns its object: `callbacks` first (`onMount` reads what the view needs), then the methods. Before the `return` only `const` that read the context or the options (`const oApi = stores[store];`, a path); no functions, hooks or effects. Logic lives in the methods: one reaches another with `this` (`last() { return this.items()[0]; }`, method syntax, never an arrow), also from `onMount`. The view renders; its only hook is a `useEffect` that calls a method when a value changes (`useEffect(guard, [backend.get('/session')]);`).
@@ -69,7 +42,7 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 - `public`, `protected` or `private` on every class method and field; constructors go without.
 - Declared functions and methods state their return type (`: Promise<void>`); inline callbacks infer it, and so does the factory of a component (`list`), from the controller it returns.
 - No `any` without a comment saying why (`// any: anything can be thrown`). Prefer `unknown` and validate.
-- No type assertions (`as`): types are declared where values are born and inferred from there. Data from outside (JSON, env) gets a typed variable where it enters (`const oFiles: StoreFiles = JSON.parse(…)`). Only `as const` is allowed.
+- Types are declared where values are born and inferred from there. Data from outside (JSON, env) gets a typed variable where it enters (`const oFiles: StoreFiles = JSON.parse(…)`).
 - Types in a `types/` folder of the package, one file per area (`types/app.ts`, `types/plugin.ts`). `type`, not `interface`. `import type` for types.
 - Generic objects are `NanoObject` (`core/types/objects.ts`), with the value type when it is known (`NanoObject<Store>`), never `object` or `Record<string, …>`.
 - Files: PascalCase when they export a class (`FileLoader.ts`), lowercase otherwise (`creators.ts`, `config.ts`).
@@ -78,7 +51,7 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 
 ### Names
 
-Prefix by type on every internal name: local variables, parameters, class fields, loop and callback variables, `catch`, and Express's `oReq`, `oRes`, `fnNext`. No prefix on: public API (exported types and their fields, plugin options, responses), names destructured from it (`const { name, routesDir } = oConfig`), declared functions and methods, module constants (`HTTP_METHODS`), type parameters (`T`, `DB`) and tool configs (`tsdown.config.ts`).
+Prefix by type on every internal name: local variables, parameters, class fields, loop and callback variables, `catch`, and Express's `oReq`, `oRes`, `fnNext`. No prefix on: public API (exported types and their fields, plugin options, responses), names destructured from it (`const { name, routesDir } = oConfig`), declared functions and methods, module constants (`PRIVATE_NETWORKS`), type parameters (`T`, `DB`) and tool configs (`tsdown.config.ts`).
 
 | Prefix | Type | Example |
 |---|---|---|
@@ -110,29 +83,25 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 - `??` for defaults. `||` only when `0`, `''` or `NaN` must also take the default (`message || 'Internal server error'`).
 - `for...of` to iterate when nothing is returned, never `.forEach` (it does not wait for `await`). `.map`, `.filter` and `.some` when they return something.
 - `async`/`await` in general. Express handlers and middlewares chain `.then()` and return the chain: Express 5 sends a rejection to the error handler.
-- Errors: an invalid consumer file throws from the `Validator` and stops the startup (or the build). No `try`/`catch` to rename or wrap an error: it reaches `NanoApp.start` as it was thrown, with its stack. The framework throws `new NanoError('…')` (`core`): Node shows it as `[nano-app] [ERROR]: …`; with a status (`new NanoError('Not found', 404)`) a handler answers it. Handlers throw a string (400), `{ status, message, warning }` or a `NanoError`.
+- Errors: an invalid consumer file throws where it is checked (the zod schemas of `core/utils/validations.ts`) and stops the startup (or the build). No `try`/`catch` to rename or wrap an error: it reaches `NanoApp.start` as it was thrown, with its stack. The framework throws `new NanoError('…')` (`core`): Node shows it as `[nano-app] [ERROR]: …`; with a status (`new NanoError('Not found', 404)`) a handler answers it. Handlers throw a string (400), `{ status, message, warning }` or a `NanoError`.
 - Messages: on the console only through `Logger.error`, `Logger.warn` and `Logger.info`, never `console`; in a response through `Logger.message`. The text says the file or thing, what is wrong, and the command that fixes it (``Run `pnpm add drizzle-orm pg`.``).
 
 ### Comments and format
 
-- `/** */` above declarations, `//` inside bodies, never `/* */`. A one-line JSDoc on everything exported, and a short comment before each step of a function, even an obvious one (`// Checks that the default export is an object`). A comment says briefly what the code does: no examples and no reasons why. English.
+- `/** */` above declarations, `//` inside bodies, never `/* */`. A one-line JSDoc on everything exported. Inside a function, a very short comment before each block says what the block does, so the code is never bare: a few words on one line, under 80 columns, with no examples, no reasons why and no list of every case. A JSDoc is one short sentence too. English.
+- No commented-out code, unless a `// TODO:` above it says when it comes back or goes away.
 - One line when it reads easily (`if (!oUser) return fnNext({ status: 401 });`). Vertical when it does not: nested objects, calls with several arguments, destructuring.
 - Prettier (`.prettierrc.json`): single quotes (backticks only to interpolate; never `+` to join strings, `.join('\n')` for lines), semicolons, 2 spaces, 100 columns, arrow functions without parentheses on one parameter (`oRoute => oRoute.path`). `pnpm format` writes, CI checks.
-
-- No commented-out code, unless a `// TODO:` above it says when it comes back or goes away.
 
 ### Tests
 
 - `node:test` against the real thing: an Express server started by the test and a real database. No mocks.
-- Tests and fixtures follow the same style: prefixes and a comment per step.
+- Tests and fixtures follow the same style: prefixes and a comment per block.
 
-## Security
+## Security in code
 
-- Never commit secrets, and never print them: no `cat .env`, no `source .env`, no logging `process.env`. To use the root `.env` elsewhere, copy the file.
-- Untrusted input (`req.body`, `req.params`, `req.query`, headers) is validated before use. SQL uses parameters (`$1`); identifiers (schema, table) come only from constants.
+- Never print secrets: no `cat .env`, no `source .env`, no logging `process.env`. Framework messages never include secrets or connection strings.
+- Untrusted input (`req.body`, `req.params`, `req.query`, headers) is validated before the framework uses it. SQL uses parameters (`$1`); identifiers (schema, table) come only from constants.
 - Routes are private when the app has `src/auth.ts`: only its endpoints and the plugins mounted before the app are public. Without it every route is public. A plugin that exposes something public says so in its README.
-- The error handler answers with the message of what was thrown below 500; a 5xx answers `Internal server error` and is logged in full. Framework messages never include secrets or connection strings.
+- The error handler answers with the message of what was thrown below 500; a 5xx answers `Internal server error` and is logged in full.
 - No DDL at startup: the consumer applies their schemas (and those of the plugins they install) with drizzle-kit; the startup only creates the clients.
-- A new dependency needs a reason a built-in cannot cover. Install scripts run only for the packages in `allowBuilds` of `pnpm-workspace.yaml`.
-- Workflows: `permissions: contents: read` by default; `id-token: write` and `contents: write` only on release jobs. Packages are published only by CI (npm trusted publishing).
-- Report vulnerabilities as in [SECURITY.md](../SECURITY.md).

@@ -5,7 +5,6 @@ import helmet from 'helmet';
 import compression from 'compression';
 import 'dotenv/config';
 import { Logger } from '@nano-app/core';
-import BetterAuth from '../auth/BetterAuth';
 import Plugin from '../routes/Plugin';
 import { mergeConfig } from './config';
 import { errorHandler, notFoundHandler } from './errors';
@@ -30,7 +29,7 @@ export default class NanoApp {
       await this.initialize();
 
       // Init server
-      this.oApp.listen(Number(this.oConfig.port), () => {
+      this.oApp.listen(this.oConfig.port, () => {
         // Runs the consumer listener
         this.oConfig.listener?.();
 
@@ -54,20 +53,14 @@ export default class NanoApp {
     this.setPackages(this.oConfig.packages);
 
     // Plugins separated by stage
+    const { mainPlugin, plugins } = this.oConfig;
     const oPlugins: NanoObject<PluginConfig[]> = { before: [], after: [] };
-    for (const oPlugin of this.oConfig.plugins) {
-      oPlugins[oPlugin.stage ?? 'before'].push(oPlugin);
+    for (const oPlugin of plugins) oPlugins[oPlugin.stage ?? 'before'].push(oPlugin);
+
+    // Mounts the ones before the app, the app's and the ones after
+    for (const oPlugin of [...oPlugins.before, mainPlugin, ...oPlugins.after]) {
+      await new Plugin(oPlugin).mount(this.oApp);
     }
-
-    // Create plugins before, in order
-    for (const oPlugin of oPlugins.before) await new Plugin(oPlugin).mount(this.oApp);
-
-    // Create consumer plugin, with Better Auth when the app has src/auth.ts
-    const { mainPlugin } = this.oConfig;
-    await new Plugin(mainPlugin, await BetterAuth.findOptions()).mount(this.oApp);
-
-    // Create plugins after, in order
-    for (const oPlugin of oPlugins.after) await new Plugin(oPlugin).mount(this.oApp);
 
     // Unmatched requests become a 404 for the error handler
     this.oApp.use(notFoundHandler);
@@ -77,7 +70,7 @@ export default class NanoApp {
   }
 
   /** Adds the packages according to the configuration */
-  private setPackages(oConfig: PackagesConfig = {}): void {
+  private setPackages(oConfig: PackagesConfig): void {
     // Morgan
     if (oConfig.morgan) {
       for (const [sKey, fnToken] of Object.entries(oConfig.morgan.tokens ?? {})) {

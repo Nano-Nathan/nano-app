@@ -22,16 +22,7 @@ export type PluginConfig<Options = NanoObject> = {
   callbacks?: PluginCallbacks;
 };
 
-/** The project's plugin: nano-app names it "app" and mounts it between the "before" and "after" plugins */
-export type MainPluginConfig<Options = NanoObject> = {
-  /** Directory of the project's `*.route.ts` files. Defaults to "src/routes" */
-  routesDir?: string;
-  /** Base path prepended to every route, e.g. "/api" (no trailing slash). Defaults to none */
-  basePath?: string;
-  /** Drizzle schema of the project's database; without it the app has none */
-  database?: DatabaseConfig;
-  /** Plugin options */
-  options?: Options;
-  /** Plugin callbacks */
-  callbacks?: PluginCallbacks;
-};
+/** The project's plugin, named "app": `routesDir` defaults to "src/routes" */
+export type MainPluginConfig<Options = NanoObject> = Partial<
+  Omit<PluginConfig<Options>, 'name' | 'stage'>
+>;

@@ -5,7 +5,7 @@ import type { FindableExtension } from '../types/files';
 
 /** Finds and loads the consumer's files */
 export default abstract class FileLoader {
-  /** Finds `*.<extension>.ts` (or built `.js`) files in a folder (`src/<extension>s` by default) and returns `{ [subPath]: defaultExport }` */
+  /** Finds the `*.<extension>.ts` files of a folder: `{ [subPath]: defaultExport }` */
   public static async findMany(
     sExtension: FindableExtension,
     sSourceDir?: string,
@@ -17,7 +17,7 @@ export default abstract class FileLoader {
       ignore: '**/*.d.ts',
     });
 
-    // Loads each file, keyed by its path without the extension (`src/routes/a/b.route.ts` → `/a/b`)
+    // Loads each file, keyed by its path without the extension
     const oEntries: NanoObject = {};
     for (const sFilePath of aFilePaths) {
       const sFileSubPath = sFilePath

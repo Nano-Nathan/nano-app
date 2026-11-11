@@ -4,7 +4,7 @@ import './env/auth';
 import { test, describe, before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { NanoAppProvider } from '@nano-app/frontend';
 import auth from '../auth';
@@ -52,7 +52,6 @@ const fnView: Parameters<ReturnType<typeof auth>['bindView']>[0] = ({
   signIn,
   signUp,
   signOut,
-  load,
   navTo,
 }) => (
   <div>
@@ -60,7 +59,6 @@ const fnView: Parameters<ReturnType<typeof auth>['bindView']>[0] = ({
     <button onClick={() => signIn({ email: 'ana@nano.app', password: 'secret' })}>sign in</button>
     <button onClick={() => signUp({ email: 'ana@nano.app', password: 'secret' })}>sign up</button>
     <button onClick={signOut}>sign out</button>
-    <button onClick={load}>load</button>
     <button onClick={() => navTo('/private')}>go</button>
   </div>
 );
@@ -90,18 +88,18 @@ describe('auth', () => {
     isSignedIn = false;
   });
 
-  test('signIn sends the body to the kind of the options and reads the session', async () => {
+  test('signIn sends the body to the kind of the options, and the session is read again', async () => {
     // Renders an auth of the username method and signs in
     const Auth = auth({ kind: 'username' }).bindView(fnView);
     renderApp(<Auth />);
     fireEvent.click(screen.getByText('sign in'));
     await expectEmail('ana@nano.app');
 
-    assert.equal(
-      aRequests[1],
-      'POST /api/api/api/auth/sign-in/username {"email":"ana@nano.app","password":"secret"}',
+    assert.ok(
+      aRequests.includes(
+        'POST /api/api/api/auth/sign-in/username {"email":"ana@nano.app","password":"secret"}',
+      ),
     );
-    assert.equal(aRequests[2], 'GET /api/api/api/auth/get-session ');
   });
 
   test('signUp signs up with email by default, and signOut clears the session', async () => {
@@ -115,24 +113,25 @@ describe('auth', () => {
     fireEvent.click(screen.getByText('sign out'));
     await expectEmail('none');
 
-    assert.match(aRequests[1], /^POST \/api\/api\/api\/auth\/sign-up\/email /);
-    assert.equal(aRequests[3], 'POST /api/api/api/auth/sign-out {}');
+    assert.ok(
+      aRequests.some(sRequest => sRequest.startsWith('POST /api/api/api/auth/sign-up/email ')),
+    );
+    assert.ok(aRequests.some(sRequest => sRequest.startsWith('POST /api/api/api/auth/sign-out ')));
   });
 
-  test('reads the session of the api store named in store when the view mounts', async () => {
-    // Renders an auth of another api store
+  test('every api store with auth reads its session when the app starts', async () => {
+    // Renders an auth: the app has two api stores with Better Auth
     const Auth = auth({ store: 'admin' }).bindView(fnView);
     renderApp(<Auth />);
-    await waitFor(() => assert.equal(aRequests.length, 1));
 
-    assert.equal(aRequests[0], 'GET /api/admin/auth/get-session ');
+    await waitFor(() => assert.ok(aRequests.includes('GET /api/api/api/auth/get-session ')));
+    await waitFor(() => assert.ok(aRequests.includes('GET /api/admin/auth/get-session ')));
   });
 
-  test('navTo goes to the url with the router of the app', async () => {
-    // Renders an auth, waits for its session and goes to the private page
+  test('navTo goes to the url with the router of the app', () => {
+    // Renders an auth and goes to the private page
     const Auth = auth().bindView(fnView);
     renderApp(<Auth />);
-    await waitFor(() => assert.equal(aRequests.length, 1));
     fireEvent.click(screen.getByText('go'));
 
     assert.deepEqual(aVisited, ['/private']);

@@ -10,9 +10,6 @@ export const INITIAL_CONFIG = {
   /** Application port */
   port: 3000,
 
-  /** Application listener */
-  listener: () => {},
-
   /** Express settings: the client IP comes from `X-Forwarded-For` only through private proxies */
   settings: {
     'trust proxy': PRIVATE_NETWORKS,
@@ -55,7 +52,7 @@ function deepMerge(oDefault: unknown, oValue: unknown): unknown {
   // Not set: the default
   if (oValue === undefined) return oDefault;
 
-  // Not two plain objects (`false`, arrays, functions, primitives): the value wins
+  // Not two plain objects: the value wins
   if (!Validator.isObject(oDefault) || !Validator.isObject(oValue)) return oValue;
 
   // Two plain objects: each key merged with its default
@@ -70,7 +67,7 @@ function isMergedConfig(oValue: unknown): oValue is typeof INITIAL_CONFIG {
 
 /** Merges the consumer configuration over the initial one; the main plugin is always named "app" */
 export function mergeConfig(oConfig: NanoAppConfig = {}): NanoAppConfig &
-  Required<Pick<NanoAppConfig, 'settings' | 'plugins' | 'packages'>> & {
+  Required<Pick<NanoAppConfig, 'port' | 'settings' | 'plugins' | 'packages'>> & {
     mainPlugin: PluginConfig;
   } {
   // Every level keeps its default where the consumer set nothing

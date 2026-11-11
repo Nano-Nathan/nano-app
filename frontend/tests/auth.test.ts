@@ -4,10 +4,10 @@ import './env/auth';
 import { test, describe, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
+import { waitFor } from '@testing-library/react';
 import createStores from '../src/creators/createStores';
 import AuthStore from '../src/stores/AuthStore';
 import { count } from './helpers';
-import type { NanoObject } from '@nano-app/core/types/objects';
 
 const PORT = 4201;
 
@@ -16,6 +16,9 @@ const aRequests: string[] = [];
 
 // Whether the backend has a session
 let isSignedIn = false;
+
+// Request that reads the session
+const SESSION = 'GET /api/backend/api/auth/get-session';
 
 /** Answers like a backend with Better Auth at `/api/auth`, and `/users` behind its session */
 function answer(sMethod: string, sUrl: string, sBody: string): [number, unknown] {
@@ -60,6 +63,14 @@ const oBackend = createServer((oReq, oRes) => {
   });
 });
 
+/** An auth store of the backend, once it read the session */
+async function createStore(): Promise<AuthStore> {
+  // Creates the store and waits for the session it reads when it is created
+  const oStore = new AuthStore('backend', '/api/auth');
+  await waitFor(() => assert.equal(count(aRequests, SESSION), 1));
+  return oStore;
+}
+
 describe('auth store', () => {
   before(async () => {
     // Moves the DOM to this backend's origin: the api store tests use the default one
@@ -73,71 +84,65 @@ describe('auth store', () => {
     isSignedIn = false;
   });
 
-  test('an api store with auth reads the session, and one without it does not', () => {
+  test('an api store with auth posts to Better Auth, and one without it does not', async () => {
     // Creates the stores: an api store with auth and one without
     const { backend, payments } = createStores();
 
-    assert.equal(typeof backend.readSession, 'function');
-    assert.equal(payments.readSession, undefined);
+    assert.equal(typeof backend.post, 'function');
+    assert.equal(payments.post, undefined);
+
+    // Waits for the session the store with auth reads
+    await waitFor(() => assert.equal(count(aRequests, SESSION), 1));
   });
 
-  test('signIn wraps the answer of Better Auth and reads the session', async () => {
-    // Signs in
-    const oStore = new AuthStore('backend', '/api/auth');
-    const oResponse: NanoObject = await oStore.signIn('email', {
+  test('the store reads the session when it is created, and again after a sign-in', async () => {
+    // Creates the store without a session, and signs in
+    const oStore = await createStore();
+    assert.equal(oStore.get('/session'), null);
+    const oResponse = await oStore.post('/sign-in/email', {
       email: 'ana@nano.app',
       password: 'secret',
     });
 
+    // Checks the answer of Better Auth inside an `ApiResponse`, and the session kept
     assert.deepEqual(oResponse, {
       success: true,
       result: { token: 'token', user: { email: 'ana@nano.app' } },
       message: undefined,
     });
-    assert.deepEqual(oStore.get('/session').user, { email: 'ana@nano.app' });
+    await waitFor(() => assert.deepEqual(oStore.get('/session')?.user, { email: 'ana@nano.app' }));
   });
 
-  test('a failed signIn returns the message of Better Auth and keeps no session', async () => {
-    // Signs in with a wrong password, and reads the session
-    const oStore = new AuthStore('backend', '/api/auth');
-    const oResponse = await oStore.signIn('email', { email: 'ana@nano.app', password: 'wrong' });
-    await oStore.readSession();
+  test('a failed sign-in returns the message of Better Auth, keeps it in the errors and no session', async () => {
+    // Signs in with a wrong password
+    const oStore = await createStore();
+    const oResponse = await oStore.post('/sign-in/email', {
+      email: 'ana@nano.app',
+      password: 'wrong',
+    });
 
     assert.equal(oResponse.success, false);
     assert.equal(oResponse.message, 'Invalid email or password');
+    assert.equal(oStore.get('/error/list')[0].message, 'Invalid email or password');
     assert.equal(oStore.get('/session'), null);
+    assert.equal(oStore.get('/busy'), false);
   });
 
-  test('readSession answers from the store until the next sign-in or sign-out', async () => {
-    // Reads the session twice, signs in, then reads it again
-    const oStore = new AuthStore('backend', '/api/auth');
-    await oStore.readSession();
-    await oStore.readSession();
-    await oStore.signIn('email', { email: 'ana@nano.app', password: 'secret' });
-    await oStore.readSession();
+  test('a sign-out clears the session', async () => {
+    // Signs in, waits for the session and signs out
+    const oStore = await createStore();
+    await oStore.post('/sign-in/email', { email: 'ana@nano.app', password: 'secret' });
+    await waitFor(() => assert.ok(oStore.get('/session')));
+    await oStore.post('/sign-out');
 
-    assert.equal(count(aRequests, 'GET /api/backend/api/auth/get-session'), 2);
-
-    // Signs out: the session is read again, without a user
-    await oStore.signOut();
-    await oStore.readSession();
-
-    assert.equal(count(aRequests, 'GET /api/backend/api/auth/get-session'), 3);
-    assert.equal(oStore.get('/session'), null);
+    await waitFor(() => assert.equal(oStore.get('/session'), null));
   });
 
-  test('concurrent readSession send one request', async () => {
-    // Reads the session twice at once, as two views mounting together
-    const oStore = new AuthStore('backend', '/api/auth');
-    await Promise.all([oStore.readSession(), oStore.readSession()]);
-
-    assert.equal(count(aRequests, 'GET /api/backend/api/auth/get-session'), 1);
-  });
-
-  test('a 401 clears the session, and the routes of the app answer as they come', async () => {
+  test('a 401 reads the session again, and the routes of the app answer as they come', async () => {
     // Signs in and reads a route behind the session
-    const oStore = new AuthStore('backend', '/api/auth');
-    await oStore.signIn('email', { email: 'ana@nano.app', password: 'secret' });
+    const oStore = await createStore();
+    await oStore.post('/sign-in/email', { email: 'ana@nano.app', password: 'secret' });
+    await waitFor(() => assert.ok(oStore.get('/session')));
 
     assert.deepEqual(await oStore.read('/users'), {
       success: true,
@@ -147,10 +152,8 @@ describe('auth store', () => {
     // The session ends in the backend, and a write answers 401
     isSignedIn = false;
     const oResponse = await oStore.create('/users', {});
-    await oStore.readSession();
 
     assert.deepEqual(oResponse, { success: false, message: 'Not authenticated' });
-    assert.equal(oStore.get('/session'), null);
-    assert.equal(count(aRequests, 'GET /api/backend/api/auth/get-session'), 2);
+    await waitFor(() => assert.equal(oStore.get('/session'), null));
   });
 });
