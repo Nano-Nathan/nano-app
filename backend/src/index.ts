@@ -13,6 +13,7 @@ export type {
   QueryParams,
   RouteEntry,
   Handler,
+  HandlerParams,
   Handlers,
   MethodEntry,
   NanoObject,

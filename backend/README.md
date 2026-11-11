@@ -4,7 +4,7 @@
 
 Preconfigured Express server with **file-convention routes** and **plugins**: it mounts the base middlewares, discovers your routes, formats every error as JSON, and groups extra endpoints in plugins.
 
-- Node.js 22.23.4, 24.22.1 or 26.12.1 and newer. ESM only.
+- Node.js 22.23.4, 24.22.1 or 26.12.1 and newer, or Bun 1.4.4 and newer (`bun src/app.ts`). ESM only.
 - Optional PostgreSQL layer through Drizzle. Off by default: without it no database code is loaded.
 
 ```bash
@@ -262,7 +262,7 @@ Two levels. Only the plugin's receives the Express app, so nothing app-wide depe
 |---|---|---|---|---|
 | Plugin (`callbacks` in its config) | `onMount` | Once, after its database and before its endpoints | `(app, params)` | App-level middlewares (a guard), shared setup |
 | Endpoint (`callbacks` in `createRoute`) | `onInit` | Once, when the endpoint is mounted | `(params)` | Setup of that route |
-| Endpoint | `onBefore` | Before every request the endpoint handles | `(req, method, params)` | Validate or load; its return value reaches the handler as `params.onBeforeResult` |
+| Endpoint | `onBefore` | Before every request the endpoint handles | `(req, method, params)` | Validate or load; its return value reaches the handler as `params.onBeforeResult` (`{}` without `onBefore`) |
 
 ```ts
 export default createPlugin((options?: { publicPaths?: string[] }) => ({
@@ -305,7 +305,7 @@ GET /unknown                                        // → 404 { success: false,
 | `createPlugin(creator)` | Types a plugin factory and its options. |
 | `createPluginCallbacks(callbacks)` | Types the callbacks of a plugin (`createPluginCallbacks<{ db: MyDb }>` types `db`), e.g. to keep them in their own file. |
 
-Also exported: the `NanoApp` class that `createNanoApp` returns, the configuration types (`NanoAppConfig`, `PackagesConfig`, `PluginConfig`, `PluginStage`, `MainPluginConfig`, `DatabaseConfig`), the Express `Request` type and the HTTP contract (`ApiResponse`, `ApiPromise`, `QueryParams`, `RouteEntry`, `Handler`, `Handlers`, `NanoObject`) and the callback types (`Params`, `Callbacks`, `PluginCallbacks`).
+Also exported: the `NanoApp` class that `createNanoApp` returns, the configuration types (`NanoAppConfig`, `PackagesConfig`, `PluginConfig`, `PluginStage`, `MainPluginConfig`, `DatabaseConfig`), the Express `Request` type and the HTTP contract (`ApiResponse`, `ApiPromise`, `QueryParams`, `RouteEntry`, `Handler`, `HandlerParams`, `Handlers`, `NanoObject`) and the callback types (`Params`, `Callbacks`, `PluginCallbacks`).
 
 ## Development
 

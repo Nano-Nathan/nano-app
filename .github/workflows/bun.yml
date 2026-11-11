@@ -1,0 +1,91 @@
+# Runs the suites of the backend and the plugins on Bun instead of Node.js:
+# - pull request that touches backend/, core/, plugins/ or this file: `test-bun`.
+#   It is not a required check: Node.js is the runtime the packages are released for.
+# `bun test` runs the same `node:test` files as `pnpm test`, one process per file as Node.js does.
+name: Bun
+
+on:
+  pull_request:
+    paths:
+      - backend/**
+      - core/**
+      - plugins/**
+      - .github/workflows/bun.yml
+
+permissions:
+  contents: read
+
+# A new push to a pull request cancels its run in progress
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  NEON_PROJECT_ID: morning-heart-02625696
+
+jobs:
+  # The PostgreSQL suites run on a Neon branch created for the run and deleted at the end.
+  # Without the Neon secret (pull requests from forks or Dependabot) DATABASE_URL is empty
+  # and those suites are skipped.
+  test-bun:
+    runs-on: ubuntu-latest
+    env:
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12.11.2
+
+      # pnpm runs on Node.js; the suites run on Bun
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          package-manager-cache: false
+
+      - uses: oven-sh/setup-bun@v2
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Create Neon branch
+        id: neon
+        if: env.NEON_API_KEY != ''
+        uses: neondatabase/create-branch-action@v6
+        with:
+          project_id: ${{ env.NEON_PROJECT_ID }}
+          api_key: ${{ env.NEON_API_KEY }}
+          branch_name: ci/bun-${{ github.event.pull_request.number }}-${{ github.run_id }}-${{ github.run_attempt }}
+
+      # Direct URL, not the pooled one: the suites push their schemas with drizzle-kit
+      - name: Backend suite on Bun
+        working-directory: backend
+        run: |
+          for sFile in ./tests/*.test.ts ../core/tests/*.test.ts; do bun test "$sFile" || iFailed=1; done
+          exit "${iFailed:-0}"
+        env:
+          DATABASE_URL: ${{ steps.neon.outputs.db_url }}
+
+      # Also when the backend suite failed: each suite reports on its own.
+      # Without crud-e2e: it runs the frontend in happy-dom, whose fetch fails on Bun
+      - name: Plugins suite on Bun
+        if: always() && steps.neon.conclusion != 'failure'
+        working-directory: plugins
+        run: |
+          for sFile in ./tests/*.test.ts; do
+            [ "$sFile" = ./tests/crud-e2e.test.ts ] || bun test "$sFile" || iFailed=1
+          done
+          exit "${iFailed:-0}"
+        env:
+          DATABASE_URL: ${{ steps.neon.outputs.db_url }}
+
+      - name: Delete Neon branch
+        if: always() && steps.neon.outputs.branch_id != ''
+        uses: neondatabase/delete-branch-action@v3
+        with:
+          project_id: ${{ env.NEON_PROJECT_ID }}
+          branch: ${{ steps.neon.outputs.branch_id }}
+          api_key: ${{ env.NEON_API_KEY }}

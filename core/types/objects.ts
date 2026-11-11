@@ -7,13 +7,15 @@ import type { ApiPromise } from './api';
 export type Params<Deps = NanoObject<any>> = Deps & {
   /** Better Auth's instance, when it is on */
   auth?: NanoObject;
-  onBeforeResult?: NanoObject;
   /** `{ user, session }` of Better Auth, when the request has one */
   session?: NanoObject;
 };
 
+/** Params of a handler: also what `onBefore` returned, `{}` without it */
+export type HandlerParams<Deps = NanoObject<any>> = Params<Deps> & { onBeforeResult: NanoObject };
+
 /** Endpoint handler */
-export type Handler<Deps> = (req: Request, params: Params<Deps>) => ApiPromise;
+export type Handler<Deps> = (req: Request, params: HandlerParams<Deps>) => ApiPromise;
 
 /** A method with its own permissions, instead of those of the route */
 export type MethodEntry<Deps = NanoObject<any>> = {
