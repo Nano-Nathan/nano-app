@@ -1,7 +1,7 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { Validator } from '@nano-app/core';
-import { ROUTE } from '@nano-app/core/utils/schemas';
+import { ROUTE } from '@nano-app/core/utils/validations';
 import Router from '../src/routes/Router';
 import { startApp, request } from './helpers';
 

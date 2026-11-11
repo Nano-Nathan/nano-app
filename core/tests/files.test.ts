@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import FileLoader from '../files/FileLoader';
 import Validator from '../utils/Validator';
-import { STORE } from '../utils/schemas';
+import { STORE } from '../utils/validations';
 
 const STORES_DIR = fileURLToPath(new URL('./fixtures/stores', import.meta.url));
 

@@ -1,6 +1,6 @@
 import FileLoader from '@nano-app/core/files/FileLoader';
 import Validator from '@nano-app/core/utils/Validator';
-import { STORE } from '@nano-app/core/utils/schemas';
+import { STORE } from '@nano-app/core/utils/validations';
 import { STORES_ENV } from '@nano-app/core/const';
 import type { NextConfig } from 'next';
 

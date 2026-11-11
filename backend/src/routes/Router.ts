@@ -1,5 +1,5 @@
 import { FileLoader, Logger, Validator } from '@nano-app/core';
-import { ROUTE } from '@nano-app/core/utils/schemas';
+import { ROUTE } from '@nano-app/core/utils/validations';
 import Endpoint from './Endpoint';
 
 /** Turns a folder of `*.route.ts` files into Express paths and endpoints */
