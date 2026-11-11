@@ -17,7 +17,7 @@ export default abstract class Database {
     return this.oClients[sName];
   }
 
-  /** Mounts the Drizzle client of a schema: the app's tables outside `nano_*`, a plugin's only in `nano_<name>` */
+  /** Mounts the Drizzle client of a schema, checking the `nano_*` rule of its tables */
   // any: the client is typed by the schema of each app, unknown to the framework
   public static async mount(sName: string, { schema }: DatabaseConfig): Promise<any> {
     // Fails when the name already has a client
@@ -28,7 +28,7 @@ export default abstract class Database {
     const { getTableConfig, PgTable } = await import('drizzle-orm/pg-core');
     const { drizzle } = await import('drizzle-orm/node-postgres');
 
-    // Checks the Postgres schema of each table: none `nano_*` for the app, `nano_<name>` for a plugin
+    // Checks the Postgres schema of each table
     const sOwn = `nano_${sName}`;
     const isApp = sName === APP_NAME;
     for (const oTable of Object.values(schema).filter(oValue => is(oValue, PgTable))) {

@@ -90,7 +90,7 @@ export default class ApiStore extends RequestStore {
     // Sends it
     const oResponse = await this.request(sPath, { method: sMethod, body: JSON.stringify(oBody) });
 
-    // Once answered, cancels the reads out, marks them old and reads again the pages a view shows
+    // Cancels the reads out and marks them old
     for (const sParent of ApiStore.parents(sPath)) {
       await this.oClient.cancelQueries({ queryKey: [sParent] });
       await this.oClient.invalidateQueries({ queryKey: [sParent] });

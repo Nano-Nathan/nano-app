@@ -4,7 +4,7 @@ import type { ApiResponse } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { ApiError } from '../types/store';
 
-/** Requests of a store to its backend through the proxy: `/busy` while one is out, the failed ones in `/error/list` */
+/** Requests of a store through the proxy, with its `/busy` and `/error/list` */
 export default class RequestStore extends Store {
   private sName: string;
   private iCount = 0;
@@ -61,7 +61,7 @@ export default class RequestStore extends Store {
       sText = await oRes.text();
       oResponse = this.receive(oRes, JSON.parse(sText));
     } catch {
-      // Keeps the text of an answer that is not JSON as the result of the failed `ApiResponse`
+      // Keeps the text of an answer that is not JSON
       if (sText !== undefined) oResponse = { ...oResponse, result: sText };
     }
 

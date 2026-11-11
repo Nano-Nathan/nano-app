@@ -3,7 +3,7 @@ import type { ErrorRequestHandler, RequestHandler } from 'express';
 import type { ApiResponse, NanoObject } from '@nano-app/core';
 import type { HandlerError } from '../types/app';
 
-/** Database errors the request caused, by their Postgres code or Drizzle's name; their own messages name tables and columns */
+/** Database errors the request caused, by their Postgres code or Drizzle's name */
 const DATABASE_ERRORS: NanoObject<HandlerError> = {
   '23505': { status: 409, message: 'Conflict' },
   '23503': { status: 409, message: 'Conflict' },
@@ -26,14 +26,14 @@ function normalize(oError: unknown): { status: number; body: ApiResponse } {
     return { status: 400, body: { success: false, message: oError } };
   }
 
-  // An object is read as { status, message, warning }; anything else has none of them
+  // Reads an object as { status, message, warning }
   const oThrown = isHandlerError(oError) ? oError : {};
 
-  // A database error caused by the request answers its own status, never its message
+  // A database error answers its status, never its message
   const sKey = oThrown.cause?.code ?? oThrown.name ?? '';
   const { status, message, warning } = DATABASE_ERRORS[sKey] ?? oThrown;
 
-  // A server error never answers its message, which may carry internals: it is logged in full
+  // A server error never answers its message
   const iStatus = status ?? 500;
   return {
     status: iStatus,

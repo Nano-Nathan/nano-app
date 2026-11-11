@@ -22,7 +22,7 @@ export type PluginConfig<Options = NanoObject> = {
   callbacks?: PluginCallbacks;
 };
 
-/** The project's plugin: nano-app names it "app" and mounts it between the "before" and "after" plugins. `routesDir` defaults to "src/routes"; without `database` the app has none */
+/** The project's plugin, named "app": `routesDir` defaults to "src/routes" */
 export type MainPluginConfig<Options = NanoObject> = Partial<
   Omit<PluginConfig<Options>, 'name' | 'stage'>
 >;

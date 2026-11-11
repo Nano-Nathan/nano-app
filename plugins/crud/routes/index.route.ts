@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { createRoute, isGranted, NanoError } from '@nano-app/backend';
 import type { ApiPromise, NanoObject, Params, Request } from '@nano-app/backend';
 
-/** Action of each method on the URL's table: the permission of Better Auth it needs and the validation of its body */
+/** Action of each method: its permission of Better Auth and the validation of its body */
 const ACTIONS: NanoObject<string> = {
   GET: 'read',
   QUERY: 'read',
@@ -20,28 +20,31 @@ function first(aRecords: NanoObject[]): { result: NanoObject } {
   return { result: aRecords[0] };
 }
 
+/** Every record of a query */
+function list(aRecords: NanoObject[]): { result: NanoObject[] } {
+  return { result: aRecords };
+}
+
 /** A list of the table, or one record by its id, with Drizzle's relational query of the body */
 async function read(_oReq: Request, { db, onBeforeResult }: Params): ApiPromise {
-  const { model, id, body } = onBeforeResult ?? {};
-  // The record of the id, or the list with the default limit when the body brings none
-  const oPage = id ? { where: { id }, limit: 1 } : { limit: body.limit ?? DEFAULT_LIMIT };
-  const aRecords = await db.query[model].findMany({ ...body, ...oPage });
+  const { model, page, answer, body } = onBeforeResult ?? {};
 
-  // One record by its id, 404 without it, or the list
-  return id ? first(aRecords) : { result: aRecords };
+  // Reads with the default limit, the body and the id over them
+  return answer(await db.query[model].findMany({ limit: DEFAULT_LIMIT, ...body, ...page }));
 }
 
 /** `GET` reads without parameters, `QUERY` with `QueryParams` as its body */
 export default createRoute({
   expression: '/:model{/:id}',
   callbacks: {
-    // The table of the URL and the body of the request: 404 when the app does not publish it, 403 without its permission, 400 when the body breaks its validation
+    // The table, the id and the validated body of the request
     onBefore: async (oReq, sMethod, oParams) => {
-      // The URL's table and the action of the method: Express types a param as a string or a list of them
+      // The table of the URL and the action of the method
       const sModel = String(oReq.params.model);
       const sAction = ACTIONS[sMethod];
+      const { id } = oReq.params;
 
-      // Only the tables the app publishes, from its Drizzle schema
+      // Only the tables the app publishes
       const oTable = oParams.dbSchema[sModel];
       if (!oParams.models.includes(sModel) || !oTable) throw new NanoError('Not found', 404);
 
@@ -50,16 +53,18 @@ export default createRoute({
         throw new NanoError('Forbidden', 403);
       }
 
-      // The body as the validation of the action gives it, answering the first rule it breaks with its field
+      // The body as its validation gives it, or as it came
       const oBody = oReq.body ?? {};
-      const oResult = oParams.validations?.[sModel]?.[sAction]?.safeParse(oBody);
-      if (oResult?.error) {
+      const oValidation = oParams.validations?.[sModel]?.[sAction];
+      const oResult = oValidation?.safeParse(oBody) ?? { data: oBody };
+      if (oResult.error) {
         const { path, message } = oResult.error.issues[0];
         throw new NanoError([...path, message].join(': '), 400);
       }
 
-      // The id of the URL, if any: Postgres casts it to the type of the column
-      return { model: sModel, table: oTable, id: oReq.params.id, body: oResult?.data ?? oBody };
+      // A read of an id answers its record; without it, the list
+      const oRead = id ? { page: { where: { id }, limit: 1 }, answer: first } : { answer: list };
+      return { model: sModel, table: oTable, id, body: oResult.data, ...oRead };
     },
   },
   GET: read,

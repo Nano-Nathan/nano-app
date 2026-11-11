@@ -4,7 +4,7 @@ import Paths from './Paths';
 import type { Callback, CallbackMethod, Handler, RouteEntry } from '../types/objects';
 import type { StoreFile } from '../types/store';
 
-// any: what the app injects in the params of its handlers and callbacks is unknown to the framework
+// any: what the app injects in its params is unknown
 
 /** A function of the consumer, typed as what the framework calls */
 function callable<T>(): z.ZodType<T> {

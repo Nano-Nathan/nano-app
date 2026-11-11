@@ -7,7 +7,7 @@ import { STORES } from '../utils/state';
 import type { StoreFile } from '@nano-app/core/types/store';
 import type { Stores } from '../types/store';
 
-/** Stores of one React tree, from the ones `withNanoApp` inlined at build time; reading one the app has not throws */
+/** Stores of one React tree; reading one the app has not throws */
 export default function createStores(): Stores {
   // Creates each store with its own state
   const oStores = Object.fromEntries(

@@ -17,7 +17,7 @@ export default createPlugin(
     stage: 'after',
     // Next to this file, from the sources and from the build
     routesDir: join(import.meta.dirname, 'routes'),
-    // Its routes read the published tables, the app's Drizzle schema and its validations from the options
+    // Its routes read them from the options
     options,
   }),
 );

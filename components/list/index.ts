@@ -12,7 +12,7 @@ export default function list(oOptions: ListOptions) {
     const oApi = stores[store];
 
     return {
-      // Reads the current page when the view mounts, and shows its pages until it unmounts
+      // Reads the page and shows its pages while mounted
       callbacks: {
         onMount(): Promise<ApiResponse> {
           oApi.watch(path, this.pagesQuery());
@@ -64,7 +64,7 @@ export default function list(oOptions: ListOptions) {
         return this.goTo(this.page() - 1);
       },
       async sort(sField: string): Promise<ApiResponse> {
-        // Toggles the field between ascending and descending, and shows the pages of the new order
+        // Toggles the order of the field and shows its pages
         const sDirection = oApi.get('/list/orderBy')?.[sField] === 'asc' ? 'desc' : 'asc';
         oApi.unwatch(path, this.pagesQuery());
         oApi.set('/list/orderBy', { [sField]: sDirection });

@@ -28,7 +28,7 @@ export function withNanoApp(oNextConfig: NextConfig = {}): () => Promise<NextCon
       poweredByHeader: false,
       ...oNextConfig,
       env: { ...oNextConfig.env, [STORES_ENV]: JSON.stringify(oStores) },
-      // Adds the security headers before the app's own: a header of the app with the same name wins
+      // Security headers first: a header of the app wins
       headers: async () => [
         { source: '/:path*', headers: SECURITY_HEADERS },
         ...((await oNextConfig.headers?.()) ?? []),
