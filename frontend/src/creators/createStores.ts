@@ -14,8 +14,8 @@ export default function createStores(): Stores {
     [...STORES].map(([sName, oFile]) => [sName, createStore(sName, oFile)]),
   );
 
-  // The app store is always there: a store of UI state, empty when the app has no file for it
-  const oAll = { [APP_NAME]: new Store(), ...oStores };
+  // The app store is always a store of UI state, empty when the app has none
+  const oAll = { ...oStores, [APP_NAME]: new Store(STORES.get(APP_NAME)?.data) };
 
   // Reading a store by a name the app does not have fails, naming the file to add
   return new Proxy(oAll, {

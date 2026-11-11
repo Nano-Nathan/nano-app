@@ -128,6 +128,7 @@ export default class ApiStore extends Store {
 
   /** Adds a failed answer to the errors of the store, with when it failed */
   protected fail(oResponse: ApiResponse): void {
+    // Keeps it with a message and the time, after the ones before
     const oError: ApiError = {
       ...oResponse,
       message: oResponse.message || REQUEST_FAILED,

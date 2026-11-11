@@ -243,20 +243,20 @@ export default {
 // src/controllers/session.controller.ts
 export default createController(({ stores: { backend } }) => ({
   signIn(sEmail: string, sPassword: string): Promise<unknown> {
-    return backend.auth.signIn.email({ email: sEmail, password: sPassword });
+    return backend.signIn('email', { email: sEmail, password: sPassword });
   },
   signOut(): Promise<unknown> {
-    return backend.auth.signOut();
+    return backend.signOut();
   },
 }));
 ```
 
-- `auth` of the store is [Better Auth's client](https://www.better-auth.com/docs/concepts/client) (`createAuthClient`) through the proxy of the store, at `<path>`: `auth.signIn.email(body)`, `auth.signUp.email(body)`, `auth.signOut()` and every other endpoint of Better Auth and its plugins by its path (`auth.requestPasswordReset(body)`, `auth.signIn.social(body)`). Each one returns Better Auth's `{ data, error }`. It exists only in the browser.
-- The store keeps `{ user, session }` at `/session`, or `null` without a session: it reads it when the app starts, and again after a sign-in, a sign-up, a sign-out, and when the tab gets the focus back, as the client does.
-- The requests of the client count in `/busy`, and its failed answers go to `/error/list` with Better Auth's message.
+- `signIn(kind, body)` and `signUp(kind, body)` send `POST <path>/sign-in/<kind>` and `POST <path>/sign-up/<kind>`: `kind` is the method of Better Auth (`email`, `username`, ...), and `body` what it asks. `signOut()` sends `POST <path>/sign-out`.
+- They return Better Auth's answer inside an `ApiResponse`: `{ success, result, message }`, with its `message` when it failed. A failed answer also goes to `/error/list`.
+- They run on [Better Auth's client](https://www.better-auth.com/docs/concepts/client), which only the store uses, through the proxy.
+- The store keeps `{ user, session }` at `/session`, or `null` without a session: it reads it when the app starts, and again after a `signIn`, `signUp` or `signOut` of any kind, and when the tab gets the focus back, as the client does.
 - Any 401 of the store's backend reads the session again.
 - The session lives in Better Auth's cookie, which the proxy passes as any other.
-- A store file reaches the browser as JSON, so it cannot carry the client plugins of Better Auth: their endpoints answer by their path, without the types and the extras each plugin adds to the client.
 - Better Auth checks the `Origin` of every `POST`: add the URL of the frontend to its `trustedOrigins` in the backend.
 - With two backends with Better Auth, their cookies get the same name on the frontend's domain: give one of them another `advanced.cookiePrefix`.
 

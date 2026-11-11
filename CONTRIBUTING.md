@@ -42,6 +42,29 @@ Each development (a feature, a fix, a refactor) is one branch and one pull reque
 
 Each package's publish workflow runs its tests and build on every pull request that touches the package, to `main` or to a feature branch. Their jobs (`test-backend`, `test-plugins`, `test-frontend`, `test-components`) are the checks required to merge, with the `dependency-review` and `audit` jobs of `security.yml`, which fail on a dependency with a high or critical advisory. The PostgreSQL suite runs on a Neon branch created for the run; pull requests from forks and Dependabot skip it.
 
+## Planning a development
+
+How the framework behaves is the maintainer's decision, so a development is planned before it is written. The code follows [`.claude/CLAUDE.md`](.claude/CLAUDE.md).
+
+1. Before writing any code, list what it will do, point by point. Each point says what and how, in plain words: what comes in, what happens to it, what goes out, and what it reuses.
+2. When a point hides a decision (a default, an edge case, an error, where the code lives), give two or three options with their cost and mark one as the recommendation.
+3. The maintainer answers point by point. Adjust the points and list again only what changed.
+4. Implement only when every point has the maintainer's OK. A change of behavior that shows up while implementing goes back to the maintainer before it is written.
+5. The tests, the README of the package and the feature file in [`features/`](features/README.md) follow the final decisions, not the first proposal.
+
+A feature split into modules is planned and reviewed module by module. A large idea is first broken into tasks: see [Breaking down a feature](features/README.md#breaking-down-a-feature).
+
+## Rules of the repository
+
+- pnpm only: `pnpm install`, `pnpm test`, `pnpm build`, `pnpm --filter <package> <script>`. Never npm or npx.
+- Branches have a descriptive name of what they do, never ids or generated names. Work on the existing branch of the topic when there is one.
+- A change that breaks the public API ends its pull request body with a `BREAKING CHANGE: <what breaks>` footer: the squash commit keeps the body.
+- Agents commit and push their work to its branch and always open its pull request. They never add a `Co-authored-by` trailer to commits or pull requests: co-authorship is added by hand by the maintainer.
+- Never commit secrets. To use the root `.env` elsewhere, copy the file.
+- Install scripts run only for the packages in `allowBuilds` of `pnpm-workspace.yaml`.
+- Workflows: `permissions: contents: read` by default; `id-token: write` and `contents: write` only on release jobs. Packages are published only by CI (npm trusted publishing).
+- Report vulnerabilities as in [SECURITY.md](SECURITY.md).
+
 ## Releases
 
 Each published package has its own version, its own tags and its own publish workflow, which runs on a merge to `main` that touches the package:

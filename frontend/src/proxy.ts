@@ -49,6 +49,7 @@ function target(oReq: NextRequest): ProxyTarget | undefined {
   const oHeaders = new Headers(oReq.headers);
   for (const [sHeader, sEnvName] of aHeaders) oHeaders.set(sHeader, process.env[sEnvName] ?? '');
 
+  // The URL of the backend with the path and the query of the request
   return {
     url: `${process.env[sUrlEnv]}/${aPath.join('/')}${oReq.nextUrl.search}`,
     headers: oHeaders,

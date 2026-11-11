@@ -9,7 +9,6 @@ import { z } from 'zod';
 import field from '../field';
 import TestApp from './provider';
 import type { FormField } from '../types/field';
-import type { FormSchema } from '../types/form';
 
 const PORT = 4201;
 
@@ -44,33 +43,19 @@ const Input = field().bindView(({ props: { field: oField }, value, error, change
   </label>
 ));
 
-// Fields of a sign-up and its schema: an email, a phone and an optional number
+// Fields of a sign-up, each with its validation: an email, a phone and an optional number
 const SIGN_UP: FormField[] = [
-  { name: 'email' },
-  { name: 'phone' },
-  { name: 'age', type: 'number' },
+  { name: 'email', validation: z.email('Invalid email') },
+  { name: 'phone', validation: z.string('Required') },
+  { name: 'age', type: 'number', validation: z.number('Invalid number').optional() },
 ];
-const SIGN_UP_SCHEMA = z.object({
-  email: z.email('Invalid email'),
-  phone: z.string('Required'),
-  age: z.number('Invalid number').optional(),
-});
 
-// Fields of a password and its repeat, and their schema: a rule of the form on one of its fields
-const PASSWORDS: FormField[] = [{ name: 'password' }, { name: 'confirm' }];
-const PASSWORDS_SCHEMA = z
-  .object({ password: z.string(), confirm: z.string() })
-  .refine(({ password, confirm }) => password === confirm, {
-    path: ['confirm'],
-    error: 'Mismatch',
-  });
-
-/** Renders the fields of a form inside the provider, with the schema of the form */
-function renderFields(sForm: string, aFields: FormField[], oSchema?: FormSchema): void {
+/** Renders the fields of a form inside the provider */
+function renderFields(sForm: string, aFields: FormField[]): void {
   render(
     <TestApp>
       {aFields.map(oField => (
-        <Input key={oField.name} form={sForm} schema={oSchema} field={oField} />
+        <Input key={oField.name} form={sForm} field={oField} />
       ))}
     </TestApp>,
   );
@@ -91,9 +76,9 @@ describe('field', () => {
   after(() => oBackend.close());
   afterEach(cleanup);
 
-  test('change keeps the value and shows the message of the rule of the schema it breaks', () => {
+  test('change keeps the value and shows the message of the first rule of its validation it breaks', () => {
     // Renders the sign-up and types an invalid email, a valid one and a text in the number
-    renderFields('signUp', SIGN_UP, SIGN_UP_SCHEMA);
+    renderFields('signUp', SIGN_UP);
     type('email', 'ana');
     assert.equal(errorOf('email'), 'email: Invalid email');
     type('email', 'ana@nano.app');
@@ -106,9 +91,9 @@ describe('field', () => {
     assert.equal(screen.getByLabelText<HTMLInputElement>('age').value, 'ten');
   });
 
-  test('an empty text is no value: only a field the schema needs breaks', () => {
+  test('an empty text is no value: only a field whose validation needs one breaks', () => {
     // Renders the sign-up, and types and empties the phone and the optional number
-    renderFields('signUp', SIGN_UP, SIGN_UP_SCHEMA);
+    renderFields('signUp', SIGN_UP);
     type('phone', '1');
     type('phone', '');
     type('age', '1');
@@ -118,24 +103,12 @@ describe('field', () => {
     assert.equal(errorOf('age'), 'age: ok');
   });
 
-  test('a rule of the schema on the whole form shows at the field of its path', () => {
-    // Renders the passwords and confirms another one
-    renderFields('passwords', PASSWORDS, PASSWORDS_SCHEMA);
-    type('password', 'secret');
-    type('confirm', 'other');
-    assert.equal(errorOf('confirm'), 'confirm: Mismatch');
-
-    // Confirms the same password
-    type('confirm', 'secret');
-    assert.equal(errorOf('confirm'), 'confirm: ok');
-  });
-
   test('fields of two forms keep their values apart', () => {
-    // Renders a field in two forms of the same tree, each with its schema, and empties one
+    // Renders a field in two forms of the same tree and empties one
     render(
       <TestApp>
-        <Input form="a" schema={z.object({ one: z.string('Required') })} field={{ name: 'one' }} />
-        <Input form="b" schema={z.object({ two: z.string('Required') })} field={{ name: 'two' }} />
+        <Input form="a" field={{ name: 'one', validation: z.string('Required') }} />
+        <Input form="b" field={{ name: 'two', validation: z.string('Required') }} />
       </TestApp>,
     );
     type('one', 'x');
@@ -162,16 +135,17 @@ describe('field', () => {
       name: 'price',
       format: iPrice => `$${iPrice}`,
       parse: sPrice => Number(sPrice.replace('$', '')),
+      validation: z.number('Text'),
     };
-    renderFields('pay', [oPrice], z.object({ price: z.number('Text') }));
+    renderFields('pay', [oPrice]);
     type('price', '$15');
 
     assert.equal(screen.getByLabelText<HTMLInputElement>('price').value, '$15');
     assert.equal(errorOf('price'), 'price: ok');
   });
 
-  test('a field of a form without a schema breaks no rule', () => {
-    // Renders a field without a schema, and types and empties it
+  test('a field without a validation breaks no rule', () => {
+    // Renders a field without a validation, and types and empties it
     renderFields('stock', [{ name: 'count' }]);
     type('count', '3');
     type('count', '');

@@ -36,12 +36,16 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
     // Mounts the app's database, then the plugin after it
     const oDb = await Database.mount('app', { schema });
     // The app checks the comments: what a `POST` sends, and how many a `QUERY` asks for
-    const oSchemas = {
+    const oValidation = {
       insert: createInsertSchema(schema.comment),
       query: z.looseObject({ limit: z.number().max(50).optional() }),
     };
     oServer = await startApp([
-      crud({ models: ['note', 'comment'], schema, schemas: { comment: oSchemas } }),
+      crud({
+        models: ['note', 'comment'],
+        dbSchema: schema,
+        validations: { comment: oValidation },
+      }),
     ]);
 
     // Two notes of this run, the first with a comment
@@ -124,7 +128,7 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
     assert.equal(status, 404);
   });
 
-  test('a body that breaks the schema of the app answers 400 with the field and the rule', async () => {
+  test('a body that breaks the validation of the app answers 400 with the field and the rule', async () => {
     // Creates a comment whose text is a number, and asks for more comments than the app allows
     const oInsert = await send('POST', oServer.url, '/api/comment', { text: 1, noteId: iNoteId });
     const oQuery = await send('QUERY', oServer.url, '/api/comment', { limit: 51 });

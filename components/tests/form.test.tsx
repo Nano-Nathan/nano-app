@@ -26,9 +26,11 @@ const SIGN_UP: FormField[] = [
   { name: 'email', type: 'email' },
 ];
 
-// Fields of a login and its schema: an email and an optional number
-const LOGIN: FormField[] = [{ name: 'email' }, { name: 'age', type: 'number' }];
-const LOGIN_SCHEMA = z.object({ email: z.email('Required'), age: z.number().optional() });
+// Fields of a login, each with its validation: an email and an optional number
+const LOGIN: FormField[] = [
+  { name: 'email', validation: z.email('Required') },
+  { name: 'age', type: 'number', validation: z.number().optional() },
+];
 
 // View of a field with an input and its error
 const Field = field().bindView(({ props: { field: oField }, value, error, change }) => (
@@ -64,7 +66,6 @@ function renderLogin(): void {
       <Login
         name="login"
         fields={LOGIN}
-        schema={LOGIN_SCHEMA}
         onSubmit={(oValues: NanoObject) => {
           aSent.push(oValues);
           return 'sent';
@@ -129,8 +130,8 @@ describe('form', () => {
     );
   });
 
-  test('submit checks the values with the schema, also the untouched fields, and does not send', () => {
-    // Types a valid age and submits without the email the schema needs
+  test('submit validates every field, also the untouched ones, and does not send', () => {
+    // Types a valid age and submits without the email its validation needs
     renderLogin();
     type('age', '30');
     fireEvent.click(screen.getByText('send'));
@@ -141,7 +142,7 @@ describe('form', () => {
     assert.deepEqual(aReturned, [undefined]);
   });
 
-  test('submit sends the values as the schema gives them and returns what onSubmit returns', () => {
+  test('submit sends the kept values and returns what onSubmit returns', () => {
     // Types both fields and submits
     renderLogin();
     type('email', 'ana@mail.com');

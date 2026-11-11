@@ -6,15 +6,20 @@ import type { StoreFile } from '../types/store';
 
 // any: what the app injects in the params of its handlers and callbacks is unknown to the framework
 
+/** A function of the consumer, typed as what the framework calls */
+function callable<T>(): z.ZodType<T> {
+  return z.custom<T>(oValue => typeof oValue === 'function');
+}
+
 /** Permissions of Better Auth's admin plugin: the actions per resource */
 const PERMISSIONS = z.record(z.string(), z.array(z.string())).optional();
 
 /** A method of a route: its handler, or it with its own permissions */
 const METHOD = z
   .union([
-    z.custom<Handler<any>>(oValue => typeof oValue === 'function'),
+    callable<Handler<any>>(),
     z.object({
-      handler: z.custom<Handler<any>>(oValue => typeof oValue === 'function'),
+      handler: callable<Handler<any>>(),
       permissions: PERMISSIONS,
     }),
   ])
@@ -28,8 +33,8 @@ export const ROUTE: z.ZodType<RouteEntry> = z
     permissions: PERMISSIONS,
     callbacks: z
       .object({
-        onInit: z.custom<Callback<any>>(oValue => typeof oValue === 'function').optional(),
-        onBefore: z.custom<CallbackMethod<any>>(oValue => typeof oValue === 'function').optional(),
+        onInit: callable<Callback<any>>().optional(),
+        onBefore: callable<CallbackMethod<any>>().optional(),
       })
       .optional(),
     GET: METHOD,

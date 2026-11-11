@@ -26,27 +26,27 @@ function first(aRecords: NanoObject[]): { result: NanoObject } {
 // any: the client and the tables of each app, unknown to the plugin
 const TABLE_ONLY = new WeakMap<NanoObject, any>();
 
-/** A body as its schema gives it, or as it came without one: 400 with what zod says when it breaks a rule */
+/** A body as its validation gives it, or as it came without one: 400 with what zod says when it breaks a rule */
 // any: the body is the consumer's, unknown to the plugin
-function parse(oSchema: ZodType | undefined, oBody: unknown): any {
-  // Without a schema of the app, the body goes as it came
-  if (!oSchema) return oBody;
+function parse(oValidation: ZodType | undefined, oBody: unknown): any {
+  // Without a validation of the app, the body goes as it came
+  if (!oValidation) return oBody;
 
   // Answers the first rule it breaks, with its field
-  const oResult = oSchema.safeParse(oBody);
+  const oResult = oValidation.safeParse(oBody);
   if (oResult.success) return oResult.data;
   const { path, message } = oResult.error.issues[0];
   throw new NanoError([...path, message].join(': '), 400);
 }
 
 /** A list of the table, or one record by its id, with Drizzle's relational query of the body on the table alone */
-async function read(oReq: Request, { db, schema, onBeforeResult }: Params): ApiPromise {
-  const { model, id, schemas } = onBeforeResult ?? {};
-  const oBody: NanoObject = parse(schemas.query, oReq.body ?? {});
+async function read(oReq: Request, { db, dbSchema, onBeforeResult }: Params): ApiPromise {
+  const { model, id, validations } = onBeforeResult ?? {};
+  const oBody: NanoObject = parse(validations.query, oReq.body ?? {});
 
   // A client on the same pool that knows the tables but none of their relations: a query cannot leave its table
   if (!TABLE_ONLY.has(db)) {
-    const { relations: _oRelations, ...oTables } = schema;
+    const { relations: _oRelations, ...oTables } = dbSchema;
     // any: the tables of each app, unknown to the plugin
     const oNoRelations: any = defineRelations(oTables);
     TABLE_ONLY.set(db, drizzle({ client: db.$client, relations: oNoRelations }));
@@ -75,7 +75,7 @@ export default createRoute({
       const { id } = oReq.params;
 
       // Only the tables the app publishes
-      const oTable = oParams.schema?.[sModel];
+      const oTable = oParams.dbSchema?.[sModel];
       if (!oParams.models.includes(sModel) || !oTable) throw new NanoError('Not found', 404);
 
       // The permission of the method on the table
@@ -83,19 +83,25 @@ export default createRoute({
         throw new NanoError('Forbidden', 403);
       }
 
-      // The table, the id of the URL, if any (Postgres casts it to the type of the column), and the app's schemas
-      return { model: sModel, table: oTable, id, schemas: oParams.schemas?.[sModel] ?? {} };
+      // The table, the id of the URL, if any (Postgres casts it to the type of the column), and the app's validations
+      return {
+        model: sModel,
+        table: oTable,
+        id,
+        validations: oParams.validations?.[sModel] ?? {},
+      };
     },
   },
   GET: read,
   QUERY: read,
   POST: async (oReq, { db, onBeforeResult }) => {
-    const { table, schemas } = onBeforeResult ?? {};
-    return first(await db.insert(table).values(parse(schemas.insert, oReq.body)).returning());
+    const { table, validations } = onBeforeResult ?? {};
+    const oData = parse(validations.insert, oReq.body);
+    return first(await db.insert(table).values(oData).returning());
   },
   PUT: async (oReq, { db, onBeforeResult }) => {
-    const { table, id, schemas } = onBeforeResult ?? {};
-    const oData = parse(schemas.update, oReq.body);
+    const { table, id, validations } = onBeforeResult ?? {};
+    const oData = parse(validations.update, oReq.body);
     return first(await db.update(table).set(oData).where(eq(table.id, id)).returning());
   },
   DELETE: async (_oReq, { db, onBeforeResult }) => {

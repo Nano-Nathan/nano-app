@@ -20,14 +20,14 @@ createNanoApp({ plugins: [health()] });
 | Plugin   | Import                                          | Endpoints                                                                                                                                                                                                                                 | Options                          |
 | -------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
 | `health` | `import health from '@nano-app/plugins/health'` | `GET /health` → `{ success: true, result: { status: "ok" } }`                                                                                                                                                                             | `basePath` (default `"/health"`) |
-| `crud`   | `import crud from '@nano-app/plugins/crud'`     | On the tables listed in `models`, by their name in the app's schema (any other answers 404): `GET` and `QUERY` on `/api/<model>{/<id>}` → a list `{ result }` or one record, with `QueryParams` as the body of `QUERY`: Drizzle's relational query on the table alone (`where`, `columns`, `orderBy`, `limit`, `offset`): a relation in `where` or `with` answers 400; `POST /api/<model>`, `PUT` and `DELETE` on `/api/<model>/<id>` → the record created, updated or deleted. Postgres casts `<id>` to the type of the `id` column. With Better Auth, each method asks for a permission on the table: `read` (`GET`, `QUERY`), `create`, `update`, `delete`, see [crud and related tables](#crud-and-related-tables) | `models` (the published ones), `schema` (the app's Drizzle schema, as in `mainPlugin.database`), `schemas` (zod schemas of the bodies, see [crud and the bodies](#crud-and-the-bodies)), `basePath` (default `"/api"`)    |
+| `crud`   | `import crud from '@nano-app/plugins/crud'`     | On the tables listed in `models`, by their name in the app's schema (any other answers 404): `GET` and `QUERY` on `/api/<model>{/<id>}` → a list `{ result }` or one record, with `QueryParams` as the body of `QUERY`: Drizzle's relational query on the table alone (`where`, `columns`, `orderBy`, `limit`, `offset`): a relation in `where` or `with` answers 400; `POST /api/<model>`, `PUT` and `DELETE` on `/api/<model>/<id>` → the record created, updated or deleted. Postgres casts `<id>` to the type of the `id` column. With Better Auth, each method asks for a permission on the table: `read` (`GET`, `QUERY`), `create`, `update`, `delete`, see [crud and related tables](#crud-and-related-tables) | `models` (the published ones), `dbSchema` (the app's Drizzle schema, as in `mainPlugin.database`), `validations` (zod schemas of the bodies, see [crud and the bodies](#crud-and-the-bodies)), `basePath` (default `"/api"`)    |
 | `rate-limit` | `import rateLimit from '@nano-app/plugins/rate-limit'` | None: limits every request of the routes and plugins mounted after it, per client IP (see [Client IP](../backend/README.md#client-ip)); the addresses of an IPv6 `/56` network are one client. Each request spends a token of the client's bucket, which holds `capacity` and refills `refillPerSecond` tokens per second; without one it answers `429` with `message` and `Retry-After` (seconds until the next token). List it first in `plugins`. The buckets live in the memory of each process | `capacity` (default `100`), `refillPerSecond` (default `1`), `message` |
 
 What is not CRUD, such as creating a record with business logic, goes in a route of your own with its own URL: a route of yours on a `crud` URL takes every method of it.
 
 ### crud and the bodies
 
-`crud` sends each body to Drizzle as it came: any column of the table can be written, and a `QUERY` can ask for any `limit` (100 without one). What a body may bring is up to the app: `schemas` takes, per model, a [zod](https://zod.dev) schema for `insert` (the body of `POST`), `update` (`PUT`) and `query` (`QUERY`, and `{}` for `GET`). A body that breaks its schema answers 400 with the field and the message of zod; one that passes goes on as zod gives it, so a schema also drops the keys it does not name and sets its defaults. [`drizzle-orm/zod`](https://orm.drizzle.team/docs/zod) builds them from the table:
+`crud` sends each body to Drizzle as it came: any column of the table can be written, and a `QUERY` can ask for any `limit` (100 without one). What a body may bring is up to the app: `validations` takes, per model, a [zod](https://zod.dev) schema for `insert` (the body of `POST`), `update` (`PUT`) and `query` (`QUERY`, and `{}` for `GET`). A body that breaks its validation answers 400 with the field and the message of zod; one that passes goes on as zod gives it, so a validation also drops the keys it does not name and sets its defaults. [`drizzle-orm/zod`](https://orm.drizzle.team/docs/zod) builds them from the table:
 
 ```ts
 import { createInsertSchema, createUpdateSchema } from 'drizzle-orm/zod';
@@ -36,8 +36,8 @@ import * as schema from './db/schema';
 
 crud({
   models: ['note'],
-  schema,
-  schemas: {
+  dbSchema: schema,
+  validations: {
     note: {
       insert: createInsertSchema(schema.note).omit({ id: true }),
       update: createUpdateSchema(schema.note).omit({ id: true }),

@@ -49,7 +49,7 @@ describe(
 
       // Mounts the app's database and the plugin, with no route of the app
       await Database.mount('app', { schema });
-      oBackend = await startApp([crud({ models: ['note'], schema })]);
+      oBackend = await startApp([crud({ models: ['note'], dbSchema: schema })]);
 
       // Points the store `backend` to it and serves the app's origin
       process.env.API_BACKEND_URL = `${oBackend.url}/api`;

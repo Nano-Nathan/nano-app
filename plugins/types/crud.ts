@@ -1,7 +1,7 @@
 import type { ZodType } from 'zod';
 
-/** Zod schemas of a model, each one optional: without it the body goes to Drizzle as it came */
-export type CrudSchemas = {
+/** Validations of a model, zod schemas, each one optional: without it the body goes to Drizzle as it came */
+export type CrudValidations = {
   /** Body of a `POST` */
   insert?: ZodType;
   /** Body of a `PUT` */
