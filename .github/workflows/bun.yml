@@ -69,12 +69,15 @@ jobs:
         env:
           DATABASE_URL: ${{ steps.neon.outputs.db_url }}
 
-      # Also when the backend suite failed: each suite reports on its own
+      # Also when the backend suite failed: each suite reports on its own.
+      # Without crud-e2e: it runs the frontend in happy-dom, whose fetch fails on Bun
       - name: Plugins suite on Bun
         if: always() && steps.neon.conclusion != 'failure'
         working-directory: plugins
         run: |
-          for sFile in ./tests/*.test.ts; do bun test "$sFile" || iFailed=1; done
+          for sFile in ./tests/*.test.ts; do
+            [ "$sFile" = ./tests/crud-e2e.test.ts ] || bun test "$sFile" || iFailed=1
+          done
           exit "${iFailed:-0}"
         env:
           DATABASE_URL: ${{ steps.neon.outputs.db_url }}

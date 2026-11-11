@@ -4,7 +4,7 @@
 
 Preconfigured Express server with **file-convention routes** and **plugins**: it mounts the base middlewares, discovers your routes, formats every error as JSON, and groups extra endpoints in plugins.
 
-- Node.js 22.23.4, 24.22.1 or 26.12.1 and newer. ESM only.
+- Node.js 22.23.4, 24.22.1 or 26.12.1 and newer, or Bun 1.4.4 and newer (`bun src/app.ts`). ESM only.
 - Optional PostgreSQL layer through Drizzle. Off by default: without it no database code is loaded.
 
 ```bash
