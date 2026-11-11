@@ -23,13 +23,12 @@ function first(aRecords: NanoObject[]): { result: NanoObject } {
 /** A list of the table, or one record by its id, with Drizzle's relational query of the body */
 async function read(_oReq: Request, { db, onBeforeResult }: Params): ApiPromise {
   const { model, id, body } = onBeforeResult ?? {};
+  // The record of the id, or the list with the default limit when the body brings none
+  const oPage = id ? { where: { id }, limit: 1 } : { limit: body.limit ?? DEFAULT_LIMIT };
+  const aRecords = await db.query[model].findMany({ ...body, ...oPage });
 
-  // One record by its id
-  if (id) return first(await db.query[model].findMany({ ...body, where: { id }, limit: 1 }));
-
-  // The list, with the default limit when the body brings none
-  const aRecords = await db.query[model].findMany({ ...body, limit: body.limit ?? DEFAULT_LIMIT });
-  return { result: aRecords };
+  // One record by its id, 404 without it, or the list
+  return id ? first(aRecords) : { result: aRecords };
 }
 
 /** `GET` reads without parameters, `QUERY` with `QueryParams` as its body */
@@ -42,8 +41,8 @@ export default createRoute({
       const sModel = String(oReq.params.model);
       const sAction = ACTIONS[sMethod];
 
-      // Only the tables the app publishes, as its client knows them
-      const oTable = oParams.db._.relations[sModel]?.table;
+      // Only the tables the app publishes, from its Drizzle schema
+      const oTable = oParams.dbSchema[sModel];
       if (!oParams.models.includes(sModel) || !oTable) throw new NanoError('Not found', 404);
 
       // The permission of the action on the table

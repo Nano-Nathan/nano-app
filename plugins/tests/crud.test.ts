@@ -41,7 +41,11 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
       read: z.looseObject({ limit: z.number().max(50).optional() }),
     };
     oServer = await startApp([
-      crud({ models: ['note', 'comment'], validations: { comment: oValidation } }),
+      crud({
+        models: ['note', 'comment'],
+        dbSchema: schema,
+        validations: { comment: oValidation },
+      }),
     ]);
 
     // Two notes of this run, the first with a comment

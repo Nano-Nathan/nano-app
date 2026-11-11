@@ -16,11 +16,12 @@ Before writing or showing any code, read this file again; before pushing, check 
 - **A cleanup never changes behavior**: a refactor or a simplification leaves what the framework accepts, rejects, stores and answers as it was. A change of behavior, however small, goes to the plan as a decision before any code.
 - **Behavior is the maintainer's decision**: what the framework does with a request, a config, an error, a plugin or the database. Code style is not: follow this file without asking.
 - **`core/` is private**: what nothing uses there is deleted. Exported functions of `backend` and `plugins` stay even when nothing in the repo uses them: consumers may.
-- **DRY**: one source of truth for each piece of knowledge (a rule, a message, a constant). Code that repeats is extracted the second time it appears (`Logger.warn`); no abstraction for a single use.
+- **DRY**: one source of truth for each piece of knowledge (a rule, a message, a constant). Code that repeats is extracted the second time it appears (`Logger.warn`), and two branches that make the same call with other arguments build the arguments and call once; no abstraction for a single use.
 - **Single responsibility**: a function does one thing, a file has one job. A file over ~120 lines, or a function you cannot read in one screen, is a sign to split or simplify.
 - **Fail fast**: invalid configuration fails at startup with a clear message, not on the first request. When something is missing, fail instead of guessing.
 - **Validate at the boundaries**: data from outside (requests, consumer files, env) is checked once where it enters; inside, types are trusted.
 - **Immutability**: `const` by default, `let` only when a value changes. Do not mutate parameters; return a new value.
+- **No private members**: never read what an object keeps for itself (`db._`, a field with `_`). What a piece of code needs comes in as an option or a parameter.
 - **Least surprise**: names say what a thing does and nothing more; a function named `get` has no side effects.
 - **HTTP semantics**: `GET` reads and never changes state; status codes mean what the standard says (400 bad input, 401 not authenticated, 403 not allowed, 404 not found, 5xx server fault).
 - **Tests describe behavior**, not implementation: they call the public API and check what a consumer sees.
