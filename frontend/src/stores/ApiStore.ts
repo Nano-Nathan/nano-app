@@ -28,10 +28,12 @@ export default class ApiStore extends RequestStore {
     if (IS_SERVER) return {};
 
     // Answers from the cache, or asks the backend once for every concurrent read
-    const oInit = oQuery ? { method: 'QUERY', body: JSON.stringify(oQuery) } : { method: 'GET' };
+    const { queryKey, init } = oQuery
+      ? { queryKey: [sPath, oQuery], init: { method: 'QUERY', body: JSON.stringify(oQuery) } }
+      : { queryKey: [sPath], init: { method: 'GET' } };
     const oResponse = await this.oClient.fetchQuery({
-      queryKey: oQuery ? [sPath, oQuery] : [sPath],
-      queryFn: () => this.request(sPath, oInit),
+      queryKey,
+      queryFn: () => this.request(sPath, init),
     });
 
     // Keeps it for the views

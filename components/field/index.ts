@@ -11,8 +11,8 @@ export default function field() {
     // Takes the form, the field, its api store and its paths
     const { form } = props;
     const oField: FormField = props.field;
-    const { options } = oField;
-    const oApi = options && stores[options.store ?? API_STORE_TYPE];
+    const { path, store = API_STORE_TYPE } = oField.options ?? {};
+    const oApi = path && stores[store];
     const sValue = `/form/${form}/values/${oField.name}`;
     const sError = `/form/${form}/errors/${oField.name}`;
 
@@ -20,7 +20,7 @@ export default function field() {
       // Reads the items of its options from the backend when the view mounts
       callbacks: {
         onMount(): Promise<ApiResponse | undefined> | undefined {
-          return options && oApi.read(options.path);
+          return oApi?.read(path);
         },
       },
       // any: the value is what the view or the format gives
@@ -52,7 +52,7 @@ export default function field() {
       },
       options(): NanoObject[] {
         // The items kept for the path of its options, as the backend gave them
-        return (options && oApi.get(options.path)?.result) ?? [];
+        return oApi?.get(path)?.result ?? [];
       },
     };
   });
