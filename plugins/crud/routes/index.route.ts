@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { createRoute, isGranted, NanoError } from '@nano-app/backend';
-import type { ApiPromise, NanoObject, Params, Request } from '@nano-app/backend';
+import type { ApiPromise, HandlerParams, NanoObject, Request } from '@nano-app/backend';
 
 /** Action of each method: its permission of Better Auth and the validation of its body */
 const ACTIONS: NanoObject<string> = {
@@ -26,8 +26,8 @@ function list(aRecords: NanoObject[]): { result: NanoObject[] } {
 }
 
 /** A list of the table, or one record by its id, with Drizzle's relational query of the body */
-async function read(_oReq: Request, { db, onBeforeResult }: Params): ApiPromise {
-  const { model, page, answer, body } = onBeforeResult ?? {};
+async function read(_oReq: Request, { db, onBeforeResult }: HandlerParams): ApiPromise {
+  const { model, page, answer, body } = onBeforeResult;
 
   // Reads with the default limit, the body and the id over them
   return answer(await db.query[model].findMany({ limit: DEFAULT_LIMIT, ...body, ...page }));
@@ -70,15 +70,15 @@ export default createRoute({
   GET: read,
   QUERY: read,
   POST: async (_oReq, { db, onBeforeResult }) => {
-    const { table, body } = onBeforeResult ?? {};
+    const { table, body } = onBeforeResult;
     return first(await db.insert(table).values(body).returning());
   },
   PUT: async (_oReq, { db, onBeforeResult }) => {
-    const { table, id, body } = onBeforeResult ?? {};
+    const { table, id, body } = onBeforeResult;
     return first(await db.update(table).set(body).where(eq(table.id, id)).returning());
   },
   DELETE: async (_oReq, { db, onBeforeResult }) => {
-    const { table, id } = onBeforeResult ?? {};
+    const { table, id } = onBeforeResult;
     return first(await db.delete(table).where(eq(table.id, id)).returning());
   },
 });
