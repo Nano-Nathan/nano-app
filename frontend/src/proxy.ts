@@ -5,13 +5,13 @@ import { HEADERS, ROUTES } from './utils/state';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { GuardedRoute, ProxyTarget } from './types/store';
 
-/** Sends `/api/<store>/<path>` to the backend of `<store>`, in `API_<STORE>_URL`, with its headers; guards the pages of `auth.routes` */
+/** Sends `/api/<store>/<path>` to the backend of the store; guards the pages of `auth.routes` */
 export async function proxy(oReq: NextRequest): Promise<Response> {
   // A request outside `/api/<store>` is a page of the app
   const oTarget = target(oReq);
   if (!oTarget) return guard(oReq);
 
-  // Answers 500 with the env var that is missing; their values never reach the browser
+  // Answers 500 with the env var that is missing
   if ('missing' in oTarget) {
     return NextResponse.json(
       {
@@ -25,13 +25,13 @@ export async function proxy(oReq: NextRequest): Promise<Response> {
     );
   }
 
-  // Next sends the same request (method, cookies, body) to the backend and answers with what it answers
+  // Next sends the request to the backend and answers
   return NextResponse.rewrite(oTarget.url, { request: { headers: oTarget.headers } });
 }
 
-/** Where a request to `/api/<store>/<path>` goes: the URL of its backend and its headers, or the env var that is missing */
+/** The backend URL and headers of a request, or the env var that is missing */
 function target(oReq: NextRequest): ProxyTarget | undefined {
-  // Reads the store named after `/api` (`/api/backend/users/7` → `backend`, `users/7`)
+  // Reads the store named after `/api`
   const [, sPrefix, sName, ...aPath] = oReq.nextUrl.pathname.split('/');
   if (sPrefix !== 'api' || !sName) return undefined;
 
@@ -87,7 +87,7 @@ async function allows(oReq: NextRequest, oRoute: GuardedRoute): Promise<boolean>
 
 /** Answer of Better Auth in the backend of the store, with the browser's cookie and the app's origin */
 async function ask(oReq: NextRequest, sPath: string, oBody?: unknown): Promise<NanoObject | null> {
-  // Finds the backend of the store, with the browser's cookie and the app's origin over its headers
+  // Finds the backend, with the browser's cookie and origin
   const oTarget = target(
     new NextRequest(new URL(sPath, oReq.url), {
       headers: {

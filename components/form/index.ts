@@ -9,7 +9,7 @@ import type { FormOptions } from '../types/form';
 /** A form from a config of fields: their views, and their submit at `/form/<name>` of `app` */
 export default function form(oOptions: FormOptions) {
   return createController(({ props, stores }) => {
-    // Takes the views of the options, the name, fields and submit of the props, and its paths
+    // Takes the views, the props of the form and its paths
     const { components } = oOptions;
     const { name, onSubmit } = props;
     const aFields: FormField[] = props.fields;

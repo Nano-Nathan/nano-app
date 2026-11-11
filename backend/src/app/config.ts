@@ -52,7 +52,7 @@ function deepMerge(oDefault: unknown, oValue: unknown): unknown {
   // Not set: the default
   if (oValue === undefined) return oDefault;
 
-  // Not two plain objects (`false`, arrays, functions, primitives): the value wins
+  // Not two plain objects: the value wins
   if (!Validator.isObject(oDefault) || !Validator.isObject(oValue)) return oValue;
 
   // Two plain objects: each key merged with its default

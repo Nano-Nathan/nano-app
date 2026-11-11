@@ -20,7 +20,7 @@ export default createPlugin(
       routesDir: '',
       callbacks: {
         onMount: async oApp => {
-          // Tokens of a bucket at a time, refilled since its last request up to the capacity
+          // Tokens of a bucket at a time, refilled up to the capacity
           const fnRefill = (oBucket: Bucket, iNow: number): number =>
             Math.min(capacity, oBucket.iTokens + ((iNow - oBucket.iTime) / 1000) * refillPerSecond);
 
@@ -37,7 +37,7 @@ export default createPlugin(
 
           // Spends a token of the client on each request
           oApp.use((oReq, oRes, fnNext) => {
-            // Refills the client's bucket: an IPv6 client is its /56 network, not one of its addresses
+            // Refills the bucket of the client: an IPv6 one is its /56
             const sIp = ipKeyGenerator(oReq.ip ?? '');
             const iNow = Date.now();
             const iTokens = fnRefill(oBuckets.get(sIp) ?? { iTokens: capacity, iTime: iNow }, iNow);

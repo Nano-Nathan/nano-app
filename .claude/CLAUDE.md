@@ -22,6 +22,7 @@ Before writing or showing any code, read this file again; before pushing, check 
 - **Validate at the boundaries**: data from outside (requests, consumer files, env) is checked once where it enters; inside, types are trusted.
 - **Immutability**: `const` by default, `let` only when a value changes. Do not mutate parameters; return a new value.
 - **No private members**: never read what an object keeps for itself (`db._`, a field with `_`). What a piece of code needs comes in as an option or a parameter.
+- **A condition once**: a function tests each condition one time. When two places need its answer, decide both there (`const oRead = id ? { page, answer: first } : { answer: list };`).
 - **Least surprise**: names say what a thing does and nothing more; a function named `get` has no side effects.
 - **HTTP semantics**: `GET` reads and never changes state; status codes mean what the standard says (400 bad input, 401 not authenticated, 403 not allowed, 404 not found, 5xx server fault).
 - **Tests describe behavior**, not implementation: they call the public API and check what a consumer sees.
@@ -87,7 +88,7 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 
 ### Comments and format
 
-- `/** */` above declarations, `//` inside bodies, never `/* */`. A one-line JSDoc on everything exported. Inside a function, a very short comment before each block says what the block does, so the code is never bare: no examples and no reasons why. English.
+- `/** */` above declarations, `//` inside bodies, never `/* */`. A one-line JSDoc on everything exported. Inside a function, a very short comment before each block says what the block does, so the code is never bare: a few words on one line, under 80 columns, with no examples, no reasons why and no list of every case. A JSDoc is one short sentence too. English.
 - No commented-out code, unless a `// TODO:` above it says when it comes back or goes away.
 - One line when it reads easily (`if (!oUser) return fnNext({ status: 401 });`). Vertical when it does not: nested objects, calls with several arguments, destructuring.
 - Prettier (`.prettierrc.json`): single quotes (backticks only to interpolate; never `+` to join strings, `.join('\n')` for lines), semicolons, 2 spaces, 100 columns, arrow functions without parentheses on one parameter (`oRoute => oRoute.path`). `pnpm format` writes, CI checks.

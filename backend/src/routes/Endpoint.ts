@@ -25,7 +25,7 @@ export default class Endpoint {
       permissions,
     }: Pick<RouteEntry, 'callbacks' | 'public' | 'permissions'>,
   ) {
-    // Each method with its handler and permissions: its own, or else those of the route
+    // Each method with its permissions, or those of the route
     this.oMethods = Object.fromEntries(
       Object.entries(oMethods).map(([sMethod, oMethod]) => [
         sMethod,
@@ -71,7 +71,7 @@ export default class Endpoint {
       // The session of the request, when Better Auth found one
       const oRequestParams = { ...oParams, session: oRes.locals.session };
 
-      // Checks the permissions of the method, none on a public route, then runs the onBefore callback
+      // Checks the permissions, then runs onBefore
       // A rejection reaches the error handler: Express 5 forwards it
       return (
         isGranted(oRequestParams, this.isPublic ? undefined : oMethod.permissions)

@@ -16,7 +16,7 @@ export default class AuthStore extends ApiStore {
     // The server renders without a session
     if (IS_SERVER) return;
 
-    // Creates the client: its requests count in `/busy`, and a sign-in, -up or -out of any kind reads the session again
+    // Creates the client: its requests count in `/busy`
     const oAuth = createAuthClient({
       baseURL: `${location.origin}/api/${sName}${sBasePath}`,
       fetchOptions: {
@@ -28,16 +28,16 @@ export default class AuthStore extends ApiStore {
     });
     this.oAuth = oAuth;
 
-    // Keeps the session of the client in `/session`: read now, and again when it changes
+    // Keeps the session of the client in `/session`
     oAuth.useSession.subscribe(({ data }) => this.set('/session', data));
   }
 
-  /** `POST <basePath><path>` of Better Auth (`/sign-in/email`, `/sign-out`, `/request-password-reset`), its answer inside an `ApiResponse` */
+  /** `POST <basePath><path>` of Better Auth (`/sign-in/email`), as an `ApiResponse` */
   public async post(sPath: string, oBody: unknown = {}): Promise<ApiResponse> {
     // Asks nothing on the server
     if (!this.oAuth) return {};
 
-    // Sends it with Better Auth's client; a failed answer goes to the errors of the store with its message
+    // Sends it; a failed answer goes to the errors
     const { data, error } = await this.oAuth.$fetch(sPath, { method: 'POST', body: oBody });
     const oResponse = { success: !error, result: data, message: error?.message };
     if (error) this.fail(oResponse);

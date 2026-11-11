@@ -57,7 +57,7 @@ export default abstract class BetterAuth {
       );
     }
 
-    // Creates the instance on the app's client, with the trusted proxies of Express by default
+    // Creates the instance on the app's client
     const oAuth = betterAuth({
       ...oOptions,
       advanced: {
@@ -70,7 +70,7 @@ export default abstract class BetterAuth {
     // Keeps the instance for the plugins mounted with the app or after it
     this.oAuth = oAuth;
 
-    // Session lookup: the session of every request that reaches it, if any; each endpoint decides whether it needs one
+    // Session lookup: the session of each request, if any
     const fnSession: RequestHandler = (oReq, oRes, fnNext) =>
       oAuth.api.getSession({ headers: fromNodeHeaders(oReq.headers) }).then(oSession => {
         // The session of the request, when there is one

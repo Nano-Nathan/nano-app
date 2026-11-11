@@ -8,7 +8,7 @@ import type { FormField } from '../types/field';
 /** A field of a form: its value and error at `/form/<form>` of `app`, and its select items */
 export default function field() {
   return createController(({ props, stores }) => {
-    // Takes the form and the field of its config, the api store of its options and its paths
+    // Takes the form, the field, its api store and its paths
     const { form } = props;
     const oField: FormField = props.field;
     const { options } = oField;
@@ -23,7 +23,7 @@ export default function field() {
           return options && oApi.read(options.path);
         },
       },
-      // any: the value is what the view gave `change`, or what the field's format gives
+      // any: the value is what the view or the format gives
       value(): any {
         // The value kept, through the field's format when it has one
         const oValue = stores.app.get(sValue);
@@ -39,7 +39,7 @@ export default function field() {
         stores.app.set(sError, this.validate(oValue));
       },
       parse(oInput: unknown): unknown {
-        // The field's own parse; else nothing for an empty text, and a number when a number field's text is one
+        // Its own parse; else no value for `''`, a number for one
         if (oField.parse) return oField.parse(oInput);
         if (oInput === '') return undefined;
         const iNumber = Number(oInput);
