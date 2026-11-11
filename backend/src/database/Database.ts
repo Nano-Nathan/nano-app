@@ -30,16 +30,21 @@ export default abstract class Database {
 
     // Checks the Postgres schema of each table
     const sOwn = `nano_${sName}`;
-    const isApp = sName === APP_NAME;
+    const { breaks, rule } =
+      sName === APP_NAME
+        ? {
+            breaks: (sSchema: string) => sSchema.startsWith('nano_'),
+            rule: 'the nano_* schemas are reserved for plugins',
+          }
+        : {
+            breaks: (sSchema: string) => sSchema !== sOwn,
+            rule: `a plugin keeps its tables in "${sOwn}"`,
+          };
     for (const oTable of Object.values(schema).filter(oValue => is(oValue, PgTable))) {
       const { name, schema: sSchema = 'public' } = getTableConfig(oTable);
-      const isInvalid = isApp ? sSchema.startsWith('nano_') : sSchema !== sOwn;
-      if (isInvalid) {
-        const sRule = isApp
-          ? 'the nano_* schemas are reserved for plugins'
-          : `a plugin keeps its tables in "${sOwn}"`;
+      if (breaks(sSchema)) {
         throw new NanoError(
-          `The database "${sName}": table "${sSchema}.${name}" breaks the rule, ${sRule}.`,
+          `The database "${sName}": table "${sSchema}.${name}" breaks the rule, ${rule}.`,
         );
       }
     }
