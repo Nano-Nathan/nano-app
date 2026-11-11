@@ -44,15 +44,15 @@ Each package's publish workflow runs its tests and build on every pull request t
 
 ## Planning a development
 
-How the framework behaves is the maintainer's decision, so a development is planned before it is written. The code follows [`.claude/CLAUDE.md`](.claude/CLAUDE.md).
+How the framework behaves is the maintainer's decision, so a development is planned before it is written. The code follows [`.claude/CLAUDE.md`](https://github.com/Nano-Nathan/nano-app/blob/main/.claude/CLAUDE.md).
 
 1. Before writing any code, list what it will do, point by point. Each point says what and how, in plain words: what comes in, what happens to it, what goes out, and what it reuses.
 2. When a point hides a decision (a default, an edge case, an error, where the code lives), give two or three options with their cost and mark one as the recommendation.
 3. The maintainer answers point by point. Adjust the points and list again only what changed.
 4. Implement only when every point has the maintainer's OK. A change of behavior that shows up while implementing goes back to the maintainer before it is written.
-5. The tests, the README of the package and the feature file in [`features/`](features/README.md) follow the final decisions, not the first proposal.
+5. The tests, the README of the package and the feature file in [`features/`](https://github.com/Nano-Nathan/nano-app/blob/main/features/README.md) follow the final decisions, not the first proposal.
 
-A feature split into modules is planned and reviewed module by module. A large idea is first broken into tasks: see [Breaking down a feature](features/README.md#breaking-down-a-feature).
+A feature split into modules is planned and reviewed module by module. A large idea is first broken into tasks: see [Breaking down a feature](https://github.com/Nano-Nathan/nano-app/blob/main/features/README.md#breaking-down-a-feature).
 
 ## Rules of the repository
 
