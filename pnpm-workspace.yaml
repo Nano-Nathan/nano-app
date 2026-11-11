@@ -7,7 +7,7 @@ packages:
   - "frontend/tests/app"
   - "site"
 allowBuilds:
-  # Prisma comes only through Better Auth's Prisma adapter: its scripts never run
+  # Prisma comes only as a peer of Better Auth: its scripts never run
   '@prisma/engines': false
   esbuild: true
   prisma: false
