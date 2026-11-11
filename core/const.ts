@@ -9,9 +9,6 @@ export const APP_STORE_TYPE = 'app';
 /** Type of a `*.store.ts` that reads and writes a backend, through the frontend proxy */
 export const API_STORE_TYPE = 'api';
 
-/** HTTP methods a route can handle */
-export const HTTP_METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'QUERY'] as const;
-
 // Backend
 
 /** Loopback and private networks: the proxies the backend trusts by default */

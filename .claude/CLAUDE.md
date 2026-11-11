@@ -11,7 +11,7 @@ Before writing or showing any code, read this file again; before pushing, check 
 - **A framework for others**: every feature is general, never shaped for one app or one plugin. The consumer gets a small, easy layer (`createRoute`, `createPlugin`, one config object) and the framework does the work behind it. Convention over configuration: a file in the right folder works without registering it.
 - **The consumer owns the app**: the security and the rules of an app (what a body may bring, how many records a list answers) are the consumer's. The framework gives the place to set them and never decides them.
 - **Least code**: add exactly what the task needs, with the least code possible. No option, default, fallback, retry or `try`/`catch` nobody asked for, and no code for a case nobody has. Prefer reusing what exists, and no change over a small one.
-- **Reuse before writing**: before writing anything, check whether an installed dependency (zod, Drizzle, TanStack Query, Better Auth, Express, Next) or `core/` already gives it. A hand-made copy of a library is more code to maintain and leaves the gaps the library closed.
+- **Reuse before writing**: before writing anything, check whether an installed dependency (zod, Drizzle, TanStack Query, Better Auth, Express, Next) or `core/` already gives it; when none does, whether a tool that already exists (a library, a CLI, a feature of the platform) solves the problem. A hand-made copy is more code to maintain and leaves the gaps the tool closed.
 - **A new dependency** needs a reason a built-in or an installed one cannot cover.
 - **A cleanup never changes behavior**: a refactor or a simplification leaves what the framework accepts, rejects, stores and answers as it was. A change of behavior, however small, goes to the plan as a decision before any code.
 - **Behavior is the maintainer's decision**: what the framework does with a request, a config, an error, a plugin or the database. Code style is not: follow this file without asking.
@@ -49,7 +49,7 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 
 ### Names
 
-Prefix by type on every internal name: local variables, parameters, class fields, loop and callback variables, `catch`, and Express's `oReq`, `oRes`, `fnNext`. No prefix on: public API (exported types and their fields, plugin options, responses), names destructured from it (`const { name, routesDir } = oConfig`), declared functions and methods, module constants (`HTTP_METHODS`), type parameters (`T`, `DB`) and tool configs (`tsdown.config.ts`).
+Prefix by type on every internal name: local variables, parameters, class fields, loop and callback variables, `catch`, and Express's `oReq`, `oRes`, `fnNext`. No prefix on: public API (exported types and their fields, plugin options, responses), names destructured from it (`const { name, routesDir } = oConfig`), declared functions and methods, module constants (`PRIVATE_NETWORKS`), type parameters (`T`, `DB`) and tool configs (`tsdown.config.ts`).
 
 | Prefix | Type | Example |
 |---|---|---|

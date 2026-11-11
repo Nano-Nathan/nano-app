@@ -22,7 +22,7 @@ export default defineConfig({
   dts: { entry: ['src/index.ts', ...Object.values(pluginEntry)], tsconfig: '../tsconfig.dts.json' },
   outDir: 'build',
   clean: true,
-  // Dependencies and optional peers (the Prisma stack) stay out of the bundle; @nano-app/core goes in
+  // Dependencies and optional peers (Drizzle, pg, Better Auth) stay out of the bundle; @nano-app/core goes in
   deps: {
     neverBundle: [
       ...Object.keys(pkg.dependencies ?? {}),
