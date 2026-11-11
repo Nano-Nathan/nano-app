@@ -22,10 +22,6 @@ function first(aRecords: NanoObject[]): { result: NanoObject } {
   return { result: aRecords[0] };
 }
 
-/** Clients that know the tables but none of their relations, one per client of an app */
-// any: the client and the tables of each app, unknown to the plugin
-const TABLE_ONLY = new WeakMap<NanoObject, any>();
-
 /** A body as its validation gives it, or as it came without one: 400 with what zod says when it breaks a rule */
 // any: the body is the consumer's, unknown to the plugin
 function parse(oValidation: ZodType | undefined, oBody: unknown): any {
@@ -45,15 +41,13 @@ async function read(oReq: Request, { db, dbSchema, onBeforeResult }: Params): Ap
   const oBody: NanoObject = parse(validations.query, oReq.body ?? {});
 
   // A client on the same pool that knows the tables but none of their relations: a query cannot leave its table
-  if (!TABLE_ONLY.has(db)) {
-    const { relations: _oRelations, ...oTables } = dbSchema;
-    // any: the tables of each app, unknown to the plugin
-    const oNoRelations: any = defineRelations(oTables);
-    TABLE_ONLY.set(db, drizzle({ client: db.$client, relations: oNoRelations }));
-  }
+  const { relations: _oRelations, ...oTables } = dbSchema;
+  // any: the tables of each app, unknown to the plugin
+  const oNoRelations: any = defineRelations(oTables);
+  const oTableOnly = drizzle({ client: db.$client, relations: oNoRelations });
 
   // One record by its id, or the list: the body goes as it came, so Drizzle rejects what leaves the table
-  const oQuery = TABLE_ONLY.get(db).query[model];
+  const oQuery = oTableOnly.query[model];
   if (id) return first(await oQuery.findMany({ ...oBody, where: { id }, limit: 1 }));
   return {
     result: await oQuery.findMany({

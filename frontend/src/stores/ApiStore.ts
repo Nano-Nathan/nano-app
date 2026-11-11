@@ -1,16 +1,12 @@
 import { QueryClient } from '@tanstack/query-core';
-import { IS_SERVER, REQUEST_FAILED } from '@nano-app/core/const';
+import { IS_SERVER } from '@nano-app/core/const';
 import Pages from './Pages';
-import Store from './Store';
+import RequestStore from './RequestStore';
 import type { ApiResponse, QueryParams } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
-import type { ApiError } from '../types/store';
 
 /** Backend of an `api` store through its proxy; each read keeps its `ApiResponse` in the store */
-export default class ApiStore extends Store {
-  private sName: string;
-  private iCount = 0;
-
+export default class ApiStore extends RequestStore {
   /** Pages of each path and query read with `more`, by their key */
   private oPages: NanoObject<Pages> = {};
 
@@ -18,12 +14,6 @@ export default class ApiStore extends Store {
   protected oClient = new QueryClient({
     defaultOptions: { queries: { staleTime: Infinity, gcTime: Infinity } },
   });
-
-  /** Store of the backend `API_<NAME>_URL`, with the initial data of its file */
-  constructor(sName: string, oData?: NanoObject) {
-    super(oData);
-    this.sName = sName;
-  }
 
   /** Value at a path, with the query of the read that kept it */
   // any: the value is the consumer's, unknown to the framework
@@ -105,61 +95,6 @@ export default class ApiStore extends Store {
       await this.oClient.cancelQueries({ queryKey: [sParent] });
       await this.oClient.invalidateQueries({ queryKey: [sParent] });
     }
-    return oResponse;
-  }
-
-  /** Sends a request, keeping `/busy` while it is out and a failed answer in `/error/list` */
-  protected request(sPath: string, oInit: RequestInit): Promise<ApiResponse> {
-    return this.track(this.send(sPath, oInit));
-  }
-
-  /** Counts a request while it is out: `/busy` is true until none is left */
-  protected track<T>(oRequest: Promise<T>): Promise<T> {
-    // Counts the request and sets the store busy
-    this.iCount++;
-    this.set('/busy', true);
-
-    // Sets the store not busy when no request is left
-    return oRequest.finally(() => {
-      this.iCount--;
-      this.set('/busy', this.iCount > 0);
-    });
-  }
-
-  /** Adds a failed answer to the errors of the store, with when it failed */
-  protected fail(oResponse: ApiResponse): void {
-    // Keeps it with a message and the time, after the ones before
-    const oError: ApiError = {
-      ...oResponse,
-      message: oResponse.message || REQUEST_FAILED,
-      timestamp: Date.now(),
-    };
-    this.set('/error/list', [...(this.get('/error/list') ?? []), oError]);
-  }
-
-  /** `ApiResponse` of an answer of the proxy, from its JSON */
-  protected receive(_oRes: Response, oResponse: ApiResponse): ApiResponse {
-    return oResponse;
-  }
-
-  /** Sends a request to the proxy of the store and reads its answer as an `ApiResponse` */
-  private async send(sPath: string, oInit: RequestInit): Promise<ApiResponse> {
-    let sText: string | undefined;
-    let oResponse: ApiResponse = { success: false, message: REQUEST_FAILED };
-    try {
-      const oRes = await fetch(`/api/${this.sName}${sPath}`, {
-        ...oInit,
-        headers: { 'content-type': 'application/json' },
-      });
-      sText = await oRes.text();
-      oResponse = this.receive(oRes, JSON.parse(sText));
-    } catch {
-      // Keeps the text of an answer that is not JSON as the result of the failed `ApiResponse`
-      if (sText !== undefined) oResponse = { ...oResponse, result: sText };
-    }
-
-    // Adds a failed answer to the errors of the store
-    if (!oResponse.success) this.fail(oResponse);
     return oResponse;
   }
 
