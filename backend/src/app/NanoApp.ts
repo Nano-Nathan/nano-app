@@ -6,7 +6,7 @@ import compression from 'compression';
 import 'dotenv/config';
 import { Logger } from '@nano-app/core';
 import { APP_NAME } from '@nano-app/core/const';
-import Plugin from '../routes/Plugin';
+import Plugin from '../router/Plugin';
 import { PACKAGES_CONFIG, EXPRESS_CONFIG, ROUTES_DIR, PORT } from './config';
 import { errorHandler, notFoundHandler } from './errors';
 import type { NanoAppConfig, PackagesConfig } from '../types/app';
@@ -60,11 +60,7 @@ export default class NanoApp {
     const oAppPlugin: PluginConfig = { name: APP_NAME, routesDir, database };
 
     // Mounts the ones before the app, the app's and the ones after
-    for (const oPlugin of [
-      ...(plugins?.before ?? []),
-      oAppPlugin,
-      ...(plugins?.after ?? []),
-    ]) {
+    for (const oPlugin of [...(plugins?.before ?? []), oAppPlugin, ...(plugins?.after ?? [])]) {
       await new Plugin(oPlugin).mount(this.oApp);
     }
 

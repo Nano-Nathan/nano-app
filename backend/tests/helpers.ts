@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { createServer } from 'node:net';
 import { resolve } from 'node:path';
 import express from 'express';
-import Plugin from '../src/routes/Plugin';
+import Plugin from '../src/router/Plugin';
 import { errorHandler, notFoundHandler } from '../src/app/errors';
 import type { ChildProcess } from 'node:child_process';
 import type { Server } from 'node:http';

@@ -2,7 +2,7 @@ import { NanoError } from '@nano-app/core';
 import { APP_NAME } from '@nano-app/core/const';
 import Router from './Router';
 import BetterAuth from '../auth/BetterAuth';
-import Database from '../database/Database';
+import Database from '../plugin/Database';
 import type { Express } from 'express';
 import type { PluginConfig } from '../types/plugin';
 

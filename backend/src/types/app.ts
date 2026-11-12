@@ -2,8 +2,7 @@ import type express from 'express';
 import type { CorsOptions } from 'cors';
 import type { BetterAuthOptions } from 'better-auth';
 import type { NanoObject } from '@nano-app/core/types/objects';
-import type { DatabaseConfig } from './database';
-import type { PluginConfig } from './plugin';
+import type { DatabaseConfig, PluginConfig } from './plugin';
 
 /** Configuration of the framework's built-in packages */
 export type PackagesConfig = {

@@ -1,7 +1,7 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { resolve } from 'node:path';
-import Database from '../src/database/Database';
+import Database from '../src/plugin/Database';
 import { boot, push, request } from './helpers';
 import * as schema from './fixtures/database/schema';
 import * as reserved from './fixtures/database/reserved';

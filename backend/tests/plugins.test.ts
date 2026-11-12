@@ -2,7 +2,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import express from 'express';
 import { startApp, request, boot } from './helpers';
-import Plugin from '../src/routes/Plugin';
+import Plugin from '../src/router/Plugin';
 import { createPluginCallbacks } from '../src/app/creators';
 import * as reserved from './fixtures/database/reserved';
 

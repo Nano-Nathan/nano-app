@@ -1,5 +1,10 @@
 import type { NanoObject, PluginCallbacks } from '@nano-app/core';
-import type { DatabaseConfig } from './database';
+
+/** Database configuration */
+export type DatabaseConfig = {
+  /** Its schema */
+  schema: NanoObject;
+};
 
 /** When a plugin is mounted, relative to the consumer routes */
 export type PluginStage = 'before' | 'after';
