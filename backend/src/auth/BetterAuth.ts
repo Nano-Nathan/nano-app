@@ -3,7 +3,7 @@ import { FileReader, NanoError, Validator } from '@nano-app/core';
 import { PRIVATE_NETWORKS } from '@nano-app/core/const';
 import type { RequestHandler } from 'express';
 import type { NanoObject } from '@nano-app/core';
-import type { AuthOptions } from '../types/app';
+import type { AuthOptions } from '../types/auth';
 
 /** Files of the app's Better Auth options, relative to `cwd`: source, then built */
 const AUTH_FILES = ['src/auth.ts', 'src/auth.js'];

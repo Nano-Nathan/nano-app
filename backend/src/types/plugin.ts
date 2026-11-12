@@ -1,8 +1,6 @@
 import type { NanoObject, PluginCallbacks } from '@nano-app/core';
+import type { AuthOptions } from './auth';
 import type { DatabaseConfig } from './database';
-
-/** When a plugin is mounted, relative to the consumer routes */
-export type PluginStage = 'before' | 'after';
 
 /** Plugin configuration: a group of endpoints */
 export type PluginConfig<Options = NanoObject> = {
@@ -12,8 +10,6 @@ export type PluginConfig<Options = NanoObject> = {
   routesDir: string;
   /** Base path prepended to every endpoint, e.g. "/auth" (no trailing slash). Defaults to none */
   basePath?: string;
-  /** Mount point relative to the consumer routes. Defaults to "before" */
-  stage?: PluginStage;
   /** Drizzle schema of the plugin's database, mounted before its endpoints */
   database?: DatabaseConfig;
   /** Plugin options */
@@ -22,7 +18,19 @@ export type PluginConfig<Options = NanoObject> = {
   callbacks?: PluginCallbacks;
 };
 
-/** The project's plugin, named "app": `routesDir` defaults to "src/routes" */
-export type MainPluginConfig<Options = NanoObject> = Partial<
-  Omit<PluginConfig<Options>, 'name' | 'stage'>
->;
+/** What PluginManager reads: the app's plugin and the ones around it */
+export type PluginManagerConfig = {
+  /** Folder of the app's routes. Defaults to "src/routes" */
+  routesDir?: string;
+  /** Drizzle schema of the app's database */
+  database?: DatabaseConfig;
+  /** Better Auth options: with them, the app's routes need a session */
+  auth?: AuthOptions;
+  /** Plugins mounted before and after the app's routes */
+  plugins?: {
+    /** Before the app's routes */
+    before?: PluginConfig[];
+    /** After the app's routes */
+    after?: PluginConfig[];
+  };
+};
