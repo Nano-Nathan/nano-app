@@ -42,7 +42,7 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 - The function of `createPlugin` returns its config: its keys first (`name`, `basePath`, `routesDir`, `options`), then `callbacks`. Before the `return` only `const` that read the options; no functions. Logic lives in the callbacks: what a callback needs is a `const` at its start (`const fnRefill = …`).
 - `public`, `protected` or `private` on every class method and field; constructors go without.
 - Declared functions and methods state their return type (`: Promise<void>`); inline callbacks infer it, and so does the factory of a component (`list`), from the controller it returns.
-- No `any` without a comment saying why (`// any: anything can be thrown`). Prefer `unknown` and validate.
+- Prefer `unknown` and validate over `any`.
 - Types are declared where values are born and inferred from there. Data from outside (JSON, env) gets a typed variable where it enters (`const oFiles: StoreFiles = JSON.parse(…)`).
 - Types in a `types/` folder of the package, one file per area (`types/app.ts`, `types/plugin.ts`). `type`, not `interface`. `import type` for types.
 - Generic objects are `NanoObject` (`core/types/objects.ts`), with the value type when it is known (`NanoObject<Store>`), never `object` or `Record<string, …>`.
