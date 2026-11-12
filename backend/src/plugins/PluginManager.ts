@@ -17,7 +17,7 @@ export default class PluginManager {
     const { routesDir = 'src/routes', database, plugins, auth } = this.oConfig;
 
     // The app's plugin; the others without a database get the app's config
-    const oAppPlugin = new Plugin({ name: APP_NAME, routesDir, database });
+    const oAppPlugin = new Plugin({ name: APP_NAME, routesDir, database }, auth);
     const aBefore = (plugins?.before ?? []).map(oPlugin => new Plugin({ database, ...oPlugin }));
     const aAfter = (plugins?.after ?? []).map(oPlugin => new Plugin({ database, ...oPlugin }));
 

@@ -1,7 +1,7 @@
 import { Logger, NanoError } from '@nano-app/core';
-import isGranted from '../auth/permissions';
-import type { RequestHandler } from 'express';
+import type { Request, RequestHandler } from 'express';
 import type {
+  ApiPromise,
   Callbacks,
   Handlers,
   MethodEntry,
@@ -14,7 +14,9 @@ import type {
 export default class Endpoint {
   private oMethods: NanoObject<MethodEntry>;
   private oCallbacks: Callbacks;
-  private isPublic: boolean;
+  protected isPublic: boolean;
+  /** Whether it checks the permissions of its methods */
+  protected isGuarded = false;
 
   /** Allowed methods and the options of the route */
   constructor(
@@ -41,9 +43,10 @@ export default class Endpoint {
   /** Handler for all methods */
   public async mount(oParams: Params, sPath: string): Promise<RequestHandler> {
     // Without Better Auth, a route with permissions answers without checking them
-    if (!oParams.auth && Object.values(this.oMethods).some(({ permissions }) => permissions)) {
+    const isUnchecked = Object.values(this.oMethods).some(({ permissions }) => permissions);
+    if (!this.isGuarded && isUnchecked) {
       Logger.warn(
-        `${sPath}: its permissions are not checked without Better Auth. Add src/auth.ts.`,
+        `${sPath}: its permissions are not checked without Better Auth. Set auth in createNanoApp.`,
       );
     }
 
@@ -54,41 +57,35 @@ export default class Endpoint {
     return this.createHandler(oParams);
   }
 
-  /** Express handler: onBefore, then the method of the request */
+  /** Express handler: the method of the request, answered as an ApiResponse */
   private createHandler(oParams: Params): RequestHandler {
     return (oReq, oRes, fnNext) => {
-      // With Better Auth on, a route needs a session unless it is public
-      if (oParams.auth && !oRes.locals.session && !this.isPublic)
-        return fnNext(new NanoError('Not authenticated', 401));
-
       // Finds the handler of the request method: a route file holds only HTTP methods
-      const sMethod = oReq.method;
-      const oMethod = this.oMethods[sMethod];
+      const oMethod = this.oMethods[oReq.method];
 
       // Checks whether the method is defined
-      if (!oMethod) return fnNext(new NanoError(`Method ${sMethod} not implemented`, 405));
+      if (!oMethod) return fnNext(new NanoError(`Method ${oReq.method} not implemented`, 405));
 
-      // The session of the request, when Better Auth found one
-      const oRequestParams = { ...oParams, session: oRes.locals.session };
-
-      // Checks the permissions, then runs onBefore
-      // A rejection reaches the error handler: Express 5 forwards it
-      return (
-        isGranted(oRequestParams, this.isPublic ? undefined : oMethod.permissions)
-          .then(isAllowed => {
-            if (!isAllowed) throw new NanoError('Forbidden', 403);
-            return this.oCallbacks.onBefore?.(oReq, sMethod, oRequestParams) ?? {};
-          })
-          // Runs the method
-          .then(onBeforeResult => oMethod.handler(oReq, { ...oRequestParams, onBeforeResult }))
-          // Handles the response
-          .then(oResponse => {
-            // Answers with the status of the handler, 200 by default, and its success
-            const { status, ...oBody } = oResponse;
-            const iStatus = status ?? 200;
-            oRes.status(iStatus).json({ ...oBody, success: iStatus < 400 });
-          })
-      );
+      // Runs it; a rejection reaches the error handler: Express 5 forwards it
+      return this.run(oReq, oMethod, oParams).then(oResponse => {
+        // Answers with the status of the handler, 200 by default, and its success
+        const { status, ...oBody } = oResponse;
+        const iStatus = status ?? 200;
+        oRes.status(iStatus).json({ ...oBody, success: iStatus < 400 });
+      });
     };
+  }
+
+  /** Guards the request, then runs onBefore and the method */
+  private async run(oReq: Request, oMethod: MethodEntry, oParams: Params): ApiPromise {
+    const oRequestParams = await this.guard(oReq, oMethod, oParams);
+    const onBeforeResult =
+      (await this.oCallbacks.onBefore?.(oReq, oReq.method, oRequestParams)) ?? {};
+    return oMethod.handler(oReq, { ...oRequestParams, onBeforeResult });
+  }
+
+  /** The params of a request that may go on; without Better Auth, every request may */
+  protected async guard(_oReq: Request, _oMethod: MethodEntry, oParams: Params): Promise<Params> {
+    return oParams;
   }
 }
