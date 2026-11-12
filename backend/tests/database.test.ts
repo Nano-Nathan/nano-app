@@ -35,10 +35,7 @@ describe('database', () => {
 
   test('an app without a database mounts none and its handlers receive no client', async () => {
     // Boots without a schema nor DATABASE_URL
-    const oApp = await boot(
-      { mainPlugin: { routesDir: `${FIXTURES}/routes` } },
-      { oEnv: { DATABASE_URL: '' } },
-    );
+    const oApp = await boot({ routesDir: `${FIXTURES}/routes` }, { oEnv: { DATABASE_URL: '' } });
 
     try {
       // Checks that the handler got no client and nothing was mounted
@@ -60,7 +57,7 @@ describe('PostgreSQL', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not
 
     // Boots with the app's schema
     oApp = await boot({
-      mainPlugin: { routesDir: `${FIXTURES}/routes` },
+      routesDir: `${FIXTURES}/routes`,
       schemaModule: SCHEMA_MODULE,
     });
 

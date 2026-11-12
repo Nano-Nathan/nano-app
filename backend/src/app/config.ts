@@ -1,83 +1,44 @@
-import { Logger, NanoError, Validator } from '@nano-app/core';
-import { APP_NAME, PRIVATE_NETWORKS } from '@nano-app/core/const';
+import { Logger, NanoError, NanoObject, Validator } from '@nano-app/core';
+import { PRIVATE_NETWORKS } from '@nano-app/core/const';
 import type { Request } from 'express';
-import type { NanoObject } from '@nano-app/core';
-import type { NanoAppConfig } from '../types/app';
-import type { PluginConfig } from '../types/plugin';
+import type { NanoAppConfig, PackagesConfig } from '../types/app';
+import { PluginConfig } from '../types/plugin';
 
-/** Initial application configuration */
-export const INITIAL_CONFIG = {
-  /** Application port */
-  port: 3000,
-
-  /** Express settings: the client IP comes from `X-Forwarded-For` only through private proxies */
-  settings: {
-    'trust proxy': PRIVATE_NETWORKS,
+/** Packages configuration */
+export const PACKAGES_CONFIG: PackagesConfig = {
+  morgan: {
+    tokens: {
+      timestamp: () => Logger.date(),
+      path: (oReq: Request) => oReq.path,
+    },
+    format: ':timestamp | :method :path :status',
   },
-
-  /** Initial middlewares */
-  packages: {
-    morgan: {
-      tokens: {
-        timestamp: () => Logger.date(),
-        path: (oReq: Request) => oReq.path,
-      },
-      format: ':timestamp | :method :path :status',
-    },
-    cors: {
-      methods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE', 'QUERY'],
-    },
-    helmet: true,
-    compression: false,
-    express: {
-      limit: '10kb',
-    },
-    urlencoded: {
-      extended: false,
-    },
+  cors: {
+    methods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE', 'QUERY'],
   },
-
-  /** Main plugin to mount */
-  mainPlugin: {
-    routesDir: 'src/routes',
-    basePath: '',
+  helmet: true,
+  compression: false,
+  express: {
+    limit: '10kb',
   },
+  urlencoded: {
+    extended: false,
+  },
+};
 
-  /** Plugins around the consumer routes */
-  plugins: [],
-} satisfies NanoAppConfig;
+/** Express settings */
+export const EXPRESS_CONFIG: NanoObject<unknown> = {
+  'trust proxy': PRIVATE_NETWORKS,
+};
 
-/** Merges a value over its default: plain objects key by key at every level; anything else replaces it */
-function deepMerge(oDefault: unknown, oValue: unknown): unknown {
-  // Not set: the default
-  if (oValue === undefined) return oDefault;
+/** Plugins configuration */
+export const PLUGINS_CONFIG: NanoObject<PluginConfig[]> = {
+  before: [],
+  after: [],
+};
 
-  // Not two plain objects: the value wins
-  if (!Validator.isObject(oDefault) || !Validator.isObject(oValue)) return oValue;
+/** Routes directory */
+export const ROUTES_DIR = 'src/routes';
 
-  // Two plain objects: each key merged with its default
-  const aKeys = Object.keys({ ...oDefault, ...oValue });
-  return Object.fromEntries(aKeys.map(sKey => [sKey, deepMerge(oDefault[sKey], oValue[sKey])]));
-}
-
-/** Whether a merged configuration kept the plain object of the initial one */
-function isMergedConfig(oValue: unknown): oValue is typeof INITIAL_CONFIG {
-  return Validator.isObject(oValue);
-}
-
-/** Merges the consumer configuration over the initial one; the main plugin is always named "app" */
-export function mergeConfig(oConfig: NanoAppConfig = {}): NanoAppConfig &
-  Required<Pick<NanoAppConfig, 'port' | 'settings' | 'plugins' | 'packages'>> & {
-    mainPlugin: PluginConfig;
-  } {
-  // Every level keeps its default where the consumer set nothing
-  const oMerged = deepMerge(INITIAL_CONFIG, oConfig);
-
-  // Fails when the configuration is not an object
-  if (!isMergedConfig(oMerged)) {
-    throw new NanoError('The configuration of createNanoApp must be an object.');
-  }
-
-  // Names the main plugin
-  return { ...oMerged, mainPlugin: { ...oMerged.mainPlugin, name: APP_NAME } };
-}
+/** Application port */
+export const PORT = 3000;

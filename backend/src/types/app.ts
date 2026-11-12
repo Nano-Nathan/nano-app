@@ -2,7 +2,8 @@ import type express from 'express';
 import type { CorsOptions } from 'cors';
 import type { BetterAuthOptions } from 'better-auth';
 import type { NanoObject } from '@nano-app/core/types/objects';
-import type { MainPluginConfig, PluginConfig } from './plugin';
+import type { DatabaseConfig } from './database';
+import type { PluginConfig } from './plugin';
 
 /** Configuration of the framework's built-in packages */
 export type PackagesConfig = {
@@ -48,8 +49,15 @@ export type NanoAppConfig = {
   settings?: NanoObject<unknown>;
   /** Default middlewares configuration */
   packages?: PackagesConfig;
-  /** Plugins to mount. Defaults to [] */
-  plugins?: PluginConfig[];
-  /** Main plugin to mount. */
-  mainPlugin?: MainPluginConfig;
+  /** Plugins to mount. Defaults to { before: [], after: [] } */
+  plugins?: {
+    /** Plugins to mount before the app */
+    before: PluginConfig[];
+    /** Plugins to mount after the app */
+    after: PluginConfig[];
+  };
+  /** Directory of the app's `*.route.ts` files. Defaults to "src/routes" */
+  routesDir?: string;
+  /** Drizzle schema of the app's database, mounted before its endpoints */
+  database?: DatabaseConfig;
 };

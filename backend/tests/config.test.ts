@@ -28,20 +28,15 @@ describe('config merge', () => {
   });
 
   test('nested objects are merged at every level', () => {
-    // Sets only the morgan format and the main plugin's base path
-    const oConfig = mergeConfig({
-      packages: { morgan: { format: ':method' } },
-      mainPlugin: { basePath: '/api' },
-    });
+    // Sets only the morgan format
+    const oConfig = mergeConfig({ packages: { morgan: { format: ':method' } } });
 
     // Checks that the nested defaults stay
     assert.deepEqual(oConfig.packages.morgan, {
       ...INITIAL_CONFIG.packages.morgan,
       format: ':method',
     });
-    assert.equal(oConfig.mainPlugin.basePath, '/api');
-    assert.equal(oConfig.mainPlugin.routesDir, INITIAL_CONFIG.mainPlugin.routesDir);
-    assert.equal(oConfig.mainPlugin.name, 'app');
+    assert.equal(oConfig.routesDir, INITIAL_CONFIG.routesDir);
   });
 
   test('the defaults are not mutated', () => {

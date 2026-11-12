@@ -35,7 +35,7 @@ const fnBoot = (sSchemaModule: string) =>
           routesDir: `${FIXTURES}/permission-routes`,
         },
       ],
-      mainPlugin: { routesDir: `${FIXTURES}/routes` },
+      routesDir: `${FIXTURES}/routes`,
       schemaModule: sSchemaModule,
     },
     { oEnv: ENV, sCwd: FIXTURES },

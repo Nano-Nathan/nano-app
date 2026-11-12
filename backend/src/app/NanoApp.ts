@@ -5,21 +5,24 @@ import helmet from 'helmet';
 import compression from 'compression';
 import 'dotenv/config';
 import { Logger } from '@nano-app/core';
+import { APP_NAME } from '@nano-app/core/const';
 import Plugin from '../routes/Plugin';
-import { mergeConfig } from './config';
+import { PACKAGES_CONFIG, EXPRESS_CONFIG, ROUTES_DIR, PORT } from './config';
 import { errorHandler, notFoundHandler } from './errors';
-import type { NanoObject } from '@nano-app/core';
 import type { NanoAppConfig, PackagesConfig } from '../types/app';
-import type { PluginConfig } from '../types/plugin';
+import { PluginConfig } from '../types/plugin';
 
 /** Main NanoApp class */
 export default class NanoApp {
   protected oApp: Express;
-  protected oConfig: ReturnType<typeof mergeConfig>;
+  protected oConfig: NanoAppConfig;
 
   constructor(oConfig: NanoAppConfig = {}) {
     this.oApp = express();
-    this.oConfig = mergeConfig(oConfig);
+    this.oConfig = {
+      port: PORT,
+      ...oConfig,
+    };
     this.start();
   }
 
@@ -45,20 +48,23 @@ export default class NanoApp {
   /** Initializes the application in the right order */
   private async initialize(): Promise<void> {
     // Express settings
-    for (const [sKey, oValue] of Object.entries(this.oConfig.settings)) {
+    for (const [sKey, oValue] of Object.entries(this.oConfig.settings ?? EXPRESS_CONFIG)) {
       this.oApp.set(sKey, oValue);
     }
 
     // Packages (body parsers included: they go first)
-    this.setPackages(this.oConfig.packages);
+    this.setPackages(this.oConfig.packages ?? PACKAGES_CONFIG);
 
-    // Plugins separated by stage
-    const { mainPlugin, plugins } = this.oConfig;
-    const oPlugins: NanoObject<PluginConfig[]> = { before: [], after: [] };
-    for (const oPlugin of plugins) oPlugins[oPlugin.stage ?? 'before'].push(oPlugin);
+    // App configuration
+    const { routesDir = ROUTES_DIR, database, plugins } = this.oConfig;
+    const oAppPlugin: PluginConfig = { name: APP_NAME, routesDir, database };
 
     // Mounts the ones before the app, the app's and the ones after
-    for (const oPlugin of [...oPlugins.before, mainPlugin, ...oPlugins.after]) {
+    for (const oPlugin of [
+      ...(plugins?.before ?? []),
+      oAppPlugin,
+      ...(plugins?.after ?? []),
+    ]) {
       await new Plugin(oPlugin).mount(this.oApp);
     }
 

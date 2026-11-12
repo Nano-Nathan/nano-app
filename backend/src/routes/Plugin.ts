@@ -30,7 +30,7 @@ export default class Plugin {
       // Better Auth keeps its tables in the app's database
       if (!database) {
         throw new NanoError(
-          'src/auth.ts needs the database of the app: set mainPlugin.database.schema.',
+          'src/auth.ts needs the database of the app: set database.schema in createNanoApp.',
         );
       }
 

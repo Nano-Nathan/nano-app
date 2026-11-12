@@ -48,7 +48,7 @@ export default createRoute({
 
 ## Routes
 
-Each `*.route.ts` under `mainPlugin.routesDir` default-exports an object with the HTTP methods it implements (`GET`, `POST`, `PUT`, `DELETE`, `QUERY`). **The file path is the URL** (`index.route.ts` → `/`, `api/users.route.ts` → `/api/users`). A route file holds only those methods and its options (`expression`, `public`, `permissions`, `callbacks`): any other key, or an invalid value, stops the startup with the file and what is wrong. `expression` is appended to that path as is, in Express syntax (`/:id`, `{/:id}` for optional):
+Each `*.route.ts` under `routesDir` default-exports an object with the HTTP methods it implements (`GET`, `POST`, `PUT`, `DELETE`, `QUERY`). **The file path is the URL** (`index.route.ts` → `/`, `api/users.route.ts` → `/api/users`). A route file holds only those methods and its options (`expression`, `public`, `permissions`, `callbacks`): any other key, or an invalid value, stops the startup with the file and what is wrong. `expression` is appended to that path as is, in Express syntax (`/:id`, `{/:id}` for optional):
 
 ```ts
 export default createRoute({
@@ -84,7 +84,8 @@ Every option is optional.
 | `listener` | `() => {}` | Callback once the server is listening. |
 | `settings` | `{ "trust proxy": <private networks> }` | Values for `app.set()`: see [Client IP](#client-ip). |
 | `packages` | see below | Framework base middlewares. |
-| `mainPlugin` | `{ routesDir: "src/routes" }` | Your routes (`routesDir`, relative to `cwd`), `basePath` (e.g. `/api`, no trailing slash) and database: see [Database](#database). |
+| `routesDir` | `"src/routes"` | Folder of your routes, relative to `cwd`. |
+| `database` | — | Your Drizzle schema, `{ schema }`: see [Database](#database). |
 | `plugins` | `[]` | Plugins mounted around your routes, in order: see [Plugins](#plugins). |
 
 `packages` accepts `morgan`, `cors`, `helmet`, `compression`, `express` (`express.json` options) and `urlencoded`. The merge is **per section**: passing one key keeps the others; pass `false` to disable one.
@@ -136,7 +137,7 @@ export const users = pgTable('users', {
 import { createNanoApp } from '@nano-app/backend';
 import * as schema from './db/schema';
 
-createNanoApp({ mainPlugin: { database: { schema } } });
+createNanoApp({ database: { schema } });
 ```
 
 ```ts
@@ -177,7 +178,7 @@ export default {
 import { createNanoApp } from '@nano-app/backend';
 import * as schema from './db/schema';
 
-createNanoApp({ mainPlugin: { database: { schema } } });
+createNanoApp({ database: { schema } });
 ```
 
 Its tables are yours, like the rest of your schema. Add them with its CLI, then apply them with drizzle-kit; run both again when you change the options:
@@ -187,7 +188,7 @@ npx auth generate --adapter drizzle --dialect pg --output src/db/auth-schema.ts 
 pnpm drizzle-kit push
 ```
 
-- It needs the database: `src/auth.ts` without `mainPlugin.database.schema` fails at startup, and so does a file without `options`.
+- It needs the database: `src/auth.ts` without `database.schema` fails at startup, and so does a file without `options`.
 - Startup also fails if your schema lacks a table the options need (`user`, `session`, ...), naming them.
 - Its endpoints are mounted with your routes, at its `basePath` (default `/api/auth`), and stay public.
 - In production, Better Auth limits sign-in, sign-up and password reset to a few attempts per client IP (its `rateLimit`): see [Client IP](#client-ip).
@@ -277,7 +278,7 @@ export default createPlugin((options?: { publicPaths?: string[] }) => ({
 }));
 ```
 
-The endpoints of one plugin have no guaranteed order: one route's `onInit` must not depend on another's. `mainPlugin` takes `callbacks` too.
+The endpoints of one plugin have no guaranteed order: one route's `onInit` must not depend on another's.
 
 Everything is mounted on one Express application, in this order: base middlewares → `before` plugins → your routes → `after` plugins → 404 → error handler.
 
@@ -305,7 +306,7 @@ GET /unknown                                        // → 404 { success: false,
 | `createPlugin(creator)` | Types a plugin factory and its options. |
 | `createPluginCallbacks(callbacks)` | Types the callbacks of a plugin (`createPluginCallbacks<{ db: MyDb }>` types `db`), e.g. to keep them in their own file. |
 
-Also exported: the `NanoApp` class that `createNanoApp` returns, the configuration types (`NanoAppConfig`, `PackagesConfig`, `PluginConfig`, `PluginStage`, `MainPluginConfig`, `DatabaseConfig`), the Express `Request` type and the HTTP contract (`ApiResponse`, `ApiPromise`, `QueryParams`, `RouteEntry`, `Handler`, `HandlerParams`, `Handlers`, `NanoObject`) and the callback types (`Params`, `Callbacks`, `PluginCallbacks`).
+Also exported: the `NanoApp` class that `createNanoApp` returns, the configuration types (`NanoAppConfig`, `PackagesConfig`, `PluginConfig`, `PluginStage`, `DatabaseConfig`), the Express `Request` type and the HTTP contract (`ApiResponse`, `ApiPromise`, `QueryParams`, `RouteEntry`, `Handler`, `HandlerParams`, `Handlers`, `NanoObject`) and the callback types (`Params`, `Callbacks`, `PluginCallbacks`).
 
 ## Development
 

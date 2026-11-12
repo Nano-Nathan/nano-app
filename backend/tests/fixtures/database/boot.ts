@@ -10,7 +10,8 @@ const oDatabase = schemaModule ? { database: { schema: await import(schemaModule
 
 createNanoApp({
   port: 0,
+  routesDir: 'tests/fixtures/routes',
   ...oConfig,
-  mainPlugin: { routesDir: 'tests/fixtures/routes', ...oConfig.mainPlugin, ...oDatabase },
+  ...oDatabase,
   listener: () => console.log('READY'),
 });
