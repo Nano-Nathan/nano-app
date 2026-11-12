@@ -5,7 +5,6 @@ import { createPlugin } from '@nano-app/backend';
 export default createPlugin((options?: { basePath?: string }) => ({
   name: 'health',
   basePath: options?.basePath ?? '/health',
-  stage: 'before',
   // Next to this file, from the sources and from the build
   routesDir: join(import.meta.dirname, 'routes'),
 }));

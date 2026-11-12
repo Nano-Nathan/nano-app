@@ -13,8 +13,6 @@ export default createPlugin(
   }) => ({
     name: 'crud',
     basePath: options?.basePath ?? '/api',
-    // After the app: it uses the app's database
-    stage: 'after',
     // Next to this file, from the sources and from the build
     routesDir: join(import.meta.dirname, 'routes'),
     // Its routes read them from the options

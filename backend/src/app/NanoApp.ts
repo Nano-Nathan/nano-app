@@ -5,21 +5,20 @@ import helmet from 'helmet';
 import compression from 'compression';
 import 'dotenv/config';
 import { Logger } from '@nano-app/core';
+import { APP_NAME } from '@nano-app/core/const';
 import Plugin from '../plugins/Plugin';
-import { mergeConfig } from './config';
+import { PACKAGES, PORT, ROUTES_DIR, SETTINGS } from './config';
 import { errorHandler, notFoundHandler } from './handlers/errors';
-import type { NanoObject } from '@nano-app/core';
 import type { NanoAppConfig, PackagesConfig } from '../types/app';
-import type { PluginConfig } from '../types/plugin';
 
 /** Main NanoApp class */
 export default class NanoApp {
   protected oApp: Express;
-  protected oConfig: ReturnType<typeof mergeConfig>;
+  protected oConfig: NanoAppConfig;
 
   constructor(oConfig: NanoAppConfig = {}) {
     this.oApp = express();
-    this.oConfig = mergeConfig(oConfig);
+    this.oConfig = oConfig;
     this.start();
   }
 
@@ -29,12 +28,13 @@ export default class NanoApp {
       await this.initialize();
 
       // Init server
-      this.oApp.listen(this.oConfig.port, () => {
+      const iPort = this.oConfig.port ?? PORT;
+      this.oApp.listen(iPort, () => {
         // Runs the consumer listener
         this.oConfig.listener?.();
 
         // Startup log
-        Logger.info(`Nano App running on port ${this.oConfig.port}`);
+        Logger.info(`Nano App running on port ${iPort}`);
       });
     } catch (oError) {
       Logger.error('Error trying to start the server.', oError);
@@ -45,20 +45,20 @@ export default class NanoApp {
   /** Initializes the application in the right order */
   private async initialize(): Promise<void> {
     // Express settings
-    for (const [sKey, oValue] of Object.entries(this.oConfig.settings)) {
+    for (const [sKey, oValue] of Object.entries(this.oConfig.settings ?? SETTINGS)) {
       this.oApp.set(sKey, oValue);
     }
 
     // Packages (body parsers included: they go first)
-    this.setPackages(this.oConfig.packages);
+    this.setPackages(this.oConfig.packages ?? PACKAGES);
 
-    // Plugins separated by stage
-    const { mainPlugin, plugins } = this.oConfig;
-    const oPlugins: NanoObject<PluginConfig[]> = { before: [], after: [] };
-    for (const oPlugin of plugins) oPlugins[oPlugin.stage ?? 'before'].push(oPlugin);
+    // The app's plugin, between the ones before and after it
+    const { routesDir = ROUTES_DIR, database, plugins } = this.oConfig;
+    const oAppPlugin = { name: APP_NAME, routesDir, database };
+    const aPlugins = [...(plugins?.before ?? []), oAppPlugin, ...(plugins?.after ?? [])];
 
-    // Mounts the ones before the app, the app's and the ones after
-    for (const oPlugin of [...oPlugins.before, mainPlugin, ...oPlugins.after]) {
+    // Mounts them in order
+    for (const oPlugin of aPlugins) {
       await new Plugin(oPlugin).mount(this.oApp);
     }
 
