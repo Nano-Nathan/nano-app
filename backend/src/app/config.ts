@@ -1,8 +1,8 @@
-import { Logger, NanoError, NanoObject, Validator } from '@nano-app/core';
+import { Logger, NanoObject } from '@nano-app/core';
 import { PRIVATE_NETWORKS } from '@nano-app/core/const';
 import type { Request } from 'express';
-import type { NanoAppConfig, PackagesConfig } from '../types/app';
-import { PluginConfig } from '../types/plugin';
+import type { PackagesConfig } from '../types/app';
+import type { PluginConfig } from '../types/plugin';
 
 /** Packages configuration */
 export const PACKAGES_CONFIG: PackagesConfig = {

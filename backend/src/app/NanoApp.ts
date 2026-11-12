@@ -5,24 +5,22 @@ import helmet from 'helmet';
 import compression from 'compression';
 import 'dotenv/config';
 import { Logger } from '@nano-app/core';
-import { APP_NAME } from '@nano-app/core/const';
-import Plugin from '../router/Plugin';
-import { PACKAGES_CONFIG, EXPRESS_CONFIG, ROUTES_DIR, PORT } from './config';
-import { errorHandler, notFoundHandler } from './errors';
+import PluginManager from '../plugins/PluginManager';
+import { PACKAGES_CONFIG, EXPRESS_CONFIG, PORT } from './config';
+import { errorHandler, notFoundHandler } from './handlers/errors';
 import type { NanoAppConfig, PackagesConfig } from '../types/app';
-import { PluginConfig } from '../types/plugin';
+import { PluginManagerConfig } from '../types/plugin';
 
 /** Main NanoApp class */
 export default class NanoApp {
   protected oApp: Express;
   protected oConfig: NanoAppConfig;
+  protected oPluginsConfig: PluginManagerConfig;
 
-  constructor(oConfig: NanoAppConfig = {}) {
+  constructor(oNanoConfig: NanoAppConfig, oPluginsConfig: PluginManagerConfig) {
     this.oApp = express();
-    this.oConfig = {
-      port: PORT,
-      ...oConfig,
-    };
+    this.oConfig = oNanoConfig;
+    this.oPluginsConfig = oPluginsConfig;
     this.start();
   }
 
@@ -55,14 +53,8 @@ export default class NanoApp {
     // Packages (body parsers included: they go first)
     this.setPackages(this.oConfig.packages ?? PACKAGES_CONFIG);
 
-    // App configuration
-    const { routesDir = ROUTES_DIR, database, plugins } = this.oConfig;
-    const oAppPlugin: PluginConfig = { name: APP_NAME, routesDir, database };
-
-    // Mounts the ones before the app, the app's and the ones after
-    for (const oPlugin of [...(plugins?.before ?? []), oAppPlugin, ...(plugins?.after ?? [])]) {
-      await new Plugin(oPlugin).mount(this.oApp);
-    }
+    // Plugins: the ones before the app, the app's and the ones after
+    await new PluginManager(this.oPluginsConfig).mount(this.oApp);
 
     // Unmatched requests become a 404 for the error handler
     this.oApp.use(notFoundHandler);

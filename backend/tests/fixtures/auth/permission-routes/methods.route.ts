@@ -1,4 +1,4 @@
-import { createRoute } from '../../../../src/app/creators';
+import { createRoute } from '../../../../src/lib/creators';
 
 /** Permissions of the route, and others for POST: the admin role has none on notes, but lists users */
 export default createRoute({

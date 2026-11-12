@@ -28,25 +28,30 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
   let oServer: Awaited<ReturnType<typeof startApp>>;
   let sCommentId: string;
   let iNoteId: number;
+  // any: the client is typed by the schema of each app, unknown to the framework
+  let oDb: any;
 
   before(async () => {
     // What the consumer does by hand: apply their schema
     await push(schema, ['crud_test']);
 
-    // Mounts the app's database, then the plugin after it
-    const oDb = await Database.mount('app', { schema });
+    // The app's database, then the plugin on its client
+    oDb = await new Database('app', { schema }).client();
     // The app checks the comments: what a `POST` sends, and how many a `QUERY` asks for
     const oValidation = {
       create: createInsertSchema(schema.comment),
       read: z.looseObject({ limit: z.number().max(50).optional() }),
     };
-    oServer = await startApp([
-      crud({
-        models: ['note', 'comment'],
-        dbSchema: schema,
-        validations: { comment: oValidation },
-      }),
-    ]);
+    oServer = await startApp(
+      [
+        crud({
+          models: ['note', 'comment'],
+          dbSchema: schema,
+          validations: { comment: oValidation },
+        }),
+      ],
+      oDb,
+    );
 
     // Two notes of this run, the first with a comment
     const [oNote] = await oDb
@@ -64,7 +69,7 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
 
   after(async () => {
     // Closes the pool and the server
-    await Database.get('app').$client.end();
+    await oDb.$client.end();
     await oServer.close();
   });
 

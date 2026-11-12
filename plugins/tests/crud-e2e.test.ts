@@ -42,14 +42,16 @@ describe(
     const sTag = `crud-e2e-${Date.now()}`;
     const oApp = createServer(serve);
     let oBackend: Awaited<ReturnType<typeof startApp>>;
+    // any: the client is typed by the schema of each app, unknown to the framework
+    let oDb: any;
 
     before(async () => {
       // What the consumer does by hand: apply their schema
       await push(schema, ['crud_test']);
 
-      // Mounts the app's database and the plugin, with no route of the app
-      await Database.mount('app', { schema });
-      oBackend = await startApp([crud({ models: ['note'], dbSchema: schema })]);
+      // The app's database and the plugin on its client, with no route of the app
+      oDb = await new Database('app', { schema }).client();
+      oBackend = await startApp([crud({ models: ['note'], dbSchema: schema })], oDb);
 
       // Points the store `backend` to it and serves the app's origin
       process.env.API_BACKEND_URL = `${oBackend.url}/api`;
@@ -58,7 +60,7 @@ describe(
 
     after(async () => {
       // Closes the pool
-      await Database.get('app').$client.end();
+      await oDb.$client.end();
 
       // Closes the backend and the app's origin
       await oBackend.close();

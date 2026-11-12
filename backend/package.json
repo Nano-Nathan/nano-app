@@ -56,11 +56,15 @@
   },
   "peerDependencies": {
     "better-auth": "^1.7.18",
+    "drizzle-kit": "^1.0.0-rc.5",
     "drizzle-orm": "^1.0.0-rc.5",
     "pg": "^8.23.1"
   },
   "peerDependenciesMeta": {
     "better-auth": {
+      "optional": true
+    },
+    "drizzle-kit": {
       "optional": true
     },
     "drizzle-orm": {

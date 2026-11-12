@@ -43,7 +43,7 @@ export default class Endpoint {
     // Without Better Auth, a route with permissions answers without checking them
     if (!oParams.auth && Object.values(this.oMethods).some(({ permissions }) => permissions)) {
       Logger.warn(
-        `${sPath}: its permissions are not checked without Better Auth. Add src/auth.ts.`,
+        `${sPath}: its permissions are not checked without Better Auth. Set auth in createNanoApp.`,
       );
     }
 

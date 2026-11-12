@@ -1,7 +1,7 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { resolve } from 'node:path';
-import Database from '../src/plugin/Database';
+import Database from '../src/database/Database';
 import { boot, push, request } from './helpers';
 import * as schema from './fixtures/database/schema';
 import * as reserved from './fixtures/database/reserved';
@@ -10,16 +10,18 @@ import type { Booted } from './helpers';
 
 const FIXTURES = 'tests/fixtures/database';
 const SCHEMA_MODULE = resolve(`${FIXTURES}/schema.ts`);
+const PUSH_MODULE = resolve(`${FIXTURES}/push.ts`);
+const PUSH_LOSS_MODULE = resolve(`${FIXTURES}/push-loss.ts`);
 
 describe('database', () => {
   test('the app never keeps tables in nano_*, a plugin only in nano_<its name>', async () => {
     // The app, and a plugin of another name, with a table in nano_test
     await assert.rejects(
-      Database.mount('app', { schema: reserved }),
+      new Database('app', { schema: reserved }).client(),
       /"nano_test.items".*the nano_\* schemas are reserved for plugins/,
     );
     await assert.rejects(
-      Database.mount('other', { schema: reserved }),
+      new Database('other', { schema: reserved }).client(),
       /"nano_test.items".*keeps its tables in "nano_other"/,
     );
   });
@@ -91,5 +93,41 @@ describe('PostgreSQL', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not
     const oListed = await request(oApp.url, '/notes');
     assert.equal(oListed.status, 200);
     assert.ok(oListed.body.result.some((oNote: { title: string }) => oNote.title === sTitle));
+  });
+
+  test('a database with push applies its schema at startup', async () => {
+    // Starts without the schema of the test
+    await push({}, ['app_push']);
+
+    // Boots with push on
+    const oPushed = await boot({ schemaModule: PUSH_MODULE, database: { push: true } });
+
+    try {
+      // Checks that it created the table before mounting
+      assert.match(
+        oPushed.output(),
+        /Database "app" pushed: [1-9]\d* statements/,
+        oPushed.output(),
+      );
+      assert.match(oPushed.output(), /READY/);
+    } finally {
+      oPushed.child.kill('SIGKILL');
+    }
+  });
+
+  test('a push that would lose data fails the startup', async () => {
+    // A row in the column the next schema drops
+    const { drizzle } = await import('drizzle-orm/node-postgres');
+    const oDb = drizzle(process.env.DATABASE_URL ?? '');
+    await oDb.execute(`INSERT INTO app_push.items (title) VALUES ('kept')`);
+    await oDb.$client.end();
+
+    // Boots with the schema without that column
+    const oLoss = await boot({ schemaModule: PUSH_LOSS_MODULE, database: { push: true } });
+
+    // Checks that it exits saying why
+    assert.equal(await oLoss.exited, 1);
+    assert.match(oLoss.output(), /"app" cannot be pushed without losing data/);
+    oLoss.child.kill('SIGKILL');
   });
 });

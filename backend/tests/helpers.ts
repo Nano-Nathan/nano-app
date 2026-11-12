@@ -2,8 +2,8 @@ import { spawn } from 'node:child_process';
 import { createServer } from 'node:net';
 import { resolve } from 'node:path';
 import express from 'express';
-import Plugin from '../src/router/Plugin';
-import { errorHandler, notFoundHandler } from '../src/app/errors';
+import Plugin from '../src/plugins/Plugin';
+import { errorHandler, notFoundHandler } from '../src/app/handlers/errors';
 import type { ChildProcess } from 'node:child_process';
 import type { Server } from 'node:http';
 import type { NanoObject } from '@nano-app/core';
@@ -28,10 +28,13 @@ export async function findFreePort(): Promise<number> {
 /**
  * Mounts the given plugins the same way `NanoApp` does — endpoints on a single
  * Express application, 404 and error handler last — and serves them on a free
- * port. The test owns the server, so it can close it when it is done.
+ * port. The test owns the server, so it can close it when it is done. `oDb`
+ * is the app's client, for the plugins without their own database.
  */
 export async function startApp(
   aPlugins: Partial<PluginConfig>[] = [{ routesDir: FIXTURES_ROUTES }],
+  // any: the client is typed by the schema of each app, unknown to the framework
+  oDb?: any,
 ): Promise<{
   url: string;
   close: () => Promise<void>;
@@ -42,7 +45,7 @@ export async function startApp(
 
   // Mounts each plugin in order
   for (const oConfig of aPlugins) {
-    await new Plugin({ name: 'test', routesDir: '', ...oConfig }).mount(oApp);
+    await new Plugin({ name: 'test', routesDir: '', ...oConfig }).mount(oApp, { db: oDb });
   }
 
   // 404 and error handler last

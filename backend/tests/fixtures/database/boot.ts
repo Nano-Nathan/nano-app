@@ -6,7 +6,9 @@ import type { NanoObject } from '@nano-app/core';
 const { schemaModule, ...oConfig }: NanoObject = JSON.parse(process.env.NANO_TEST_CONFIG ?? '{}');
 
 // The app's Drizzle schema, from the module the test names (JSON cannot carry it)
-const oDatabase = schemaModule ? { database: { schema: await import(schemaModule) } } : {};
+const oDatabase = schemaModule
+  ? { database: { ...oConfig.database, schema: await import(schemaModule) } }
+  : {};
 
 createNanoApp({
   port: 0,

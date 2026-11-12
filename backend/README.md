@@ -86,9 +86,9 @@ Every option is optional.
 | `packages` | see below | Framework base middlewares. |
 | `routesDir` | `"src/routes"` | Folder of your routes, relative to `cwd`. |
 | `database` | — | Your Drizzle schema, `{ schema }`: see [Database](#database). |
-| `plugins` | `[]` | Plugins mounted around your routes, in order: see [Plugins](#plugins). |
+| `plugins` | `{ before: [], after: [] }` | Plugins mounted before and after your routes, in order: see [Plugins](#plugins). |
 
-`packages` accepts `morgan`, `cors`, `helmet`, `compression`, `express` (`express.json` options) and `urlencoded`. The merge is **per section**: passing one key keeps the others; pass `false` to disable one.
+`packages` accepts `morgan`, `cors`, `helmet`, `compression`, `express` (`express.json` options) and `urlencoded`. Passing `packages` replaces the defaults: a key you leave out is off. The same goes for `settings`.
 
 `compression` is off by default: the proxy in front of the app (an ingress, nginx) usually compresses the answers. Turn it on with `packages: { compression: true }` when nothing does.
 
@@ -155,6 +155,7 @@ export default createRoute({
 - The `nano_` prefix is reserved for plugins: a table of yours in a `nano_*` Postgres schema fails the startup.
 - Without a database, `db` is `undefined`.
 - Drizzle and pg are loaded only when your database or a mounted plugin's is on.
+- `database: { schema, push: true }` applies the schema at startup with drizzle-kit's push (`pnpm add drizzle-kit`), only in the Postgres schemas its tables use. Startup fails if the push would lose data (a non-empty table or column to drop): apply that change by hand. Under a terminal, drizzle-kit asks about renames; without one, a rename fails the startup. Replicas push one at a time.
 
 ## Better Auth
 
@@ -197,7 +198,7 @@ pnpm drizzle-kit push
 - Sign-up works as Better Auth sets it: with `emailAndPassword` anyone can sign up and reach your routes. Close it with `disableSignUp: true`, or check roles in your handlers.
 - Relate your tables to `user` in your `relations`. Extra user fields go in its `user.additionalFields`.
 - Set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` in the environment, as Better Auth asks.
-- With it on, every route of the app and of the plugins mounted after it (`stage: 'after'`) needs a session: without one it answers 401 `Not authenticated`. The handlers receive it in `session`.
+- With it on, every route of the app and of the plugins in `plugins.after` needs a session: without one it answers 401 `Not authenticated`. The handlers receive it in `session`.
 - `createRoute({ public: true, ... })` answers without a session; its handlers still receive `session` when the request has one. An unknown path answers 404.
 - Its own endpoints, the plugins mounted before the app and the middlewares a plugin adds with `app.use` in `onMount` are not checked: a plugin that exposes something public says it in its README.
 - Better Auth is loaded only when it is on.
@@ -221,7 +222,7 @@ A public route does not check them. Without Better Auth the route answers anyway
 
 ## Plugins
 
-A plugin is a group of endpoints mounted under a base path. Your routes are mounted as one (named `app`). The official plugins are in [`@nano-app/plugins`](https://github.com/Nano-Nathan/nano-app/blob/main/plugins/README.md). You write one with `createPlugin` and list it in `plugins`. Nothing is mounted unless you list it. Official plugins that have tables ship their own migrations: nano-app applies them at startup, each in its `nano_*` schema. That is the only change it makes to your database.
+A plugin is a group of endpoints mounted under a base path. Your routes are mounted as one (named `app`). The official plugins are in [`@nano-app/plugins`](https://github.com/Nano-Nathan/nano-app/blob/main/plugins/README.md). You write one with `createPlugin` and list it in `plugins.before` or `plugins.after`. Nothing is mounted unless you list it.
 
 ```ts
 // src/plugins/hello/index.ts
@@ -250,10 +251,10 @@ export default createRoute({
 import { createNanoApp } from '@nano-app/backend';
 import hello from './plugins/hello';
 
-createNanoApp({ plugins: [hello()] });
+createNanoApp({ plugins: { before: [hello()], after: [] } });
 ```
 
-`createPlugin` types the options of that plugin. Each plugin chooses its base path and whether it mounts `before` (default) or `after` your routes. What the plugin puts in `options` reaches every callback and handler of its routes in `params`.
+`createPlugin` types the options of that plugin. Each plugin chooses its base path; the app chooses whether it mounts before or after your routes. What the plugin puts in `options` reaches every callback and handler of its routes in `params`.
 
 ### Callbacks
 
@@ -280,7 +281,7 @@ export default createPlugin((options?: { publicPaths?: string[] }) => ({
 
 The endpoints of one plugin have no guaranteed order: one route's `onInit` must not depend on another's.
 
-Everything is mounted on one Express application, in this order: base middlewares → `before` plugins → your routes → `after` plugins → 404 → error handler.
+Everything is mounted on one Express application, in this order: base middlewares → `plugins.before` → your routes → `plugins.after` → 404 → error handler.
 
 A plugin with a database passes its own `database: { schema }`, and keeps its tables in the Postgres schema `nano_<its name>`: a table elsewhere fails the startup. Two plugins with the same name and a database fail too. Without a database of its own, a plugin receives the app's `db`. See [`@nano-app/plugins`](https://github.com/Nano-Nathan/nano-app/blob/main/plugins/README.md#database).
 

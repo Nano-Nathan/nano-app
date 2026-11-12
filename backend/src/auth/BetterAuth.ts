@@ -1,35 +1,12 @@
-import { existsSync } from 'node:fs';
-import { FileReader, NanoError, Validator } from '@nano-app/core';
+import { NanoError } from '@nano-app/core';
 import { PRIVATE_NETWORKS } from '@nano-app/core/const';
 import type { RequestHandler } from 'express';
 import type { NanoObject } from '@nano-app/core';
 import type { AuthOptions } from '../types/app';
 
-/** Files of the app's Better Auth options, relative to `cwd`: source, then built */
-const AUTH_FILES = ['src/auth.ts', 'src/auth.js'];
-
 /** Better Auth on the app's Drizzle client: the instance, its handler and the session lookup */
 export default abstract class BetterAuth {
   private static oAuth?: NanoObject;
-
-  /** The options of the app's `src/auth.ts`, or undefined without it: Better Auth stays off */
-  public static async findOptions(): Promise<AuthOptions | undefined> {
-    // Finds the file
-    const sFilePath = AUTH_FILES.find(existsSync);
-    if (!sFilePath) return undefined;
-
-    // Loads its default export
-    const oFile: { options?: AuthOptions } = await FileReader.loadModule(sFilePath, {
-      default: true,
-    });
-
-    // Checks that it holds the options
-    if (!Validator.isObject(oFile?.options)) {
-      throw new NanoError(`${sFilePath} must default export { options }: the Better Auth options.`);
-    }
-
-    return oFile.options;
-  }
 
   /** The instance, once the app's plugin created it */
   public static get(): NanoObject | undefined {

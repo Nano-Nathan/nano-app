@@ -12,7 +12,7 @@ pnpm add @nano-app/backend @nano-app/plugins
 import { createNanoApp } from '@nano-app/backend';
 import health from '@nano-app/plugins/health';
 
-createNanoApp({ plugins: [health()] });
+createNanoApp({ plugins: { before: [health()], after: [] } });
 ```
 
 ## Official plugins
@@ -20,8 +20,8 @@ createNanoApp({ plugins: [health()] });
 | Plugin   | Import                                          | Endpoints                                                                                                                                                                                                                                 | Options                          |
 | -------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
 | `health` | `import health from '@nano-app/plugins/health'` | `GET /health` → `{ success: true, result: { status: "ok" } }`                                                                                                                                                                             | `basePath` (default `"/health"`) |
-| `crud`   | `import crud from '@nano-app/plugins/crud'`     | On the tables listed in `models`, by their name in the app's schema (any other answers 404): `GET` and `QUERY` on `/api/<model>{/<id>}` → a list `{ result }` or one record, with `QueryParams` as the body of `QUERY`: Drizzle's relational query (`where`, `columns`, `orderBy`, `limit`, `offset`, `with`); `POST /api/<model>`, `PUT` and `DELETE` on `/api/<model>/<id>` → the record created, updated or deleted. Postgres casts `<id>` to the type of the `id` column. With Better Auth, each method asks for a permission on the table: `read` (`GET`, `QUERY`), `create`, `update`, `delete`, see [crud and related tables](#crud-and-related-tables) | `models` (the published ones), `dbSchema` (the app's Drizzle schema, as in `database`), `validations` (zod schemas of the bodies, see [crud and the bodies](#crud-and-the-bodies)), `basePath` (default `"/api"`)    |
-| `rate-limit` | `import rateLimit from '@nano-app/plugins/rate-limit'` | None: limits every request of the routes and plugins mounted after it, per client IP (see [Client IP](../backend/README.md#client-ip)); the addresses of an IPv6 `/56` network are one client. Each request spends a token of the client's bucket, which holds `capacity` and refills `refillPerSecond` tokens per second; without one it answers `429` with `message` and `Retry-After` (seconds until the next token). List it first in `plugins`. The buckets live in the memory of each process | `capacity` (default `100`), `refillPerSecond` (default `1`), `message` |
+| `crud`   | `import crud from '@nano-app/plugins/crud'`     | List it in `plugins.after`, so it uses the app's database and, with Better Auth, needs a session. On the tables listed in `models`, by their name in the app's schema (any other answers 404): `GET` and `QUERY` on `/api/<model>{/<id>}` → a list `{ result }` or one record, with `QueryParams` as the body of `QUERY`: Drizzle's relational query (`where`, `columns`, `orderBy`, `limit`, `offset`, `with`); `POST /api/<model>`, `PUT` and `DELETE` on `/api/<model>/<id>` → the record created, updated or deleted. Postgres casts `<id>` to the type of the `id` column. With Better Auth, each method asks for a permission on the table: `read` (`GET`, `QUERY`), `create`, `update`, `delete`, see [crud and related tables](#crud-and-related-tables) | `models` (the published ones), `dbSchema` (the app's Drizzle schema, as in `database`), `validations` (zod schemas of the bodies, see [crud and the bodies](#crud-and-the-bodies)), `basePath` (default `"/api"`)    |
+| `rate-limit` | `import rateLimit from '@nano-app/plugins/rate-limit'` | None: limits every request of the routes and plugins mounted after it, per client IP (see [Client IP](../backend/README.md#client-ip)); the addresses of an IPv6 `/56` network are one client. Each request spends a token of the client's bucket, which holds `capacity` and refills `refillPerSecond` tokens per second; without one it answers `429` with `message` and `Retry-After` (seconds until the next token). List it first in `plugins.before`. The buckets live in the memory of each process | `capacity` (default `100`), `refillPerSecond` (default `1`), `message` |
 
 What is not CRUD, such as creating a record with business logic, goes in a route of your own with its own URL: a route of yours on a `crud` URL takes every method of it.
 
@@ -86,7 +86,6 @@ import { fileURLToPath } from 'node:url';
 export default createPlugin((options?: { basePath?: string }) => ({
   name: 'hello',
   basePath: options?.basePath ?? '/hello',
-  stage: 'before',
   routesDir: resolve(dirname(fileURLToPath(import.meta.url)), 'routes'),
 }));
 ```
@@ -105,10 +104,10 @@ export default createRoute({
 import { createNanoApp } from '@nano-app/backend';
 import hello from './plugins/hello';
 
-createNanoApp({ plugins: [hello()] });
+createNanoApp({ plugins: { before: [hello()], after: [] } });
 ```
 
-`stage` is `"before"` (default) or `"after"` the app's own routes. Mount order: base middlewares, `before` plugins, your routes, `after` plugins, 404, error handler.
+The app lists each plugin in `plugins.before` or `plugins.after` its own routes. Mount order: base middlewares, `plugins.before`, your routes, `plugins.after`, 404, error handler.
 
 Set `options` in the returned config to pass values to the plugin's routes: every handler and callback receives them in `params`, next to `db`. Callbacks: `callbacks.onMount(app, params)` on the plugin, once, before its endpoints (app-level middlewares go here); `onInit(params)` and `onBefore(req, method, params)` on each route. See the [backend README](../backend/README.md#callbacks).
 
@@ -137,7 +136,7 @@ Use MIT or Apache-2.0 if you want the plugin listed from this repo later. Open a
 
 Optional. Pass `database: { schema }` on the plugin config: the module of its Drizzle tables, with its `relations` when it has them. Its tables live in the Postgres schema `nano_<plugin name>`, which drizzle-kit creates when the module exports its `pgSchema`; a table elsewhere fails the startup.
 
-Its tables are applied with drizzle-kit by whoever installs it, like the app's schema. Handlers and callbacks receive its client as `params.db`.
+Its tables are applied with drizzle-kit by whoever installs it, like the app's schema, or at startup with `database: { schema, push: true }` (see the backend's [Database](../backend/README.md#database)). Handlers and callbacks receive its client as `params.db`.
 
 ### What belongs in this repository
 
