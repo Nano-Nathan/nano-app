@@ -1,5 +1,5 @@
 import { PRIVATE_NETWORKS } from '@nano-app/core/const';
-import Database from '../database/Database';
+import DatabaseManager from '../database/DatabaseManager';
 import type { Express, Request } from 'express';
 import type { IncomingHttpHeaders } from 'node:http';
 import type { Auth } from 'better-auth';
@@ -46,7 +46,7 @@ export default abstract class BetterAuth {
     const { PostgresDialect } = await import('kysely');
 
     // The options on the shared pool, with the tables in their own schema
-    const oPool = await Database.pool();
+    const oPool = await DatabaseManager.pool();
     const { advanced, basePath = '/api/auth' } = oOptions;
     const oFullOptions = {
       ...oOptions,
@@ -64,7 +64,6 @@ export default abstract class BetterAuth {
     // Creates its schema and tables, one startup at a time; only adds
     const oConnection = await oPool.connect();
     await oConnection.query('SELECT pg_advisory_lock($1)', [MIGRATION_LOCK]);
-    await oConnection.query(`CREATE SCHEMA IF NOT EXISTS ${SCHEMA}`);
     await (await getMigrations(oFullOptions)).runMigrations();
 
     // Closing the connection frees the lock

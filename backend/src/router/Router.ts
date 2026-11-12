@@ -1,8 +1,6 @@
 import { FileLoader, Logger, Validator } from '@nano-app/core';
 import { ROUTE } from '@nano-app/core/utils/validations';
 import Endpoint from './Endpoint';
-import AuthEndpoint from './AuthEndpoint';
-import BetterAuth from '../auth/BetterAuth';
 
 /** Turns a folder of `*.route.ts` files into Express paths and endpoints */
 export default class Router {
@@ -30,12 +28,11 @@ export default class Router {
         const sPath = this.createPath(sFilePath, expression);
         Logger.info(sPath);
 
-        // Create the endpoint, behind Better Auth when it is on
-        const oOptions = { callbacks, public: isPublic, permissions };
-        const oEndpoint = BetterAuth.instance()
-          ? new AuthEndpoint(methods, oOptions)
-          : new Endpoint(methods, oOptions);
-        return { path: sPath, endpoint: oEndpoint };
+        // Create the endpoint
+        return {
+          path: sPath,
+          endpoint: new Endpoint(methods, { callbacks, public: isPublic, permissions }),
+        };
       },
     );
   }

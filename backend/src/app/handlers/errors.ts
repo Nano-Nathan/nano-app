@@ -13,8 +13,8 @@ export const errorHandler: ErrorRequestHandler = (oError, _oReq, oRes, _fnNext) 
   const iStatus = oThrown?.status ?? 500;
   const sMessage = iStatus < 500 ? oThrown.message : 'Internal server error';
 
-  // Every error is logged in full, with what was thrown
-  Logger.error(sMessage, oError);
+  // A server error is logged in full, with what was thrown
+  if (iStatus >= 500) Logger.error(sMessage, oError);
 
   // Answers with the status and the body
   oRes

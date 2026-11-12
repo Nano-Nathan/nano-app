@@ -103,5 +103,5 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 
 - Never print secrets: no `cat .env`, no `source .env`, no logging `process.env`. Framework messages never include secrets or connection strings.
 - Untrusted input (`req.body`, `req.params`, `req.query`, headers) is validated before the framework uses it. SQL uses parameters (`$1`); identifiers (schema, table) come only from constants.
-- Routes are private when `createNanoApp` has `auth`: only its endpoints and the plugins in `plugins.before` are public. Without it every route is public. A plugin that exposes something public says so in its README.
+- Routes are private when `createNanoApp` has `auth`: only its endpoints and the routes with `public: true` are public. Without it every route is public. A plugin that exposes something public says so in its README.
 - The error handler answers with the message of what was thrown below 500; a 5xx answers `Internal server error` and is logged in full.

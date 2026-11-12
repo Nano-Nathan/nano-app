@@ -28,7 +28,7 @@ describe('error handling', () => {
 
     // Checks that the string is the message of a 400
     assert.equal(status, 400);
-    assert.deepEqual(body, { success: false, message: 'Field name is required' });
+    assert.deepEqual(body, { success: false, warning: false, message: 'Field name is required' });
   });
 
   test('an Error without status answers 500 without its message', async () => {

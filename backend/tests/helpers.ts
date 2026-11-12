@@ -124,20 +124,15 @@ export type Booted = {
 
 /**
  * Starts `fixtures/database/boot.ts` in a child process: a real NanoApp with its
- * `process.exit` on startup failure, run from `sCwd` (default: the backend).
- * Resolves once it prints READY or exits.
+ * `process.exit` on startup failure. Resolves once it prints READY or exits.
  */
-export async function boot(
-  oConfig: NanoObject,
-  { oEnv = {}, sCwd }: { oEnv?: NodeJS.ProcessEnv; sCwd?: string } = {},
-): Promise<Booted> {
+export async function boot(oConfig: NanoObject, oEnv: NodeJS.ProcessEnv = {}): Promise<Booted> {
   // Node flags: tsx
   const iPort = await findFreePort();
   const aArgs = ['--import', 'tsx', resolve('tests/fixtures/database/boot.ts')];
 
   // The config travels as an env var
   const oChild = spawn(process.execPath, aArgs, {
-    cwd: sCwd,
     env: { ...process.env, ...oEnv, NANO_TEST_CONFIG: JSON.stringify({ port: iPort, ...oConfig }) },
     stdio: ['ignore', 'pipe', 'pipe'],
   });

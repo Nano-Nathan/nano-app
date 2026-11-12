@@ -4,7 +4,7 @@ import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { NextRequest } from 'next/server';
-import Database from '../../backend/src/database/Database';
+import DatabaseManager from '../../backend/src/database/DatabaseManager';
 import { push, startApp } from '../../backend/tests/helpers';
 import * as schema from '../../backend/tests/fixtures/database/crud';
 import { proxy } from '../../frontend/src/proxy';
@@ -48,7 +48,7 @@ describe(
       await push(schema, ['crud_test']);
 
       // Mounts the app's database and the plugin, with no route of the app
-      await Database.mount('app', { schema });
+      await DatabaseManager.mount('app', { schema });
       oBackend = await startApp([crud({ models: ['note'], dbSchema: schema })]);
 
       // Points the store `backend` to it and serves the app's origin
@@ -58,7 +58,7 @@ describe(
 
     after(async () => {
       // Closes the pool
-      await Database.get('app').$client.end();
+      await (await DatabaseManager.pool()).end();
 
       // Closes the backend and the app's origin
       await oBackend.close();

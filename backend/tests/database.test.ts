@@ -1,9 +1,8 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { resolve } from 'node:path';
-import Database from '../src/database/Database';
+import DatabaseManager from '../src/database/DatabaseManager';
 import { boot, push, request } from './helpers';
-import * as schema from './fixtures/database/schema';
 import * as reserved from './fixtures/database/reserved';
 import './database/better-auth';
 import type { Booted } from './helpers';
@@ -12,21 +11,19 @@ const FIXTURES = 'tests/fixtures/database';
 const SCHEMA_MODULE = resolve(`${FIXTURES}/schema.ts`);
 
 describe('database', () => {
-  test('the app never keeps tables in nano_*, a plugin only in nano_<its name>', async () => {
+  test('a nano_* schema is reserved for the plugin of its name', async () => {
     // The app, and a plugin of another name, with a table in nano_test
-    await assert.rejects(
-      Database.mount('app', { schema: reserved }),
-      /"nano_test.items".*the nano_\* schemas are reserved for plugins/,
-    );
-    await assert.rejects(
-      Database.mount('other', { schema: reserved }),
-      /"nano_test.items".*keeps its tables in "nano_other"/,
-    );
+    for (const sName of ['app', 'other']) {
+      await assert.rejects(
+        DatabaseManager.mount(sName, { schema: reserved }),
+        /"nano_test.items" breaks the rule, each nano_\* schema is reserved/,
+      );
+    }
   });
 
   test('a database without DATABASE_URL fails the startup', async () => {
     // Boots with a schema but no DATABASE_URL
-    const oApp = await boot({ schemaModule: SCHEMA_MODULE }, { oEnv: { DATABASE_URL: '' } });
+    const oApp = await boot({ schemaModule: SCHEMA_MODULE }, { DATABASE_URL: '' });
 
     // Checks that it exits saying why
     assert.equal(await oApp.exited, 1);
@@ -35,10 +32,7 @@ describe('database', () => {
 
   test('an app without a database mounts none and its handlers receive no client', async () => {
     // Boots without a schema nor DATABASE_URL
-    const oApp = await boot(
-      { mainPlugin: { routesDir: `${FIXTURES}/routes` } },
-      { oEnv: { DATABASE_URL: '' } },
-    );
+    const oApp = await boot({ routesDir: `${FIXTURES}/routes` }, { DATABASE_URL: '' });
 
     try {
       // Checks that the handler got no client and nothing was mounted
@@ -55,13 +49,14 @@ describe('PostgreSQL', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not
   let oApp: Booted;
 
   before(async () => {
-    // What the consumer does by hand: apply their schema
-    await push(schema, ['app_data']);
+    // Starts without the tables of the app
+    await push({}, ['app_data']);
 
-    // Boots with the app's schema
+    // Boots with the app's schema, pushed at startup
     oApp = await boot({
-      mainPlugin: { routesDir: `${FIXTURES}/routes` },
+      routesDir: `${FIXTURES}/routes`,
       schemaModule: SCHEMA_MODULE,
+      database: { push: true },
     });
 
     // Checks that it started with the client mounted
@@ -94,5 +89,28 @@ describe('PostgreSQL', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not
     const oListed = await request(oApp.url, '/notes');
     assert.equal(oListed.status, 200);
     assert.ok(oListed.body.result.some((oNote: { title: string }) => oNote.title === sTitle));
+  });
+});
+
+describe('migrations', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' }, () => {
+  test('the pending migrations of its folder are applied at startup', async () => {
+    // Starts without the tables of the app nor Drizzle's record of its migrations
+    await push({}, ['app_data', 'drizzle']);
+
+    // Boots with the folder `drizzle-kit generate` wrote
+    const oApp = await boot({
+      routesDir: `${FIXTURES}/routes`,
+      schemaModule: SCHEMA_MODULE,
+      database: { migrations: `${FIXTURES}/migrations` },
+    });
+
+    try {
+      // Checks that the table of the migration answers
+      const { status, body } = await request(oApp.url, '/notes');
+      assert.equal(status, 200, oApp.output());
+      assert.deepEqual(body.result, []);
+    } finally {
+      oApp.child.kill('SIGKILL');
+    }
   });
 });

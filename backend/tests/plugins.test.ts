@@ -117,13 +117,13 @@ describe('plugins', () => {
     }
   });
 
-  test('NanoApp mounts the plugins of each stage around the consumer routes, in order', async () => {
+  test('NanoApp mounts the plugins before and after the consumer routes, in order', async () => {
     // Boots a real NanoApp with a plugin after and one before the consumer routes
     const oApp = await boot({
-      plugins: [
-        { routesDir: PLUGIN_ROUTES, basePath: '/late', stage: 'after' },
-        { routesDir: PLUGIN_ROUTES, basePath: '/early' },
-      ],
+      plugins: {
+        after: [{ name: 'late', routesDir: PLUGIN_ROUTES, basePath: '/late' }],
+        before: [{ name: 'early', routesDir: PLUGIN_ROUTES, basePath: '/early' }],
+      },
     });
 
     try {
@@ -140,14 +140,14 @@ describe('plugins', () => {
     }
   });
 
-  test("a plugin's tables live in nano_<its name>", async () => {
+  test('a plugin keeps no tables in the nano_* schema of another', async () => {
     // A plugin named "other" with a table in nano_test
     const oPlugin = new Plugin({ name: 'other', routesDir: '', database: { schema: reserved } });
 
     // Checks that mounting it fails naming the table and the rule
     await assert.rejects(
       oPlugin.mount(express()),
-      /"nano_test.items".*keeps its tables in "nano_other"/,
+      /"nano_test.items" breaks the rule, each nano_\* schema is reserved/,
     );
   });
 });

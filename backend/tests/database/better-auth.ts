@@ -1,65 +1,60 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { resolve } from 'node:path';
-import { boot, push, request } from '../helpers';
-import * as authSchema from '../fixtures/auth/schema';
+import { boot, request } from '../helpers';
 import type { Booted } from '../helpers';
 
-// Better Auth suite, imported by database.test.ts: the app runs from the auth fixture
+// Better Auth suite, imported by database.test.ts
 
-const FIXTURES = resolve('tests/fixtures/auth');
-const SCHEMA = `${FIXTURES}/schema.ts`;
-const NO_AUTH_SCHEMA = resolve('tests/fixtures/database/schema.ts');
-const PLUGIN_ROUTES = resolve('tests/fixtures/plugin-routes');
+const FIXTURES = 'tests/fixtures/auth';
+const PLUGIN_ROUTES = 'tests/fixtures/plugin-routes';
 
-/** Env of the instance: Better Auth signs its cookies with the secret */
+/** The plugins around the app: one with a plain route, one with routes with permissions */
+const PLUGINS = {
+  before: [{ name: 'before', basePath: '/before', routesDir: PLUGIN_ROUTES }],
+  after: [
+    { name: 'after', basePath: '/after', routesDir: PLUGIN_ROUTES },
+    { name: 'permissions', basePath: '/permissions', routesDir: `${FIXTURES}/permission-routes` },
+  ],
+};
+
+/** The app with Better Auth and its rate limit: its secret signs the cookies */
+const CONFIG = {
+  plugins: PLUGINS,
+  routesDir: `${FIXTURES}/routes`,
+  authModule: resolve(`${FIXTURES}/options.ts`),
+};
 const ENV = { BETTER_AUTH_SECRET: 'a-secret-only-for-the-tests-of-nano-app' };
 
-/** Boots the app with Better Auth and its rate limit on the Drizzle schema of a module */
-const fnBoot = (sSchemaModule: string) =>
-  boot(
-    {
-      plugins: [
-        { name: 'public', routesDir: PLUGIN_ROUTES },
-        { name: 'early', basePath: '/early', routesDir: `${FIXTURES}/permission-routes` },
-        {
-          name: 'after',
-          stage: 'after',
-          basePath: '/after',
-          routesDir: PLUGIN_ROUTES,
-        },
-        {
-          name: 'permissions',
-          stage: 'after',
-          basePath: '/permissions',
-          routesDir: `${FIXTURES}/permission-routes`,
-        },
-      ],
-      mainPlugin: { routesDir: `${FIXTURES}/routes` },
-      schemaModule: sSchemaModule,
-    },
-    { oEnv: ENV, sCwd: FIXTURES },
-  );
+describe('Better Auth without DATABASE_URL', () => {
+  test('fails the startup', async () => {
+    // Boots with Better Auth and no DATABASE_URL
+    const oApp = await boot(CONFIG, { ...ENV, DATABASE_URL: '' });
 
-describe('Better Auth without options', () => {
-  test('fails the startup naming the file', async () => {
-    // Boots from an app whose src/auth.ts has no options
-    const oApp = await boot({}, { oEnv: ENV, sCwd: resolve('tests/fixtures/bad-auth') });
-
-    // Checks that it exits saying what the file must export
+    // Checks that it exits saying why
     assert.equal(await oApp.exited, 1);
-    assert.match(oApp.output(), /src\/auth.ts must default export \{ options \}/);
+    assert.match(oApp.output(), /DATABASE_URL environment variable is not defined/);
   });
 });
 
-describe('Better Auth without a database', () => {
-  test('fails the startup', async () => {
-    // Boots with Better Auth and the database off
-    const oApp = await boot({}, { oEnv: ENV, sCwd: FIXTURES });
+describe('without Better Auth', () => {
+  test('a route with permissions answers and warns at startup', async () => {
+    // Boots the same plugins without Better Auth
+    const oApp = await boot({ plugins: PLUGINS });
 
-    // Checks that it exits saying what to enable
-    assert.equal(await oApp.exited, 1);
-    assert.match(oApp.output(), /src\/auth.ts needs the database of the app/);
+    try {
+      // Checks that it answers anyway
+      const { status } = await request(oApp.url, '/permissions/notes');
+      assert.equal(status, 200, oApp.output());
+
+      // It warned at startup that the permissions are not checked
+      assert.match(
+        oApp.output(),
+        /\/permissions\/notes: its permissions are not checked without Better Auth/,
+      );
+    } finally {
+      oApp.child.kill('SIGKILL');
+    }
   });
 });
 
@@ -68,26 +63,13 @@ describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is no
   let sCookie: string;
 
   before(async () => {
-    // What the consumer does by hand: apply the schema with the tables of Better Auth
-    await push(authSchema, ['auth_test']);
-
-    // Boots with Better Auth on the app's database
-    oApp = await fnBoot(SCHEMA);
+    // Boots with Better Auth: it creates its tables in nano_auth
+    oApp = await boot(CONFIG, ENV);
     assert.match(oApp.output(), /READY/, oApp.output());
   });
 
   after(() => {
     oApp?.child.kill('SIGKILL');
-  });
-
-  test('a schema without its tables fails the startup with the command that adds them', async () => {
-    // Boots with a schema that has no Better Auth tables
-    const oFailed = await fnBoot(NO_AUTH_SCHEMA);
-
-    // Checks that it exits naming the tables and the fix
-    assert.equal(await oFailed.exited, 1);
-    assert.match(oFailed.output(), /needs the tables user, session, account, verification/);
-    assert.match(oFailed.output(), /npx auth generate/);
   });
 
   test('its endpoints are public: signs up and signs in', async () => {
@@ -126,10 +108,16 @@ describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is no
     assert.match(oAllowed.body.result, /@nano-app\.test$/);
   });
 
-  test('the plugins mounted before the app stay public', async () => {
-    // Checks that the plugin answers without a session
-    const { status } = await request(oApp.url, '/ping');
-    assert.equal(status, 200);
+  test('the plugins before and after the app need a session too', async () => {
+    for (const sPath of ['/before/ping', '/after/ping']) {
+      // Without a session
+      const oDenied = await request(oApp.url, sPath);
+      assert.equal(oDenied.status, 401);
+
+      // With the session of the sign-in
+      const oAllowed = await request(oApp.url, sPath, { headers: { cookie: sCookie } });
+      assert.equal(oAllowed.status, 200);
+    }
   });
 
   test('a public route answers without a session, and receives it when there is one', async () => {
@@ -142,16 +130,6 @@ describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is no
     const oSigned = await request(oApp.url, '/open', { headers: { cookie: sCookie } });
     assert.equal(oSigned.status, 200);
     assert.match(oSigned.body.result, /@nano-app\.test$/);
-  });
-
-  test('the plugins mounted after the app need a session', async () => {
-    // Without a session
-    const oDenied = await request(oApp.url, '/after/ping');
-    assert.equal(oDenied.status, 401);
-
-    // With the session of the sign-in
-    const oAllowed = await request(oApp.url, '/after/ping', { headers: { cookie: sCookie } });
-    assert.equal(oAllowed.status, 200);
   });
 
   test('an unknown path answers 404 without a session', async () => {
@@ -187,18 +165,6 @@ describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is no
       headers: { cookie: sCookie },
     });
     assert.deepEqual([oListed.status, oCreated.status], [403, 200]);
-  });
-
-  test('without Better Auth, a route with permissions answers and warns at startup', async () => {
-    // The plugin mounted before the app has no Better Auth: it answers anyway
-    const { status } = await request(oApp.url, '/early/notes');
-    assert.equal(status, 200);
-
-    // It warned at startup that the permissions are not checked
-    assert.match(
-      oApp.output(),
-      /\/early\/notes: its permissions are not checked without Better Auth/,
-    );
   });
 
   test('sign-in is limited per client behind private proxies', async () => {

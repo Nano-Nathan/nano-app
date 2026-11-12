@@ -44,13 +44,13 @@ export default class NanoApp {
 
   /** Initializes the application in the right order */
   private async initialize(): Promise<void> {
-    // Express settings
-    for (const [sKey, oValue] of Object.entries(this.oConfig.settings ?? SETTINGS)) {
+    // Express settings, over the defaults
+    for (const [sKey, oValue] of Object.entries({ ...SETTINGS, ...this.oConfig.settings })) {
       this.oApp.set(sKey, oValue);
     }
 
     // Packages (body parsers included: they go first)
-    this.setPackages(this.oConfig.packages ?? PACKAGES);
+    this.setPackages({ ...PACKAGES, ...this.oConfig.packages });
 
     // Better Auth: its tables, its instance and its endpoints, when it is on
     await BetterAuth.mount(this.oApp, this.oConfig.auth);

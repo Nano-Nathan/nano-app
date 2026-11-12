@@ -34,11 +34,11 @@ export type ServerConfig = {
   listener?: () => void;
   /** Application port. Defaults to 3000 */
   port?: number;
-  /** Values for Express `app.set()` (e.g. `{ "trust proxy": 1 }`). Replace the defaults */
+  /** Values for Express `app.set()` (e.g. `{ "trust proxy": 1 }`), over the defaults */
   settings?: NanoObject<unknown>;
-  /** Base middlewares. Replace the defaults */
+  /** Base middlewares: each one set replaces its default */
   packages?: PackagesConfig;
-  /** Better Auth options: with them, the routes of the app and after it need a session */
+  /** Better Auth options: with them, every route needs a session unless it is `public` */
   auth?: AuthOptions;
 };
 
