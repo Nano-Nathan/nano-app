@@ -9,6 +9,7 @@ import PluginManager from '../plugins/PluginManager';
 import BetterAuth from '../auth/BetterAuth';
 import { PACKAGES, PORT, SETTINGS } from './config';
 import { errorHandler, notFoundHandler } from './handlers/errors';
+import rateLimit from './handlers/rateLimit';
 import type { NanoAppConfig, PackagesConfig } from '../types/app';
 
 /** Main NanoApp class */
@@ -79,6 +80,7 @@ export default class NanoApp {
     const aPackages = [
       oConfig.cors && cors(oConfig.cors),
       oConfig.helmet && helmet(),
+      oConfig.rateLimit && rateLimit(oConfig.rateLimit),
       oConfig.compression && compression(),
       oConfig.express && express.json(oConfig.express),
       oConfig.urlencoded && express.urlencoded(oConfig.urlencoded),
