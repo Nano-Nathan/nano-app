@@ -5,7 +5,7 @@ import type { DatabaseConfig } from '../types/database';
 
 /** Database of the app or of a plugin: its Drizzle client on the pool of `DATABASE_URL` */
 export default class Database {
-  private static oPool?: Pool;
+  private static oPool?: Promise<Pool>;
   private sName: string;
   private oConfig?: DatabaseConfig;
   // any: the client is typed by the schema of each app, unknown to the framework
@@ -52,9 +52,8 @@ export default class Database {
     }
 
     // Creates the pool once, then the client on it with the relations of the schema
-    Database.oPool ??= await Database.pool();
     const oClient = drizzle({
-      client: Database.oPool,
+      client: await Database.pool(),
       relations: schema.relations ?? defineRelations(schema),
     });
 
@@ -63,8 +62,14 @@ export default class Database {
     return oClient;
   }
 
-  /** The pool of `DATABASE_URL`, shared by every client */
-  private static async pool(): Promise<Pool> {
+  /** The pool of `DATABASE_URL`, shared by every client and Better Auth, created on the first call */
+  public static pool(): Promise<Pool> {
+    this.oPool ??= this.createPool();
+    return this.oPool;
+  }
+
+  /** Creates the pool of `DATABASE_URL` */
+  private static async createPool(): Promise<Pool> {
     // Checks the URL of the database
     const sUrl = process.env.DATABASE_URL;
     if (!sUrl) throw new NanoError('The DATABASE_URL environment variable is not defined.');

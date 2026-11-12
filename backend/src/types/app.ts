@@ -1,6 +1,7 @@
 import type express from 'express';
 import type { CorsOptions } from 'cors';
 import type { NanoObject } from '@nano-app/core/types/objects';
+import type { AuthOptions } from './auth';
 import type { PluginManagerConfig } from './plugin';
 
 /** Configuration of the framework's built-in packages */
@@ -37,6 +38,8 @@ export type ServerConfig = {
   settings?: NanoObject<unknown>;
   /** Base middlewares. Replace the defaults */
   packages?: PackagesConfig;
+  /** Better Auth options: with them, the routes of the app and after it need a session */
+  auth?: AuthOptions;
 };
 
 /** Application configuration: the server and its plugins */

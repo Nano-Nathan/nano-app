@@ -57,9 +57,13 @@
   "peerDependencies": {
     "better-auth": "^1.7.18",
     "drizzle-orm": "^1.0.0-rc.5",
+    "kysely": "^0.29.8",
     "pg": "^8.23.1"
   },
   "peerDependenciesMeta": {
+    "kysely": {
+      "optional": true
+    },
     "better-auth": {
       "optional": true
     },
@@ -80,6 +84,7 @@
     "better-auth": "^1.7.18",
     "drizzle-kit": "^1.0.0-rc.5",
     "drizzle-orm": "^1.0.0-rc.5",
+    "kysely": "^0.29.8",
     "pg": "^8.23.1",
     "tsdown": "^0.23.5",
     "tsx": "^4.23.15",

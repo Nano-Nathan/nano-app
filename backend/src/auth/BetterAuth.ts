@@ -1,62 +1,79 @@
-import { NanoError } from '@nano-app/core';
 import { PRIVATE_NETWORKS } from '@nano-app/core/const';
-import type { RequestHandler } from 'express';
+import Database from '../database/Database';
+import type { Express, Request } from 'express';
+import type { IncomingHttpHeaders } from 'node:http';
+import type { Auth } from 'better-auth';
 import type { NanoObject } from '@nano-app/core';
 import type { AuthOptions } from '../types/auth';
 
-/** Better Auth on the app's Drizzle client: the instance and its handler */
-export default abstract class BetterAuth {
-  private static oAuth?: NanoObject;
+/** Postgres schema of Better Auth's tables */
+const SCHEMA = 'nano_auth';
 
-  /** The instance, once the app's plugin created it */
-  public static get(): NanoObject | undefined {
+/** Key of the Postgres lock that lets one startup migrate at a time */
+const MIGRATION_LOCK = 7_310_002;
+
+/** Better Auth of the app: its tables in `nano_auth`, its endpoints and the session of a request */
+export default abstract class BetterAuth {
+  // any: the options of each app type the instance, unknown to the framework
+  private static oAuth?: Auth<any>;
+  private static fnHeaders?: (oHeaders: IncomingHttpHeaders) => Headers;
+
+  /** Better Auth's instance, once mounted */
+  // any: the options of each app type the instance, unknown to the framework
+  public static instance(): Auth<any> | undefined {
     return this.oAuth;
   }
 
-  /** Creates the instance on the app's client and schema, and its handler */
-  // any: the client is typed by the schema of each app, unknown to the framework
-  public static async create(
-    oOptions: AuthOptions,
-    oDb: any,
-    oSchema?: NanoObject,
-  ): Promise<{ oHandler: RequestHandler; sPath: string }> {
-    // Better Auth is an optional dependency: imported only when it is on
+  /** The session of a request, when it has one */
+  public static async session(oReq: Request): Promise<NanoObject | undefined> {
+    // Before the mount there is no instance, so no session
+    if (!this.oAuth || !this.fnHeaders) return undefined;
+
+    // Asks Better Auth with the headers of the request
+    const oHeaders = this.fnHeaders(oReq.headers);
+    return (await this.oAuth.api.getSession({ headers: oHeaders })) ?? undefined;
+  }
+
+  /** Migrates its tables, creates the instance and mounts its endpoints; off without options */
+  public static async mount(oApp: Express, oOptions?: AuthOptions): Promise<void> {
+    // Without options Better Auth stays off
+    if (!oOptions) return;
+
+    // Better Auth and Kysely are optional dependencies: imported only when it is on
     const { betterAuth } = await import('better-auth');
-    const { drizzleAdapter } = await import('better-auth/adapters/drizzle');
-    const { getSchema } = await import('better-auth/db');
-    const { toNodeHandler } = await import('better-auth/node');
+    const { getMigrations } = await import('better-auth/db/migration');
+    const { fromNodeHeaders, toNodeHandler } = await import('better-auth/node');
+    const { PostgresDialect } = await import('kysely');
 
-    // Better Auth keeps its tables in the app's database
-    if (!oSchema) {
-      throw new NanoError(
-        'auth needs the database of the app: set database.schema in createNanoApp.',
-      );
-    }
-
-    // Checks that the app's schema has every table these options need
-    const aMissing = Object.keys(getSchema(oOptions)).filter(sModel => !oSchema[sModel]);
-    if (aMissing.length) {
-      throw new NanoError(
-        `Better Auth needs the tables ${aMissing.join(', ')} in the app's schema. Run \`npx auth generate\` and apply your schema with drizzle-kit.`,
-      );
-    }
-
-    // Creates the instance on the app's client
-    const oAuth = betterAuth({
+    // The options on the shared pool, with the tables in their own schema
+    const oPool = await Database.pool();
+    const { advanced, basePath = '/api/auth' } = oOptions;
+    const oFullOptions = {
       ...oOptions,
       advanced: {
-        ...oOptions.advanced,
-        ipAddress: { trustedProxies: PRIVATE_NETWORKS, ...oOptions.advanced?.ipAddress },
+        ...advanced,
+        ipAddress: { trustedProxies: PRIVATE_NETWORKS, ...advanced?.ipAddress },
       },
-      database: drizzleAdapter(oDb, { provider: 'pg', schema: oSchema }),
-    });
-
-    // Keeps the instance for the plugins mounted with the app or after it
-    this.oAuth = oAuth;
-
-    return {
-      oHandler: toNodeHandler(oAuth),
-      sPath: `${oOptions.basePath ?? '/api/auth'}/{*path}`,
+      database: {
+        dialect: new PostgresDialect({ pool: oPool }),
+        type: 'postgres' as const,
+        schemaName: SCHEMA,
+      },
     };
+
+    // Creates its schema and tables, one startup at a time; only adds
+    const oConnection = await oPool.connect();
+    await oConnection.query('SELECT pg_advisory_lock($1)', [MIGRATION_LOCK]);
+    await oConnection.query(`CREATE SCHEMA IF NOT EXISTS ${SCHEMA}`);
+    await (await getMigrations(oFullOptions)).runMigrations();
+
+    // Closing the connection frees the lock
+    oConnection.release(true);
+
+    // The instance and its endpoints
+    const oAuth = betterAuth(oFullOptions);
+    this.oAuth = oAuth;
+    this.fnHeaders = fromNodeHeaders;
+    oApp.all(`${basePath}/{*path}`, toNodeHandler(oAuth));
   }
 }

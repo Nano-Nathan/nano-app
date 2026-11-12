@@ -6,6 +6,7 @@ import compression from 'compression';
 import 'dotenv/config';
 import { Logger } from '@nano-app/core';
 import PluginManager from '../plugins/PluginManager';
+import BetterAuth from '../auth/BetterAuth';
 import { PACKAGES, PORT, SETTINGS } from './config';
 import { errorHandler, notFoundHandler } from './handlers/errors';
 import type { NanoAppConfig, PackagesConfig } from '../types/app';
@@ -14,12 +15,10 @@ import type { NanoAppConfig, PackagesConfig } from '../types/app';
 export default class NanoApp {
   protected oApp: Express;
   protected oConfig: NanoAppConfig;
-  private oPlugins: PluginManager;
 
   constructor(oConfig: NanoAppConfig = {}) {
     this.oApp = express();
     this.oConfig = oConfig;
-    this.oPlugins = new PluginManager(oConfig);
     this.start();
   }
 
@@ -53,8 +52,11 @@ export default class NanoApp {
     // Packages (body parsers included: they go first)
     this.setPackages(this.oConfig.packages ?? PACKAGES);
 
+    // Better Auth: its tables, its instance and its endpoints, when it is on
+    await BetterAuth.mount(this.oApp, this.oConfig.auth);
+
     // Plugins: the ones before the app, the app's and the ones after
-    await this.oPlugins.mount(this.oApp);
+    await PluginManager.mount(this.oApp, this.oConfig);
 
     // Unmatched requests become a 404 for the error handler
     this.oApp.use(notFoundHandler);

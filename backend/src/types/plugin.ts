@@ -1,5 +1,4 @@
 import type { NanoObject, PluginCallbacks } from '@nano-app/core';
-import type { AuthOptions } from './auth';
 import type { DatabaseConfig } from './database';
 
 /** Plugin configuration: a group of endpoints */
@@ -24,8 +23,6 @@ export type PluginManagerConfig = {
   routesDir?: string;
   /** Drizzle schema of the app's database */
   database?: DatabaseConfig;
-  /** Better Auth options: with them, the app's routes need a session */
-  auth?: AuthOptions;
   /** Plugins mounted before and after the app's routes */
   plugins?: {
     /** Before the app's routes */
