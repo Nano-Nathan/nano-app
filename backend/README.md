@@ -48,7 +48,7 @@ export default createRoute({
 
 ## Routes
 
-Each `*.route.ts` under `mainPlugin.routesDir` default-exports an object with the HTTP methods it implements (`GET`, `POST`, `PUT`, `DELETE`, `QUERY`). **The file path is the URL** (`index.route.ts` → `/`, `api/users.route.ts` → `/api/users`). A route file holds only those methods and its options (`expression`, `public`, `permissions`, `callbacks`): any other key, or an invalid value, stops the startup with the file and what is wrong. `expression` is appended to that path as is, in Express syntax (`/:id`, `{/:id}` for optional):
+Each `*.route.ts` under `routesDir` default-exports an object with the HTTP methods it implements (`GET`, `POST`, `PUT`, `DELETE`, `QUERY`). **The file path is the URL** (`index.route.ts` → `/`, `api/users.route.ts` → `/api/users`). A route file holds only those methods and its options (`expression`, `public`, `permissions`, `callbacks`): any other key, or an invalid value, stops the startup with the file and what is wrong. `expression` is appended to that path as is, in Express syntax (`/:id`, `{/:id}` for optional):
 
 ```ts
 export default createRoute({
@@ -84,10 +84,12 @@ Every option is optional.
 | `listener` | `() => {}` | Callback once the server is listening. |
 | `settings` | `{ "trust proxy": <private networks> }` | Values for `app.set()`: see [Client IP](#client-ip). |
 | `packages` | see below | Framework base middlewares. |
-| `mainPlugin` | `{ routesDir: "src/routes" }` | Your routes (`routesDir`, relative to `cwd`), `basePath` (e.g. `/api`, no trailing slash) and database: see [Database](#database). |
-| `plugins` | `[]` | Plugins mounted around your routes, in order: see [Plugins](#plugins). |
+| `routesDir` | `"src/routes"` | Folder of your routes, relative to `cwd`. |
+| `database` | none | Your Drizzle schema: see [Database](#database). |
+| `auth` | none | Better Auth options: see [Better Auth](#better-auth). |
+| `plugins` | `{}` | Plugins mounted `before` and `after` your routes, in order: see [Plugins](#plugins). |
 
-`packages` accepts `morgan`, `cors`, `helmet`, `compression`, `express` (`express.json` options) and `urlencoded`. The merge is **per section**: passing one key keeps the others; pass `false` to disable one.
+`packages` accepts `morgan`, `cors`, `helmet`, `compression`, `express` (`express.json` options) and `urlencoded`. Each one you set replaces its default whole and the others keep theirs; pass `false` to disable one. `settings` works the same way, key by key.
 
 `compression` is off by default: the proxy in front of the app (an ingress, nginx) usually compresses the answers. Turn it on with `packages: { compression: true }` when nothing does.
 
@@ -114,7 +116,7 @@ By default the backend reads that header only when the request comes from loopba
 
 ## Database
 
-Off until the app passes its schema: nano-app creates a [Drizzle](https://orm.drizzle.team) client of it on `DATABASE_URL` and passes it to your handlers as `db`. **It never modifies your schemas**: applying them (`drizzle-kit push`, `drizzle-kit generate` and `migrate`) is up to you.
+Off until the app passes its schema: nano-app creates a [Drizzle](https://orm.drizzle.team) client of it on `DATABASE_URL` and passes it to your handlers as `db`. It changes your tables only when you ask: `push` or `migrations`. Without them, applying the schema (`drizzle-kit push`, `drizzle-kit generate` and `migrate`) is up to you.
 
 ```bash
 pnpm add drizzle-orm pg
@@ -136,7 +138,7 @@ export const users = pgTable('users', {
 import { createNanoApp } from '@nano-app/backend';
 import * as schema from './db/schema';
 
-createNanoApp({ mainPlugin: { database: { schema } } });
+createNanoApp({ database: { schema } });
 ```
 
 ```ts
@@ -149,63 +151,46 @@ export default createRoute({
 ```
 
 - `database.schema` is the module of your tables: every export that is a table, and `relations` (from `defineRelations`) when you relate them. A `pgSchema` the tables use is exported too, so drizzle-kit creates it.
-- One pool serves the app and every plugin with a database. It connects on its first query: a missing table fails that query, not the startup.
+- `database.push: true` applies the schema at startup with drizzle-kit's push (`pnpm add drizzle-kit`), only to the Postgres schemas of its tables. A change that would lose data stops the startup.
+- `database.migrations` is the folder `drizzle-kit generate` writes: its pending migrations are applied at startup.
+- One pool serves the app, Better Auth and every plugin with a database. It connects on its first query: a missing table fails that query, not the startup.
 - Startup fails if `DATABASE_URL` is missing.
-- The `nano_` prefix is reserved for plugins: a table of yours in a `nano_*` Postgres schema fails the startup.
+- Each `nano_*` Postgres schema is reserved for the plugin of its name (`nano_auth` for Better Auth): a table of yours in one fails the startup.
 - Without a database, `db` is `undefined`.
 - Drizzle and pg are loaded only when your database or a mounted plugin's is on.
 
 ## Better Auth
 
-Users, sign-in and sessions with [Better Auth](https://www.better-auth.com), on your database. On when your app has `src/auth.ts` (or the built `src/auth.js`), relative to `cwd`: its default export holds the options in `options` (everything but `database`: nano-app passes your Drizzle client and schema). Without the file it stays off.
+Users, sign-in and sessions with [Better Auth](https://www.better-auth.com). On when `createNanoApp` has `auth`: its options, everything but `database`. Without it, it stays off.
 
 ```bash
-pnpm add better-auth
-```
-
-```ts
-// src/auth.ts: nano-app and the Better Auth CLI read `options`
-import type { BetterAuthOptions } from 'better-auth';
-
-export default {
-  options: { emailAndPassword: { enabled: true } } satisfies BetterAuthOptions,
-};
+pnpm add better-auth kysely pg
 ```
 
 ```ts
 // src/app.ts
 import { createNanoApp } from '@nano-app/backend';
-import * as schema from './db/schema';
 
-createNanoApp({ mainPlugin: { database: { schema } } });
+createNanoApp({ auth: { emailAndPassword: { enabled: true } } });
 ```
 
-Its tables are yours, like the rest of your schema. Add them with its CLI, then apply them with drizzle-kit; run both again when you change the options:
-
-```bash
-npx auth generate --adapter drizzle --dialect pg --output src/db/auth-schema.ts   # then export its tables from src/db/schema.ts
-pnpm drizzle-kit push
-```
-
-- It needs the database: `src/auth.ts` without `mainPlugin.database.schema` fails at startup, and so does a file without `options`.
-- Startup also fails if your schema lacks a table the options need (`user`, `session`, ...), naming them.
-- Its endpoints are mounted with your routes, at its `basePath` (default `/api/auth`), and stay public.
+- It uses the pool of `DATABASE_URL`, with or without a database of the app: startup fails if it is missing.
+- Its tables live in the Postgres schema `nano_auth`. nano-app creates them at startup with Better Auth's migrations, and adds what new options need; it never drops anything.
+- Its endpoints are mounted before your routes, at its `basePath` (default `/api/auth`), and stay public.
 - In production, Better Auth limits sign-in, sign-up and password reset to a few attempts per client IP (its `rateLimit`): see [Client IP](#client-ip).
-- Every route of yours and of the `after` plugins needs a session: without one, 401. The `before` plugins stay public (a landing, an about page).
-- Handlers and `onBefore` receive the session in `params.session` (`{ user, session }`).
+- With it on, every route of the app and of every plugin needs a session: without one it answers 401 `Not authenticated`.
+- `createRoute({ public: true, ... })` answers without a session. An unknown path answers 404.
+- Handlers and `onBefore` receive the session in `params.session` (`{ user, session }`), also on a public route when the request has one.
+- The middlewares a plugin adds with `app.use` in `onMount` are not checked: a plugin that exposes something public says it in its README.
 - Sign-up works as Better Auth sets it: with `emailAndPassword` anyone can sign up and reach your routes. Close it with `disableSignUp: true`, or check roles in your handlers.
-- Relate your tables to `user` in your `relations`. Extra user fields go in its `user.additionalFields`.
+- Extra user fields go in its `user.additionalFields`.
 - Set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` in the environment, as Better Auth asks.
-- With it on, every route of the app and of the plugins mounted after it (`stage: 'after'`) needs a session: without one it answers 401 `Not authenticated`. The handlers receive it in `session`.
-- `createRoute({ public: true, ... })` answers without a session; its handlers still receive `session` when the request has one. An unknown path answers 404.
-- Its own endpoints, the plugins mounted before the app and the middlewares a plugin adds with `app.use` in `onMount` are not checked: a plugin that exposes something public says it in its README.
-- Better Auth is loaded only when it is on.
-- Before 0.14.0 the options went in `packages.betterAuth`: move them to the default export of `src/auth.ts`.
-- nano-app creates the one instance the app uses: do not call `betterAuth()` in `src/auth.ts`. The CLI's `generate` only reads `options` of its default export.
+- Better Auth is loaded only when it is on, and nano-app creates the one instance the app uses.
+- Before 0.19.0 the options went in the default export of `src/auth.ts` and its tables in your schema: move the options to `auth`.
 
 ### Permissions
 
-A route asks for permissions of Better Auth's [admin plugin](https://www.better-auth.com/docs/plugins/admin): add `admin()` to the `plugins` of your options, with your roles (`ac` and `roles`), and generate its fields with `npx auth generate`. A user without them gets 403:
+A route asks for permissions of Better Auth's [admin plugin](https://www.better-auth.com/docs/plugins/admin): add `admin()` to the `plugins` of your options, with your roles (`ac` and `roles`). A user without them gets 403:
 
 ```ts
 export default createRoute({
@@ -220,7 +205,7 @@ A public route does not check them. Without Better Auth the route answers anyway
 
 ## Plugins
 
-A plugin is a group of endpoints mounted under a base path. Your routes are mounted as one (named `app`). The official plugins are in [`@nano-app/plugins`](https://github.com/Nano-Nathan/nano-app/blob/main/plugins/README.md). You write one with `createPlugin` and list it in `plugins`. Nothing is mounted unless you list it. Official plugins that have tables ship their own migrations: nano-app applies them at startup, each in its `nano_*` schema. That is the only change it makes to your database.
+A plugin is a group of endpoints mounted under a base path. Your routes are mounted as one (named `app`). The official plugins are in [`@nano-app/plugins`](https://github.com/Nano-Nathan/nano-app/blob/main/plugins/README.md). You write one with `createPlugin` and list it in `plugins.before` or `plugins.after`. Nothing is mounted unless you list it.
 
 ```ts
 // src/plugins/hello/index.ts
@@ -249,10 +234,10 @@ export default createRoute({
 import { createNanoApp } from '@nano-app/backend';
 import hello from './plugins/hello';
 
-createNanoApp({ plugins: [hello()] });
+createNanoApp({ plugins: { before: [hello()] } });
 ```
 
-`createPlugin` types the options of that plugin. Each plugin chooses its base path and whether it mounts `before` (default) or `after` your routes. What the plugin puts in `options` reaches every callback and handler of its routes in `params`.
+`createPlugin` types the options of that plugin. Each plugin chooses its base path; the app chooses whether it mounts `before` or `after` its routes. What the plugin puts in `options` reaches every callback and handler of its routes in `params`.
 
 ### Callbacks
 
@@ -277,11 +262,11 @@ export default createPlugin((options?: { publicPaths?: string[] }) => ({
 }));
 ```
 
-The endpoints of one plugin have no guaranteed order: one route's `onInit` must not depend on another's. `mainPlugin` takes `callbacks` too.
+The endpoints of one plugin have no guaranteed order: one route's `onInit` must not depend on another's.
 
-Everything is mounted on one Express application, in this order: base middlewares → `before` plugins → your routes → `after` plugins → 404 → error handler.
+Everything is mounted on one Express application, in this order: base middlewares → Better Auth → `before` plugins → your routes → `after` plugins → 404 → error handler.
 
-A plugin with a database passes its own `database: { schema }`, and keeps its tables in the Postgres schema `nano_<its name>`: a table elsewhere fails the startup. Two plugins with the same name and a database fail too. Without a database of its own, a plugin receives the app's `db`. See [`@nano-app/plugins`](https://github.com/Nano-Nathan/nano-app/blob/main/plugins/README.md#database).
+A plugin with a database passes its own `database` (`schema`, `push`, `migrations`, as the app's). Only it may keep tables in the Postgres schema `nano_<its name>`: a table in the `nano_*` schema of another fails the startup. Without a database of its own, a plugin receives the app's `db`. See [`@nano-app/plugins`](https://github.com/Nano-Nathan/nano-app/blob/main/plugins/README.md#database).
 
 ## Errors
 
@@ -289,10 +274,9 @@ The framework mounts the 404 and the error handler: an unmatched request becomes
 
 ```ts
 throw { status: 409, message: 'Already exists' };   // → 409 { success: false, warning: false, message: "Already exists" }
-throw 'Field name is required';                     // → 400 { success: false, message: "Field name is required" }
+throw 'Field name is required';                     // → 400 { success: false, warning: false, message: "Field name is required" }
 throw new Error('boom');                            // → 500 "Internal server error", logged to stderr
-// A Postgres error the request caused answers without its message, which names tables and columns:
-// 23505 and 23503 → 409 "Conflict", 23502 and 22P02 → 400 "Invalid request"
+// A Postgres error is one more Error: 500. Catch it in your handler to answer a 409
 GET /unknown                                        // → 404 { success: false, warning: false, message: "/unknown not found" }
 ```
 

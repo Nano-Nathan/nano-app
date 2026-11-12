@@ -34,11 +34,12 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 
 ### Structure
 
+- The backend's `src/` folders follow its composition, `app/` → `plugins/` → `database/` and `router/`: a file imports down that chain, never up. `lib/` (the public creators) sits on top; `auth/` and `types/` serve any of them.
 - Up to 3 positional parameters; with more, one object (`DatabaseConfig`).
 - A class when there is state (`Database`, `Plugin`); `abstract class` with `static` methods for stateless utilities grouped by area (`FileReader`, `Validator`). Public API is plain functions (`createRoute`, `createPlugin`).
 - The function of `createController` returns its object: `callbacks` first (`onMount` reads what the view needs), then the methods. Before the `return` only `const` that read the context or the options (`const oApi = stores[store];`, a path); no functions, hooks or effects. Logic lives in the methods: one reaches another with `this` (`last() { return this.items()[0]; }`, method syntax, never an arrow), also from `onMount`. The view renders; its only hook is a `useEffect` that calls a method when a value changes (`useEffect(guard, [backend.get('/session')]);`).
 - The object of `createRoute` goes in order: its config (`expression`, `public`, `permissions`), then `callbacks`, then the handlers (`GET`, `POST`…).
-- The function of `createPlugin` returns its config: its keys first (`name`, `basePath`, `stage`, `routesDir`, `options`), then `callbacks`. Before the `return` only `const` that read the options; no functions. Logic lives in the callbacks: what a callback needs is a `const` at its start (`const fnRefill = …`).
+- The function of `createPlugin` returns its config: its keys first (`name`, `basePath`, `routesDir`, `options`), then `callbacks`. Before the `return` only `const` that read the options; no functions. Logic lives in the callbacks: what a callback needs is a `const` at its start (`const fnRefill = …`).
 - `public`, `protected` or `private` on every class method and field; constructors go without.
 - Declared functions and methods state their return type (`: Promise<void>`); inline callbacks infer it, and so does the factory of a component (`list`), from the controller it returns.
 - No `any` without a comment saying why (`// any: anything can be thrown`). Prefer `unknown` and validate.
@@ -102,6 +103,5 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 
 - Never print secrets: no `cat .env`, no `source .env`, no logging `process.env`. Framework messages never include secrets or connection strings.
 - Untrusted input (`req.body`, `req.params`, `req.query`, headers) is validated before the framework uses it. SQL uses parameters (`$1`); identifiers (schema, table) come only from constants.
-- Routes are private when the app has `src/auth.ts`: only its endpoints and the plugins mounted before the app are public. Without it every route is public. A plugin that exposes something public says so in its README.
+- Routes are private when `createNanoApp` has `auth`: only its endpoints and the routes with `public: true` are public. Without it every route is public. A plugin that exposes something public says so in its README.
 - The error handler answers with the message of what was thrown below 500; a 5xx answers `Internal server error` and is logged in full.
-- No DDL at startup: the consumer applies their schemas (and those of the plugins they install) with drizzle-kit; the startup only creates the clients.

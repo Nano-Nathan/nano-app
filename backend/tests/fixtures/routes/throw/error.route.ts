@@ -1,4 +1,4 @@
-import { createRoute } from '../../../../src/app/creators';
+import { createRoute } from '../../../../src/lib/creators';
 
 /** Throws an Error, with no status */
 export default createRoute({

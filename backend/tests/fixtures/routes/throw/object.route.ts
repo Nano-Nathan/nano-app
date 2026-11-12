@@ -1,4 +1,4 @@
-import { createRoute } from '../../../../src/app/creators';
+import { createRoute } from '../../../../src/lib/creators';
 
 /** Throws the shape the framework expects: { status, message } */
 export default createRoute({

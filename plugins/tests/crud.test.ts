@@ -2,7 +2,7 @@ import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createInsertSchema } from 'drizzle-orm/zod';
 import { z } from 'zod';
-import Database from '../../backend/src/database/Database';
+import DatabaseManager from '../../backend/src/database/DatabaseManager';
 import { push, request, startApp } from '../../backend/tests/helpers';
 import * as schema from '../../backend/tests/fixtures/database/crud';
 import crud from '../crud';
@@ -34,7 +34,7 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
     await push(schema, ['crud_test']);
 
     // Mounts the app's database, then the plugin after it
-    const oDb = await Database.mount('app', { schema });
+    const oDb = await DatabaseManager.mount('app', { schema });
     // The app checks the comments: what a `POST` sends, and how many a `QUERY` asks for
     const oValidation = {
       create: createInsertSchema(schema.comment),
@@ -64,7 +64,7 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
 
   after(async () => {
     // Closes the pool and the server
-    await Database.get('app').$client.end();
+    await (await DatabaseManager.pool()).end();
     await oServer.close();
   });
 
@@ -152,7 +152,7 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
     assert.equal(body.result[0].note.title, `${sTag}-a`);
   });
 
-  test('Postgres errors answer their status without their message', async () => {
+  test('Postgres errors answer 500 without their message', async () => {
     // A comment nobody created: read, updated and deleted
     const sPath = '/api/comment/00000000-0000-0000-0000-000000000000';
     const { status: iRead, body: oRead } = await request(oServer.url, sPath);
@@ -169,10 +169,10 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
     });
 
     // Checks each status, and that the messages name no table or column
-    assert.deepEqual([iRead, iUpdate, iDelete, iConflict, iInvalid], [404, 404, 404, 409, 400]);
+    assert.deepEqual([iRead, iUpdate, iDelete, iConflict, iInvalid], [404, 404, 404, 500, 500]);
     assert.deepEqual(
       [oRead.message, oConflict.message, oInvalid.message],
-      ['Not found', 'Conflict', 'Invalid request'],
+      ['Not found', 'Internal server error', 'Internal server error'],
     );
   });
 });

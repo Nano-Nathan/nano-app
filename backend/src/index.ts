@@ -1,7 +1,7 @@
 /** Application configuration and types */
-export type { NanoAppConfig, PackagesConfig } from './types/app';
+export type { NanoAppConfig, ServerConfig, PackagesConfig } from './types/app';
 export type { DatabaseConfig } from './types/database';
-export type { PluginConfig, PluginStage, MainPluginConfig } from './types/plugin';
+export type { PluginConfig, PluginManagerConfig } from './types/plugin';
 
 /** Re-exported Express type: the consumer does not need @types/express */
 export type { Request } from 'express';
@@ -24,7 +24,7 @@ export type {
 
 /** Main class and creators */
 export { default as NanoApp } from './app/NanoApp';
-export * from './app/creators';
+export * from './lib/creators';
 
 /** Error of the framework, also for handlers: `throw new NanoError('Not found', 404)` */
 export { NanoError } from '@nano-app/core';

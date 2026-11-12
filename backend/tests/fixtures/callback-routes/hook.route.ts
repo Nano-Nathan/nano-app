@@ -1,4 +1,4 @@
-import { createRoute } from '../../../src/app/creators';
+import { createRoute } from '../../../src/lib/creators';
 
 /** Route of a fixture plugin with every endpoint callback: records them in `options.calls` */
 export default createRoute({

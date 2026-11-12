@@ -1,8 +1,8 @@
 import type express from 'express';
 import type { CorsOptions } from 'cors';
-import type { BetterAuthOptions } from 'better-auth';
 import type { NanoObject } from '@nano-app/core/types/objects';
-import type { MainPluginConfig, PluginConfig } from './plugin';
+import type { AuthOptions } from './auth';
+import type { PluginManagerConfig } from './plugin';
 
 /** Configuration of the framework's built-in packages */
 export type PackagesConfig = {
@@ -28,28 +28,19 @@ export type PackagesConfig = {
   urlencoded?: Partial<Parameters<typeof express.urlencoded>[0]> | false;
 };
 
-/** Better Auth options of `src/auth.ts`, without `database`: it uses the app's Drizzle client */
-export type AuthOptions = Omit<BetterAuthOptions, 'database'>;
-
-/** Error shape thrown by the consumer handlers */
-export type HandlerError = {
-  status?: number;
-  message?: string;
-  warning?: boolean;
-};
-
-/** Application configuration */
-export type NanoAppConfig = {
+/** What NanoApp reads: the server */
+export type ServerConfig = {
   /** Listener run once the server is listening */
   listener?: () => void;
   /** Application port. Defaults to 3000 */
   port?: number;
-  /** Values applied with Express `app.set()` (e.g. `{ "trust proxy": 1 }`) */
+  /** Values for Express `app.set()` (e.g. `{ "trust proxy": 1 }`), over the defaults */
   settings?: NanoObject<unknown>;
-  /** Default middlewares configuration */
+  /** Base middlewares: each one set replaces its default */
   packages?: PackagesConfig;
-  /** Plugins to mount. Defaults to [] */
-  plugins?: PluginConfig[];
-  /** Main plugin to mount. */
-  mainPlugin?: MainPluginConfig;
+  /** Better Auth options: with them, every route needs a session unless it is `public` */
+  auth?: AuthOptions;
 };
+
+/** Application configuration: the server and its plugins */
+export type NanoAppConfig = ServerConfig & PluginManagerConfig;

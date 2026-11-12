@@ -5,21 +5,20 @@ import helmet from 'helmet';
 import compression from 'compression';
 import 'dotenv/config';
 import { Logger } from '@nano-app/core';
-import Plugin from '../routes/Plugin';
-import { mergeConfig } from './config';
-import { errorHandler, notFoundHandler } from './errors';
-import type { NanoObject } from '@nano-app/core';
+import PluginManager from '../plugins/PluginManager';
+import BetterAuth from '../auth/BetterAuth';
+import { PACKAGES, PORT, SETTINGS } from './config';
+import { errorHandler, notFoundHandler } from './handlers/errors';
 import type { NanoAppConfig, PackagesConfig } from '../types/app';
-import type { PluginConfig } from '../types/plugin';
 
 /** Main NanoApp class */
 export default class NanoApp {
   protected oApp: Express;
-  protected oConfig: ReturnType<typeof mergeConfig>;
+  protected oConfig: NanoAppConfig;
 
   constructor(oConfig: NanoAppConfig = {}) {
     this.oApp = express();
-    this.oConfig = mergeConfig(oConfig);
+    this.oConfig = oConfig;
     this.start();
   }
 
@@ -29,12 +28,13 @@ export default class NanoApp {
       await this.initialize();
 
       // Init server
-      this.oApp.listen(this.oConfig.port, () => {
+      const iPort = this.oConfig.port ?? PORT;
+      this.oApp.listen(iPort, () => {
         // Runs the consumer listener
         this.oConfig.listener?.();
 
         // Startup log
-        Logger.info(`Nano App running on port ${this.oConfig.port}`);
+        Logger.info(`Nano App running on port ${iPort}`);
       });
     } catch (oError) {
       Logger.error('Error trying to start the server.', oError);
@@ -44,23 +44,19 @@ export default class NanoApp {
 
   /** Initializes the application in the right order */
   private async initialize(): Promise<void> {
-    // Express settings
-    for (const [sKey, oValue] of Object.entries(this.oConfig.settings)) {
+    // Express settings, over the defaults
+    for (const [sKey, oValue] of Object.entries({ ...SETTINGS, ...this.oConfig.settings })) {
       this.oApp.set(sKey, oValue);
     }
 
     // Packages (body parsers included: they go first)
-    this.setPackages(this.oConfig.packages);
+    this.setPackages({ ...PACKAGES, ...this.oConfig.packages });
 
-    // Plugins separated by stage
-    const { mainPlugin, plugins } = this.oConfig;
-    const oPlugins: NanoObject<PluginConfig[]> = { before: [], after: [] };
-    for (const oPlugin of plugins) oPlugins[oPlugin.stage ?? 'before'].push(oPlugin);
+    // Better Auth: its tables, its instance and its endpoints, when it is on
+    await BetterAuth.mount(this.oApp, this.oConfig.auth);
 
-    // Mounts the ones before the app, the app's and the ones after
-    for (const oPlugin of [...oPlugins.before, mainPlugin, ...oPlugins.after]) {
-      await new Plugin(oPlugin).mount(this.oApp);
-    }
+    // Plugins: the ones before the app, the app's and the ones after
+    await PluginManager.mount(this.oApp, this.oConfig);
 
     // Unmatched requests become a 404 for the error handler
     this.oApp.use(notFoundHandler);

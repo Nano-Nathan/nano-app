@@ -1,4 +1,4 @@
-import { createRoute } from '../../../../src/app/creators';
+import { createRoute } from '../../../../src/lib/creators';
 
 /** /me: the user of the session the handler receives */
 export default createRoute({

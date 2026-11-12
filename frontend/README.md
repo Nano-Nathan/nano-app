@@ -271,7 +271,7 @@ The proxy guards the pages of `auth.routes`; every other page is public. For eac
 - `permissions`: actions per resource of the admin plugin, separated by commas. The proxy asks `POST <path>/admin/has-permission` with them as `{ permissions: { collections: ['read', 'update'] } }`, and every one is needed. A route with `roles` and `permissions` needs both.
 - `roles` and `permissions` need the admin plugin on in the backend. Their names are not checked against it: a role or an action it does not have never allows the page.
 - Every request of a guarded page asks `get-session` through the proxy, and `has-permission` too when the route has `permissions`. A session that ends while a page is open is caught on the next navigation.
-- To answer `get-session` without reading the database, turn on Better Auth's cookie cache in the backend's `src/auth.ts` (`session: { cookieCache: { enabled: true, maxAge: 300 } }`): the session comes from a signed cookie, so a revoked session or a new role shows up within `maxAge` seconds. `has-permission` always reads the database.
+- To answer `get-session` without reading the database, turn on Better Auth's cookie cache in the backend's `auth` options (`session: { cookieCache: { enabled: true, maxAge: 300 } }`): the session comes from a signed cookie, so a revoked session or a new role shows up within `maxAge` seconds. `has-permission` always reads the database.
 
 The data stays protected by the backend: the proxy only keeps the pages from showing.
 

@@ -16,7 +16,6 @@ export default createPlugin(
 
     return {
       name: 'rate-limit',
-      stage: 'before',
       routesDir: '',
       callbacks: {
         onMount: async oApp => {

@@ -1,0 +1,53 @@
+{
+  "version": "8",
+  "dialect": "postgres",
+  "id": "9097918d-be5f-4963-9cb0-fda7133f06de",
+  "prevIds": ["00000000-0000-0000-0000-000000000000"],
+  "ddl": [
+    {
+      "name": "app_data",
+      "entityType": "schemas"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "notes",
+      "entityType": "tables",
+      "schema": "app_data"
+    },
+    {
+      "type": "serial",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "app_data",
+      "table": "notes"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "title",
+      "entityType": "columns",
+      "schema": "app_data",
+      "table": "notes"
+    },
+    {
+      "columns": ["id"],
+      "nameExplicit": false,
+      "name": "notes_pkey",
+      "schema": "app_data",
+      "table": "notes",
+      "entityType": "pks"
+    }
+  ],
+  "renames": []
+}
