@@ -2,8 +2,8 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import express from 'express';
 import { startApp, request, boot } from './helpers';
-import Plugin from '../src/routes/Plugin';
-import { createPluginCallbacks } from '../src/app/creators';
+import Plugin from '../src/plugins/Plugin';
+import { createPluginCallbacks } from '../src/lib/creators';
 import * as reserved from './fixtures/database/reserved';
 
 const PLUGIN_ROUTES = 'tests/fixtures/plugin-routes';

@@ -34,6 +34,7 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 
 ### Structure
 
+- The backend's `src/` folders follow its composition, `app/` → `plugins/` → `database/` and `router/`: a file imports down that chain, never up. `lib/` (the public creators) sits on top; `auth/` and `types/` serve any of them.
 - Up to 3 positional parameters; with more, one object (`DatabaseConfig`).
 - A class when there is state (`Database`, `Plugin`); `abstract class` with `static` methods for stateless utilities grouped by area (`FileReader`, `Validator`). Public API is plain functions (`createRoute`, `createPlugin`).
 - The function of `createController` returns its object: `callbacks` first (`onMount` reads what the view needs), then the methods. Before the `return` only `const` that read the context or the options (`const oApi = stores[store];`, a path); no functions, hooks or effects. Logic lives in the methods: one reaches another with `this` (`last() { return this.items()[0]; }`, method syntax, never an arrow), also from `onMount`. The view renders; its only hook is a `useEffect` that calls a method when a value changes (`useEffect(guard, [backend.get('/session')]);`).

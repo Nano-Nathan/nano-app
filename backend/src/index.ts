@@ -24,7 +24,7 @@ export type {
 
 /** Main class and creators */
 export { default as NanoApp } from './app/NanoApp';
-export * from './app/creators';
+export * from './lib/creators';
 
 /** Error of the framework, also for handlers: `throw new NanoError('Not found', 404)` */
 export { NanoError } from '@nano-app/core';

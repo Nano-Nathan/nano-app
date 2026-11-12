@@ -1,4 +1,4 @@
-import { createRoute } from '../../../../src/app/creators';
+import { createRoute } from '../../../../src/lib/creators';
 
 /** A route that needs a permission the admin role lacks */
 export default createRoute({

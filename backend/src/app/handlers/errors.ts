@@ -1,7 +1,7 @@
 import { Logger, NanoError } from '@nano-app/core';
 import type { ErrorRequestHandler, RequestHandler } from 'express';
 import type { ApiResponse, NanoObject } from '@nano-app/core';
-import type { HandlerError } from '../types/app';
+import type { HandlerError } from '../../types/app';
 
 /** Database errors the request caused, by their Postgres code or Drizzle's name */
 const DATABASE_ERRORS: NanoObject<HandlerError> = {

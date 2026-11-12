@@ -1,6 +1,6 @@
 import { NanoError } from '@nano-app/core';
 import { APP_NAME } from '@nano-app/core/const';
-import Router from './Router';
+import Router from '../router/Router';
 import BetterAuth from '../auth/BetterAuth';
 import Database from '../database/Database';
 import type { Express } from 'express';
