@@ -1,7 +1,6 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { Validator } from '@nano-app/core';
-import { ROUTE } from '@nano-app/core/utils/validations';
 import Router from '../src/router/Router';
 import { startApp, request } from './helpers';
 
@@ -124,7 +123,7 @@ describe('routes by file convention', () => {
     // Checks the route of a file with a public that is not a boolean
     const oRoute = { public: 'yes', GET: () => ({}) };
     assert.throws(
-      () => Validator.validate({ '/bad': oRoute }, ROUTE),
+      () => Validator.validate('route', oRoute, '/bad'),
       /\/bad:\n.*expected boolean, received string\n.*public/,
     );
   });
@@ -132,6 +131,6 @@ describe('routes by file convention', () => {
   test('a route with a key that is not an option nor an HTTP method fails, naming the key', () => {
     // Checks the route of a file with a method nano-app does not handle
     const oRoute = { GET: () => ({}), PATCH: () => ({}) };
-    assert.throws(() => Validator.validate({ '/bad': oRoute }, ROUTE), /\/bad:\n.*"PATCH"/);
+    assert.throws(() => Validator.validate('route', oRoute, '/bad'), /\/bad:\n.*"PATCH"/);
   });
 });

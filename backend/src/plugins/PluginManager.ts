@@ -10,13 +10,13 @@ export default abstract class PluginManager {
   public static async mount(oApp: Express, oConfig: PluginManagerConfig): Promise<void> {
     const { routesDir = 'src/routes', database, plugins } = oConfig;
 
-    // The database of the app first: the plugins without their own use it
+    // The database of the app first, named as it: the plugins without their own share it
     await DatabaseManager.mount(APP_NAME, database);
 
-    // The app's plugin and the ones around it
+    // The app's plugin and the ones around it, with the app's database unless they have one
     const oAppPlugin = new Plugin({ name: APP_NAME, routesDir, database });
-    const aBefore = (plugins?.before ?? []).map(oPlugin => new Plugin(oPlugin));
-    const aAfter = (plugins?.after ?? []).map(oPlugin => new Plugin(oPlugin));
+    const aBefore = (plugins?.before ?? []).map(oPlugin => new Plugin({ database, ...oPlugin }));
+    const aAfter = (plugins?.after ?? []).map(oPlugin => new Plugin({ database, ...oPlugin }));
 
     // Mounts them in order
     for (const oPlugin of [...aBefore, oAppPlugin, ...aAfter]) await oPlugin.mount(oApp);

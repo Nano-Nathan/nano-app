@@ -1,6 +1,4 @@
 import FileLoader from '@nano-app/core/files/FileLoader';
-import Validator from '@nano-app/core/utils/Validator';
-import { STORE } from '@nano-app/core/utils/validations';
 import { STORES_ENV } from '@nano-app/core/const';
 import type { NextConfig } from 'next';
 
@@ -19,8 +17,7 @@ const SECURITY_HEADERS = [
 export function withNanoApp(oNextConfig: NextConfig = {}): () => Promise<NextConfig> {
   return async () => {
     // Finds, names and validates the app's `src/stores/**/*.store.ts`
-    const oFiles = await FileLoader.findMany('store');
-    const oStores = Validator.validate(oFiles, STORE);
+    const oStores = await FileLoader.findMany('store');
 
     // Inlines them in the bundle as JSON: the browser reads no file
     return {

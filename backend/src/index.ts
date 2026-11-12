@@ -1,3 +1,5 @@
+import BetterAuth from './auth/BetterAuth';
+
 /** Application configuration and types */
 export type { NanoAppConfig, ServerConfig, PackagesConfig } from './types/app';
 export type { DatabaseConfig } from './types/database';
@@ -29,5 +31,5 @@ export * from './lib/creators';
 /** Error of the framework, also for handlers: `throw new NanoError('Not found', 404)` */
 export { NanoError } from '@nano-app/core';
 
-/** Permissions check by Better Auth */
-export { default as isGranted } from './auth/permissions';
+/** Whether the user of a session has the permissions, asked to Better Auth */
+export const isGranted = BetterAuth.isGranted.bind(BetterAuth);

@@ -1,5 +1,5 @@
+import { Logger } from '@nano-app/core';
 import Router from '../router/Router';
-import BetterAuth from '../auth/BetterAuth';
 import DatabaseManager from '../database/DatabaseManager';
 import type { Express } from 'express';
 import type { PluginConfig } from '../types/plugin';
@@ -21,7 +21,7 @@ export default class Plugin {
     const oDb = await DatabaseManager.mount(name, database);
 
     // What every callback and handler receives, read-only
-    const oParams = Object.freeze({ ...options, db: oDb, auth: BetterAuth.instance() });
+    const oParams = Object.freeze({ ...options, db: oDb });
 
     // Plugin setup with the app, before any of its endpoints
     await callbacks?.onMount?.(oApp, oParams);
@@ -29,6 +29,7 @@ export default class Plugin {
     // Append the handlers
     const oRouter = new Router(routesDir, basePath);
     for (const { path, endpoint } of await oRouter.mount()) {
+      Logger.info(path);
       oApp.all(path, await endpoint.mount(oParams, path));
     }
   }

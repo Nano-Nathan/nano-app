@@ -1,24 +1,24 @@
 import { APP_NAME } from '@nano-app/core/const';
 import { Logger, NanoError } from '@nano-app/core';
 import type { Pool } from 'pg';
-import type { NanoObject } from '@nano-app/core';
 import type { DatabaseConfig } from '../types/database';
 
-/** The databases of the app and its plugins: one Drizzle client per name on the pool of `DATABASE_URL` */
+/** The databases of the app and its plugins: one Drizzle client per config on the pool of `DATABASE_URL` */
 export default abstract class DatabaseManager {
   private static oPool?: Promise<Pool>;
   // any: the client is typed by the schema of each app, unknown to the framework
-  private static oClients: NanoObject<Promise<any>> = {};
+  private static oClients = new Map<DatabaseConfig, Promise<any>>();
 
-  /** The Drizzle client of a database, created on the first call; without a config, the app's */
+  /** The Drizzle client of a database, created on the first call; undefined without a config */
   // any: the client is typed by the schema of each app, unknown to the framework
   public static async mount(sName: string, oConfig?: DatabaseConfig): Promise<any> {
-    // Without a config, the client of the app; undefined when it has none
-    if (!oConfig) return this.oClients[APP_NAME];
+    // Without a config there is no database: no client
+    if (!oConfig) return undefined;
 
-    // Creates it once per name
-    this.oClients[sName] ??= this.create(sName, oConfig);
-    return this.oClients[sName];
+    // One client per config: the plugins on the app's config share its client
+    const oClient = this.oClients.get(oConfig) ?? this.create(sName, oConfig);
+    this.oClients.set(oConfig, oClient);
+    return oClient;
   }
 
   /** Creates a client: the `nano_*` rule of its tables, then its push and its migrations */

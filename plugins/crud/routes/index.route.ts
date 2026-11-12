@@ -49,7 +49,7 @@ export default createRoute({
       if (!oParams.models.includes(sModel) || !oTable) throw new NanoError('Not found', 404);
 
       // The permission of the action on the table
-      if (!(await isGranted(oParams, { [sModel]: [sAction] }))) {
+      if (!(await isGranted(oParams.session, { [sModel]: [sAction] }))) {
         throw new NanoError('Forbidden', 403);
       }
 

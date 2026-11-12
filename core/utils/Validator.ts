@@ -1,6 +1,14 @@
 import { z } from 'zod';
 import NanoError from './NanoError';
+import { ROUTE, STORE } from './validations';
 import type { NanoObject } from '../types/objects';
+import type { FileEntries, FindableExtension } from '../types/files';
+
+/** The zod schema of each kind of file */
+const SCHEMAS: { [E in FindableExtension]: z.ZodType<FileEntries[E]> } = {
+  route: ROUTE,
+  store: STORE,
+};
 
 /** Checks values of the framework and the consumer's files; an invalid file throws a `NanoError` */
 export default abstract class Validator {
@@ -9,16 +17,16 @@ export default abstract class Validator {
     return Object.prototype.toString.call(oValue) === '[object Object]';
   }
 
-  /** Checks every entry with a zod schema (`ROUTE`, `STORE`): the first invalid one throws with its key */
-  public static validate<T>(oEntries: NanoObject, oSchema: z.ZodType<T>): NanoObject<T> {
-    return Object.fromEntries(
-      Object.entries(oEntries).map(([sKey, oEntry]) => {
-        // Checks the entry: zod says what is wrong and where
-        const oResult = oSchema.safeParse(oEntry);
-        if (!oResult.success) throw new NanoError(`${sKey}:\n${z.prettifyError(oResult.error)}`);
+  /** Checks a file with the schema of its kind: an invalid one throws with its key */
+  public static validate<E extends FindableExtension>(
+    sExtension: E,
+    oFile: unknown,
+    sKey: string,
+  ): FileEntries[E] {
+    // Checks the file: zod says what is wrong and where
+    const oResult = SCHEMAS[sExtension].safeParse(oFile);
+    if (!oResult.success) throw new NanoError(`${sKey}:\n${z.prettifyError(oResult.error)}`);
 
-        return [sKey, oResult.data];
-      }),
-    );
+    return oResult.data;
   }
 }

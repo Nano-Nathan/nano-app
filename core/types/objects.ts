@@ -5,8 +5,6 @@ import type { ApiPromise } from './api';
 
 /** Extra params of handlers and callbacks: what the app injects (options, `db`) and the framework adds */
 export type Params<Deps = NanoObject<any>> = Deps & {
-  /** Better Auth's instance, when it is on */
-  auth?: NanoObject;
   /** `{ user, session }` of Better Auth, when the request has one */
   session?: NanoObject;
 };
@@ -60,16 +58,23 @@ export type PluginCallbacks<Deps = NanoObject<any>> = {
   onMount?: CallbackMount<Deps>;
 };
 
-/** Entry of a route file (`*.route.ts`) */
-export type RouteEntry<Deps = NanoObject<any>> = {
-  /** Express route expression appended to the path (e.g. `/:id`) */
-  expression?: string;
+/** Endpoint params */
+export type EndpointParams<Deps = NanoObject<any>> = {
   /** With Better Auth on, answers without a session; the handlers still receive it when there is one */
   public?: boolean;
   /** With Better Auth on, the permissions of its admin plugin the user needs (`{ notes: ['read'] }`) */
   permissions?: NanoObject<string[]>;
   callbacks?: Callbacks<Deps>;
 } & Handlers<Deps>;
+
+/** Route params */
+export type RouteParams = {
+  /** Express route expression appended to the path (e.g. `/:id`) */
+  expression?: string;
+};
+
+/** Entry of a route file (`*.route.ts`) */
+export type RouteEntry<Deps = NanoObject<any>> = RouteParams & EndpointParams<Deps>;
 
 /** Generic object */
 export type NanoObject<T = any> = Record<string, T>;

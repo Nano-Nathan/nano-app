@@ -34,6 +34,22 @@ export default abstract class BetterAuth {
     return (await this.oAuth.api.getSession({ headers: oHeaders })) ?? undefined;
   }
 
+  /** Whether the user of a session has the permissions; always without Better Auth or permissions */
+  public static async isGranted(
+    oSession?: NanoObject,
+    oPermissions?: NanoObject<string[]>,
+  ): Promise<boolean> {
+    // Nothing to check without Better Auth or permissions
+    if (!this.oAuth || !oPermissions) return true;
+
+    // Asks its admin plugin, unknown to the type of the instance, about the role of the user
+    const oApi: NanoObject = this.oAuth.api;
+    const { success } = await oApi.userHasPermission({
+      body: { userId: oSession?.user.id, role: oSession?.user.role, permissions: oPermissions },
+    });
+    return success;
+  }
+
   /** Migrates its tables, creates the instance and mounts its endpoints; off without options */
   public static async mount(oApp: Express, oOptions?: AuthOptions): Promise<void> {
     // Without options Better Auth stays off
