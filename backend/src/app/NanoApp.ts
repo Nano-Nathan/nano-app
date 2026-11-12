@@ -5,9 +5,8 @@ import helmet from 'helmet';
 import compression from 'compression';
 import 'dotenv/config';
 import { Logger } from '@nano-app/core';
-import { APP_NAME } from '@nano-app/core/const';
-import Plugin from '../plugins/Plugin';
-import { PACKAGES, PORT, ROUTES_DIR, SETTINGS } from './config';
+import PluginManager from '../plugins/PluginManager';
+import { PACKAGES, PORT, SETTINGS } from './config';
 import { errorHandler, notFoundHandler } from './handlers/errors';
 import type { NanoAppConfig, PackagesConfig } from '../types/app';
 
@@ -15,10 +14,12 @@ import type { NanoAppConfig, PackagesConfig } from '../types/app';
 export default class NanoApp {
   protected oApp: Express;
   protected oConfig: NanoAppConfig;
+  private oPlugins: PluginManager;
 
   constructor(oConfig: NanoAppConfig = {}) {
     this.oApp = express();
     this.oConfig = oConfig;
+    this.oPlugins = new PluginManager(oConfig);
     this.start();
   }
 
@@ -52,15 +53,8 @@ export default class NanoApp {
     // Packages (body parsers included: they go first)
     this.setPackages(this.oConfig.packages ?? PACKAGES);
 
-    // The app's plugin, between the ones before and after it
-    const { routesDir = ROUTES_DIR, database, plugins } = this.oConfig;
-    const oAppPlugin = { name: APP_NAME, routesDir, database };
-    const aPlugins = [...(plugins?.before ?? []), oAppPlugin, ...(plugins?.after ?? [])];
-
-    // Mounts them in order
-    for (const oPlugin of aPlugins) {
-      await new Plugin(oPlugin).mount(this.oApp);
-    }
+    // Plugins: the ones before the app, the app's and the ones after
+    await this.oPlugins.mount(this.oApp);
 
     // Unmatched requests become a 404 for the error handler
     this.oApp.use(notFoundHandler);
