@@ -39,8 +39,8 @@ export type StoreFile = {
 
 /** Better Auth of an `api` store: its base path and the pages it guards */
 type StoreAuth = {
-  /** Base path of Better Auth in the backend (`/api/auth`) */
-  path: string;
+  /** Base path of Better Auth in the backend, `/auth` by default */
+  path?: string;
   /** Pages that need a session; the rest are public */
   routes?: AuthRoute[];
 };

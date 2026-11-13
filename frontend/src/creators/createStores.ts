@@ -1,4 +1,4 @@
-import { API_STORE_TYPE, APP_NAME } from '@nano-app/core/const';
+import { API_STORE_TYPE, APP_NAME, AUTH_PATH } from '@nano-app/core/const';
 import NanoError from '@nano-app/core/utils/NanoError';
 import ApiStore from '../stores/ApiStore';
 import AuthStore from '../stores/AuthStore';
@@ -33,7 +33,7 @@ function createStore(sName: string, oFile: StoreFile): Store {
   if (oFile.type !== API_STORE_TYPE) return new Store(oFile.data);
 
   // An api store with Better Auth at its base path
-  if (oFile.auth) return new AuthStore(sName, oFile.auth.path, oFile.data);
+  if (oFile.auth) return new AuthStore(sName, oFile.auth.path ?? AUTH_PATH, oFile.data);
 
   // An api store
   return new ApiStore(sName, oFile.data);

@@ -75,14 +75,14 @@ describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is no
     const oCredentials = { email: `user-${Date.now()}@nano-app.test`, password: 'a-long-password' };
 
     // Signs up a user
-    const oSignUp = await request(oApp.url, '/api/auth/sign-up/email', {
+    const oSignUp = await request(oApp.url, '/auth/sign-up/email', {
       ...oInit,
       body: JSON.stringify({ ...oCredentials, name: 'User' }),
     });
     assert.equal(oSignUp.status, 200, JSON.stringify(oSignUp.body));
 
     // Signs in and keeps the session cookie
-    const oSignIn = await request(oApp.url, '/api/auth/sign-in/email', {
+    const oSignIn = await request(oApp.url, '/auth/sign-in/email', {
       ...oInit,
       body: JSON.stringify(oCredentials),
     });
@@ -164,7 +164,7 @@ describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is no
   test('sign-in is limited per client behind private proxies', async () => {
     // Signs in with a wrong password from a client: a forged IP, then the one its proxy appended
     const fnSignIn = (sForwardedFor: string) =>
-      request(oApp.url, '/api/auth/sign-in/email', {
+      request(oApp.url, '/auth/sign-in/email', {
         method: 'POST',
         headers: {
           'content-type': 'application/json',

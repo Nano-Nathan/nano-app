@@ -1,5 +1,5 @@
 import { createController } from '@nano-app/frontend';
-import { API_STORE_TYPE } from '@nano-app/core/const';
+import { DEFAULT_STORE } from '@nano-app/core/const';
 import validate from './validate';
 import type { ApiResponse } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
@@ -11,7 +11,7 @@ export default function field() {
     // Takes the form, the field, its api store and its paths
     const { form } = props;
     const oField: FormField = props.field;
-    const { path, store = API_STORE_TYPE } = oField.options ?? {};
+    const { path, store = DEFAULT_STORE } = oField.options ?? {};
     const oApi = path && stores[store];
     const sValue = `/form/${form}/values/${oField.name}`;
     const sError = `/form/${form}/errors/${oField.name}`;

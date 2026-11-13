@@ -1,11 +1,11 @@
 import { createController } from '@nano-app/frontend';
-import { API_STORE_TYPE } from '@nano-app/core/const';
+import { DEFAULT_STORE } from '@nano-app/core/const';
 import type { ApiResponse } from '@nano-app/core/types/api';
 import type { AuthOptions } from '../types/auth';
 
 /** Sign-in, sign-up and sign-out of an api store with Better Auth, and the navigation after them */
 export default function auth(oOptions: AuthOptions = {}) {
-  const { kind = 'email', store = API_STORE_TYPE } = oOptions;
+  const { kind = 'email', store = DEFAULT_STORE } = oOptions;
 
   return createController(({ stores, router }) => {
     // Takes the api store of the options

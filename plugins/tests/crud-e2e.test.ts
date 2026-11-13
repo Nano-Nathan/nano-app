@@ -57,8 +57,8 @@ describe(
         oAppDB,
       );
 
-      // Points the store `backend` to it and serves the app's origin
-      process.env.API_BACKEND_URL = `${oBackend.url}/api`;
+      // Points the default store to it and serves the app's origin
+      process.env.API_URL = `${oBackend.url}/api`;
       await new Promise<void>(fnResolve => oApp.listen(APP_PORT, fnResolve));
     });
 
@@ -73,7 +73,7 @@ describe(
 
     test('an api store reads, filters, creates, updates and deletes a model', async () => {
       // The store of the app, as a controller gets it
-      const oStore = new ApiStore('backend');
+      const oStore = new ApiStore('api');
       const oQuery = {
         where: { title: { like: `${sTag}%` } },
         orderBy: { title: 'asc' as const },

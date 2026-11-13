@@ -1,4 +1,5 @@
 import { NanoError } from '@nano-app/core';
+import { AUTH_PATH } from '@nano-app/core/const';
 import { AUTH_NAME, PRIVATE_NETWORKS } from '../const';
 import DatabaseManager from '../database/DatabaseManager';
 import BetterAuth from '../database/clients/BetterAuth';
@@ -24,7 +25,7 @@ export default abstract class Auth {
     const { fromNodeHeaders, toNodeHandler } = await import('better-auth/node');
 
     // Its options, trusting the private proxies by default
-    const { database = { push: true }, advanced, basePath = '/api/auth', ...oRest } = oOptions;
+    const { database = { push: true }, advanced, basePath = AUTH_PATH, ...oRest } = oOptions;
     const oFullOptions = {
       ...oRest,
       basePath,

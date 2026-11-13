@@ -14,7 +14,7 @@ export const STORE: z.ZodType<StoreFile> = z.object({
   headers: z.record(z.string(), z.string()).optional(),
   auth: z
     .object({
-      path: z.string(),
+      path: z.string().optional(),
       routes: z
         .array(
           z

@@ -10,7 +10,7 @@ describe('store files', () => {
       none: 'not an object',
       kind: { type: 'other' },
       headers: { type: 'api', headers: { 'x-api-key': 1 } },
-      auth: { type: 'api', auth: '/api/auth' },
+      auth: { type: 'api', auth: '/auth' },
       data: { type: 'app', data: 'not an object' },
     };
     for (const [sName, oStore] of Object.entries(oInvalid)) {
@@ -24,7 +24,7 @@ describe('store files', () => {
     // Checks that the valid ones pass
     const oValid = {
       api: { type: 'api', headers: { 'x-api-key': 'STRIPE_KEY' } },
-      session: { type: 'api', auth: { path: '/api/auth' } },
+      session: { type: 'api', auth: { path: '/auth' } },
       app: { type: 'app', data: { iCount: 0 } },
     };
     for (const [sName, oStore] of Object.entries(oValid)) {

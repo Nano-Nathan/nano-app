@@ -124,10 +124,10 @@ The types of a controller and its views come from `@nano-app/frontend`: `Control
 
 ## Backend
 
-A store of type `api` connects the app to a backend. The browser never talks to the backend: it calls `/api/<store>/...` on the Next server, and the proxy sends the request there. The proxy is a [rewrite](https://nextjs.org/docs/app/api-reference/functions/next-response#rewrite) of Next: Next sends the request to the backend and answers with what it answers.
+A store of type `api` connects the app to a backend. The browser never talks to the backend: it calls `/api/...` on the Next server, and the proxy sends the request there. The proxy is a [rewrite](https://nextjs.org/docs/app/api-reference/functions/next-response#rewrite) of Next: Next sends the request to the backend and answers with what it answers.
 
 ```ts
-// src/stores/backend.store.ts
+// src/stores/api.store.ts
 export default { type: 'api' };
 ```
 
@@ -136,10 +136,10 @@ export default { type: 'api' };
 export { proxy } from '@nano-app/frontend/proxy';
 ```
 
-The backend URL is read at runtime from `API_<STORE>_URL` (`backend` → `API_BACKEND_URL`, `admin/users.store.ts` → `API_ADMIN_USERS_URL`), on the server only: it never reaches the browser. The prefix goes away (`/api/backend/users/7?top=1` → `$API_BACKEND_URL/users/7?top=1`); a backend with a `basePath` puts it in the URL (`API_BACKEND_URL=http://backend:3000/api`).
+The store `api` is the default one: the components use it when they name none, and the proxy serves it on `/api` itself, with its backend in `API_URL` (`/api/users/7?top=1` → `$API_URL/users/7?top=1`). An app with more backends adds a store per backend, served on `/api/<store>` with its URL in `API_<STORE>_URL` (`backend` → `/api/backend/...` and `API_BACKEND_URL`, `admin/users.store.ts` → `API_ADMIN_USERS_URL`). The URLs are read at runtime, on the server only: they never reach the browser. A backend with a `basePath` puts it in the URL (`API_URL=http://backend:3000/api`).
 
 - The request keeps its method, headers, cookies and body, and the backend's answer comes back as is, `Set-Cookie` and redirects included.
-- Every `/api/<name>/...` goes to `API_<NAME>_URL`, and one without its variable answers 500 with the name of the variable to define. A request outside `/api/<name>` goes on to the app's own routes.
+- `/api/<name>/...` goes to the api store `<name>` when the app has one, and any other `/api/...` to the store `api`: a path of the default backend that starts with the name of another store reaches that store, so name the stores apart from the default backend's routes. A store without its variable answers 500 with the name of the variable to define. A request outside `/api/` goes on to the app's own routes.
 
 ### Reading and writing
 
@@ -222,14 +222,13 @@ The proxy sends `x-api-key` with the value of `API_STRIPE_KEY_HEADER` (the name 
 
 ### Sessions
 
-With [Better Auth](../backend/README.md#better-auth) on in the backend, its store declares `auth`: `path`, the `basePath` of Better Auth there, and `routes`, the pages that need a session. Without it the store stays as is.
+With [Better Auth](../backend/README.md#better-auth) on in the backend, its store declares `auth`: `path`, the `basePath` of Better Auth there (`/auth` by default, as the backend's), and `routes`, the pages that need a session. Without it the store stays as is.
 
 ```ts
-// src/stores/backend.store.ts
+// src/stores/api.store.ts
 export default {
   type: 'api',
   auth: {
-    path: '/api/auth',
     routes: [
       { match: '/', redirect: '/login' },
       { match: '/admin/*', roles: 'admin,editor' },
@@ -311,7 +310,7 @@ The `Users` component reads and writes `/users` of the `backend` store, and `Use
 API_BACKEND_URL=http://localhost:3000 API_BACKEND_KEY_HEADER=dev pnpm --filter nano-frontend-test-app start
 ```
 
-The `backend` store declares `auth: { path: '/api/auth', routes: [{ match: '/private/*', redirect: '/login' }] }`: the backend has Better Auth with `emailAndPassword`, and the URL of the app (`http://localhost:3100`) in its `trustedOrigins`. `/login` signs in, `/` shows the session with a button to sign out, and `/private` shows only with a session.
+The `backend` store declares `auth: { routes: [{ match: '/private/*', redirect: '/login' }] }`: the backend has Better Auth with `emailAndPassword`, and the URL of the app (`http://localhost:3100`) in its `trustedOrigins`. `/login` signs in, `/` shows the session with a button to sign out, and `/private` shows only with a session.
 
 ## Design
 

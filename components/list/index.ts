@@ -1,11 +1,11 @@
 import { createController } from '@nano-app/frontend';
-import { API_STORE_TYPE } from '@nano-app/core/const';
+import { DEFAULT_STORE } from '@nano-app/core/const';
 import type { ApiResponse, QueryParams } from '@nano-app/core/types/api';
 import type { ListOptions } from '../types/list';
 
 /** A paged, sortable list of a backend path, also read page after page; its state is at `/list` */
 export default function list(oOptions: ListOptions) {
-  const { path, limit, store = API_STORE_TYPE } = oOptions;
+  const { path, limit, store = DEFAULT_STORE } = oOptions;
 
   return createController(({ stores }) => {
     // Takes the api store of the options

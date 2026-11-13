@@ -1,6 +1,6 @@
 // First: the stores of the proxy, read when it loads
 import './env/proxy';
-import { test, describe, before, after } from 'node:test';
+import { test, describe, before, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { NextRequest } from 'next/server';
@@ -76,6 +76,10 @@ describe('proxy', () => {
     process.env.API_GUARDED_URL = `http://localhost:${PORT}`;
   });
 
+  afterEach(() => {
+    delete process.env.API_URL;
+  });
+
   after(() => oBackend.close());
 
   test('a request reaches its backend with method, path, query, body, cookie and the store key', async () => {
@@ -97,6 +101,15 @@ describe('proxy', () => {
     });
   });
 
+  test('a path of no api store goes to the default store, on API_URL with the whole path', async () => {
+    // Sends a path whose first segment is not a store
+    process.env.API_URL = `http://localhost:${PORT}/api`;
+    const oRes = await send('/api/users/7?top=1');
+
+    // Checks that the backend of API_URL got the whole path
+    assert.equal((await oRes.json()).url, '/api/users/7?top=1');
+  });
+
   test('the browser cannot replace a header of the store', async () => {
     // Sends the store's header from the browser
     const oRes = await send('/api/admin_users/users', { headers: { 'x-api-key': 'fake' } });
@@ -115,11 +128,11 @@ describe('proxy', () => {
 
   test('a missing URL or header answers 500 with the variable to define', async () => {
     // A store without its URL, and one without the env var of its header
-    for (const [sName, sEnvName] of [
-      ['missing', 'API_MISSING_URL'],
-      ['orders', 'API_ORDERS_KEY_HEADER'],
+    for (const [sName, sEnvName, sPath] of [
+      ['api', 'API_URL', '/api/users'],
+      ['orders', 'API_ORDERS_KEY_HEADER', '/api/orders/users'],
     ]) {
-      const oRes = await send(`/api/${sName}/users`);
+      const oRes = await send(sPath);
 
       assert.equal(oRes.status, 500);
       assert.deepEqual(await oRes.json(), {

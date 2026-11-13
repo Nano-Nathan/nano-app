@@ -1,10 +1,11 @@
+import { DEFAULT_STORE } from '@nano-app/core/const';
 import { PROXY_PATH } from '../const';
 
 /** Paths of the app: its pages and the proxy of its stores */
 export default abstract class Paths {
-  /** Path of a store in the proxy: `/api/<store>` */
+  /** Path of a store in the proxy: `/api` for the default one, `/api/<store>` for the rest */
   public static store(sName: string): string {
-    return `${PROXY_PATH}/${sName}`;
+    return sName === DEFAULT_STORE ? PROXY_PATH : `${PROXY_PATH}/${sName}`;
   }
 
   /** Whether a path matches a pattern: exact (`/admin`), or the path and all below it (`/admin/*`) */

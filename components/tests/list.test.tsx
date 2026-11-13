@@ -92,7 +92,7 @@ describe('list', () => {
     await expectNames('Ana,Beto');
 
     assert.ok(screen.getByText('page 0'));
-    assert.equal(aRequests[0], 'QUERY /api/api/users {"offset":0,"limit":2}');
+    assert.equal(aRequests[0], 'QUERY /api/users {"offset":0,"limit":2}');
   });
 
   test('sort orders by a field, toggles its direction and goes back to the first page', async () => {
@@ -142,7 +142,7 @@ describe('list', () => {
     fireEvent.click(screen.getByText('load'));
     await act(() => new Promise(fnResolve => setTimeout(fnResolve, 50)));
 
-    assert.deepEqual(aRequests, ['QUERY /api/api/users {"offset":0,"limit":1}']);
+    assert.deepEqual(aRequests, ['QUERY /api/users {"offset":0,"limit":1}']);
   });
 
   test('more adds the next page to the pages read so far, until a page comes short', async () => {
@@ -172,7 +172,7 @@ describe('list', () => {
     await act(() => new Promise(fnResolve => setTimeout(fnResolve, 50)));
 
     assert.equal(
-      aRequests.filter(sRequest => sRequest.startsWith('QUERY /api/api/users {"limit":2')).length,
+      aRequests.filter(sRequest => sRequest.startsWith('QUERY /api/users {"limit":2')).length,
       3,
     );
   });

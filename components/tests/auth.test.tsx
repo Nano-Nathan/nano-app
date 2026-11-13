@@ -97,7 +97,7 @@ describe('auth', () => {
 
     assert.ok(
       aRequests.includes(
-        'POST /api/api/api/auth/sign-in/username {"email":"ana@nano.app","password":"secret"}',
+        'POST /api/auth/sign-in/username {"email":"ana@nano.app","password":"secret"}',
       ),
     );
   });
@@ -113,10 +113,8 @@ describe('auth', () => {
     fireEvent.click(screen.getByText('sign out'));
     await expectEmail('none');
 
-    assert.ok(
-      aRequests.some(sRequest => sRequest.startsWith('POST /api/api/api/auth/sign-up/email ')),
-    );
-    assert.ok(aRequests.some(sRequest => sRequest.startsWith('POST /api/api/api/auth/sign-out ')));
+    assert.ok(aRequests.some(sRequest => sRequest.startsWith('POST /api/auth/sign-up/email ')));
+    assert.ok(aRequests.some(sRequest => sRequest.startsWith('POST /api/auth/sign-out ')));
   });
 
   test('every api store with auth reads its session when the app starts', async () => {
@@ -124,7 +122,7 @@ describe('auth', () => {
     const Auth = auth({ store: 'admin' }).bindView(fnView);
     renderApp(<Auth />);
 
-    await waitFor(() => assert.ok(aRequests.includes('GET /api/api/api/auth/get-session ')));
+    await waitFor(() => assert.ok(aRequests.includes('GET /api/auth/get-session ')));
     await waitFor(() => assert.ok(aRequests.includes('GET /api/admin/auth/get-session ')));
   });
 

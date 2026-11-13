@@ -18,16 +18,16 @@ const aRequests: string[] = [];
 let isSignedIn = false;
 
 // Request that reads the session
-const SESSION = 'GET /api/backend/api/auth/get-session';
+const SESSION = 'GET /api/backend/auth/get-session';
 
-/** Answers like a backend with Better Auth at `/api/auth`, and `/users` behind its session */
+/** Answers like a backend with Better Auth at `/auth`, and `/users` behind its session */
 function answer(sMethod: string, sUrl: string, sBody: string): [number, unknown] {
   const sPath = sUrl.replace('/api/backend', '');
   const oBody = sBody ? JSON.parse(sBody) : {};
   const oUser = { email: 'ana@nano.app' };
 
   // Signs in with the right password
-  if (sPath === '/api/auth/sign-in/email') {
+  if (sPath === '/auth/sign-in/email') {
     isSignedIn = oBody.password === 'secret';
     if (!isSignedIn)
       return [401, { code: 'INVALID_EMAIL_OR_PASSWORD', message: 'Invalid email or password' }];
@@ -35,15 +35,15 @@ function answer(sMethod: string, sUrl: string, sBody: string): [number, unknown]
   }
 
   // Signs out
-  if (sPath === '/api/auth/sign-out') {
+  if (sPath === '/auth/sign-out') {
     isSignedIn = false;
     return [200, { success: true }];
   }
 
   // Answers the session, or null without one
-  if (sPath === '/api/auth/get-session' && isSignedIn)
+  if (sPath === '/auth/get-session' && isSignedIn)
     return [200, { session: { id: 'session' }, user: oUser }];
-  if (sPath === '/api/auth/get-session') return [200, null];
+  if (sPath === '/auth/get-session') return [200, null];
 
   // Answers the app's routes only with a session
   if (!isSignedIn) return [401, { success: false, message: 'Not authenticated' }];
@@ -66,7 +66,7 @@ const oBackend = createServer((oReq, oRes) => {
 /** An auth store of the backend, once it read the session */
 async function createStore(): Promise<AuthStore> {
   // Creates the store and waits for the session it reads when it is created
-  const oStore = new AuthStore('backend', '/api/auth');
+  const oStore = new AuthStore('backend', '/auth');
   await waitFor(() => assert.equal(count(aRequests, SESSION), 1));
   return oStore;
 }
