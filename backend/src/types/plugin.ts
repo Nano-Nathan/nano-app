@@ -20,6 +20,12 @@ export type PluginConfig<Options = NanoObject> = {
   callbacks?: PluginCallbacks;
 };
 
+/** Options every plugin takes, besides its own */
+export type PluginOptions = {
+  /** Base path of its endpoints, over the plugin's default */
+  basePath?: string;
+};
+
 /** What PluginManager reads: the app's plugin and the ones around it */
 export type PluginManagerConfig = {
   /** Folder of the app's routes. Defaults to "src/routes" */

@@ -3,7 +3,7 @@ import Auth from './auth/Auth';
 /** Application configuration and types */
 export type { NanoAppConfig, ServerConfig, PackagesConfig } from './types/app';
 export type { DatabaseConfig } from './types/database';
-export type { PluginConfig, PluginManagerConfig } from './types/plugin';
+export type { PluginConfig, PluginManagerConfig, PluginOptions } from './types/plugin';
 
 /** Re-exported Express type: the consumer does not need @types/express */
 export type { Request } from 'express';
