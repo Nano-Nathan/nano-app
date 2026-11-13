@@ -1,21 +1,18 @@
-import { join } from 'node:path';
 import { createPlugin } from '@nano-app/backend';
+import route from './route';
 import type { NanoObject } from '@nano-app/backend';
 import type { CrudValidations } from '../types/crud';
 
-/** Automatic CRUD: the listed tables of the app's database on `/api/<model>{/<id>}` */
+/** Automatic CRUD: the tables of `models` of the app's database on `/<model>{/<id>}` */
 export default createPlugin(
-  (options?: {
-    basePath?: string;
-    models: string[];
-    dbSchema: NanoObject;
-    validations?: NanoObject<CrudValidations>;
-  }) => ({
+  (options?: { models: NanoObject; validations?: NanoObject<CrudValidations> }) => ({
     name: 'crud',
-    basePath: options?.basePath ?? '/api',
-    // Next to this file, from the sources and from the build
-    routesDir: join(import.meta.dirname, 'routes'),
-    // Its routes read them from the options
-    options,
+    // One route per table, by its name in the app's relations
+    routes: Object.fromEntries(
+      Object.entries(options?.models ?? {}).map(([sModel, oTable]) => [
+        `/${sModel}`,
+        route(sModel, oTable, options?.validations?.[sModel]),
+      ]),
+    ),
   }),
 );
