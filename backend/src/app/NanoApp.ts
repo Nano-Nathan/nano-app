@@ -1,8 +1,4 @@
 import express, { type Express } from 'express';
-import morgan from 'morgan';
-import cors from 'cors';
-import helmet from 'helmet';
-import compression from 'compression';
 import 'dotenv/config';
 import { Logger } from '@nano-app/core';
 import { APP_NAME } from '@nano-app/core/const';
@@ -11,8 +7,8 @@ import BetterAuth from '../auth/BetterAuth';
 import DatabaseManager from '../database/DatabaseManager';
 import { PACKAGES, PORT, SETTINGS } from './config';
 import { errorHandler, notFoundHandler } from './handlers/errors';
-import rateLimit from './handlers/rateLimit';
-import type { NanoAppConfig, PackagesConfig } from '../types/app';
+import packages from './packages';
+import type { NanoAppConfig } from '../types/app';
 
 /** Main NanoApp class */
 export default class NanoApp {
@@ -53,7 +49,9 @@ export default class NanoApp {
     }
 
     // Packages (body parsers included: they go first)
-    this.setPackages({ ...PACKAGES, ...this.oConfig.packages });
+    for (const fnPackage of packages({ ...PACKAGES, ...this.oConfig.packages })) {
+      this.oApp.use(fnPackage);
+    }
 
     // The database of the app first, named as it: the plugins without their own share it
     await DatabaseManager.mount(APP_NAME, this.oConfig.database);
@@ -73,27 +71,5 @@ export default class NanoApp {
 
     // Error handler: always last, so it covers every package above
     this.oApp.use(errorHandler);
-  }
-
-  /** Adds the packages according to the configuration */
-  private setPackages(oConfig: PackagesConfig): void {
-    // Morgan
-    if (oConfig.morgan) {
-      for (const [sKey, fnToken] of Object.entries(oConfig.morgan.tokens ?? {})) {
-        morgan.token(sKey, fnToken);
-      }
-      this.oApp.use(morgan(oConfig.morgan.format));
-    }
-
-    // The rest in order, each only when it is on
-    const aPackages = [
-      oConfig.cors && cors(oConfig.cors),
-      oConfig.helmet && helmet(),
-      oConfig.rateLimit && rateLimit(oConfig.rateLimit),
-      oConfig.compression && compression(),
-      oConfig.express && express.json(oConfig.express),
-      oConfig.urlencoded && express.urlencoded(oConfig.urlencoded),
-    ];
-    for (const fnPackage of aPackages) if (fnPackage) this.oApp.use(fnPackage);
   }
 }
