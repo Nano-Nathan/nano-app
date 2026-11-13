@@ -1,4 +1,5 @@
 import { REQUEST_FAILED } from '@nano-app/core/const';
+import Paths from '../utils/Paths';
 import Store from './Store';
 import type { ApiResponse } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
@@ -54,7 +55,7 @@ export default class RequestStore extends Store {
     let sText: string | undefined;
     let oResponse: ApiResponse = { success: false, message: REQUEST_FAILED };
     try {
-      const oRes = await fetch(`/api/${this.sName}${sPath}`, {
+      const oRes = await fetch(`${Paths.store(this.sName)}${sPath}`, {
         ...oInit,
         headers: { 'content-type': 'application/json' },
       });

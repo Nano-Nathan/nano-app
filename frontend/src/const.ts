@@ -17,3 +17,6 @@ export const SECURITY_HEADERS = [
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
 ];
+
+/** Base path of the proxy: `/api/<store>/<path>` goes to the backend of the store */
+export const PROXY_PATH = '/api';
