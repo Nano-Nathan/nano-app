@@ -10,10 +10,8 @@ export type FormField = NanoObject & {
   /** Rules of its value, a zod schema (`z.email()`); a rule between fields goes in the `onSubmit` of the form */
   validation?: ZodType;
   /** What the view shows of the value kept (`1234` → `$1.234`) */
-  // any: the value is what `change` kept
   format?(value: any): unknown;
   /** What to keep of what the view gives `change` (`$1.234` → `1234`), instead of the default */
-  // any: the input is what the field's view gives `change`
   parse?(input: any): unknown;
   /** Items of a select, read from its api store */
   options?: FieldOptions;

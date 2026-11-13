@@ -1,32 +1,22 @@
-import { Logger, NanoError } from '@nano-app/core';
-import BetterAuth from '../auth/BetterAuth';
-import isGranted from '../auth/permissions';
+import { NanoError } from '@nano-app/core';
+import Auth from '../auth/Auth';
 import type { Request, RequestHandler } from 'express';
-import type {
-  ApiPromise,
-  Callbacks,
-  Handlers,
-  MethodEntry,
-  NanoObject,
-  Params,
-  RouteEntry,
-} from '@nano-app/core';
+import type { ApiPromise, NanoObject } from '@nano-app/core';
+import type { Callbacks, EndpointParams, MethodEntry, Params } from '../types/route';
 
-/** Base class for all endpoints */
+/** A route: its methods, its access and its callbacks */
 export default class Endpoint {
   private oMethods: NanoObject<MethodEntry>;
   private oCallbacks: Callbacks;
   private isPublic: boolean;
 
   /** Allowed methods and the options of the route */
-  constructor(
-    oMethods: Handlers,
-    {
-      callbacks = {},
-      public: isPublic = false,
-      permissions,
-    }: Pick<RouteEntry, 'callbacks' | 'public' | 'permissions'>,
-  ) {
+  constructor({
+    callbacks = {},
+    public: isPublic = false,
+    permissions,
+    ...oMethods
+  }: EndpointParams) {
     // Each method with its permissions, or those of the route
     this.oMethods = Object.fromEntries(
       Object.entries(oMethods).map(([sMethod, oMethod]) => [
@@ -40,25 +30,12 @@ export default class Endpoint {
     this.isPublic = isPublic;
   }
 
-  /** Handler for all methods */
-  public async mount(oParams: Params, sPath: string): Promise<RequestHandler> {
-    // Without Better Auth, a route with permissions answers without checking them
-    const isUnchecked = Object.values(this.oMethods).some(({ permissions }) => permissions);
-    if (!oParams.auth && isUnchecked) {
-      Logger.warn(
-        `${sPath}: its permissions are not checked without Better Auth. Set auth in createNanoApp.`,
-      );
-    }
-
+  /** Runs its onInit and gives its handler for all methods */
+  public async init(oParams: Params): Promise<RequestHandler> {
     // Runs the onInit callback
     await this.oCallbacks.onInit?.(oParams);
 
     // Returns the request handler
-    return this.createHandler(oParams);
-  }
-
-  /** Express handler: the request, answered as an ApiResponse */
-  private createHandler(oParams: Params): RequestHandler {
     return (oReq, oRes) =>
       // Runs it; a rejection reaches the error handler: Express 5 forwards it
       this.run(oReq, oParams).then(oResponse => {
@@ -69,27 +46,18 @@ export default class Endpoint {
       });
   }
 
-  /** Checks the session and the permissions, then runs onBefore and the method */
+  /** Checks the session and the permissions of the method, then runs onBefore and it */
   private async run(oReq: Request, oParams: Params): ApiPromise {
-    // The session of the request, when Better Auth found one
-    const oSession = await BetterAuth.session(oReq);
-    const oRequestParams = { ...oParams, session: oSession };
-
-    // With Better Auth on, a route needs a session unless it is public
-    if (oParams.auth && !oSession && !this.isPublic) {
-      throw new NanoError('Not authenticated', 401);
-    }
-
-    // Finds the handler of the request method: a route file holds only HTTP methods
+    // The method of the request: a route file holds only HTTP methods
     const sMethod = oReq.method;
     const oMethod = this.oMethods[sMethod];
+
+    // The session, checked with the permissions of the method; then 405 without it
+    const session = await Auth.guard(oReq, this.isPublic, oMethod?.permissions);
     if (!oMethod) throw new NanoError(`Method ${sMethod} not implemented`, 405);
 
-    // Checks the permissions of the method, unless the route is public
-    const oPermissions = this.isPublic ? undefined : oMethod.permissions;
-    if (!(await isGranted(oRequestParams, oPermissions))) throw new NanoError('Forbidden', 403);
-
     // Runs onBefore, then the method
+    const oRequestParams = { ...oParams, session };
     const onBeforeResult = (await this.oCallbacks.onBefore?.(oReq, sMethod, oRequestParams)) ?? {};
     return oMethod.handler(oReq, { ...oRequestParams, onBeforeResult });
   }

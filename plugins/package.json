@@ -64,8 +64,5 @@
     "zod": {
       "optional": true
     }
-  },
-  "dependencies": {
-    "express-rate-limit": "^8.7.3"
   }
 }

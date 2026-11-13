@@ -4,7 +4,6 @@ import type { NanoObject } from '@nano-app/core/types/objects';
 import type { Stores } from './store';
 
 /** Props a component receives from its parent */
-// any: the props are the consumer's, unknown to the framework
 export type ComponentProps = NanoObject<any>;
 
 /** What a controller and its views receive: the props, the stores and Next's router */

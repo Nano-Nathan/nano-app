@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Logger from '@nano-app/core/utils/Logger';
-import Paths from '@nano-app/core/utils/Paths';
+import Paths from './utils/Paths';
 import { HEADERS, ROUTES } from './utils/state';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { GuardedRoute, ProxyTarget } from './types/store';
@@ -46,13 +46,13 @@ function target(oReq: NextRequest): ProxyTarget | undefined {
   if (sMissing) return { store: sName, missing: sMissing };
 
   // Adds the store's headers over the browser's: the browser cannot replace them
-  const oHeaders = new Headers(oReq.headers);
-  for (const [sHeader, sEnvName] of aHeaders) oHeaders.set(sHeader, process.env[sEnvName] ?? '');
+  const headers = new Headers(oReq.headers);
+  for (const [sHeader, sEnvName] of aHeaders) headers.set(sHeader, process.env[sEnvName] ?? '');
 
   // The URL of the backend with the path and the query of the request
   return {
     url: `${process.env[sUrlEnv]}/${aPath.join('/')}${oReq.nextUrl.search}`,
-    headers: oHeaders,
+    headers,
   };
 }
 

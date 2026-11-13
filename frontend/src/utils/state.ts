@@ -1,6 +1,5 @@
-import { DEFAULT_REDIRECT } from '@nano-app/core/const';
-import type { StoreFile, StoreFiles } from '@nano-app/core/types/store';
-import type { GuardedRoute } from '../types/store';
+import { DEFAULT_REDIRECT } from '../const';
+import type { GuardedRoute, StoreFile, StoreFiles } from '../types/store';
 
 /** Store files that `withNanoApp` inlined at build time */
 // `process.env.NANO_APP_STORES` stays literal so Next can replace it

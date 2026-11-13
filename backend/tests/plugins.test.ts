@@ -1,9 +1,8 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import express from 'express';
 import { startApp, request, boot } from './helpers';
 import Plugin from '../src/plugins/Plugin';
-import { createPluginCallbacks } from '../src/lib/creators';
+import { createPlugin, createPluginCallbacks, createRoute } from '../src/lib/creators';
 import * as reserved from './fixtures/database/reserved';
 
 const PLUGIN_ROUTES = 'tests/fixtures/plugin-routes';
@@ -48,6 +47,54 @@ describe('plugins', () => {
     await oServer.close();
   });
 
+  test('mounts the routes made in code beside its routesDir; a path in both takes the code', async () => {
+    // Starts an app with a plugin that has both
+    const oServer = await startApp([
+      {
+        routesDir: PLUGIN_ROUTES,
+        routes: {
+          '/ping': createRoute({ GET: async () => ({ message: 'code' }) }),
+          '/extra': createRoute({ GET: async () => ({ result: true }) }),
+        },
+      },
+    ]);
+
+    // Checks that the code wins on /ping and its own route answers
+    assert.equal((await request(oServer.url, '/ping')).body.message, 'code');
+    assert.equal((await request(oServer.url, '/extra')).status, 200);
+
+    // Stops the server
+    await oServer.close();
+  });
+
+  test('a route made in code that breaks the schema fails, naming its path', async () => {
+    // A plugin with a route whose public is not a boolean
+    const oPlugin = new Plugin({
+      name: 'bad',
+      routes: { '/bad': { public: 'yes', GET: async () => ({}) } as any },
+    });
+
+    // Checks that building it fails naming the path
+    await assert.rejects(oPlugin.build(), /\/bad:\n.*expected boolean/);
+  });
+
+  test("the consumer's basePath goes over the plugin's default", async () => {
+    // A plugin with its default base path, mounted as is and moved
+    const fnDemo = createPlugin(() => ({
+      name: 'demo',
+      basePath: '/demo',
+      routesDir: PLUGIN_ROUTES,
+    }));
+    const oServer = await startApp([fnDemo(), fnDemo({ basePath: '/moved' })]);
+
+    // Checks that it answers on both
+    assert.equal((await request(oServer.url, '/demo/ping')).status, 200);
+    assert.equal((await request(oServer.url, '/moved/ping')).status, 200);
+
+    // Stops the server
+    await oServer.close();
+  });
+
   test('several plugins coexist on the same application', async () => {
     // Starts an app with the same plugin on two base paths
     const oServer = await startApp([
@@ -76,20 +123,16 @@ describe('plugins', () => {
     await oServer.close();
   });
 
-  test('plugin onMount runs once with the app before its endpoints; endpoint onInit once, onBefore per request', async () => {
-    // Starts a plugin whose callbacks record their calls and whose onMount adds a header
+  test('plugin onMount runs once before its endpoints; endpoint onInit once, onBefore per request', async () => {
+    // Starts a plugin whose callbacks record their calls
     const aCalls: string[] = [];
     const oServer = await startApp([
       {
         routesDir: CALLBACK_ROUTES,
         options: { calls: aCalls, greeting: 'hi' },
         callbacks: createPluginCallbacks({
-          onMount: async (oApp, oParams) => {
+          onMount: async oParams => {
             oParams.calls.push('mount');
-            oApp.use((_oReq, oRes, fnNext) => {
-              oRes.set('x-mounted', 'yes');
-              fnNext();
-            });
           },
         }),
       },
@@ -100,13 +143,9 @@ describe('plugins', () => {
       assert.deepEqual(aCalls, ['mount', 'init']);
 
       // Checks that the handler got the options and the onBefore result
-      const { status, body, headers } = await request(oServer.url, '/hook');
+      const { status, body } = await request(oServer.url, '/hook');
       assert.equal(status, 200);
       assert.deepEqual(body.result, { greeting: 'hi', before: 'hello' });
-      assert.equal(headers.get('x-mounted'), 'yes');
-
-      // The plugin's middleware precedes every endpoint, whatever their order
-      assert.equal((await request(oServer.url, '/plain')).headers.get('x-mounted'), 'yes');
 
       // Checks that onBefore can reject, and that it runs once per request
       const oDenied = await request(oServer.url, '/hook?deny=1');
@@ -142,11 +181,15 @@ describe('plugins', () => {
 
   test('a plugin keeps no tables in the nano_* schema of another', async () => {
     // A plugin named "other" with a table in nano_test
-    const oPlugin = new Plugin({ name: 'other', routesDir: '', database: { schema: reserved } });
+    const oPlugin = new Plugin({
+      name: 'other',
+      routesDir: '',
+      database: { relations: reserved.relations },
+    });
 
-    // Checks that mounting it fails naming the table and the rule
+    // Checks that building it fails naming the table and the rule
     await assert.rejects(
-      oPlugin.mount(express()),
+      oPlugin.build(),
       /"nano_test.items" breaks the rule, each nano_\* schema is reserved/,
     );
   });

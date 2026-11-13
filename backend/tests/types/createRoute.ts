@@ -22,7 +22,7 @@ createRoute<AppDeps>({
 
 createPluginCallbacks<AppDeps>({
   // @ts-expect-error a plugin callback receives only what the plugin injects
-  onMount: async (_oApp, { db }) => db.missing(),
+  onMount: async ({ db }) => db.missing(),
 });
 
 // Without `Deps`, the params take anything the app injects

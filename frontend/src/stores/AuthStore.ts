@@ -1,5 +1,5 @@
 import { createAuthClient } from 'better-auth/client';
-import { IS_SERVER } from '@nano-app/core/const';
+import { IS_SERVER } from '../const';
 import ApiStore from './ApiStore';
 import type { ApiResponse } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';

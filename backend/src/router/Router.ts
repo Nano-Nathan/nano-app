@@ -1,44 +1,50 @@
-import { FileLoader, Logger, Validator } from '@nano-app/core';
-import { ROUTE } from '@nano-app/core/utils/validations';
+import { FileLoader, Validator } from '@nano-app/core';
+import { MARKS } from '../const';
 import Endpoint from './Endpoint';
+import { ROUTE } from './validations';
+import type { NanoObject } from '@nano-app/core';
+import type { RouteEntry } from '../types/route';
 
-/** Turns a folder of `*.route.ts` files into Express paths and endpoints */
+/** Turns a folder of `*.route.ts` files and routes made in code into Express paths and endpoints */
 export default class Router {
   private sRoutesDir?: string;
   private sBasePath: string;
+  private oRoutes: NanoObject<RouteEntry<any>>;
 
-  constructor(sRoutesDir?: string, sBasePath?: string) {
+  constructor(sRoutesDir?: string, sBasePath?: string, oRoutes?: NanoObject<RouteEntry<any>>) {
     this.sRoutesDir = sRoutesDir;
     this.sBasePath = sBasePath ?? '';
+    this.oRoutes = oRoutes ?? {};
   }
 
-  /** Loads the routes and creates one endpoint per file */
-  public async mount(): Promise<{ path: string; endpoint: Endpoint }[]> {
-    // Without a directory there are no routes
-    if (!this.sRoutesDir) return [];
+  /** Loads the routes and creates one endpoint per route, the most specific path first */
+  public async load(): Promise<{ path: string; endpoint: Endpoint }[]> {
+    // Loads the routes of the directory, when it has one; an invalid one throws
+    const oRoutes = this.sRoutesDir
+      ? await FileLoader.findMany('route', ROUTE, this.sRoutesDir)
+      : {};
 
-    // Loads the routes of the directory; an invalid one throws
-    const oFiles = await FileLoader.findMany('route', this.sRoutesDir);
-    const oRoutes = Validator.validate(oFiles, ROUTE);
+    // Validates the routes made in code as the files
+    for (const [sPath, oRoute] of Object.entries(this.oRoutes)) {
+      oRoutes[sPath] = Validator.validate(ROUTE, oRoute, sPath);
+    }
 
-    // Create the endpoints
-    return Object.entries(oRoutes).map(
-      ([sFilePath, { expression, callbacks, public: isPublic, permissions, ...methods }]) => {
-        // Create the path of endpoints
-        const sPath = this.createPath(sFilePath, expression);
-        Logger.info(sPath);
-
-        // Create the endpoint
-        return {
-          path: sPath,
-          endpoint: new Endpoint(methods, { callbacks, public: isPublic, permissions }),
-        };
-      },
-    );
+    // Creates the endpoints; Express answers with the first path that matches
+    return Object.entries(oRoutes)
+      .map(([sFilePath, { expression = '', ...oEndpointParams }]) => ({
+        path: `${this.sBasePath}${sFilePath.replace(/\/index$/, '')}${expression}` || '/',
+        endpoint: new Endpoint(oEndpointParams),
+      }))
+      .sort((oA, oB) => Router.specificity(oA.path).localeCompare(Router.specificity(oB.path)));
   }
 
-  /** `basePath` + file path (`/index` is the folder itself) + `expression`, as Express reads them */
-  private createPath(sEndpoint: string, sExpression: string = ''): string {
-    return `${this.sBasePath}${sEndpoint.replace(/\/index$/, '')}${sExpression}` || '/';
+  /** One digit per segment: 0 static, 1 `:param`, 2 `{optional}`, 3 `*wildcard` */
+  private static specificity(sPath: string): string {
+    return sPath
+      .split('/')
+      .map(sSegment =>
+        MARKS.reduce((iRank, sMark, iIndex) => (sSegment.includes(sMark) ? iIndex + 1 : iRank), 0),
+      )
+      .join('');
   }
 }

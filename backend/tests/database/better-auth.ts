@@ -38,7 +38,7 @@ describe('Better Auth without DATABASE_URL', () => {
 });
 
 describe('without Better Auth', () => {
-  test('a route with permissions answers and warns at startup', async () => {
+  test('a route with permissions answers without checking them', async () => {
     // Boots the same plugins without Better Auth
     const oApp = await boot({ plugins: PLUGINS });
 
@@ -46,12 +46,6 @@ describe('without Better Auth', () => {
       // Checks that it answers anyway
       const { status } = await request(oApp.url, '/permissions/notes');
       assert.equal(status, 200, oApp.output());
-
-      // It warned at startup that the permissions are not checked
-      assert.match(
-        oApp.output(),
-        /\/permissions\/notes: its permissions are not checked without Better Auth/,
-      );
     } finally {
       oApp.child.kill('SIGKILL');
     }

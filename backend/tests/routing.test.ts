@@ -1,8 +1,8 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { Validator } from '@nano-app/core';
-import { ROUTE } from '@nano-app/core/utils/validations';
 import Router from '../src/router/Router';
+import { ROUTE } from '../src/router/validations';
 import { startApp, request } from './helpers';
 
 describe('file path to express path', () => {
@@ -117,14 +117,14 @@ describe('routes by file convention', () => {
     const oRouter = new Router('tests/fixtures/broken-routes');
 
     // Checks that it throws with the file and what is wrong
-    await assert.rejects(oRouter.mount(), /\/broken:\n.*expected object, received string/);
+    await assert.rejects(oRouter.load(), /\/broken:\n.*expected object, received string/);
   });
 
   test('a route whose public is not a boolean fails, naming the file', () => {
     // Checks the route of a file with a public that is not a boolean
     const oRoute = { public: 'yes', GET: () => ({}) };
     assert.throws(
-      () => Validator.validate({ '/bad': oRoute }, ROUTE),
+      () => Validator.validate(ROUTE, oRoute, '/bad'),
       /\/bad:\n.*expected boolean, received string\n.*public/,
     );
   });
@@ -132,6 +132,6 @@ describe('routes by file convention', () => {
   test('a route with a key that is not an option nor an HTTP method fails, naming the key', () => {
     // Checks the route of a file with a method nano-app does not handle
     const oRoute = { GET: () => ({}), PATCH: () => ({}) };
-    assert.throws(() => Validator.validate({ '/bad': oRoute }, ROUTE), /\/bad:\n.*"PATCH"/);
+    assert.throws(() => Validator.validate(ROUTE, oRoute, '/bad'), /\/bad:\n.*"PATCH"/);
   });
 });

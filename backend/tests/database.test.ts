@@ -2,8 +2,10 @@ import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { resolve } from 'node:path';
 import DatabaseManager from '../src/database/DatabaseManager';
+import Drizzle from '../src/database/clients/Drizzle';
 import { boot, push, request } from './helpers';
-import * as reserved from './fixtures/database/reserved';
+import * as schema from './fixtures/database/schema';
+import { relations } from './fixtures/database/reserved';
 import './database/better-auth';
 import type { Booted } from './helpers';
 
@@ -15,7 +17,7 @@ describe('database', () => {
     // The app, and a plugin of another name, with a table in nano_test
     for (const sName of ['app', 'other']) {
       await assert.rejects(
-        DatabaseManager.mount(sName, { schema: reserved }),
+        DatabaseManager.mount(new Drizzle(sName, { relations: relations })),
         /"nano_test.items" breaks the rule, each nano_\* schema is reserved/,
       );
     }
@@ -49,15 +51,11 @@ describe('PostgreSQL', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not
   let oApp: Booted;
 
   before(async () => {
-    // Starts without the tables of the app
-    await push({}, ['app_data']);
+    // What the consumer does by hand: apply their schema
+    await push(schema, ['app_data']);
 
-    // Boots with the app's schema, pushed at startup
-    oApp = await boot({
-      routesDir: `${FIXTURES}/routes`,
-      schemaModule: SCHEMA_MODULE,
-      database: { push: true },
-    });
+    // Boots with the app's schema
+    oApp = await boot({ routesDir: `${FIXTURES}/routes`, schemaModule: SCHEMA_MODULE });
 
     // Checks that it started with the client mounted
     assert.match(oApp.output(), /READY/, oApp.output());
@@ -101,7 +99,7 @@ describe('migrations', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not
     const oApp = await boot({
       routesDir: `${FIXTURES}/routes`,
       schemaModule: SCHEMA_MODULE,
-      database: { migrations: `${FIXTURES}/migrations` },
+      database: { migrate: `${FIXTURES}/migrations` },
     });
 
     try {

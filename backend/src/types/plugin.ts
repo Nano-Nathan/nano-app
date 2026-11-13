@@ -1,4 +1,5 @@
-import type { NanoObject, PluginCallbacks } from '@nano-app/core';
+import type { NanoObject } from '@nano-app/core';
+import type { PluginCallbacks, RouteEntry } from './route';
 import type { DatabaseConfig } from './database';
 
 /** Plugin configuration: a group of endpoints */
@@ -6,7 +7,9 @@ export type PluginConfig<Options = NanoObject> = {
   /** Name of the plugin, also the name of its database when it has one */
   name: string;
   /** Directory used to discover the `*.route.ts` files */
-  routesDir: string;
+  routesDir?: string;
+  /** Routes made in code, by path (`{ '/notes': createRoute({...}) }`), validated as the files */
+  routes?: NanoObject<RouteEntry<any>>;
   /** Base path prepended to every endpoint, e.g. "/auth" (no trailing slash). Defaults to none */
   basePath?: string;
   /** Drizzle schema of the plugin's database, mounted before its endpoints */
@@ -15,6 +18,12 @@ export type PluginConfig<Options = NanoObject> = {
   options?: Options;
   /** Plugin callbacks */
   callbacks?: PluginCallbacks;
+};
+
+/** Options every plugin takes, besides its own */
+export type PluginOptions = {
+  /** Base path of its endpoints, over the plugin's default */
+  basePath?: string;
 };
 
 /** What PluginManager reads: the app's plugin and the ones around it */

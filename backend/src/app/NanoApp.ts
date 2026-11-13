@@ -1,15 +1,12 @@
 import express, { type Express } from 'express';
-import morgan from 'morgan';
-import cors from 'cors';
-import helmet from 'helmet';
-import compression from 'compression';
 import 'dotenv/config';
 import { Logger } from '@nano-app/core';
 import PluginManager from '../plugins/PluginManager';
-import BetterAuth from '../auth/BetterAuth';
-import { PACKAGES, PORT, SETTINGS } from './config';
+import Auth from '../auth/Auth';
+import { PACKAGES, PORT, SETTINGS } from '../const';
 import { errorHandler, notFoundHandler } from './handlers/errors';
-import type { NanoAppConfig, PackagesConfig } from '../types/app';
+import packages from './packages';
+import type { NanoAppConfig } from '../types/app';
 
 /** Main NanoApp class */
 export default class NanoApp {
@@ -50,39 +47,24 @@ export default class NanoApp {
     }
 
     // Packages (body parsers included: they go first)
-    this.setPackages({ ...PACKAGES, ...this.oConfig.packages });
+    for (const fnPackage of packages({ ...PACKAGES, ...this.oConfig.packages })) {
+      this.oApp.use(fnPackage);
+    }
 
-    // Better Auth: its tables, its instance and its endpoints, when it is on
-    await BetterAuth.mount(this.oApp, this.oConfig.auth);
+    // Better Auth's endpoints, when it is on, then the plugins: before, the app's and after
+    const aAuth = await Auth.init(this.oConfig.auth);
+    const aPlugins = await PluginManager.build(this.oConfig);
 
-    // Plugins: the ones before the app, the app's and the ones after
-    await PluginManager.mount(this.oApp, this.oConfig);
+    // Registers their routes in order
+    for (const { path, handler } of [...aAuth, ...aPlugins]) {
+      Logger.info(path);
+      this.oApp.all(path, handler);
+    }
 
     // Unmatched requests become a 404 for the error handler
     this.oApp.use(notFoundHandler);
 
     // Error handler: always last, so it covers every package above
     this.oApp.use(errorHandler);
-  }
-
-  /** Adds the packages according to the configuration */
-  private setPackages(oConfig: PackagesConfig): void {
-    // Morgan
-    if (oConfig.morgan) {
-      for (const [sKey, fnToken] of Object.entries(oConfig.morgan.tokens ?? {})) {
-        morgan.token(sKey, fnToken);
-      }
-      this.oApp.use(morgan(oConfig.morgan.format));
-    }
-
-    // The rest in order, each only when it is on
-    const aPackages = [
-      oConfig.cors && cors(oConfig.cors),
-      oConfig.helmet && helmet(),
-      oConfig.compression && compression(),
-      oConfig.express && express.json(oConfig.express),
-      oConfig.urlencoded && express.urlencoded(oConfig.urlencoded),
-    ];
-    for (const fnPackage of aPackages) if (fnPackage) this.oApp.use(fnPackage);
   }
 }

@@ -56,8 +56,8 @@ describe('store state', () => {
 });
 
 describe('withNanoApp', () => {
-  test('the app stores reach the bundle as JSON and the Next config is kept', async () => {
-    // Runs from an app with src/stores/app.store.ts, like Next does
+  test('the app stores reach the bundle as JSON, named with _ for /, and the Next config is kept', async () => {
+    // Runs from an app with src/stores/app.store.ts and admin/users.store.ts, like Next does
     const sCwd = process.cwd();
     process.chdir(fileURLToPath(new URL('./fixtures/app', import.meta.url)));
 
@@ -67,6 +67,7 @@ describe('withNanoApp', () => {
       assert.equal(oConfig.reactStrictMode, true);
       assert.equal(oConfig.env?.API, '/api');
       assert.deepEqual(JSON.parse(oConfig.env?.[STORES_ENV] ?? ''), {
+        admin_users: { type: 'app', data: { aUsers: [] } },
         app: { type: 'app', data: { iCount: 0 } },
       });
     } finally {

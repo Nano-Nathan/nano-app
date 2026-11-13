@@ -6,6 +6,8 @@ This file holds the code guidelines. Branches, pull requests, releases and how a
 
 Before writing or showing any code, read this file again; before pushing, check the whole diff against it.
 
+Before opening a pull request, check its title against the release rules: the table of [Releases](../CONTRIBUTING.md#releases) and the `.releaserc.json` of each package it touches. The title of the squash decides whether and how each package is published.
+
 ## Clean core
 
 - **A framework for others**: every feature is general, never shaped for one app or one plugin. The consumer gets a small, easy layer (`createRoute`, `createPlugin`, one config object) and the framework does the work behind it. Convention over configuration: a file in the right folder works without registering it.
@@ -34,19 +36,20 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 
 ### Structure
 
-- The backend's `src/` folders follow its composition, `app/` → `plugins/` → `database/` and `router/`: a file imports down that chain, never up. `lib/` (the public creators) sits on top; `auth/` and `types/` serve any of them.
+- The backend's `src/` folders follow its composition, `app/` → `plugins/` → `database/` and `router/`: a file imports down that chain, never up. `lib/` (the public creators) sits on top; `auth/`, `types/` and `const.ts` serve any of them.
 - Up to 3 positional parameters; with more, one object (`DatabaseConfig`).
-- A class when there is state (`Database`, `Plugin`); `abstract class` with `static` methods for stateless utilities grouped by area (`FileReader`, `Validator`). Public API is plain functions (`createRoute`, `createPlugin`).
+- A class when there is state (`Plugin`, `Drizzle`), abstract when its subclasses fill it (`DatabaseClient`); `abstract class` with `static` methods for stateless utilities grouped by area (`FileReader`, `Validator`). Public API is plain functions (`createRoute`, `createPlugin`).
 - The function of `createController` returns its object: `callbacks` first (`onMount` reads what the view needs), then the methods. Before the `return` only `const` that read the context or the options (`const oApi = stores[store];`, a path); no functions, hooks or effects. Logic lives in the methods: one reaches another with `this` (`last() { return this.items()[0]; }`, method syntax, never an arrow), also from `onMount`. The view renders; its only hook is a `useEffect` that calls a method when a value changes (`useEffect(guard, [backend.get('/session')]);`).
 - The object of `createRoute` goes in order: its config (`expression`, `public`, `permissions`), then `callbacks`, then the handlers (`GET`, `POST`…).
-- The function of `createPlugin` returns its config: its keys first (`name`, `basePath`, `routesDir`, `options`), then `callbacks`. Before the `return` only `const` that read the options; no functions. Logic lives in the callbacks: what a callback needs is a `const` at its start (`const fnRefill = …`).
+- The function of `createPlugin` returns its config: its keys first (`name`, `basePath`, `routesDir`, `routes`, `options`), then `callbacks`. Before the `return` only `const` that read the options; no functions. Logic lives in the callbacks: what a callback needs is a `const` at its start (`const fnRefill = …`).
 - `public`, `protected` or `private` on every class method and field; constructors go without.
 - Declared functions and methods state their return type (`: Promise<void>`); inline callbacks infer it, and so does the factory of a component (`list`), from the controller it returns.
-- No `any` without a comment saying why (`// any: anything can be thrown`). Prefer `unknown` and validate.
+- Prefer `unknown` and validate over `any`.
 - Types are declared where values are born and inferred from there. Data from outside (JSON, env) gets a typed variable where it enters (`const oFiles: StoreFiles = JSON.parse(…)`).
+- `core/` holds only what two or more packages use; what one package uses lives in it. Module constants go in the `const.ts` of their package (`core/const.ts` for the shared ones). A file exports only what another file uses.
 - Types in a `types/` folder of the package, one file per area (`types/app.ts`, `types/plugin.ts`). `type`, not `interface`. `import type` for types.
 - Generic objects are `NanoObject` (`core/types/objects.ts`), with the value type when it is known (`NanoObject<Store>`), never `object` or `Record<string, …>`.
-- Files: PascalCase when they export a class (`FileLoader.ts`), lowercase otherwise (`creators.ts`, `config.ts`).
+- Files: PascalCase when they export a class (`FileLoader.ts`), lowercase otherwise (`creators.ts`, `const.ts`).
 - `export default` when a file exports one thing, also the official plugins (`import health from '@nano-app/plugins/health'`). Named exports for files that export several.
 - Imports in groups: Node built-ins with `node:` (`node:fs`), dependencies, `@nano-app/*`, relative files, then every `import type` in the same order. Optional dependencies are imported when needed (`await import('pg')`), never at the top.
 
@@ -63,7 +66,7 @@ Prefix by type on every internal name: local variables, parameters, class fields
 | `i` | number, integer or not | `iPort`, `iValue` |
 | `is` | boolean | `isEnabled`, `isPlugin` |
 
-A union with `null` or `undefined` takes the prefix of the other type (`sName?: string`). An unused parameter starts with `_` before its prefix (`_oRes`). A class kept in a variable stays PascalCase (`const Pool = …`), as `new` expects. A callback parameter whose name is passed as is to a public field has no prefix (`.then(onBeforeResult => fnMethod(oReq, { ...oParams, onBeforeResult }))`).
+A union with `null` or `undefined` takes the prefix of the other type (`sName?: string`). An unused parameter starts with `_` before its prefix (`_oRes`). A class kept in a variable stays PascalCase (`const Pool = …`), as `new` expects. A variable or callback parameter born to fill a field of the same name has no prefix, so the shorthand reads (`const db = await DatabaseManager.mount(…); { ...options, db }`, `.then(onBeforeResult => fnMethod(oReq, { ...oParams, onBeforeResult }))`).
 
 ```ts
 private static oClients: NanoObject = {};
@@ -84,7 +87,7 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 - `??` for defaults. `||` only when `0`, `''` or `NaN` must also take the default (`message || 'Internal server error'`).
 - `for...of` to iterate when nothing is returned, never `.forEach` (it does not wait for `await`). `.map`, `.filter` and `.some` when they return something.
 - `async`/`await` in general. Express handlers and middlewares chain `.then()` and return the chain: Express 5 sends a rejection to the error handler.
-- Errors: an invalid consumer file throws where it is checked (the zod schemas of `core/utils/validations.ts`) and stops the startup (or the build). No `try`/`catch` to rename or wrap an error: it reaches `NanoApp.start` as it was thrown, with its stack. The framework throws `new NanoError('…')` (`core`): Node shows it as `[nano-app] [ERROR]: …`; with a status (`new NanoError('Not found', 404)`) a handler answers it. Handlers throw a string (400), `{ status, message, warning }` or a `NanoError`.
+- Errors: an invalid consumer file throws where it is checked (the zod schemas of `backend/src/router/validations.ts` and `frontend/src/utils/validations.ts`) and stops the startup (or the build). No `try`/`catch` to rename or wrap an error: it reaches `NanoApp.start` as it was thrown, with its stack. The framework throws `new NanoError('…')` (`core`): Node shows it as `[nano-app] [ERROR]: …`; with a status (`new NanoError('Not found', 404)`) a handler answers it. Handlers throw a string (400), `{ status, message, warning }` or a `NanoError`.
 - Messages: on the console only through `Logger.error`, `Logger.warn` and `Logger.info`, never `console`; in a response through `Logger.message`. The text says the file or thing, what is wrong, and the command that fixes it (``Run `pnpm add drizzle-orm pg`.``).
 
 ### Comments and format

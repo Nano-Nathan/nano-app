@@ -4,8 +4,8 @@ import './env/controller';
 import { test, describe, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { MISSING_PROVIDER } from '@nano-app/core/const';
 import createController from '../src/creators/createController';
+import { MISSING_PROVIDER } from '../src/const';
 import TestApp from './provider';
 import type { ReactNode } from 'react';
 

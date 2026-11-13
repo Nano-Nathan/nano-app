@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/query-core';
-import { IS_SERVER } from '@nano-app/core/const';
+import { IS_SERVER } from '../const';
 import Pages from './Pages';
 import RequestStore from './RequestStore';
 import type { ApiResponse, QueryParams } from '@nano-app/core/types/api';
@@ -16,7 +16,6 @@ export default class ApiStore extends RequestStore {
   });
 
   /** Value at a path, with the query of the read that kept it */
-  // any: the value is the consumer's, unknown to the framework
   public get(sPath: string, oQuery?: QueryParams): any {
     // Gets the value at the key of the path and query
     return super.get(ApiStore.key(sPath, oQuery));
@@ -107,10 +106,10 @@ export default class ApiStore extends RequestStore {
     this.oPages[sKey] ??= new Pages(this.oClient, {
       key: [sPath, oQuery, 'more'],
       limit: oQuery.limit,
-      read: iOffset =>
+      read: offset =>
         this.request(sPath, {
           method: 'QUERY',
-          body: JSON.stringify({ ...oQuery, offset: iOffset }),
+          body: JSON.stringify({ ...oQuery, offset }),
         }),
       keep: oResponse => this.keep(oResponse, sKey),
     });

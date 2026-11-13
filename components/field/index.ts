@@ -23,7 +23,6 @@ export default function field() {
           return oApi?.read(path);
         },
       },
-      // any: the value is what the view or the format gives
       value(): any {
         // The value kept, through the field's format when it has one
         const oValue = stores.app.get(sValue);

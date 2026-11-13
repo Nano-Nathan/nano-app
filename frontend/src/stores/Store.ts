@@ -11,7 +11,6 @@ export default class Store {
   }
 
   /** Value at a path: an object comes back observable, so reading its fields stays tracked */
-  // any: the value is the consumer's, unknown to the framework
   public get(sPath: string): any {
     // Walks down the path
     return Store.keys(sPath).reduce((oValue, sKey) => oValue?.[sKey], this.oState);

@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { enableStaticRendering, observer } from 'mobx-react-lite';
-import { IS_SERVER } from '@nano-app/core/const';
+import { IS_SERVER } from '../const';
 import { useStores } from '../react/NanoAppProvider';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type {
@@ -30,9 +30,9 @@ function controller<M extends NanoObject & { callbacks?: ControllerCallbacks }>(
   return {
     // Each bound view re-renders when a path it read changes
     bindView: fnView =>
-      observer((oProps: ComponentProps) => {
+      observer((props: ComponentProps) => {
         // Gives the methods the props, the stores and the router of the app
-        const oContext = { props: oProps, stores: useStores(), router: useRouter() };
+        const oContext = { props, stores: useStores(), router: useRouter() };
         const oMethods = fnMethods(oContext);
 
         // Binds each method, so `this` reaches the others

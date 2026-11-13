@@ -1,15 +1,17 @@
 import { glob } from 'glob';
 import FileReader from './FileReader';
+import Validator from '../utils/Validator';
+import type { z } from 'zod';
 import type { NanoObject } from '../types/objects';
-import type { FindableExtension } from '../types/files';
 
 /** Finds and loads the consumer's files */
 export default abstract class FileLoader {
-  /** Finds the `*.<extension>.ts` files of a folder: `{ [subPath]: defaultExport }` */
-  public static async findMany(
-    sExtension: FindableExtension,
+  /** The `*.<extension>.ts` files of a folder by subpath, checked with a schema */
+  public static async findMany<T>(
+    sExtension: string,
+    oSchema: z.ZodType<T>,
     sSourceDir?: string,
-  ): Promise<NanoObject> {
+  ): Promise<NanoObject<T>> {
     // Resolves the paths
     const sSrcDir = (sSourceDir ?? `src/${sExtension}s`).replace(/^\.\//, '').replace(/\/$/, '');
     const aFilePaths = await glob(`${sSrcDir}/**/*.${sExtension}.{ts,js}`, {
@@ -17,16 +19,14 @@ export default abstract class FileLoader {
       ignore: '**/*.d.ts',
     });
 
-    // Loads each file, keyed by its path without the extension
-    const oEntries: NanoObject = {};
+    // Loads and validates each file, keyed by its path without the extension
+    const oEntries: NanoObject<T> = {};
     for (const sFilePath of aFilePaths) {
-      const sFileSubPath = sFilePath
+      const sKey = sFilePath
         .slice(sSrcDir.length)
         .replace(new RegExp(`\\.${sExtension}\\.(ts|js)$`), '');
-      // Stores use `_` for `/` (`src/stores/admin/users.store.ts` → `admin_users`)
-      const sKey =
-        sExtension === 'store' ? sFileSubPath.slice(1).replaceAll('/', '_') : sFileSubPath;
-      oEntries[sKey] = await FileReader.loadModule(sFilePath, { default: true });
+      const oFile = await FileReader.loadModule(sFilePath, { default: true });
+      oEntries[sKey] = Validator.validate(oSchema, oFile, sKey);
     }
 
     return oEntries;

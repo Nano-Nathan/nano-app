@@ -1,9 +1,8 @@
 import NanoApp from '../app/NanoApp';
-import type { NanoObject, PluginCallbacks, RouteEntry } from '@nano-app/core';
+import type { NanoObject } from '@nano-app/core';
 import type { NanoAppConfig } from '../types/app';
-import type { PluginConfig } from '../types/plugin';
-
-// any: without `Deps`, what the app injects is unknown to the framework
+import type { PluginConfig, PluginOptions } from '../types/plugin';
+import type { PluginCallbacks, RouteEntry } from '../types/route';
 
 /** Creates a new NanoApp instance */
 export function createNanoApp(oConfig?: NanoAppConfig): NanoApp {
@@ -17,8 +16,14 @@ export function createRoute<Deps = NanoObject<any>>(oRoute: RouteEntry<Deps>): R
 
 /** Creates a plugin: a function of the plugin's own options that returns its configuration. */
 type Creator<Options> = (options?: Options) => PluginConfig<Options>;
-export function createPlugin<Options>(fnCreator: Creator<Options>): Creator<Options> {
-  return fnCreator;
+export function createPlugin<Options extends NanoObject = NanoObject>(
+  fnCreator: Creator<Options>,
+): (options?: Options & PluginOptions) => PluginConfig<Options> {
+  return options => {
+    // The consumer's basePath over the plugin's
+    const oConfig = fnCreator(options);
+    return { ...oConfig, basePath: options?.basePath ?? oConfig.basePath };
+  };
 }
 
 /** Creates the callbacks of a plugin, typed with what it injects in its params. */

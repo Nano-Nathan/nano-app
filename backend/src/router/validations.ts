@@ -1,10 +1,5 @@
 import { z } from 'zod';
-import { API_STORE_TYPE, APP_STORE_TYPE, DEFAULT_REDIRECT } from '../const';
-import Paths from './Paths';
-import type { Callback, CallbackMethod, Handler, RouteEntry } from '../types/objects';
-import type { StoreFile } from '../types/store';
-
-// any: what the app injects in its params is unknown
+import type { Callback, CallbackMethod, Handler, RouteEntry } from '../types/route';
 
 /** A function of the consumer, typed as what the framework calls */
 function callable<T>(): z.ZodType<T> {
@@ -46,32 +41,3 @@ export const ROUTE: z.ZodType<RouteEntry> = z
   .refine(({ GET, POST, PUT, DELETE, QUERY }) => GET ?? POST ?? PUT ?? DELETE ?? QUERY, {
     error: 'It defines no HTTP method',
   });
-
-/** A path of the app, starting with `/` */
-const PATH = z.string().startsWith('/');
-
-/** A `*.store.ts` file: its type, its initial state, the headers of its proxy and Better Auth */
-export const STORE: z.ZodType<StoreFile> = z.object({
-  type: z.enum([APP_STORE_TYPE, API_STORE_TYPE]),
-  data: z.record(z.string(), z.any()).optional(),
-  headers: z.record(z.string(), z.string()).optional(),
-  auth: z
-    .object({
-      path: z.string(),
-      routes: z
-        .array(
-          z
-            .object({
-              match: PATH,
-              redirect: PATH.optional(),
-              roles: z.string().optional(),
-              permissions: z.record(z.string(), z.string()).optional(),
-            })
-            .refine(({ match, redirect }) => !Paths.matches(match, redirect ?? DEFAULT_REDIRECT), {
-              error: 'Its "redirect" must be outside its "match"',
-            }),
-        )
-        .optional(),
-    })
-    .optional(),
-});

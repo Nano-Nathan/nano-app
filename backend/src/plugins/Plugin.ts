@@ -1,7 +1,8 @@
 import Router from '../router/Router';
-import BetterAuth from '../auth/BetterAuth';
 import DatabaseManager from '../database/DatabaseManager';
-import type { Express } from 'express';
+import Drizzle from '../database/clients/Drizzle';
+import type DatabaseClient from '../database/clients/DatabaseClient';
+import type { Mount } from '../types/app';
 import type { PluginConfig } from '../types/plugin';
 
 /** A group of routes, with its options, callbacks and database */
@@ -13,23 +14,26 @@ export default class Plugin {
     this.oConfig = oConfig;
   }
 
-  /** Mounts its endpoints on express app */
-  public async mount(oApp: Express): Promise<void> {
-    const { name, routesDir, basePath, database, options, callbacks } = this.oConfig;
+  /** Its endpoints, the most specific path first, for NanoApp to register */
+  public async build(oAppDB?: DatabaseClient): Promise<Mount[]> {
+    const { name, routesDir, routes, basePath, database, options, callbacks } = this.oConfig;
 
     // The Drizzle client of its database; without one, the app's
-    const oDb = await DatabaseManager.mount(name, database);
+    const db = await DatabaseManager.mount(database ? new Drizzle(name, database) : oAppDB);
 
     // What every callback and handler receives, read-only
-    const oParams = Object.freeze({ ...options, db: oDb, auth: BetterAuth.instance() });
+    const oParams = Object.freeze({ ...options, db });
 
-    // Plugin setup with the app, before any of its endpoints
-    await callbacks?.onMount?.(oApp, oParams);
+    // Its setup, before any of its endpoints
+    await callbacks?.onMount?.(oParams);
 
-    // Append the handlers
-    const oRouter = new Router(routesDir, basePath);
-    for (const { path, endpoint } of await oRouter.mount()) {
-      oApp.all(path, await endpoint.mount(oParams, path));
-    }
+    // Its endpoints, the most specific path first
+    const aRoutes = await new Router(routesDir, basePath, routes).load();
+    return Promise.all(
+      aRoutes.map(async ({ path, endpoint }) => ({
+        path,
+        handler: await endpoint.init(oParams),
+      })),
+    );
   }
 }
