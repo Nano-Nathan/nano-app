@@ -3,10 +3,10 @@
   "tagFormat": "plugins-v${version}",
   "plugins": [
     ["@semantic-release/commit-analyzer", {
-      "preset": "angular",
+      "preset": "conventionalcommits",
       "releaseRules": [{ "breaking": true, "release": "minor" }]
     }],
-    "@semantic-release/release-notes-generator",
+    ["@semantic-release/release-notes-generator", { "preset": "conventionalcommits" }],
     "@semantic-release/npm",
     ["@semantic-release/github", { "successCommentCondition": false, "failCommentCondition": false, "releasedLabels": false }]
   ]
