@@ -30,8 +30,8 @@ Public API, comments, and these files are English: `README.md` and the README of
 1. Branch from `main`: `feat/<topic>`, `fix/<topic>`, `refactor/<topic>`, `docs/<topic>`.
 2. Keep the change focused.
 3. Run `pnpm test`. If you touch the build, run `pnpm build`. Both run every package; `pnpm --filter <package>` runs one.
-4. Open the pull request to `main`. Its title must be a [Conventional Commit](https://www.conventionalcommits.org/) (`feat: add X`, `fix: Y`): the merge squashes the branch into one commit with that title, and the title decides the release (see [Releases](#releases)).
-5. Describe why the change exists. A linked issue helps.
+4. Open the pull request to `main`. Its title must be a [Conventional Commit](https://www.conventionalcommits.org/) (`feat: add X`, `fix: Y`), without `!`: the merge squashes the branch into one commit whose message is the title and the description of the pull request, and that message decides the release (see [Releases](#releases)).
+5. Describe why the change exists. A linked issue helps. A breaking change ends the description with a `BREAKING CHANGE: <what breaks>` line.
 
 Each development (a feature, a fix, a refactor) is one branch and one pull request to `main`. Only a feature the maintainer decides to split, because it is too large for one review, is built in modules:
 
@@ -76,14 +76,17 @@ Each published package has its own version, its own tags and its own publish wor
 | `@nano-app/frontend` | `frontend/`, `core/` | `frontend-vX.Y.Z` | `publish-frontend.yml` |
 | `@nano-app/components` | `components/`, `core/` | `components-vX.Y.Z` | `publish-components.yml` |
 
-[semantic-release](https://github.com/semantic-release/semantic-release) reads the commits since the package's last tag and publishes it only when one of them is a [Conventional Commit](https://www.conventionalcommits.org/) that asks for it. It reads every commit since that tag, also the ones that touched only another package:
+[semantic-release](https://github.com/semantic-release/semantic-release) reads the commits since the package's last tag, with the `angular` preset of each `.releaserc.json`, and publishes it only when one of them asks for it. It reads every commit since that tag, also the ones that touched only another package:
 
 | Commit | Release |
 |---|---|
-| `fix: …` | patch (`0.7.0` → `0.7.1`) |
-| `feat: …` | minor (`0.7.0` → `0.8.0`) |
-| `feat!: …` or a `BREAKING CHANGE:` footer | minor while the version is `0.x` |
-| Any other message | none |
+| `fix: …`, `fix(<scope>): …` | patch (`0.7.0` → `0.7.1`) |
+| `feat: …`, `feat(<scope>): …` | minor (`0.7.0` → `0.8.0`) |
+| A `BREAKING CHANGE:` line in the description | minor while the version is `0.x` |
+| A `!` after the type (`feat!: …`) | none: the `angular` preset does not read it, so the whole commit is ignored |
+| Any other message (`refactor:`, `docs:`, `chore:`…) | none |
+
+A merge that touches only files outside the packages (the root `package.json`, `.github/`, the docs) runs no publish workflow: its commit is published with the next merge that touches the package.
 
 The version lives in the git tags and on npm. Each `package.json` keeps a placeholder, and the release notes are the [GitHub Releases](https://github.com/Nano-Nathan/nano-app/releases). Do not publish from your machine.
 

@@ -6,7 +6,11 @@ This file holds the code guidelines. Branches, pull requests, releases and how a
 
 Before writing or showing any code, read this file again; before pushing, check the whole diff against it.
 
-Before opening a pull request, check its title against the release rules: the table of [Releases](../CONTRIBUTING.md#releases) and the `.releaserc.json` of each package it touches. The title of the squash decides whether and how each package is published.
+Before opening a pull request, read [Pull requests](../CONTRIBUTING.md#pull-requests) and [Releases](../CONTRIBUTING.md#releases): the squash commit is its title and description, and it decides whether each package is published.
+
+- The title is `feat:` (minor) or `fix:` (patch) when a package must be published, another type when not. Never a `!` after the type: the `angular` preset ignores the whole commit.
+- A breaking change ends the description with `BREAKING CHANGE: <what breaks>`.
+- Only a merge that touches a package's paths (`backend/`, `core/`, `plugins/`, `frontend/`, `components/`) runs its publish workflow.
 
 ## Clean core
 
