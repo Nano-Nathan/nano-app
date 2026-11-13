@@ -1,7 +1,5 @@
 import type { NanoObject } from './objects';
 
-// any: `T` is the consumer's result, unknown to the framework
-
 /** API response */
 export type ApiResponse<T = any> = {
   status?: number;

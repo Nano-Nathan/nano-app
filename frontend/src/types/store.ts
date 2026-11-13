@@ -24,7 +24,6 @@ export type PagesConfig = {
 };
 
 /** Stores of a React tree by name: a `Store` per `app` file, an `ApiStore` per `api` file */
-// any: each store is a `Store` or an `ApiStore` by its file
 export type Stores = NanoObject<any> & { [APP_NAME]: Store };
 
 /** A route of `auth.routes` as the proxy keeps it, ready to ask Better Auth */

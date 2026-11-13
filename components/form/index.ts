@@ -32,7 +32,6 @@ export default function form(oOptions: FormOptions) {
           return createElement(fnView, { key: oField.name, form: name, field: oField });
         });
       },
-      // any: what the onSubmit of the props returns
       submit(oEvent: SubmitEvent<HTMLFormElement>): any {
         // Stops the browser's submit
         oEvent.preventDefault();
