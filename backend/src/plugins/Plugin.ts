@@ -1,5 +1,6 @@
 import Router from '../router/Router';
 import DatabaseManager from '../database/DatabaseManager';
+import Drizzle from '../database/clients/Drizzle';
 import type { Mount } from '../types/app';
 import type { PluginConfig } from '../types/plugin';
 
@@ -17,7 +18,7 @@ export default class Plugin {
     const { name, routesDir, basePath, database, options, callbacks } = this.oConfig;
 
     // The Drizzle client of its database; without one, the app's
-    const oDb = await DatabaseManager.mount(name, database);
+    const oDb = await DatabaseManager.mount(database && new Drizzle(name, database));
 
     // What every callback and handler receives, read-only
     const oParams = Object.freeze({ ...options, db: oDb });

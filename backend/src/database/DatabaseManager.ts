@@ -1,7 +1,7 @@
 import { Logger, NanoError, Validator } from '@nano-app/core';
-import Drizzle from './clients/Drizzle';
 import type { Pool } from 'pg';
-import type { DatabaseClient, DatabaseConfig } from '../types/database';
+import type DatabaseClient from './clients/DatabaseClient';
+import type { DatabaseOptions } from '../types/database';
 
 /** Key of the Postgres lock that lets one startup change the database at a time */
 const LOCK = 7_310_002;
@@ -9,18 +9,18 @@ const LOCK = 7_310_002;
 /** The databases of the app and its plugins: the pool of `DATABASE_URL`, its lock and one client per config */
 export default abstract class DatabaseManager {
   private static oPool: Pool;
-  private static oClients = new Map<DatabaseConfig, Promise<any>>();
+  private static oClients = new Map<DatabaseOptions, Promise<any>>();
 
-  /** Mounts a database once, named as its plugin, and gives its client; undefined without a config */
-  public static async mount(sName: string, oConfig?: DatabaseConfig): Promise<any> {
-    // Without a config there is no database: no client
-    if (!oConfig) return undefined;
+  /** Mounts a database once, whatever its client, and gives its client; undefined without one */
+  public static async mount(oDB?: DatabaseClient): Promise<any> {
+    // Without a client there is no database
+    if (!oDB) return undefined;
 
     // One client per config: the plugins on the app's config share its client
-    return this.getClient(sName, oConfig);
+    return this.getClient(oDB);
   }
 
-  /** The pool of `DATABASE_URL`, shared by every client and Better Auth, created on the first call */
+  /** The pool of `DATABASE_URL`, shared by every client, created on the first call */
   private static async pool(): Promise<Pool> {
     // Checks the URL of the database
     const sUrl = process.env.DATABASE_URL;
@@ -35,15 +35,15 @@ export default abstract class DatabaseManager {
   }
 
   /** Creates the client of a database on the shared pool, with the lock for its changes */
-  private static async getClient(sName: string, oConfig: DatabaseConfig): Promise<any> {
+  private static async getClient(oDB: DatabaseClient): Promise<any> {
+    const { sName, oConfig } = oDB;
     const oClient = this.oClients.get(oConfig);
     if (oClient !== undefined) return oClient;
 
     // The pool, created by the first database
     await this.pool();
 
-    // Its tables follow the nano_* rule, then its client: how it is made is up to Drizzle
-    const oDB: DatabaseClient = new Drizzle(sName, oConfig);
+    // Its tables follow the nano_* rule, then its client: how it is made is up to it
     Validator.checkTables(sName, await oDB.tables());
     const oDBClient = await oDB.connect(this.oPool);
 

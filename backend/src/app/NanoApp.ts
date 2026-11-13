@@ -5,6 +5,7 @@ import { APP_NAME } from '@nano-app/core/const';
 import PluginManager from '../plugins/PluginManager';
 import BetterAuth from '../auth/BetterAuth';
 import DatabaseManager from '../database/DatabaseManager';
+import Drizzle from '../database/clients/Drizzle';
 import { PACKAGES, PORT, SETTINGS } from './config';
 import { errorHandler, notFoundHandler } from './handlers/errors';
 import packages from './packages';
@@ -54,7 +55,8 @@ export default class NanoApp {
     }
 
     // The database of the app first, named as it: the plugins without their own share it
-    await DatabaseManager.mount(APP_NAME, this.oConfig.database);
+    const { database } = this.oConfig;
+    await DatabaseManager.mount(database && new Drizzle(APP_NAME, database));
 
     // Better Auth's endpoints, when it is on, then the plugins: before, the app's and after
     const aAuth = await BetterAuth.init(this.oConfig.auth);

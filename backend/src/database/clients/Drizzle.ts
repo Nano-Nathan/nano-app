@@ -1,19 +1,12 @@
 import { NanoError, Validator } from '@nano-app/core';
+import DatabaseClient from './DatabaseClient';
 import type { Pool } from 'pg';
 import type { DatabaseTable } from '@nano-app/core';
-import type { DatabaseClient, DatabaseConfig } from '../../types/database';
+import type { DatabaseConfig } from '../../types/database';
 
 /** Drizzle client of the app or of a plugin: its tables, its client and its changes */
-export default class Drizzle implements DatabaseClient {
-  private sName: string;
-  private oConfig: DatabaseConfig;
+export default class Drizzle extends DatabaseClient<DatabaseConfig> {
   private oClient: any;
-
-  /** Creates a new Drizzle instance */
-  constructor(sName: string, oConfig: DatabaseConfig) {
-    this.sName = sName;
-    this.oConfig = oConfig;
-  }
 
   /** The Postgres schema and name of each of its tables, from Drizzle's metadata */
   public async tables(): Promise<DatabaseTable[]> {
