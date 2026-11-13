@@ -4,7 +4,7 @@ import type { Request, RequestHandler } from 'express';
 import type { ApiPromise, NanoObject } from '@nano-app/core';
 import type { Callbacks, EndpointParams, MethodEntry, Params } from '../types/route';
 
-/** Base class for all endpoints */
+/** A route: its methods, its access and its callbacks */
 export default class Endpoint {
   private oMethods: NanoObject<MethodEntry>;
   private oCallbacks: Callbacks;

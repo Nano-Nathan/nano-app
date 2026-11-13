@@ -9,7 +9,7 @@ import type { NanoObject } from '@nano-app/core';
 import type { Mount } from '../types/app';
 import type { AuthOptions } from '../types/auth';
 
-/** Better Auth of the app: its tables in `nano_auth`, its endpoints and the session of a request */
+/** Better Auth of the app: its tables in `nano_auth`, its endpoints and the access of each request */
 export default abstract class Auth {
   private static oAuth?: BetterAuthInstance<any>;
   private static fnHeaders?: (oHeaders: IncomingHttpHeaders) => Headers;

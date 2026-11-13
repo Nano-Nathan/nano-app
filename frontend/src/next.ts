@@ -11,10 +11,10 @@ import type { NextConfig } from 'next';
  */
 export function withNanoApp(oNextConfig: NextConfig = {}): () => Promise<NextConfig> {
   return async () => {
-    // Finds, names and validates the app's `src/stores/**/*.store.ts`
+    // Finds and validates the app's `src/stores/**/*.store.ts`
     const oFiles = await FileLoader.findMany('store', STORE);
 
-    // Names each by its path, `_` for `/` (`admin/users.store.ts` → `admin_users`)
+    // Names each by its path, `_` for `/`
     const oStores = Object.fromEntries(
       Object.entries(oFiles).map(([sPath, oStore]) => [
         sPath.slice(1).replaceAll('/', '_'),

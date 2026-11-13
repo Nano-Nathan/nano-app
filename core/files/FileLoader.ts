@@ -6,7 +6,7 @@ import type { NanoObject } from '../types/objects';
 
 /** Finds and loads the consumer's files */
 export default abstract class FileLoader {
-  /** Finds and validates the `*.<extension>.ts` files of a folder: `{ [subPath]: defaultExport }` */
+  /** The `*.<extension>.ts` files of a folder by subpath, checked with a schema */
   public static async findMany<T>(
     sExtension: string,
     oSchema: z.ZodType<T>,

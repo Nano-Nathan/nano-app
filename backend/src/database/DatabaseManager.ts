@@ -14,7 +14,7 @@ export default abstract class DatabaseManager {
     // Without a client there is no database
     if (!oDB) return undefined;
 
-    // One client per config: the plugins on the app's config share its client
+    // One client per config: the plugins without their own share the app's
     return this.getClient(oDB);
   }
 

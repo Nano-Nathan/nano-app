@@ -6,7 +6,7 @@ import type { PluginManagerConfig } from '../types/plugin';
 
 /** The plugins of the app: its own, the ones before it and the ones after it */
 export default abstract class PluginManager {
-  /** The middlewares and endpoints of every plugin, in order: before, the app's, after */
+  /** The endpoints of every plugin, in order: before, the app's, after */
   public static async build(oConfig: PluginManagerConfig): Promise<Mount[]> {
     const { routesDir = 'src/routes', database, plugins } = oConfig;
 
