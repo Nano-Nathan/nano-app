@@ -1,6 +1,8 @@
 import { z } from 'zod';
+import { APP_NAME } from '../const';
 import NanoError from './NanoError';
 import { ROUTE, STORE } from './validations';
+import type { DatabaseTable } from '../types/database';
 import type { NanoObject } from '../types/objects';
 import type { FileEntries, FindableExtension } from '../types/files';
 
@@ -28,5 +30,18 @@ export default abstract class Validator {
     if (!oResult.success) throw new NanoError(`${sKey}:\n${z.prettifyError(oResult.error)}`);
 
     return oResult.data;
+  }
+
+  /** Checks the tables of a database: a nano_* schema only for the plugin of its name */
+  public static checkTables(sName: string, aTables: DatabaseTable[]): void {
+    // Fails on a table in the nano_* schema of another plugin
+    const sOwn = sName === APP_NAME ? undefined : `nano_${sName}`;
+    for (const { schema, name } of aTables) {
+      if (schema.startsWith('nano_') && schema !== sOwn) {
+        throw new NanoError(
+          `The database "${sName}": table "${schema}.${name}" breaks the rule, each nano_* schema is reserved for the plugin of its name.`,
+        );
+      }
+    }
   }
 }

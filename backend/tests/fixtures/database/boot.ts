@@ -1,3 +1,4 @@
+import { defineRelations } from 'drizzle-orm';
 import { createNanoApp } from '../../../src';
 import type { NanoObject } from '@nano-app/core';
 
@@ -7,10 +8,9 @@ const { schemaModule, authModule, ...oConfig }: NanoObject = JSON.parse(
   process.env.NANO_TEST_CONFIG ?? '{}',
 );
 
-// The app's Drizzle schema and its Better Auth options, from the modules the test names
-const oDatabase = schemaModule
-  ? { database: { ...oConfig.database, schema: await import(schemaModule) } }
-  : {};
+// The relations of the app's Drizzle schema and its Better Auth options, from the modules the test names
+const oRelations = schemaModule ? { relations: defineRelations(await import(schemaModule)) } : {};
+const oDatabase = schemaModule ? { database: { ...oConfig.database, ...oRelations } } : {};
 const oAuth = authModule ? { auth: (await import(authModule)).default } : {};
 
 createNanoApp({
