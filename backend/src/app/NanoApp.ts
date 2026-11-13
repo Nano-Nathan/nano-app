@@ -1,11 +1,8 @@
 import express, { type Express } from 'express';
 import 'dotenv/config';
 import { Logger } from '@nano-app/core';
-import { APP_NAME } from '@nano-app/core/const';
 import PluginManager from '../plugins/PluginManager';
 import Auth from '../auth/Auth';
-import DatabaseManager from '../database/DatabaseManager';
-import Drizzle from '../database/clients/Drizzle';
 import { PACKAGES, PORT, SETTINGS } from './config';
 import { errorHandler, notFoundHandler } from './handlers/errors';
 import packages from './packages';
@@ -53,10 +50,6 @@ export default class NanoApp {
     for (const fnPackage of packages({ ...PACKAGES, ...this.oConfig.packages })) {
       this.oApp.use(fnPackage);
     }
-
-    // The database of the app first, named as it: the plugins without their own share it
-    const { database } = this.oConfig;
-    await DatabaseManager.mount(database && new Drizzle(APP_NAME, database));
 
     // Better Auth's endpoints, when it is on, then the plugins: before, the app's and after
     const aAuth = await Auth.init(this.oConfig.auth);

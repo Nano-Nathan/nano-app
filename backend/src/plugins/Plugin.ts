@@ -1,6 +1,7 @@
 import Router from '../router/Router';
 import DatabaseManager from '../database/DatabaseManager';
 import Drizzle from '../database/clients/Drizzle';
+import type DatabaseClient from '../database/clients/DatabaseClient';
 import type { Mount } from '../types/app';
 import type { PluginConfig } from '../types/plugin';
 
@@ -14,14 +15,14 @@ export default class Plugin {
   }
 
   /** Its endpoints, the most specific path first, for NanoApp to register */
-  public async build(): Promise<Mount[]> {
+  public async build(oAppDB?: DatabaseClient): Promise<Mount[]> {
     const { name, routesDir, routes, basePath, database, options, callbacks } = this.oConfig;
 
     // The Drizzle client of its database; without one, the app's
-    const oDb = await DatabaseManager.mount(database && new Drizzle(name, database));
+    const db = await DatabaseManager.mount(database ? new Drizzle(name, database) : oAppDB);
 
     // What every callback and handler receives, read-only
-    const oParams = Object.freeze({ ...options, db: oDb });
+    const oParams = Object.freeze({ ...options, db });
 
     // Its setup, before any of its endpoints
     await callbacks?.onMount?.(oParams);
