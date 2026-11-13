@@ -16,7 +16,7 @@ export function createRoute<Deps = NanoObject<any>>(oRoute: RouteEntry<Deps>): R
 
 /** Creates a plugin: a function of the plugin's own options that returns its configuration. */
 type Creator<Options> = (options?: Options) => PluginConfig<Options>;
-export function createPlugin<Options>(
+export function createPlugin<Options extends NanoObject = NanoObject>(
   fnCreator: Creator<Options>,
 ): (options?: Options & PluginOptions) => PluginConfig<Options> {
   return options => {
