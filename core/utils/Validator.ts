@@ -32,10 +32,15 @@ export default abstract class Validator {
     return oResult.data;
   }
 
+  /** The nano_* schema reserved for a plugin; the app has none */
+  public static reservedSchema(sName: string): string | undefined {
+    return sName === APP_NAME ? undefined : `nano_${sName}`;
+  }
+
   /** Checks the tables of a database: a nano_* schema only for the plugin of its name */
   public static checkTables(sName: string, aTables: DatabaseTable[]): void {
     // Fails on a table in the nano_* schema of another plugin
-    const sOwn = sName === APP_NAME ? undefined : `nano_${sName}`;
+    const sOwn = this.reservedSchema(sName);
     for (const { schema, name } of aTables) {
       if (schema.startsWith('nano_') && schema !== sOwn) {
         throw new NanoError(

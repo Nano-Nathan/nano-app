@@ -1,4 +1,4 @@
-import { NanoError } from '@nano-app/core';
+import { NanoError, Validator } from '@nano-app/core';
 import type { Pool } from 'pg';
 import type { DatabaseTable } from '@nano-app/core';
 import type { DatabaseClient, DatabaseConfig } from '../../types/database';
@@ -43,11 +43,16 @@ export default class Drizzle implements DatabaseClient {
     return this.oClient;
   }
 
-  /** Applies the pending migrations of a folder */
+  /** Applies the pending migrations of a folder, recorded in its own nano_* schema */
   public async migrate(sFolder: string): Promise<void> {
     // Drizzle's migrator: imported only when a database has migrations
     const { migrate } = await import('drizzle-orm/node-postgres/migrator');
-    await migrate(this.oClient, { migrationsFolder: sFolder });
+
+    // A plugin records them in its nano_* schema; the app, in Drizzle's default
+    await migrate(this.oClient, {
+      migrationsFolder: sFolder,
+      migrationsSchema: Validator.reservedSchema(this.sName),
+    });
   }
 
   /** Pushes its tables to their Postgres schemas, failing when it would lose data */
