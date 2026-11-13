@@ -85,7 +85,7 @@ Every option is optional.
 | `settings` | `{ "trust proxy": <private networks> }` | Values for `app.set()`: see [Client IP](#client-ip). |
 | `packages` | see below | Framework base middlewares. |
 | `routesDir` | `"src/routes"` | Folder of your routes, relative to `cwd`. |
-| `database` | none | Your Drizzle schema: see [Database](#database). |
+| `database` | none | Your Drizzle relations and how its tables are applied: see [Database](#database). |
 | `auth` | none | Better Auth options: see [Better Auth](#better-auth). |
 | `plugins` | `{}` | Plugins mounted `before` and `after` your routes, in order: see [Plugins](#plugins). |
 
@@ -118,7 +118,7 @@ By default the backend reads that header only when the request comes from loopba
 
 ## Database
 
-Off until the app passes its schema: nano-app creates a [Drizzle](https://orm.drizzle.team) client of it on `DATABASE_URL` and passes it to your handlers as `db`. It changes your tables only when you ask: `push` or `migrations`. Without them, applying the schema (`drizzle-kit push`, `drizzle-kit generate` and `migrate`) is up to you.
+Off until the app passes its relations: nano-app creates a [Drizzle](https://orm.drizzle.team) client of them on `DATABASE_URL` and passes it to your handlers as `db`. It changes your tables only when you ask: `push` or `migrate`. Without them, applying the schema (`drizzle-kit push`, `drizzle-kit generate` and `migrate`) is up to you.
 
 ```bash
 pnpm add drizzle-orm pg
@@ -137,10 +137,11 @@ export const users = pgTable('users', {
 
 ```ts
 // src/app.ts — DATABASE_URL comes from the environment (or a .env file)
+import { defineRelations } from 'drizzle-orm';
 import { createNanoApp } from '@nano-app/backend';
 import * as schema from './db/schema';
 
-createNanoApp({ database: { schema } });
+createNanoApp({ database: { relations: defineRelations(schema) } });
 ```
 
 ```ts
@@ -152,9 +153,10 @@ export default createRoute({
 });
 ```
 
-- `database.schema` is the module of your tables: every export that is a table, and `relations` (from `defineRelations`) when you relate them. A `pgSchema` the tables use is exported too, so drizzle-kit creates it.
-- `database.push: true` applies the schema at startup with drizzle-kit's push (`pnpm add drizzle-kit`), only to the Postgres schemas of its tables. A change that would lose data stops the startup.
-- `database.migrations` is the folder `drizzle-kit generate` writes: its pending migrations are applied at startup. A database uses one of the two, `push` or `migrations`, never both.
+- `database.relations` is what `defineRelations` gives of your tables, with their relations when you relate them. A `pgSchema` the tables use is exported from the module too, so drizzle-kit creates it. The rest of `database` goes to Drizzle as its options.
+- `database.push: true` applies the tables at startup with drizzle-kit's push (`pnpm add drizzle-kit`), only to the Postgres schemas they use. A change that would lose data stops the startup.
+- `database.migrate` is the folder `drizzle-kit generate` writes: its pending migrations are applied at startup. With both, the migrations run first, then the push.
+- One startup at a time changes the database: a Postgres lock covers the migrations and the push of every database, across replicas.
 - One pool serves the app, Better Auth and every plugin with a database. It connects on its first query: a missing table fails that query, not the startup.
 - Startup fails if `DATABASE_URL` is missing.
 - Each `nano_*` Postgres schema is reserved for the plugin of its name (`nano_auth` for Better Auth): a table of yours in one fails the startup.
@@ -177,7 +179,8 @@ createNanoApp({ auth: { emailAndPassword: { enabled: true } } });
 ```
 
 - It uses the pool of `DATABASE_URL`, with or without a database of the app: startup fails if it is missing.
-- Its tables live in the Postgres schema `nano_auth`. nano-app creates them at startup with Better Auth's migrations, and adds what new options need; it never drops anything.
+- Its tables live in the Postgres schema `nano_auth`, and Better Auth decides them from its options (plugins, `user.additionalFields`).
+- `auth.database` says how they are applied at startup, `{ push: true }` by default: `push` creates them with Better Auth's migrations and adds what new options need, never dropping anything; `migrate` is a folder of Drizzle migrations of them (`npx auth generate --adapter drizzle`, then `drizzle-kit generate`), applied in `nano_auth`.
 - Its endpoints are mounted before your routes, at its `basePath` (default `/api/auth`), and stay public.
 - In production, Better Auth limits sign-in, sign-up and password reset to a few attempts per client IP (its `rateLimit`): see [Client IP](#client-ip).
 - With it on, every route of the app and of every plugin needs a session: without one it answers 401 `Not authenticated`.
@@ -214,9 +217,9 @@ import { createPlugin } from '@nano-app/backend';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export default createPlugin((options?: { basePath?: string }) => ({
+export default createPlugin(() => ({
   name: 'hello',
-  basePath: options?.basePath ?? '/hello',
+  basePath: '/hello',
   routesDir: resolve(dirname(fileURLToPath(import.meta.url)), 'routes'),
 }));
 ```
@@ -246,7 +249,7 @@ routes: Object.fromEntries(
 ),
 ```
 
-`createPlugin` types the options of that plugin. Each plugin chooses its base path; the app chooses whether it mounts `before` or `after` its routes. What the plugin puts in `options` reaches every callback and handler of its routes in `params`.
+`createPlugin` types the options of that plugin, and adds `basePath` to them: each plugin chooses its default, and the app moves it with `hello({ basePath: '/hi' })`. The app also chooses whether it mounts `before` or `after` its routes: a route of a `before` plugin takes its path from the app's routes, and an `after` plugin only gets what they leave. What the plugin puts in `options` reaches every callback and handler of its routes in `params`.
 
 ### Callbacks
 
@@ -262,7 +265,7 @@ The endpoints of one plugin have no guaranteed order: one route's `onInit` must 
 
 Everything is mounted on one Express application, in this order: base middlewares → Better Auth → `before` plugins → your routes → `after` plugins → 404 → error handler.
 
-A plugin with a database passes its own `database` (`schema`, `push`, `migrations`, as the app's). Only it may keep tables in the Postgres schema `nano_<its name>`: a table in the `nano_*` schema of another fails the startup. Without a database of its own, a plugin receives the app's `db`. See [`@nano-app/plugins`](https://github.com/Nano-Nathan/nano-app/blob/main/plugins/README.md#database).
+A plugin with a database passes its own `database` (`relations`, `push`, `migrate`, as the app's). Only it may keep tables in the Postgres schema `nano_<its name>`: a table in the `nano_*` schema of another fails the startup. Without a database of its own, a plugin receives the app's `db`. See [`@nano-app/plugins`](https://github.com/Nano-Nathan/nano-app/blob/main/plugins/README.md#database).
 
 ## Errors
 
