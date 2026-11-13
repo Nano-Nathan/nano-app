@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createInsertSchema } from 'drizzle-orm/zod';
 import { z } from 'zod';
 import DatabaseManager from '../../backend/src/database/DatabaseManager';
+import Drizzle from '../../backend/src/database/clients/Drizzle';
 import { push, request, startApp } from '../../backend/tests/helpers';
 import * as schema from '../../backend/tests/fixtures/database/crud';
 import crud from '../crud';
@@ -28,25 +29,29 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
   let oServer: Awaited<ReturnType<typeof startApp>>;
   let sCommentId: string;
   let iNoteId: number;
+  let oDb: any;
 
   before(async () => {
     // What the consumer does by hand: apply their schema
     await push(schema, ['crud_test']);
 
     // Mounts the app's database, then the plugin after it
-    const oDb = await DatabaseManager.mount('app', { schema });
+    const oAppDB = new Drizzle('app', { relations: schema.relations });
+    oDb = await DatabaseManager.mount(oAppDB);
     // The app checks the comments: what a `POST` sends, and how many a `QUERY` asks for
     const oValidation = {
       create: createInsertSchema(schema.comment),
       read: z.looseObject({ limit: z.number().max(50).optional() }),
     };
-    oServer = await startApp([
-      crud({
-        models: ['note', 'comment'],
-        dbSchema: schema,
-        validations: { comment: oValidation },
-      }),
-    ]);
+    oServer = await startApp(
+      [
+        crud({
+          models: { note: schema.note, comment: schema.comment },
+          validations: { comment: oValidation },
+        }),
+      ],
+      oAppDB,
+    );
 
     // Two notes of this run, the first with a comment
     const [oNote] = await oDb
@@ -64,19 +69,19 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
 
   after(async () => {
     // Closes the pool and the server
-    await (await DatabaseManager.pool()).end();
+    await oDb.$client.end();
     await oServer.close();
   });
 
   test('a model out of the list answers 404', async () => {
     // Reads a model of the schema the app does not list
-    const { status } = await request(oServer.url, '/api/secret');
+    const { status } = await request(oServer.url, '/secret');
     assert.equal(status, 404);
   });
 
   test('GET lists a model', async () => {
     // Reads the notes without parameters
-    const { status, body } = await request(oServer.url, '/api/note');
+    const { status, body } = await request(oServer.url, '/note');
 
     // Checks the list
     assert.equal(status, 200);
@@ -85,7 +90,7 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
 
   test('QUERY filters, orders, pages and picks columns', async () => {
     // Reads the first note of this run
-    const { body } = await send('QUERY', oServer.url, '/api/note', {
+    const { body } = await send('QUERY', oServer.url, '/note', {
       where: { title: { like: `${sTag}%` } },
       orderBy: { title: 'asc' },
       limit: 1,
@@ -99,7 +104,7 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
 
   test('QUERY reads one record by its string id', async () => {
     // Reads the comment
-    const { status, body } = await send('QUERY', oServer.url, `/api/comment/${sCommentId}`, {});
+    const { status, body } = await send('QUERY', oServer.url, `/comment/${sCommentId}`, {});
 
     // Checks the record
     assert.equal(status, 200);
@@ -108,11 +113,11 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
 
   test('POST creates, PUT updates the fields sent and DELETE deletes', async () => {
     // Creates a comment on the first note
-    const { body: oCreated } = await send('POST', oServer.url, '/api/comment', {
+    const { body: oCreated } = await send('POST', oServer.url, '/comment', {
       text: 'second',
       noteId: iNoteId,
     });
-    const sPath = `/api/comment/${oCreated.result.id}`;
+    const sPath = `/comment/${oCreated.result.id}`;
 
     // Updates only its text
     const { body: oUpdated } = await send('PUT', oServer.url, sPath, { text: 'edited' });
@@ -130,8 +135,8 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
 
   test('a body that breaks the validation of the app answers 400 with the field and the rule', async () => {
     // Creates a comment whose text is a number, and asks for more comments than the app allows
-    const oInsert = await send('POST', oServer.url, '/api/comment', { text: 1, noteId: iNoteId });
-    const oQuery = await send('QUERY', oServer.url, '/api/comment', { limit: 51 });
+    const oInsert = await send('POST', oServer.url, '/comment', { text: 1, noteId: iNoteId });
+    const oQuery = await send('QUERY', oServer.url, '/comment', { limit: 51 });
 
     // Checks that both name their field
     assert.deepEqual([oInsert.status, oQuery.status], [400, 400]);
@@ -141,7 +146,7 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
 
   test('a query filters by a relation and loads it', async () => {
     // Reads the comments of the first note of this run, each with its note
-    const { status, body } = await send('QUERY', oServer.url, '/api/comment', {
+    const { status, body } = await send('QUERY', oServer.url, '/comment', {
       where: { note: { title: `${sTag}-a` } },
       with: { note: true },
     });
@@ -154,17 +159,17 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
 
   test('Postgres errors answer 500 without their message', async () => {
     // A comment nobody created: read, updated and deleted
-    const sPath = '/api/comment/00000000-0000-0000-0000-000000000000';
+    const sPath = '/comment/00000000-0000-0000-0000-000000000000';
     const { status: iRead, body: oRead } = await request(oServer.url, sPath);
     const { status: iUpdate } = await send('PUT', oServer.url, sPath, { text: 'edited' });
     const { status: iDelete } = await request(oServer.url, sPath, { method: 'DELETE' });
 
     // A comment of a note that does not exist, and a note without its title
-    const { status: iConflict, body: oConflict } = await send('POST', oServer.url, '/api/comment', {
+    const { status: iConflict, body: oConflict } = await send('POST', oServer.url, '/comment', {
       text: 'orphan',
       noteId: 0,
     });
-    const { status: iInvalid, body: oInvalid } = await send('POST', oServer.url, '/api/note', {
+    const { status: iInvalid, body: oInvalid } = await send('POST', oServer.url, '/note', {
       name: 'unknown field',
     });
 

@@ -1,9 +1,8 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { startApp, request, boot } from './helpers';
-import { defineRelations } from 'drizzle-orm';
 import Plugin from '../src/plugins/Plugin';
-import { createPluginCallbacks } from '../src/lib/creators';
+import { createPlugin, createPluginCallbacks, createRoute } from '../src/lib/creators';
 import * as reserved from './fixtures/database/reserved';
 
 const PLUGIN_ROUTES = 'tests/fixtures/plugin-routes';
@@ -43,6 +42,54 @@ describe('plugins', () => {
 
     // Checks that its base path has nothing
     assert.equal((await request(oServer.url, '/empty')).status, 404);
+
+    // Stops the server
+    await oServer.close();
+  });
+
+  test('mounts the routes made in code beside its routesDir; a path in both takes the code', async () => {
+    // Starts an app with a plugin that has both
+    const oServer = await startApp([
+      {
+        routesDir: PLUGIN_ROUTES,
+        routes: {
+          '/ping': createRoute({ GET: async () => ({ message: 'code' }) }),
+          '/extra': createRoute({ GET: async () => ({ result: true }) }),
+        },
+      },
+    ]);
+
+    // Checks that the code wins on /ping and its own route answers
+    assert.equal((await request(oServer.url, '/ping')).body.message, 'code');
+    assert.equal((await request(oServer.url, '/extra')).status, 200);
+
+    // Stops the server
+    await oServer.close();
+  });
+
+  test('a route made in code that breaks the schema fails, naming its path', async () => {
+    // A plugin with a route whose public is not a boolean
+    const oPlugin = new Plugin({
+      name: 'bad',
+      routes: { '/bad': { public: 'yes', GET: async () => ({}) } as any },
+    });
+
+    // Checks that building it fails naming the path
+    await assert.rejects(oPlugin.build(), /\/bad:\n.*expected boolean/);
+  });
+
+  test("the consumer's basePath goes over the plugin's default", async () => {
+    // A plugin with its default base path, mounted as is and moved
+    const fnDemo = createPlugin(() => ({
+      name: 'demo',
+      basePath: '/demo',
+      routesDir: PLUGIN_ROUTES,
+    }));
+    const oServer = await startApp([fnDemo(), fnDemo({ basePath: '/moved' })]);
+
+    // Checks that it answers on both
+    assert.equal((await request(oServer.url, '/demo/ping')).status, 200);
+    assert.equal((await request(oServer.url, '/moved/ping')).status, 200);
 
     // Stops the server
     await oServer.close();
@@ -137,7 +184,7 @@ describe('plugins', () => {
     const oPlugin = new Plugin({
       name: 'other',
       routesDir: '',
-      database: { relations: defineRelations(reserved) },
+      database: { relations: reserved.relations },
     });
 
     // Checks that building it fails naming the table and the rule

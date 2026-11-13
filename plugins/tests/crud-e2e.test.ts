@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { NextRequest } from 'next/server';
 import DatabaseManager from '../../backend/src/database/DatabaseManager';
+import Drizzle from '../../backend/src/database/clients/Drizzle';
 import { push, startApp } from '../../backend/tests/helpers';
 import * as schema from '../../backend/tests/fixtures/database/crud';
 import { proxy } from '../../frontend/src/proxy';
@@ -42,14 +43,19 @@ describe(
     const sTag = `crud-e2e-${Date.now()}`;
     const oApp = createServer(serve);
     let oBackend: Awaited<ReturnType<typeof startApp>>;
+    let oDb: any;
 
     before(async () => {
       // What the consumer does by hand: apply their schema
       await push(schema, ['crud_test']);
 
-      // Mounts the app's database and the plugin, with no route of the app
-      await DatabaseManager.mount('app', { schema });
-      oBackend = await startApp([crud({ models: ['note'], dbSchema: schema })]);
+      // Mounts the app's database and the plugin under /api, with no route of the app
+      const oAppDB = new Drizzle('app', { relations: schema.relations });
+      oDb = await DatabaseManager.mount(oAppDB);
+      oBackend = await startApp(
+        [crud({ models: { note: schema.note }, basePath: '/api' })],
+        oAppDB,
+      );
 
       // Points the store `backend` to it and serves the app's origin
       process.env.API_BACKEND_URL = `${oBackend.url}/api`;
@@ -58,7 +64,7 @@ describe(
 
     after(async () => {
       // Closes the pool
-      await (await DatabaseManager.pool()).end();
+      await oDb.$client.end();
 
       // Closes the backend and the app's origin
       await oBackend.close();

@@ -1,11 +1,11 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { resolve } from 'node:path';
-import { defineRelations } from 'drizzle-orm';
 import DatabaseManager from '../src/database/DatabaseManager';
+import Drizzle from '../src/database/clients/Drizzle';
 import { boot, push, request } from './helpers';
 import * as schema from './fixtures/database/schema';
-import * as reserved from './fixtures/database/reserved';
+import { relations } from './fixtures/database/reserved';
 import './database/better-auth';
 import type { Booted } from './helpers';
 
@@ -17,7 +17,7 @@ describe('database', () => {
     // The app, and a plugin of another name, with a table in nano_test
     for (const sName of ['app', 'other']) {
       await assert.rejects(
-        DatabaseManager.mount(sName, { relations: defineRelations(reserved) }),
+        DatabaseManager.mount(new Drizzle(sName, { relations: relations })),
         /"nano_test.items" breaks the rule, each nano_\* schema is reserved/,
       );
     }

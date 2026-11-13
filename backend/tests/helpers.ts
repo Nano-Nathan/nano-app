@@ -7,6 +7,7 @@ import { errorHandler, notFoundHandler } from '../src/app/handlers/errors';
 import type { ChildProcess } from 'node:child_process';
 import type { Server } from 'node:http';
 import type { NanoObject } from '@nano-app/core';
+import type DatabaseClient from '../src/database/clients/DatabaseClient';
 import type { PluginConfig } from '../src/types/plugin';
 
 const FIXTURES_ROUTES = 'tests/fixtures/routes';
@@ -32,6 +33,7 @@ export async function findFreePort(): Promise<number> {
  */
 export async function startApp(
   aPlugins: Partial<PluginConfig>[] = [{ routesDir: FIXTURES_ROUTES }],
+  oAppDB?: DatabaseClient,
 ): Promise<{
   url: string;
   close: () => Promise<void>;
@@ -40,9 +42,9 @@ export async function startApp(
   const oApp = express();
   oApp.use(express.json());
 
-  // Registers each plugin in order, as NanoApp does
+  // Registers each plugin in order, with the app's database, as NanoApp does
   for (const oConfig of aPlugins) {
-    const aMounts = await new Plugin({ name: 'test', routesDir: '', ...oConfig }).build();
+    const aMounts = await new Plugin({ name: 'test', ...oConfig }).build(oAppDB);
     for (const { path, handler } of aMounts) oApp.all(path, handler);
   }
 
