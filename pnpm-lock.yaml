@@ -254,6 +254,9 @@ importers:
 
   components:
     dependencies:
+      '@tanstack/query-core':
+        specifier: ^5.107.1
+        version: 5.107.1
       zod:
         specifier: ^4.6.7
         version: 4.6.7
