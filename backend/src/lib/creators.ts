@@ -1,7 +1,8 @@
 import NanoApp from '../app/NanoApp';
-import type { NanoObject, PluginCallbacks, RouteEntry } from '@nano-app/core';
+import type { NanoObject } from '@nano-app/core';
 import type { NanoAppConfig } from '../types/app';
 import type { PluginConfig } from '../types/plugin';
+import type { PluginCallbacks, RouteEntry } from '../types/route';
 
 /** Creates a new NanoApp instance */
 export function createNanoApp(oConfig?: NanoAppConfig): NanoApp {

@@ -1,8 +1,8 @@
 'use client';
 
 import { createContext, use, useRef } from 'react';
-import { MISSING_PROVIDER } from '@nano-app/core/const';
 import NanoError from '@nano-app/core/utils/NanoError';
+import { MISSING_PROVIDER } from '../const';
 import createStores from '../creators/createStores';
 import type { ReactNode } from 'react';
 import type { Stores } from '../types/store';

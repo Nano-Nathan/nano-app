@@ -1,14 +1,8 @@
 import { NanoError } from '@nano-app/core';
 import Auth from '../auth/Auth';
 import type { Request, RequestHandler } from 'express';
-import type {
-  ApiPromise,
-  Callbacks,
-  MethodEntry,
-  NanoObject,
-  Params,
-  EndpointParams,
-} from '@nano-app/core';
+import type { ApiPromise, NanoObject } from '@nano-app/core';
+import type { Callbacks, EndpointParams, MethodEntry, Params } from '../types/route';
 
 /** Base class for all endpoints */
 export default class Endpoint {

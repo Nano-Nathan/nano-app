@@ -1,10 +1,8 @@
-import { Logger, NanoError, Validator } from '@nano-app/core';
+import { Logger, NanoError } from '@nano-app/core';
 import type { Pool } from 'pg';
+import { LOCK } from '../const';
 import type DatabaseClient from './clients/DatabaseClient';
 import type { DatabaseOptions } from '../types/database';
-
-/** Key of the Postgres lock that lets one startup change the database at a time */
-const LOCK = 7_310_002;
 
 /** The databases of the app and its plugins: the pool of `DATABASE_URL`, its lock and one client per config */
 export default abstract class DatabaseManager {
@@ -44,7 +42,7 @@ export default abstract class DatabaseManager {
     await this.pool();
 
     // Its tables follow the nano_* rule, then its client: how it is made is up to it
-    Validator.checkTables(sName, await oDB.tables());
+    await oDB.checkTables();
     const oDBClient = await oDB.connect(this.oPool);
 
     // One connection holds the lock while its changes run

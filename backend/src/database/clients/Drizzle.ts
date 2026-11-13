@@ -1,8 +1,7 @@
-import { NanoError, Validator } from '@nano-app/core';
+import { NanoError } from '@nano-app/core';
 import DatabaseClient from './DatabaseClient';
 import type { Pool } from 'pg';
-import type { DatabaseTable } from '@nano-app/core';
-import type { DatabaseConfig } from '../../types/database';
+import type { DatabaseConfig, DatabaseTable } from '../../types/database';
 
 /** Drizzle client of the app or of a plugin: its tables, its client and its changes */
 export default class Drizzle extends DatabaseClient<DatabaseConfig> {
@@ -44,7 +43,7 @@ export default class Drizzle extends DatabaseClient<DatabaseConfig> {
     // A plugin records them in its nano_* schema; the app, in Drizzle's default
     await migrate(this.oClient, {
       migrationsFolder: sFolder,
-      migrationsSchema: Validator.reservedSchema(this.sName),
+      migrationsSchema: this.sSchema,
     });
   }
 

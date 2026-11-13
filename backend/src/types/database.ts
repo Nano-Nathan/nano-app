@@ -14,3 +14,9 @@ export type DrizzleConfig = DrizzlePgConfig<AnyRelations> & { relations: AnyRela
 
 /** Database of a plugin or of the app: the options of its client and what every database has */
 export type DatabaseConfig = DatabaseOptions & DrizzleConfig;
+
+/** A table of a database: its Postgres schema and its name */
+export type DatabaseTable = {
+  schema: string;
+  name: string;
+};

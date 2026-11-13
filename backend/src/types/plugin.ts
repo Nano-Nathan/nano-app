@@ -1,4 +1,5 @@
-import type { NanoObject, PluginCallbacks, RouteEntry } from '@nano-app/core';
+import type { NanoObject } from '@nano-app/core';
+import type { PluginCallbacks, RouteEntry } from './route';
 import type { DatabaseConfig } from './database';
 
 /** Plugin configuration: a group of endpoints */

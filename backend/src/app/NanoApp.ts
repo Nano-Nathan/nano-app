@@ -3,7 +3,7 @@ import 'dotenv/config';
 import { Logger } from '@nano-app/core';
 import PluginManager from '../plugins/PluginManager';
 import Auth from '../auth/Auth';
-import { PACKAGES, PORT, SETTINGS } from './config';
+import { PACKAGES, PORT, SETTINGS } from '../const';
 import { errorHandler, notFoundHandler } from './handlers/errors';
 import packages from './packages';
 import type { NanoAppConfig } from '../types/app';

@@ -9,20 +9,17 @@ export type { PluginConfig, PluginManagerConfig } from './types/plugin';
 export type { Request } from 'express';
 
 /** HTTP contract */
+export type { ApiPromise, ApiResponse, QueryParams, NanoObject } from '@nano-app/core';
 export type {
-  ApiPromise,
-  ApiResponse,
-  QueryParams,
   RouteEntry,
   Handler,
   HandlerParams,
   Handlers,
   MethodEntry,
-  NanoObject,
   Params,
   Callbacks,
   PluginCallbacks,
-} from '@nano-app/core';
+} from './types/route';
 
 /** Main class and creators */
 export { default as NanoApp } from './app/NanoApp';

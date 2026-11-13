@@ -1,8 +1,17 @@
 import { Logger } from '@nano-app/core';
-import { PRIVATE_NETWORKS } from '@nano-app/core/const';
 import type { Request } from 'express';
 import type { NanoObject } from '@nano-app/core';
-import type { PackagesConfig } from '../types/app';
+import type { PackagesConfig } from './types/app';
+
+/** Loopback and private networks: the proxies the backend trusts by default */
+export const PRIVATE_NETWORKS = [
+  '127.0.0.0/8',
+  '::1/128',
+  '10.0.0.0/8',
+  '172.16.0.0/12',
+  '192.168.0.0/16',
+  'fc00::/7',
+];
 
 /** Application port */
 export const PORT = 3000;
@@ -33,3 +42,12 @@ export const PACKAGES: PackagesConfig = {
     extended: false,
   },
 };
+
+/** Key of the Postgres lock that lets one startup change the database at a time */
+export const LOCK = 7_310_002;
+
+/** Name of Better Auth's database: its tables live in `nano_auth` */
+export const AUTH_NAME = 'auth';
+
+/** Marks of the dynamic segments of a path, from the least to the most generic */
+export const MARKS = [':', '{', '*'];

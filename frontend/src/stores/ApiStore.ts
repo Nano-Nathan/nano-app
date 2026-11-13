@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/query-core';
-import { IS_SERVER } from '@nano-app/core/const';
+import { IS_SERVER } from '../const';
 import Pages from './Pages';
 import RequestStore from './RequestStore';
 import type { ApiResponse, QueryParams } from '@nano-app/core/types/api';

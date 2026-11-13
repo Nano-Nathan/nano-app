@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Logger from '@nano-app/core/utils/Logger';
-import Paths from '@nano-app/core/utils/Paths';
+import Paths from './utils/Paths';
 import { HEADERS, ROUTES } from './utils/state';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { GuardedRoute, ProxyTarget } from './types/store';

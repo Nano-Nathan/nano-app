@@ -1,18 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { createRoute, isGranted, NanoError } from '@nano-app/backend';
+import { ACTIONS, DEFAULT_LIMIT } from '../../const';
 import type { ApiPromise, HandlerParams, NanoObject, Request } from '@nano-app/backend';
-
-/** Action of each method: its permission of Better Auth and the validation of its body */
-const ACTIONS: NanoObject<string> = {
-  GET: 'read',
-  QUERY: 'read',
-  POST: 'create',
-  PUT: 'update',
-  DELETE: 'delete',
-};
-
-/** Records a list answers when the request sends no `limit` */
-const DEFAULT_LIMIT = 100;
 
 /** The first record of a query or a write: 404 without it */
 function first(aRecords: NanoObject[]): { result: NanoObject } {

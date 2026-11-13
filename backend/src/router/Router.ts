@@ -1,9 +1,9 @@
 import { FileLoader, Validator } from '@nano-app/core';
+import { MARKS } from '../const';
 import Endpoint from './Endpoint';
-import type { NanoObject, RouteEntry } from '@nano-app/core';
-
-/** Marks of the dynamic segments of a path, from the least to the most generic */
-const MARKS = [':', '{', '*'];
+import { ROUTE } from './validations';
+import type { NanoObject } from '@nano-app/core';
+import type { RouteEntry } from '../types/route';
 
 /** Turns a folder of `*.route.ts` files and routes made in code into Express paths and endpoints */
 export default class Router {
@@ -20,11 +20,13 @@ export default class Router {
   /** Loads the routes and creates one endpoint per route, the most specific path first */
   public async load(): Promise<{ path: string; endpoint: Endpoint }[]> {
     // Loads the routes of the directory, when it has one; an invalid one throws
-    const oRoutes = this.sRoutesDir ? await FileLoader.findMany('route', this.sRoutesDir) : {};
+    const oRoutes = this.sRoutesDir
+      ? await FileLoader.findMany('route', ROUTE, this.sRoutesDir)
+      : {};
 
     // Validates the routes made in code as the files
     for (const [sPath, oRoute] of Object.entries(this.oRoutes)) {
-      oRoutes[sPath] = Validator.validate('route', oRoute, sPath);
+      oRoutes[sPath] = Validator.validate(ROUTE, oRoute, sPath);
     }
 
     // Creates the endpoints; Express answers with the first path that matches

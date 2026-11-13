@@ -1,5 +1,5 @@
 import { NanoError } from '@nano-app/core';
-import { PRIVATE_NETWORKS } from '@nano-app/core/const';
+import { AUTH_NAME, PRIVATE_NETWORKS } from '../const';
 import DatabaseManager from '../database/DatabaseManager';
 import BetterAuth from '../database/clients/BetterAuth';
 import type { Request } from 'express';
@@ -8,9 +8,6 @@ import type { Auth as BetterAuthInstance } from 'better-auth';
 import type { NanoObject } from '@nano-app/core';
 import type { Mount } from '../types/app';
 import type { AuthOptions } from '../types/auth';
-
-/** Name of Better Auth's database: its tables live in `nano_auth` */
-const NAME = 'auth';
 
 /** Better Auth of the app: its tables in `nano_auth`, its endpoints and the session of a request */
 export default abstract class Auth {
@@ -38,7 +35,9 @@ export default abstract class Auth {
     };
 
     // Its tables in their own schema, applied as its database says
-    const oDatabase = await DatabaseManager.mount(new BetterAuth(NAME, database, oFullOptions));
+    const oDatabase = await DatabaseManager.mount(
+      new BetterAuth(AUTH_NAME, database, oFullOptions),
+    );
 
     // The instance and its endpoints
     const oAuth = betterAuth({ ...oFullOptions, database: oDatabase });

@@ -44,9 +44,10 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 - Declared functions and methods state their return type (`: Promise<void>`); inline callbacks infer it, and so does the factory of a component (`list`), from the controller it returns.
 - Prefer `unknown` and validate over `any`.
 - Types are declared where values are born and inferred from there. Data from outside (JSON, env) gets a typed variable where it enters (`const oFiles: StoreFiles = JSON.parse(…)`).
+- `core/` holds only what two or more packages use; what one package uses lives in it. Module constants go in the `const.ts` of their package (`core/const.ts` for the shared ones). A file exports only what another file uses.
 - Types in a `types/` folder of the package, one file per area (`types/app.ts`, `types/plugin.ts`). `type`, not `interface`. `import type` for types.
 - Generic objects are `NanoObject` (`core/types/objects.ts`), with the value type when it is known (`NanoObject<Store>`), never `object` or `Record<string, …>`.
-- Files: PascalCase when they export a class (`FileLoader.ts`), lowercase otherwise (`creators.ts`, `config.ts`).
+- Files: PascalCase when they export a class (`FileLoader.ts`), lowercase otherwise (`creators.ts`, `const.ts`).
 - `export default` when a file exports one thing, also the official plugins (`import health from '@nano-app/plugins/health'`). Named exports for files that export several.
 - Imports in groups: Node built-ins with `node:` (`node:fs`), dependencies, `@nano-app/*`, relative files, then every `import type` in the same order. Optional dependencies are imported when needed (`await import('pg')`), never at the top.
 
@@ -84,7 +85,7 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 - `??` for defaults. `||` only when `0`, `''` or `NaN` must also take the default (`message || 'Internal server error'`).
 - `for...of` to iterate when nothing is returned, never `.forEach` (it does not wait for `await`). `.map`, `.filter` and `.some` when they return something.
 - `async`/`await` in general. Express handlers and middlewares chain `.then()` and return the chain: Express 5 sends a rejection to the error handler.
-- Errors: an invalid consumer file throws where it is checked (the zod schemas of `core/utils/validations.ts`) and stops the startup (or the build). No `try`/`catch` to rename or wrap an error: it reaches `NanoApp.start` as it was thrown, with its stack. The framework throws `new NanoError('…')` (`core`): Node shows it as `[nano-app] [ERROR]: …`; with a status (`new NanoError('Not found', 404)`) a handler answers it. Handlers throw a string (400), `{ status, message, warning }` or a `NanoError`.
+- Errors: an invalid consumer file throws where it is checked (the zod schemas of `backend/src/router/validations.ts` and `frontend/src/utils/validations.ts`) and stops the startup (or the build). No `try`/`catch` to rename or wrap an error: it reaches `NanoApp.start` as it was thrown, with its stack. The framework throws `new NanoError('…')` (`core`): Node shows it as `[nano-app] [ERROR]: …`; with a status (`new NanoError('Not found', 404)`) a handler answers it. Handlers throw a string (400), `{ status, message, warning }` or a `NanoError`.
 - Messages: on the console only through `Logger.error`, `Logger.warn` and `Logger.info`, never `console`; in a response through `Logger.message`. The text says the file or thing, what is wrong, and the command that fixes it (``Run `pnpm add drizzle-orm pg`.``).
 
 ### Comments and format

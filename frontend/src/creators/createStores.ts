@@ -4,8 +4,7 @@ import ApiStore from '../stores/ApiStore';
 import AuthStore from '../stores/AuthStore';
 import Store from '../stores/Store';
 import { STORES } from '../utils/state';
-import type { StoreFile } from '@nano-app/core/types/store';
-import type { Stores } from '../types/store';
+import type { StoreFile, Stores } from '../types/store';
 
 /** Stores of one React tree; reading one the app has not throws */
 export default function createStores(): Stores {

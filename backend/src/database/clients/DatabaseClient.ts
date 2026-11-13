@@ -1,16 +1,20 @@
+import { NanoError } from '@nano-app/core';
+import { APP_NAME } from '@nano-app/core/const';
 import type { Pool } from 'pg';
-import type { DatabaseTable } from '@nano-app/core';
-import type { DatabaseOptions } from '../../types/database';
+import type { DatabaseOptions, DatabaseTable } from '../../types/database';
 
 /** A database the manager mounts, whatever its client: its tables, its client and its changes */
 export default abstract class DatabaseClient<Config extends DatabaseOptions = DatabaseOptions> {
   public readonly sName: string;
   public readonly oConfig: Config;
+  /** Its nano_* schema, reserved for its plugin; the app has none */
+  public readonly sSchema?: string;
 
   /** Creates a new client of a database, named as its plugin */
   constructor(sName: string, oConfig: Config) {
     this.sName = sName;
     this.oConfig = oConfig;
+    this.sSchema = sName === APP_NAME ? undefined : `nano_${sName}`;
   }
 
   /** The Postgres schema and name of each of its tables */
@@ -24,4 +28,16 @@ export default abstract class DatabaseClient<Config extends DatabaseOptions = Da
 
   /** Applies its tables as they are declared, failing on data loss */
   public abstract push(): Promise<void>;
+
+  /** Checks its tables: a nano_* schema only for the plugin of its name */
+  public async checkTables(): Promise<void> {
+    // Fails on a table in the nano_* schema of another plugin
+    for (const { schema, name } of await this.tables()) {
+      if (schema.startsWith('nano_') && schema !== this.sSchema) {
+        throw new NanoError(
+          `The database "${this.sName}": table "${schema}.${name}" breaks the rule, each nano_* schema is reserved for the plugin of its name.`,
+        );
+      }
+    }
+  }
 }

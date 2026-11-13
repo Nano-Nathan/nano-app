@@ -1,13 +1,8 @@
 import FileLoader from '@nano-app/core/files/FileLoader';
 import { STORES_ENV } from '@nano-app/core/const';
+import { SECURITY_HEADERS } from './const';
+import { STORE } from './utils/validations';
 import type { NextConfig } from 'next';
-
-/** Security headers of every page */
-const SECURITY_HEADERS = [
-  { key: 'X-Content-Type-Options', value: 'nosniff' },
-  { key: 'X-Frame-Options', value: 'DENY' },
-  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-];
 
 /**
  * Wraps the app's Next config: loads its stores while Next reads `next.config.ts`, before compiling,
@@ -17,7 +12,15 @@ const SECURITY_HEADERS = [
 export function withNanoApp(oNextConfig: NextConfig = {}): () => Promise<NextConfig> {
   return async () => {
     // Finds, names and validates the app's `src/stores/**/*.store.ts`
-    const oStores = await FileLoader.findMany('store');
+    const oFiles = await FileLoader.findMany('store', STORE);
+
+    // Names each by its path, `_` for `/` (`admin/users.store.ts` → `admin_users`)
+    const oStores = Object.fromEntries(
+      Object.entries(oFiles).map(([sPath, oStore]) => [
+        sPath.slice(1).replaceAll('/', '_'),
+        oStore,
+      ]),
+    );
 
     // Inlines them in the bundle as JSON: the browser reads no file
     return {

@@ -1,9 +1,7 @@
-import { Validator } from '@nano-app/core';
 import DatabaseClient from './DatabaseClient';
 import type { Pool } from 'pg';
-import type { DatabaseTable } from '@nano-app/core';
 import type { AuthOptions } from '../../types/auth';
-import type { DatabaseOptions } from '../../types/database';
+import type { DatabaseOptions, DatabaseTable } from '../../types/database';
 
 /** Better Auth's tables, as its options declare them, in its nano_* schema on its Kysely adapter */
 export default class BetterAuth extends DatabaseClient {
@@ -23,7 +21,7 @@ export default class BetterAuth extends DatabaseClient {
     const { getSchema } = await import('better-auth/db');
 
     // Every table in its nano_* schema
-    const sSchema = Validator.reservedSchema(this.sName) ?? 'public';
+    const sSchema = this.sSchema ?? 'public';
     return Object.keys(getSchema(this.oOptions)).map(name => ({ schema: sSchema, name }));
   }
 
@@ -37,7 +35,7 @@ export default class BetterAuth extends DatabaseClient {
     this.oDatabase = {
       dialect: new PostgresDialect({ pool: oPool }),
       type: 'postgres' as const,
-      schemaName: Validator.reservedSchema(this.sName),
+      schemaName: this.sSchema,
     };
     return this.oDatabase;
   }
@@ -51,7 +49,7 @@ export default class BetterAuth extends DatabaseClient {
     // Recorded in its nano_* schema
     await migrate(drizzle({ client: this.oPool }), {
       migrationsFolder: sFolder,
-      migrationsSchema: Validator.reservedSchema(this.sName),
+      migrationsSchema: this.sSchema,
     });
   }
 
