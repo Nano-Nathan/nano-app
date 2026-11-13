@@ -1,7 +1,5 @@
-import type { Express, Request } from 'express';
+import type { Request } from 'express';
 import type { ApiPromise } from './api';
-
-// any: what the consumer injects and its data are unknown
 
 /** Extra params of handlers and callbacks: what the app injects (options, `db`) and the framework adds */
 export type Params<Deps = NanoObject<any>> = Deps & {
@@ -41,8 +39,8 @@ export type CallbackMethod<Deps> = (
   params: Params<Deps>,
 ) => Promise<NanoObject>;
 
-/** Callback run with the Express app */
-export type CallbackMount<Deps> = (app: Express, params: Params<Deps>) => Promise<void>;
+/** Callback run once with the params */
+export type CallbackMount<Deps> = (params: Params<Deps>) => Promise<void>;
 
 /** Callbacks of an endpoint; what affects the whole app goes in the plugin's onMount */
 export type Callbacks<Deps = NanoObject<any>> = {
@@ -54,7 +52,7 @@ export type Callbacks<Deps = NanoObject<any>> = {
 
 /** Callbacks of a plugin */
 export type PluginCallbacks<Deps = NanoObject<any>> = {
-  /** Run once with the Express app, after its database and before its endpoints (e.g. app-level middlewares) */
+  /** Run once, after its database and before its endpoints: the plugin's setup */
   onMount?: CallbackMount<Deps>;
 };
 

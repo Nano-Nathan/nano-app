@@ -40,9 +40,10 @@ export async function startApp(
   const oApp = express();
   oApp.use(express.json());
 
-  // Mounts each plugin in order
+  // Registers each plugin in order, as NanoApp does
   for (const oConfig of aPlugins) {
-    await new Plugin({ name: 'test', routesDir: '', ...oConfig }).mount(oApp);
+    const aMounts = await new Plugin({ name: 'test', routesDir: '', ...oConfig }).build();
+    for (const { path, handler } of aMounts) oApp.all(path, handler);
   }
 
   // 404 and error handler last
@@ -95,7 +96,6 @@ export async function request(
   const sText = await oResponse.text();
 
   // Parses the body when it is JSON
-  // any: the body is whatever the server answered
   let oBody: any = sText;
   try {
     oBody = JSON.parse(sText);
@@ -109,7 +109,6 @@ export async function request(
 /** What `request` returns */
 export type TestResponse = {
   status: number;
-  // any: the body is whatever the server answered
   body: any;
   headers: Headers;
 };

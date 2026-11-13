@@ -15,7 +15,7 @@ export default class Router {
   }
 
   /** Loads the routes and creates one endpoint per file, the most specific path first */
-  public async mount(): Promise<{ path: string; endpoint: Endpoint }[]> {
+  public async load(): Promise<{ path: string; endpoint: Endpoint }[]> {
     // Without a directory there are no routes
     if (!this.sRoutesDir) return [];
 

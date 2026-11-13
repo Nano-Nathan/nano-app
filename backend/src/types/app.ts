@@ -1,4 +1,5 @@
 import type express from 'express';
+import type { RequestHandler } from 'express';
 import type { CorsOptions } from 'cors';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { AuthOptions } from './auth';
@@ -24,7 +25,6 @@ export type PackagesConfig = {
     | false
     | {
         /** Morgan tokens */
-        // any: morgan types each token callback with its own request and response
         tokens?: NanoObject<any>;
         /** Morgan format */
         format: string;
@@ -55,6 +55,14 @@ export type ServerConfig = {
   packages?: PackagesConfig;
   /** Better Auth options: with them, every route needs a session unless it is `public` */
   auth?: AuthOptions;
+};
+
+/** A route NanoApp registers */
+export type Mount = {
+  /** Express path of the route */
+  path: string;
+  /** Its handler */
+  handler: RequestHandler;
 };
 
 /** Application configuration: the server and its plugins */

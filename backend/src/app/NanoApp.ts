@@ -5,8 +5,10 @@ import helmet from 'helmet';
 import compression from 'compression';
 import 'dotenv/config';
 import { Logger } from '@nano-app/core';
+import { APP_NAME } from '@nano-app/core/const';
 import PluginManager from '../plugins/PluginManager';
 import BetterAuth from '../auth/BetterAuth';
+import DatabaseManager from '../database/DatabaseManager';
 import { PACKAGES, PORT, SETTINGS } from './config';
 import { errorHandler, notFoundHandler } from './handlers/errors';
 import rateLimit from './handlers/rateLimit';
@@ -53,11 +55,18 @@ export default class NanoApp {
     // Packages (body parsers included: they go first)
     this.setPackages({ ...PACKAGES, ...this.oConfig.packages });
 
-    // Better Auth: its tables, its instance and its endpoints, when it is on
-    await BetterAuth.mount(this.oApp, this.oConfig.auth);
+    // The database of the app first, named as it: the plugins without their own share it
+    await DatabaseManager.mount(APP_NAME, this.oConfig.database);
 
-    // Plugins: the ones before the app, the app's and the ones after
-    await PluginManager.mount(this.oApp, this.oConfig);
+    // Better Auth's endpoints, when it is on, then the plugins: before, the app's and after
+    const aAuth = await BetterAuth.init(this.oConfig.auth);
+    const aPlugins = await PluginManager.build(this.oConfig);
+
+    // Registers their routes in order
+    for (const { path, handler } of [...aAuth, ...aPlugins]) {
+      Logger.info(path);
+      this.oApp.all(path, handler);
+    }
 
     // Unmatched requests become a 404 for the error handler
     this.oApp.use(notFoundHandler);

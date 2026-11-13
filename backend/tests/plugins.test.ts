@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import express from 'express';
 import { startApp, request, boot } from './helpers';
+import { defineRelations } from 'drizzle-orm';
 import Plugin from '../src/plugins/Plugin';
 import { createPluginCallbacks } from '../src/lib/creators';
 import * as reserved from './fixtures/database/reserved';
@@ -76,20 +76,16 @@ describe('plugins', () => {
     await oServer.close();
   });
 
-  test('plugin onMount runs once with the app before its endpoints; endpoint onInit once, onBefore per request', async () => {
-    // Starts a plugin whose callbacks record their calls and whose onMount adds a header
+  test('plugin onMount runs once before its endpoints; endpoint onInit once, onBefore per request', async () => {
+    // Starts a plugin whose callbacks record their calls
     const aCalls: string[] = [];
     const oServer = await startApp([
       {
         routesDir: CALLBACK_ROUTES,
         options: { calls: aCalls, greeting: 'hi' },
         callbacks: createPluginCallbacks({
-          onMount: async (oApp, oParams) => {
+          onMount: async oParams => {
             oParams.calls.push('mount');
-            oApp.use((_oReq, oRes, fnNext) => {
-              oRes.set('x-mounted', 'yes');
-              fnNext();
-            });
           },
         }),
       },
@@ -100,13 +96,9 @@ describe('plugins', () => {
       assert.deepEqual(aCalls, ['mount', 'init']);
 
       // Checks that the handler got the options and the onBefore result
-      const { status, body, headers } = await request(oServer.url, '/hook');
+      const { status, body } = await request(oServer.url, '/hook');
       assert.equal(status, 200);
       assert.deepEqual(body.result, { greeting: 'hi', before: 'hello' });
-      assert.equal(headers.get('x-mounted'), 'yes');
-
-      // The plugin's middleware precedes every endpoint, whatever their order
-      assert.equal((await request(oServer.url, '/plain')).headers.get('x-mounted'), 'yes');
 
       // Checks that onBefore can reject, and that it runs once per request
       const oDenied = await request(oServer.url, '/hook?deny=1');
@@ -142,11 +134,15 @@ describe('plugins', () => {
 
   test('a plugin keeps no tables in the nano_* schema of another', async () => {
     // A plugin named "other" with a table in nano_test
-    const oPlugin = new Plugin({ name: 'other', routesDir: '', database: { schema: reserved } });
+    const oPlugin = new Plugin({
+      name: 'other',
+      routesDir: '',
+      database: { relations: defineRelations(reserved) },
+    });
 
-    // Checks that mounting it fails naming the table and the rule
+    // Checks that building it fails naming the table and the rule
     await assert.rejects(
-      oPlugin.mount(express()),
+      oPlugin.build(),
       /"nano_test.items" breaks the rule, each nano_\* schema is reserved/,
     );
   });

@@ -37,8 +37,8 @@ export default class Endpoint {
     this.isPublic = isPublic;
   }
 
-  /** Handler for all methods */
-  public async mount(oParams: Params, sPath: string): Promise<RequestHandler> {
+  /** Runs its onInit and gives its handler for all methods */
+  public async init(oParams: Params, sPath: string): Promise<RequestHandler> {
     // Without Better Auth, a route with permissions answers without checking them
     const isUnchecked = Object.values(this.oMethods).some(({ permissions }) => permissions);
     if (!BetterAuth.instance() && isUnchecked) {

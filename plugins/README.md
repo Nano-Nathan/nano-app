@@ -108,7 +108,7 @@ createNanoApp({ plugins: { before: [hello()] } });
 
 The app lists it in `plugins.before` or `plugins.after` its own routes. Mount order: base middlewares, Better Auth, `before` plugins, your routes, `after` plugins, 404, error handler. With Better Auth on, its routes need a session unless they are `public`.
 
-Set `options` in the returned config to pass values to the plugin's routes: every handler and callback receives them in `params`, next to `db`. Callbacks: `callbacks.onMount(app, params)` on the plugin, once, before its endpoints (app-level middlewares go here); `onInit(params)` and `onBefore(req, method, params)` on each route. See the [backend README](../backend/README.md#callbacks).
+Set `options` in the returned config to pass values to the plugin's routes: every handler and callback receives them in `params`, next to `db`. Callbacks: `callbacks.onMount(params)` on the plugin, once, before its endpoints, for its setup; `onInit(params)` and `onBefore(req, method, params)` on each route. See the [backend README](../backend/README.md#callbacks).
 
 `routesDir` must be a real directory of `*.route.ts` files when you run the app from source (`tsx`). `jiti` loads them. There is no compile step for your routes.
 

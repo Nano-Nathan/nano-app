@@ -154,7 +154,7 @@ export default createRoute({
 
 - `database.schema` is the module of your tables: every export that is a table, and `relations` (from `defineRelations`) when you relate them. A `pgSchema` the tables use is exported too, so drizzle-kit creates it.
 - `database.push: true` applies the schema at startup with drizzle-kit's push (`pnpm add drizzle-kit`), only to the Postgres schemas of its tables. A change that would lose data stops the startup.
-- `database.migrations` is the folder `drizzle-kit generate` writes: its pending migrations are applied at startup.
+- `database.migrations` is the folder `drizzle-kit generate` writes: its pending migrations are applied at startup. A database uses one of the two, `push` or `migrations`, never both.
 - One pool serves the app, Better Auth and every plugin with a database. It connects on its first query: a missing table fails that query, not the startup.
 - Startup fails if `DATABASE_URL` is missing.
 - Each `nano_*` Postgres schema is reserved for the plugin of its name (`nano_auth` for Better Auth): a table of yours in one fails the startup.
@@ -183,7 +183,6 @@ createNanoApp({ auth: { emailAndPassword: { enabled: true } } });
 - With it on, every route of the app and of every plugin needs a session: without one it answers 401 `Not authenticated`.
 - `createRoute({ public: true, ... })` answers without a session. An unknown path answers 404.
 - Handlers and `onBefore` receive the session in `params.session` (`{ user, session }`), also on a public route when the request has one.
-- The middlewares a plugin adds with `app.use` in `onMount` are not checked: a plugin that exposes something public says it in its README.
 - Sign-up works as Better Auth sets it: with `emailAndPassword` anyone can sign up and reach your routes. Close it with `disableSignUp: true`, or check roles in your handlers.
 - Extra user fields go in its `user.additionalFields`.
 - Set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` in the environment, as Better Auth asks.
@@ -243,26 +242,13 @@ createNanoApp({ plugins: { before: [hello()] } });
 
 ### Callbacks
 
-Two levels. Only the plugin's receives the Express app, so nothing app-wide depends on the order of the route files.
+Two levels: the plugin's runs once for the whole plugin, the endpoint's for its route.
 
 | Level | Callback | Runs | Receives | Use |
 |---|---|---|---|---|
-| Plugin (`callbacks` in its config) | `onMount` | Once, after its database and before its endpoints | `(app, params)` | App-level middlewares (a guard), shared setup |
+| Plugin (`callbacks` in its config) | `onMount` | Once, after its database and before its endpoints | `(params)` | Shared setup (a client, a job) |
 | Endpoint (`callbacks` in `createRoute`) | `onInit` | Once, when the endpoint is mounted | `(params)` | Setup of that route |
 | Endpoint | `onBefore` | Before every request the endpoint handles | `(req, method, params)` | Validate or load; its return value reaches the handler as `params.onBeforeResult` (`{}` without `onBefore`) |
-
-```ts
-export default createPlugin((options?: { publicPaths?: string[] }) => ({
-  name: 'guard',
-  routesDir: resolve(dirname(fileURLToPath(import.meta.url)), 'routes'),
-  options: { publicPaths: options?.publicPaths ?? [] },
-  callbacks: {
-    onMount: async (app, { publicPaths }) => {
-      app.use((req, _res, next) => next(publicPaths.includes(req.path) ? undefined : { status: 401, message: 'Unauthorized' }));
-    },
-  },
-}));
-```
 
 The endpoints of one plugin have no guaranteed order: one route's `onInit` must not depend on another's.
 

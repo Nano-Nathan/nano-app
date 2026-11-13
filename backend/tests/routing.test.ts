@@ -116,7 +116,7 @@ describe('routes by file convention', () => {
     const oRouter = new Router('tests/fixtures/broken-routes');
 
     // Checks that it throws with the file and what is wrong
-    await assert.rejects(oRouter.mount(), /\/broken:\n.*expected object, received string/);
+    await assert.rejects(oRouter.load(), /\/broken:\n.*expected object, received string/);
   });
 
   test('a route whose public is not a boolean fails, naming the file', () => {

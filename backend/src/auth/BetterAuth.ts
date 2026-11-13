@@ -1,25 +1,21 @@
 import { PRIVATE_NETWORKS } from '@nano-app/core/const';
 import DatabaseManager from '../database/DatabaseManager';
-import type { Express, Request } from 'express';
+import type { Request } from 'express';
 import type { IncomingHttpHeaders } from 'node:http';
 import type { Auth } from 'better-auth';
 import type { NanoObject } from '@nano-app/core';
+import type { Mount } from '../types/app';
 import type { AuthOptions } from '../types/auth';
 
 /** Postgres schema of Better Auth's tables */
 const SCHEMA = 'nano_auth';
 
-/** Key of the Postgres lock that lets one startup migrate at a time */
-const MIGRATION_LOCK = 7_310_002;
-
 /** Better Auth of the app: its tables in `nano_auth`, its endpoints and the session of a request */
 export default abstract class BetterAuth {
-  // any: the options of each app type the instance, unknown to the framework
   private static oAuth?: Auth<any>;
   private static fnHeaders?: (oHeaders: IncomingHttpHeaders) => Headers;
 
   /** Better Auth's instance, once mounted */
-  // any: the options of each app type the instance, unknown to the framework
   public static instance(): Auth<any> | undefined {
     return this.oAuth;
   }
@@ -50,10 +46,10 @@ export default abstract class BetterAuth {
     return success;
   }
 
-  /** Migrates its tables, creates the instance and mounts its endpoints; off without options */
-  public static async mount(oApp: Express, oOptions?: AuthOptions): Promise<void> {
+  /** Migrates its tables and creates the instance; its endpoints, none without options */
+  public static async init(oOptions?: AuthOptions): Promise<Mount[]> {
     // Without options Better Auth stays off
-    if (!oOptions) return;
+    if (!oOptions) return [];
 
     // Better Auth and Kysely are optional dependencies: imported only when it is on
     const { betterAuth } = await import('better-auth');
@@ -78,17 +74,12 @@ export default abstract class BetterAuth {
     };
 
     // Creates its schema and tables, one startup at a time; only adds
-    const oConnection = await oPool.connect();
-    await oConnection.query('SELECT pg_advisory_lock($1)', [MIGRATION_LOCK]);
-    await (await getMigrations(oFullOptions)).runMigrations();
-
-    // Closing the connection frees the lock
-    oConnection.release(true);
+    await DatabaseManager.lock(async () => (await getMigrations(oFullOptions)).runMigrations());
 
     // The instance and its endpoints
     const oAuth = betterAuth(oFullOptions);
     this.oAuth = oAuth;
     this.fnHeaders = fromNodeHeaders;
-    oApp.all(`${basePath}/{*path}`, toNodeHandler(oAuth));
+    return [{ path: `${basePath}/{*path}`, handler: toNodeHandler(oAuth) }];
   }
 }
