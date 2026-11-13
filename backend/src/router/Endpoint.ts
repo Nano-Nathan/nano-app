@@ -1,10 +1,9 @@
-import { Logger, NanoError } from '@nano-app/core';
+import { NanoError } from '@nano-app/core';
 import Auth from '../auth/Auth';
 import type { Request, RequestHandler } from 'express';
 import type {
   ApiPromise,
   Callbacks,
-  Handlers,
   MethodEntry,
   NanoObject,
   Params,
@@ -38,24 +37,11 @@ export default class Endpoint {
   }
 
   /** Runs its onInit and gives its handler for all methods */
-  public async init(oParams: Params, sPath: string): Promise<RequestHandler> {
-    // Without Better Auth, a route with permissions answers without checking them
-    const isUnchecked = Object.values(this.oMethods).some(({ permissions }) => permissions);
-    if (!Auth.instance() && isUnchecked) {
-      Logger.warn(
-        `${sPath}: its permissions are not checked without Better Auth. Set auth in createNanoApp.`,
-      );
-    }
-
+  public async init(oParams: Params): Promise<RequestHandler> {
     // Runs the onInit callback
     await this.oCallbacks.onInit?.(oParams);
 
     // Returns the request handler
-    return this.createHandler(oParams);
-  }
-
-  /** Express handler: the request, answered as an ApiResponse */
-  private createHandler(oParams: Params): RequestHandler {
     return (oReq, oRes) =>
       // Runs it; a rejection reaches the error handler: Express 5 forwards it
       this.run(oReq, oParams).then(oResponse => {
@@ -66,28 +52,18 @@ export default class Endpoint {
       });
   }
 
-  /** Checks the session and the permissions, then runs onBefore and the method */
+  /** Checks the session and the permissions of the method, then runs onBefore and it */
   private async run(oReq: Request, oParams: Params): ApiPromise {
-    // The session of the request, when Better Auth found one
-    const oSession = await Auth.session(oReq);
-    const oRequestParams = { ...oParams, session: oSession };
-
-    // With Better Auth on, a route needs a session unless it is public
-    if (Auth.instance() && !oSession && !this.isPublic) {
-      throw new NanoError('Not authenticated', 401);
-    }
-
-    // Finds the handler of the request method: a route file holds only HTTP methods
+    // The method of the request: a route file holds only HTTP methods
     const sMethod = oReq.method;
     const oMethod = this.oMethods[sMethod];
+
+    // The session, checked with the permissions of the method; then 405 without it
+    const oSession = await Auth.guard(oReq, this.isPublic, oMethod?.permissions);
     if (!oMethod) throw new NanoError(`Method ${sMethod} not implemented`, 405);
 
-    // Checks the permissions of the method, unless the route is public
-    const oPermissions = this.isPublic ? undefined : oMethod.permissions;
-    const isAllowed = await Auth.isGranted(oSession, oPermissions);
-    if (!isAllowed) throw new NanoError('Forbidden', 403);
-
     // Runs onBefore, then the method
+    const oRequestParams = { ...oParams, session: oSession };
     const onBeforeResult = (await this.oCallbacks.onBefore?.(oReq, sMethod, oRequestParams)) ?? {};
     return oMethod.handler(oReq, { ...oRequestParams, onBeforeResult });
   }

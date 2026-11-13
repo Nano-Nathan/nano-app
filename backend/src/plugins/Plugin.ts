@@ -31,7 +31,7 @@ export default class Plugin {
     return Promise.all(
       aRoutes.map(async ({ path, endpoint }) => ({
         path,
-        handler: await endpoint.init(oParams, path),
+        handler: await endpoint.init(oParams),
       })),
     );
   }

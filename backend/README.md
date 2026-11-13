@@ -202,7 +202,7 @@ export default createRoute({
 
 A method may ask for its own permissions instead of the route's: `POST: { handler, permissions: { notes: ['create'] } }`. A plain function takes those of the route. Without any, a session is enough. In a handler of your own, `isGranted(params.session, permissions)` asks Better Auth the same.
 
-A public route does not check them. Without Better Auth the route answers anyway, with a warning at startup. The params of handlers and callbacks are read-only.
+A public route does not check them. Without Better Auth nothing checks them: the route answers anyway, so turn on `auth` before you rely on them. The params of handlers and callbacks are read-only.
 
 ## Plugins
 

@@ -24,16 +24,11 @@ export default class Router {
 
     // Creates the endpoints; Express answers with the first path that matches
     return Object.entries(oRoutes)
-      .map(([sFilePath, { expression, ...oEndpointParams }]) => ({
-        path: this.createPath(sFilePath, expression),
+      .map(([sFilePath, { expression = '', ...oEndpointParams }]) => ({
+        path: `${this.sBasePath}${sFilePath.replace(/\/index$/, '')}${expression}` || '/',
         endpoint: new Endpoint(oEndpointParams),
       }))
       .sort((oA, oB) => Router.specificity(oA.path).localeCompare(Router.specificity(oB.path)));
-  }
-
-  /** `basePath` + file path (`/index` is the folder itself) + `expression`, as Express reads them */
-  private createPath(sEndpoint: string, sExpression: string = ''): string {
-    return `${this.sBasePath}${sEndpoint.replace(/\/index$/, '')}${sExpression}` || '/';
   }
 
   /** One digit per segment: 0 static, 1 `:param`, 2 `{optional}`, 3 `*wildcard` */

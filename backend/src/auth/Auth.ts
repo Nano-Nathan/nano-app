@@ -1,3 +1,4 @@
+import { NanoError } from '@nano-app/core';
 import { PRIVATE_NETWORKS } from '@nano-app/core/const';
 import DatabaseManager from '../database/DatabaseManager';
 import BetterAuth from '../database/clients/BetterAuth';
@@ -15,37 +16,6 @@ const NAME = 'auth';
 export default abstract class Auth {
   private static oAuth?: BetterAuthInstance<any>;
   private static fnHeaders?: (oHeaders: IncomingHttpHeaders) => Headers;
-
-  /** Better Auth's instance, once mounted */
-  public static instance(): BetterAuthInstance<any> | undefined {
-    return this.oAuth;
-  }
-
-  /** The session of a request, when it has one */
-  public static async session(oReq: Request): Promise<NanoObject | undefined> {
-    // Before the mount there is no instance, so no session
-    if (!this.oAuth || !this.fnHeaders) return undefined;
-
-    // Asks Better Auth with the headers of the request
-    const oHeaders = this.fnHeaders(oReq.headers);
-    return (await this.oAuth.api.getSession({ headers: oHeaders })) ?? undefined;
-  }
-
-  /** Whether the user of a session has the permissions; always without Better Auth or permissions */
-  public static async isGranted(
-    oSession?: NanoObject,
-    oPermissions?: NanoObject<string[]>,
-  ): Promise<boolean> {
-    // Nothing to check without Better Auth or permissions
-    if (!this.oAuth || !oPermissions) return true;
-
-    // Asks its admin plugin, unknown to the type of the instance, about the role of the user
-    const oApi: NanoObject = this.oAuth.api;
-    const { success } = await oApi.userHasPermission({
-      body: { userId: oSession?.user.id, role: oSession?.user.role, permissions: oPermissions },
-    });
-    return success;
-  }
 
   /** Mounts its database and creates the instance; its endpoints, none without options */
   public static async init(oOptions?: AuthOptions): Promise<Mount[]> {
@@ -75,5 +45,47 @@ export default abstract class Auth {
     this.oAuth = oAuth;
     this.fnHeaders = fromNodeHeaders;
     return [{ path: `${basePath}/{*path}`, handler: toNodeHandler(oAuth) }];
+  }
+
+  /** The session of a request; 401 without one unless public, 403 without the permissions */
+  public static async guard(
+    oReq: Request,
+    isPublic: boolean,
+    oPermissions?: NanoObject<string[]>,
+  ): Promise<NanoObject | undefined> {
+    // With Better Auth on, a route needs a session unless it is public
+    const oSession = await this.session(oReq);
+    if (this.oAuth && !oSession && !isPublic) throw new NanoError('Not authenticated', 401);
+
+    // Checks the permissions, unless the route is public
+    const isAllowed = await this.isGranted(oSession, isPublic ? undefined : oPermissions);
+    if (!isAllowed) throw new NanoError('Forbidden', 403);
+    return oSession;
+  }
+
+  /** The session of a request, when it has one */
+  private static async session(oReq: Request): Promise<NanoObject | undefined> {
+    // Before the mount there is no instance, so no session
+    if (!this.oAuth || !this.fnHeaders) return undefined;
+
+    // Asks Better Auth with the headers of the request
+    const oHeaders = this.fnHeaders(oReq.headers);
+    return (await this.oAuth.api.getSession({ headers: oHeaders })) ?? undefined;
+  }
+
+  /** Whether the user of a session has the permissions; always without Better Auth or permissions */
+  public static async isGranted(
+    oSession?: NanoObject,
+    oPermissions?: NanoObject<string[]>,
+  ): Promise<boolean> {
+    // Nothing to check without Better Auth or permissions
+    if (!this.oAuth || !oPermissions) return true;
+
+    // Asks its admin plugin, unknown to the type of the instance, about the role of the user
+    const oApi: NanoObject = this.oAuth.api;
+    const { success } = await oApi.userHasPermission({
+      body: { userId: oSession?.user.id, role: oSession?.user.role, permissions: oPermissions },
+    });
+    return success;
   }
 }
