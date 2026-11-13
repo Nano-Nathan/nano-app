@@ -15,7 +15,7 @@ export default class Plugin {
 
   /** Its endpoints, the most specific path first, for NanoApp to register */
   public async build(): Promise<Mount[]> {
-    const { name, routesDir, basePath, database, options, callbacks } = this.oConfig;
+    const { name, routesDir, routes, basePath, database, options, callbacks } = this.oConfig;
 
     // The Drizzle client of its database; without one, the app's
     const oDb = await DatabaseManager.mount(database && new Drizzle(name, database));
@@ -27,7 +27,7 @@ export default class Plugin {
     await callbacks?.onMount?.(oParams);
 
     // Its endpoints, the most specific path first
-    const aRoutes = await new Router(routesDir, basePath).load();
+    const aRoutes = await new Router(routesDir, basePath, routes).load();
     return Promise.all(
       aRoutes.map(async ({ path, endpoint }) => ({
         path,

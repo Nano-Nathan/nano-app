@@ -52,8 +52,8 @@ Each `*.route.ts` under `routesDir` default-exports an object with the HTTP meth
 
 ```ts
 export default createRoute({
-  expression: '/:id',                                  // → /users/:id
-  GET:    async req => ({ result: { id: req.params.id } }),
+  expression: '/:id', // → /users/:id
+  GET: async req => ({ result: { id: req.params.id } }),
   DELETE: async req => ({ message: 'Deleted' }),
 });
 ```
@@ -62,8 +62,8 @@ Each handler receives `(req, params)` and returns an `ApiResponse` without `succ
 
 ```ts
 type ApiResponse<T> = {
-  status?: number;     // HTTP status, 200 by default; not sent in the body
-  success?: boolean;   // set by the framework: status < 400
+  status?: number; // HTTP status, 200 by default; not sent in the body
+  success?: boolean; // set by the framework: status < 400
   result?: T;
   message?: string;
   warning?: boolean;
@@ -78,16 +78,16 @@ type ApiResponse<T> = {
 
 Every option is optional.
 
-| Option | Default | Description |
-|---|---|---|
-| `port` | `3000` | Listening port. |
-| `listener` | `() => {}` | Callback once the server is listening. |
-| `settings` | `{ "trust proxy": <private networks> }` | Values for `app.set()`: see [Client IP](#client-ip). |
-| `packages` | see below | Framework base middlewares. |
-| `routesDir` | `"src/routes"` | Folder of your routes, relative to `cwd`. |
-| `database` | none | Your Drizzle schema: see [Database](#database). |
-| `auth` | none | Better Auth options: see [Better Auth](#better-auth). |
-| `plugins` | `{}` | Plugins mounted `before` and `after` your routes, in order: see [Plugins](#plugins). |
+| Option      | Default                                 | Description                                                                          |
+| ----------- | --------------------------------------- | ------------------------------------------------------------------------------------ |
+| `port`      | `3000`                                  | Listening port.                                                                      |
+| `listener`  | `() => {}`                              | Callback once the server is listening.                                               |
+| `settings`  | `{ "trust proxy": <private networks> }` | Values for `app.set()`: see [Client IP](#client-ip).                                 |
+| `packages`  | see below                               | Framework base middlewares.                                                          |
+| `routesDir` | `"src/routes"`                          | Folder of your routes, relative to `cwd`.                                            |
+| `database`  | none                                    | Your Drizzle schema: see [Database](#database).                                      |
+| `auth`      | none                                    | Better Auth options: see [Better Auth](#better-auth).                                |
+| `plugins`   | `{}`                                    | Plugins mounted `before` and `after` your routes, in order: see [Plugins](#plugins). |
 
 `packages` accepts `morgan`, `cors`, `helmet`, `rateLimit`, `compression`, `express` (`express.json` options) and `urlencoded`. Each one you set replaces its default whole and the others keep theirs; pass `false` to disable one. `settings` works the same way, key by key.
 
@@ -238,17 +238,25 @@ import hello from './plugins/hello';
 createNanoApp({ plugins: { before: [hello()] } });
 ```
 
+A plugin may also make routes in code with `routes`, by path, beside or instead of `routesDir`: they are checked as the files, and a path in both takes the one in `routes`. Useful when its routes come from its options, as one per table with its own permissions:
+
+```ts
+routes: Object.fromEntries(
+  models.map(sModel => [`/${sModel}`, createRoute({ GET: { handler, permissions: { [sModel]: ['read'] } } })]),
+),
+```
+
 `createPlugin` types the options of that plugin. Each plugin chooses its base path; the app chooses whether it mounts `before` or `after` its routes. What the plugin puts in `options` reaches every callback and handler of its routes in `params`.
 
 ### Callbacks
 
 Two levels: the plugin's runs once for the whole plugin, the endpoint's for its route.
 
-| Level | Callback | Runs | Receives | Use |
-|---|---|---|---|---|
-| Plugin (`callbacks` in its config) | `onMount` | Once, after its database and before its endpoints | `(params)` | Shared setup (a client, a job) |
-| Endpoint (`callbacks` in `createRoute`) | `onInit` | Once, when the endpoint is mounted | `(params)` | Setup of that route |
-| Endpoint | `onBefore` | Before every request the endpoint handles | `(req, method, params)` | Validate or load; its return value reaches the handler as `params.onBeforeResult` (`{}` without `onBefore`) |
+| Level                                   | Callback   | Runs                                              | Receives                | Use                                                                                                         |
+| --------------------------------------- | ---------- | ------------------------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Plugin (`callbacks` in its config)      | `onMount`  | Once, after its database and before its endpoints | `(params)`              | Shared setup (a client, a job)                                                                              |
+| Endpoint (`callbacks` in `createRoute`) | `onInit`   | Once, when the endpoint is mounted                | `(params)`              | Setup of that route                                                                                         |
+| Endpoint                                | `onBefore` | Before every request the endpoint handles         | `(req, method, params)` | Validate or load; its return value reaches the handler as `params.onBeforeResult` (`{}` without `onBefore`) |
 
 The endpoints of one plugin have no guaranteed order: one route's `onInit` must not depend on another's.
 
@@ -261,20 +269,20 @@ A plugin with a database passes its own `database` (`schema`, `push`, `migration
 The framework mounts the 404 and the error handler: an unmatched request becomes a `404`, and anything a handler throws becomes an `ApiResponse`.
 
 ```ts
-throw { status: 409, message: 'Already exists' };   // → 409 { success: false, warning: false, message: "Already exists" }
-throw 'Field name is required';                     // → 400 { success: false, warning: false, message: "Field name is required" }
-throw new Error('boom');                            // → 500 "Internal server error", logged to stderr
+throw { status: 409, message: 'Already exists' }; // → 409 { success: false, warning: false, message: "Already exists" }
+throw 'Field name is required'; // → 400 { success: false, warning: false, message: "Field name is required" }
+throw new Error('boom'); // → 500 "Internal server error", logged to stderr
 // A Postgres error is one more Error: 500. Catch it in your handler to answer a 409
-GET /unknown                                        // → 404 { success: false, warning: false, message: "/unknown not found" }
+GET / unknown; // → 404 { success: false, warning: false, message: "/unknown not found" }
 ```
 
 ## Typed creators
 
-| Function | Purpose |
-|---|---|
-| `createNanoApp(config?)` | Creates and starts the app. |
-| `createRoute(route)` | Types a route file. |
-| `createPlugin(creator)` | Types a plugin factory and its options. |
+| Function                           | Purpose                                                                                                                  |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `createNanoApp(config?)`           | Creates and starts the app.                                                                                              |
+| `createRoute(route)`               | Types a route file.                                                                                                      |
+| `createPlugin(creator)`            | Types a plugin factory and its options.                                                                                  |
 | `createPluginCallbacks(callbacks)` | Types the callbacks of a plugin (`createPluginCallbacks<{ db: MyDb }>` types `db`), e.g. to keep them in their own file. |
 
 Also exported: the `NanoApp` class that `createNanoApp` returns, the configuration types (`NanoAppConfig`, `PackagesConfig`, `PluginConfig`, `PluginStage`, `MainPluginConfig`, `DatabaseConfig`), the Express `Request` type and the HTTP contract (`ApiResponse`, `ApiPromise`, `QueryParams`, `RouteEntry`, `Handler`, `HandlerParams`, `Handlers`, `NanoObject`) and the callback types (`Params`, `Callbacks`, `PluginCallbacks`).
