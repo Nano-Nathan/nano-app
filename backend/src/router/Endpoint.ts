@@ -1,5 +1,5 @@
 import { Logger, NanoError } from '@nano-app/core';
-import BetterAuth from '../auth/BetterAuth';
+import Auth from '../auth/Auth';
 import type { Request, RequestHandler } from 'express';
 import type {
   ApiPromise,
@@ -41,7 +41,7 @@ export default class Endpoint {
   public async init(oParams: Params, sPath: string): Promise<RequestHandler> {
     // Without Better Auth, a route with permissions answers without checking them
     const isUnchecked = Object.values(this.oMethods).some(({ permissions }) => permissions);
-    if (!BetterAuth.instance() && isUnchecked) {
+    if (!Auth.instance() && isUnchecked) {
       Logger.warn(
         `${sPath}: its permissions are not checked without Better Auth. Set auth in createNanoApp.`,
       );
@@ -69,11 +69,11 @@ export default class Endpoint {
   /** Checks the session and the permissions, then runs onBefore and the method */
   private async run(oReq: Request, oParams: Params): ApiPromise {
     // The session of the request, when Better Auth found one
-    const oSession = await BetterAuth.session(oReq);
+    const oSession = await Auth.session(oReq);
     const oRequestParams = { ...oParams, session: oSession };
 
     // With Better Auth on, a route needs a session unless it is public
-    if (BetterAuth.instance() && !oSession && !this.isPublic) {
+    if (Auth.instance() && !oSession && !this.isPublic) {
       throw new NanoError('Not authenticated', 401);
     }
 
@@ -84,7 +84,7 @@ export default class Endpoint {
 
     // Checks the permissions of the method, unless the route is public
     const oPermissions = this.isPublic ? undefined : oMethod.permissions;
-    const isAllowed = await BetterAuth.isGranted(oSession, oPermissions);
+    const isAllowed = await Auth.isGranted(oSession, oPermissions);
     if (!isAllowed) throw new NanoError('Forbidden', 403);
 
     // Runs onBefore, then the method

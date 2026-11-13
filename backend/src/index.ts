@@ -1,4 +1,4 @@
-import BetterAuth from './auth/BetterAuth';
+import Auth from './auth/Auth';
 
 /** Application configuration and types */
 export type { NanoAppConfig, ServerConfig, PackagesConfig } from './types/app';
@@ -32,4 +32,4 @@ export * from './lib/creators';
 export { NanoError } from '@nano-app/core';
 
 /** Whether the user of a session has the permissions, asked to Better Auth */
-export const isGranted = BetterAuth.isGranted.bind(BetterAuth);
+export const isGranted = Auth.isGranted.bind(Auth);

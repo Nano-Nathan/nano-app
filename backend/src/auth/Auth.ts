@@ -1,22 +1,23 @@
 import { PRIVATE_NETWORKS } from '@nano-app/core/const';
 import DatabaseManager from '../database/DatabaseManager';
+import BetterAuth from '../database/clients/BetterAuth';
 import type { Request } from 'express';
 import type { IncomingHttpHeaders } from 'node:http';
-import type { Auth } from 'better-auth';
+import type { Auth as BetterAuthInstance } from 'better-auth';
 import type { NanoObject } from '@nano-app/core';
 import type { Mount } from '../types/app';
 import type { AuthOptions } from '../types/auth';
 
-/** Postgres schema of Better Auth's tables */
-const SCHEMA = 'nano_auth';
+/** Name of Better Auth's database: its tables live in `nano_auth` */
+const NAME = 'auth';
 
 /** Better Auth of the app: its tables in `nano_auth`, its endpoints and the session of a request */
-export default abstract class BetterAuth {
-  private static oAuth?: Auth<any>;
+export default abstract class Auth {
+  private static oAuth?: BetterAuthInstance<any>;
   private static fnHeaders?: (oHeaders: IncomingHttpHeaders) => Headers;
 
   /** Better Auth's instance, once mounted */
-  public static instance(): Auth<any> | undefined {
+  public static instance(): BetterAuthInstance<any> | undefined {
     return this.oAuth;
   }
 
@@ -46,38 +47,31 @@ export default abstract class BetterAuth {
     return success;
   }
 
-  /** Migrates its tables and creates the instance; its endpoints, none without options */
+  /** Mounts its database and creates the instance; its endpoints, none without options */
   public static async init(oOptions?: AuthOptions): Promise<Mount[]> {
     // Without options Better Auth stays off
     if (!oOptions) return [];
 
-    // Better Auth and Kysely are optional dependencies: imported only when it is on
+    // Better Auth is an optional dependency: imported only when it is on
     const { betterAuth } = await import('better-auth');
-    const { getMigrations } = await import('better-auth/db/migration');
     const { fromNodeHeaders, toNodeHandler } = await import('better-auth/node');
-    const { PostgresDialect } = await import('kysely');
 
-    // The options on the shared pool, with the tables in their own schema
-    const oPool = await DatabaseManager.pool();
-    const { advanced, basePath = '/api/auth' } = oOptions;
+    // Its options, trusting the private proxies by default
+    const { database = { push: true }, advanced, basePath = '/api/auth', ...oRest } = oOptions;
     const oFullOptions = {
-      ...oOptions,
+      ...oRest,
+      basePath,
       advanced: {
         ...advanced,
         ipAddress: { trustedProxies: PRIVATE_NETWORKS, ...advanced?.ipAddress },
       },
-      database: {
-        dialect: new PostgresDialect({ pool: oPool }),
-        type: 'postgres' as const,
-        schemaName: SCHEMA,
-      },
     };
 
-    // Creates its schema and tables, one startup at a time; only adds
-    await DatabaseManager.lock(async () => (await getMigrations(oFullOptions)).runMigrations());
+    // Its tables in their own schema, applied as its database says
+    const oDatabase = await DatabaseManager.mount(new BetterAuth(NAME, database, oFullOptions));
 
     // The instance and its endpoints
-    const oAuth = betterAuth(oFullOptions);
+    const oAuth = betterAuth({ ...oFullOptions, database: oDatabase });
     this.oAuth = oAuth;
     this.fnHeaders = fromNodeHeaders;
     return [{ path: `${basePath}/{*path}`, handler: toNodeHandler(oAuth) }];
