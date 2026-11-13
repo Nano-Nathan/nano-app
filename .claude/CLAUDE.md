@@ -6,6 +6,8 @@ This file holds the code guidelines. Branches, pull requests, releases and how a
 
 Before writing or showing any code, read this file again; before pushing, check the whole diff against it.
 
+Before opening a pull request, check its title against the release rules: the table of [Releases](../CONTRIBUTING.md#releases) and the `.releaserc.json` of each package it touches. The title of the squash decides whether and how each package is published.
+
 ## Clean core
 
 - **A framework for others**: every feature is general, never shaped for one app or one plugin. The consumer gets a small, easy layer (`createRoute`, `createPlugin`, one config object) and the framework does the work behind it. Convention over configuration: a file in the right folder works without registering it.
