@@ -14,8 +14,11 @@ export default abstract class PluginManager {
     const aBefore = (plugins?.before ?? []).map(oPlugin => new Plugin({ database, ...oPlugin }));
     const aAfter = (plugins?.after ?? []).map(oPlugin => new Plugin({ database, ...oPlugin }));
 
-    // Builds them, keeping their order
-    const aPlugins = [...aBefore, oAppPlugin, ...aAfter];
-    return (await Promise.all(aPlugins.map(oPlugin => oPlugin.build()))).flat();
+    // Builds them one by one, in order
+    const aMounts: Mount[] = [];
+    for (const oPlugin of [...aBefore, oAppPlugin, ...aAfter]) {
+      aMounts.push(...(await oPlugin.build()));
+    }
+    return aMounts;
   }
 }
