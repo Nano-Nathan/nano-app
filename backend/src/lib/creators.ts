@@ -3,8 +3,6 @@ import type { NanoObject, PluginCallbacks, RouteEntry } from '@nano-app/core';
 import type { NanoAppConfig } from '../types/app';
 import type { PluginConfig } from '../types/plugin';
 
-// any: without `Deps`, what the app injects is unknown to the framework
-
 /** Creates a new NanoApp instance */
 export function createNanoApp(oConfig?: NanoAppConfig): NanoApp {
   return new NanoApp(oConfig);
