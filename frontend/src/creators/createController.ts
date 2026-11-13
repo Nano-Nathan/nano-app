@@ -30,9 +30,9 @@ function controller<M extends NanoObject & { callbacks?: ControllerCallbacks }>(
   return {
     // Each bound view re-renders when a path it read changes
     bindView: fnView =>
-      observer((oProps: ComponentProps) => {
+      observer((props: ComponentProps) => {
         // Gives the methods the props, the stores and the router of the app
-        const oContext = { props: oProps, stores: useStores(), router: useRouter() };
+        const oContext = { props, stores: useStores(), router: useRouter() };
         const oMethods = fnMethods(oContext);
 
         // Binds each method, so `this` reaches the others

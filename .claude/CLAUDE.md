@@ -63,7 +63,7 @@ Prefix by type on every internal name: local variables, parameters, class fields
 | `i` | number, integer or not | `iPort`, `iValue` |
 | `is` | boolean | `isEnabled`, `isPlugin` |
 
-A union with `null` or `undefined` takes the prefix of the other type (`sName?: string`). An unused parameter starts with `_` before its prefix (`_oRes`). A class kept in a variable stays PascalCase (`const Pool = …`), as `new` expects. A callback parameter whose name is passed as is to a public field has no prefix (`.then(onBeforeResult => fnMethod(oReq, { ...oParams, onBeforeResult }))`).
+A union with `null` or `undefined` takes the prefix of the other type (`sName?: string`). An unused parameter starts with `_` before its prefix (`_oRes`). A class kept in a variable stays PascalCase (`const Pool = …`), as `new` expects. A variable or callback parameter born to fill a field of the same name has no prefix, so the shorthand reads (`const db = await DatabaseManager.mount(…); { ...options, db }`, `.then(onBeforeResult => fnMethod(oReq, { ...oParams, onBeforeResult }))`).
 
 ```ts
 private static oClients: NanoObject = {};

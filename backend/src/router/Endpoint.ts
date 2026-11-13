@@ -59,11 +59,11 @@ export default class Endpoint {
     const oMethod = this.oMethods[sMethod];
 
     // The session, checked with the permissions of the method; then 405 without it
-    const oSession = await Auth.guard(oReq, this.isPublic, oMethod?.permissions);
+    const session = await Auth.guard(oReq, this.isPublic, oMethod?.permissions);
     if (!oMethod) throw new NanoError(`Method ${sMethod} not implemented`, 405);
 
     // Runs onBefore, then the method
-    const oRequestParams = { ...oParams, session: oSession };
+    const oRequestParams = { ...oParams, session };
     const onBeforeResult = (await this.oCallbacks.onBefore?.(oReq, sMethod, oRequestParams)) ?? {};
     return oMethod.handler(oReq, { ...oRequestParams, onBeforeResult });
   }

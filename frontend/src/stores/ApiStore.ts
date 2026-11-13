@@ -107,10 +107,10 @@ export default class ApiStore extends RequestStore {
     this.oPages[sKey] ??= new Pages(this.oClient, {
       key: [sPath, oQuery, 'more'],
       limit: oQuery.limit,
-      read: iOffset =>
+      read: offset =>
         this.request(sPath, {
           method: 'QUERY',
-          body: JSON.stringify({ ...oQuery, offset: iOffset }),
+          body: JSON.stringify({ ...oQuery, offset }),
         }),
       keep: oResponse => this.keep(oResponse, sKey),
     });

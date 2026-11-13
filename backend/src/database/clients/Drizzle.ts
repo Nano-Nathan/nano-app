@@ -57,9 +57,9 @@ export default class Drizzle extends DatabaseClient<DatabaseConfig> {
     const oTables = Object.fromEntries(
       Object.values(this.oConfig.relations).map(({ name, table }) => [name, table]),
     );
-    const aSchemas = (await this.tables()).map(({ schema }) => schema);
+    const schemas = (await this.tables()).map(({ schema }) => schema);
     const { hints, apply } = await pushSchema(oTables, this.oClient, {
-      schemas: aSchemas,
+      schemas,
       tables: undefined,
       entities: undefined,
       extensions: undefined,

@@ -69,8 +69,8 @@ export default abstract class Auth {
     if (!this.oAuth || !this.fnHeaders) return undefined;
 
     // Asks Better Auth with the headers of the request
-    const oHeaders = this.fnHeaders(oReq.headers);
-    return (await this.oAuth.api.getSession({ headers: oHeaders })) ?? undefined;
+    const headers = this.fnHeaders(oReq.headers);
+    return (await this.oAuth.api.getSession({ headers })) ?? undefined;
   }
 
   /** Whether the user of a session has the permissions; always without Better Auth or permissions */
