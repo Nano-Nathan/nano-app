@@ -1,5 +1,3 @@
-import Auth from './auth/Auth';
-
 /** Re-exported Express type: the consumer does not need @types/express */
 export type { Request } from 'express';
 
@@ -16,6 +14,3 @@ export * from './lib/creators';
 
 /** Error of the framework, also for handlers: `throw new NanoError('Not found', 404)` */
 export { NanoError } from '@nano-app/core';
-
-/** Whether the user of a session has the permissions, asked to Better Auth */
-export const isGranted = Auth.isGranted.bind(Auth);

@@ -203,7 +203,7 @@ export default createRoute({
 });
 ```
 
-A method may ask for its own permissions instead of the route's: `POST: { handler, permissions: { notes: ['create'] } }`. A plain function takes those of the route. Without any, a session is enough. In a handler of your own, `isGranted(params.session, permissions)` asks Better Auth the same.
+A method may ask for its own permissions instead of the route's: `POST: { handler, permissions: { notes: ['create'] } }`. A plain function takes those of the route. Without any, a session is enough.
 
 A public route does not check them. Without Better Auth nothing checks them: the route answers anyway, so turn on `auth` before you rely on them. The params of handlers and callbacks are read-only.
 
@@ -288,7 +288,7 @@ GET /unknown                                        // → 404 { success: false,
 | `createPlugin(creator)` | Types a plugin factory and its options. |
 | `createPluginCallbacks(callbacks)` | Types the callbacks of a plugin (`createPluginCallbacks<{ db: MyDb }>` types `db`), e.g. to keep them in their own file. |
 
-Also exported: `NanoError`, `isGranted`, the Express `Request` type, the HTTP contract (`ApiResponse`, `ApiPromise`, `RouteEntry`, `HandlerParams`, `NanoObject`) and what the creators return (`PluginConfig`, `PluginOptions`, `PluginCallbacks`).
+Also exported: `NanoError`, the Express `Request` type, the HTTP contract (`ApiResponse`, `ApiPromise`, `RouteEntry`, `HandlerParams`, `NanoObject`) and what the creators return (`PluginConfig`, `PluginOptions`, `PluginCallbacks`).
 
 ## Development
 
