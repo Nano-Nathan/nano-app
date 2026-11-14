@@ -45,7 +45,10 @@ export async function startApp(
   // Registers each plugin in order, with the app's database, as NanoApp does
   for (const oConfig of aPlugins) {
     const aMounts = await new Plugin({ name: 'test', ...oConfig }).build(oAppDB);
-    for (const { path, handler } of aMounts) oApp.all(path, handler);
+    for (const { path, handler } of aMounts) {
+      if (path) oApp.all(path, handler);
+      else oApp.use(handler);
+    }
   }
 
   // 404 and error handler last

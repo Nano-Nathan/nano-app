@@ -1,3 +1,4 @@
+import type { RequestHandler } from 'express';
 import type { NanoObject } from '@nano-app/core';
 import type { PluginCallbacks, RouteEntry } from './route';
 import type { DatabaseConfig } from './database';
@@ -10,6 +11,8 @@ export type PluginConfig<Options = NanoObject> = {
   routesDir?: string;
   /** Routes made in code, by path (`{ '/notes': createRoute({...}) }`), validated as the files */
   routes?: NanoObject<RouteEntry<any>>;
+  /** Express middlewares, run on every request that reaches them, before its routes */
+  middlewares?: RequestHandler[];
   /** Base path prepended to every endpoint, e.g. "/auth" (no trailing slash). Defaults to none */
   basePath?: string;
   /** Drizzle schema of the plugin's database, mounted before its endpoints */

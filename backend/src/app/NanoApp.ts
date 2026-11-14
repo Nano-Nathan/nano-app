@@ -55,10 +55,14 @@ export default class NanoApp {
     const aAuth = await Auth.init(this.oConfig.auth);
     const aPlugins = await PluginManager.build(this.oConfig);
 
-    // Registers their routes in order
+    // Registers them in order: a route on its path, a middleware on every request
     for (const { path, handler } of [...aAuth, ...aPlugins]) {
-      Logger.info(path);
-      this.oApp.all(path, handler);
+      if (path) {
+        Logger.info(path);
+        this.oApp.all(path, handler);
+      } else {
+        this.oApp.use(handler);
+      }
     }
 
     // Unmatched requests become a 404 for the error handler
