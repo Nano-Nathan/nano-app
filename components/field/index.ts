@@ -19,8 +19,8 @@ export default function field() {
     return {
       // Reads the items of its options from the backend when the view mounts
       callbacks: {
-        onMount(): Promise<ApiResponse | undefined> | undefined {
-          return oApi?.read(path);
+        onMount(): Promise<ApiResponse> | undefined {
+          return oApi?.GET(path);
         },
       },
       value(): any {
@@ -50,7 +50,7 @@ export default function field() {
         return validate(oField, oValue);
       },
       options(): NanoObject[] {
-        // The items kept for the path of its options, as the backend gave them
+        // The items read for its options, as the backend gave them
         return oApi?.get(path)?.result ?? [];
       },
     };

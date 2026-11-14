@@ -1,6 +1,5 @@
 import { createAuthClient } from 'better-auth/client';
 import { IS_SERVER } from '../const';
-import Paths from '../utils/Paths';
 import ApiStore from './ApiStore';
 import type { ApiResponse } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
@@ -19,7 +18,7 @@ export default class AuthStore extends ApiStore {
 
     // Creates the client: its requests count in `/busy`
     const oAuth = createAuthClient({
-      baseURL: `${location.origin}${Paths.store(sName)}${sBasePath}`,
+      baseURL: `${location.origin}${this.sUrl}${sBasePath}`,
       fetchOptions: {
         customFetchImpl: (oInput, oInit) => this.track(fetch(oInput, oInit)),
         onSuccess: ({ request }) => {

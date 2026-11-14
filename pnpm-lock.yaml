@@ -254,9 +254,6 @@ importers:
 
   components:
     dependencies:
-      '@tanstack/query-core':
-        specifier: ^5.107.1
-        version: 5.107.1
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -325,9 +322,6 @@ importers:
 
   frontend:
     dependencies:
-      '@tanstack/query-core':
-        specifier: ^5.107.1
-        version: 5.107.1
       better-auth:
         specifier: ^1.7.18
         version: 1.7.18(@prisma/client@7.10.1(prisma@7.10.1(@types/node@26.6.6)(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@7.0.2))(typescript@7.0.2))(drizzle-kit@1.0.0-rc.5-ab785fc)(drizzle-orm@1.0.0-rc.5-ab785fc(@electric-sql/pglite@0.4.3)(@types/pg@8.23.1)(mysql2@3.24.4(@types/node@26.6.6))(pg@8.23.1)(postgres@3.4.7)(valibot@1.4.2(typescript@7.0.2))(zod@4.6.7))(mysql2@3.24.4(@types/node@26.6.6))(next@16.4.5(@types/node@26.6.6)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(pg@8.23.1)(prisma@7.10.1(@types/node@26.6.6)(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@7.0.2))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(vue@3.5.45(typescript@7.0.2))
@@ -1915,9 +1909,6 @@ packages:
 
   '@swc/helpers@0.5.23':
     resolution: {integrity: sha512-5lSsMOTXURePglDfvuAQUqkGek9Hg2kksOYay2m0+XR++b2NWYL/4sWyuvVBIs8oKnJaxkdi9whaL/sqN13afw==}
-
-  '@tanstack/query-core@5.107.1':
-    resolution: {integrity: sha512-PSyAik11oQBEVOiVy5hjZWHmoUqOXqK1WYy4v55mcxozEfKaQgpUMsgnXhWjuESzSht8JfzqMS1m6M/9CpNgvg==}
 
   '@testing-library/dom@10.4.2':
     resolution: {integrity: sha512-yzr2S9HyAIdhz2/6qHgbs665Q7PKVcDF05vsOlHPxG1mo36gKVesdYVeDLnXgfjJ03CrKRk08knc6+E/9m8v2Q==}
@@ -5957,8 +5948,6 @@ snapshots:
   '@swc/helpers@0.5.23':
     dependencies:
       tslib: 2.8.1
-
-  '@tanstack/query-core@5.107.1': {}
 
   '@testing-library/dom@10.4.2':
     dependencies:

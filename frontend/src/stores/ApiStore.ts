@@ -1,89 +1,96 @@
-import { QueryClient } from '@tanstack/query-core';
+import { REQUEST_FAILED } from '@nano-app/core/const';
 import { IS_SERVER } from '../const';
-import RequestStore from './RequestStore';
+import Paths from '../utils/Paths';
+import Store from './Store';
 import type { ApiResponse, QueryParams } from '@nano-app/core/types/api';
+import type { NanoObject } from '@nano-app/core/types/objects';
+import type { ApiError } from '../types/store';
 
-/** Backend of an `api` store through its proxy; each read keeps its `ApiResponse` in the store */
-export default class ApiStore extends RequestStore {
-  /** Cache of the reads: each one is kept until a write on its path or a parent */
-  public readonly client = new QueryClient({
-    defaultOptions: { queries: { staleTime: Infinity, gcTime: Infinity } },
-  });
+/** Backend of an `api` store through the proxy: one method per HTTP method, as its routes */
+export default class ApiStore extends Store {
+  /** URL of the store in the proxy */
+  protected readonly sUrl: string;
+  private iCount = 0;
 
-  /** Value at a path, with the query of the read that kept it */
+  /** Store of the backend `API_<NAME>_URL`, with the initial data of its file */
+  constructor(sName: string, oData?: NanoObject) {
+    super(oData);
+    this.sUrl = Paths.store(sName);
+  }
+
+  /** Answer of a read, kept at its path and query */
   public get(sPath: string, oQuery?: QueryParams): any {
-    // Gets the value at the key of the path and query
     return super.get(ApiStore.key(sPath, oQuery));
   }
 
-  /** `ApiResponse` of a path and query, from the cache until a write on its path or a parent */
-  public async read(sPath: string, oQuery?: QueryParams): Promise<ApiResponse> {
-    // Asks nothing on the server
-    if (IS_SERVER) return {};
+  /** `GET <path>`, kept at its path */
+  public GET(sPath: string): Promise<ApiResponse> {
+    return this.send('GET', sPath);
+  }
 
-    // Answers from the cache, or asks the backend once for every concurrent read
-    const { queryKey, init } = oQuery
-      ? { queryKey: [sPath, oQuery], init: { method: 'QUERY', body: JSON.stringify(oQuery) } }
-      : { queryKey: [sPath], init: { method: 'GET' } };
-    const oResponse = await this.client.fetchQuery({
-      queryKey,
-      queryFn: () => this.request(sPath, init),
-    });
-
-    // Keeps it for the views
-    this.keep(oResponse, sPath, oQuery);
-    return oResponse;
+  /** `QUERY <path>` with the query as its body, kept at its path and query */
+  public QUERY(sPath: string, oQuery: QueryParams): Promise<ApiResponse> {
+    return this.send('QUERY', sPath, oQuery);
   }
 
   /** `POST <path>` */
-  public create(sPath: string, oBody: unknown): Promise<ApiResponse> {
-    return this.write('POST', sPath, oBody);
+  public POST(sPath: string, oBody: unknown): Promise<ApiResponse> {
+    return this.send('POST', sPath, oBody);
   }
 
-  /** `PUT <path>`, keeping a successful answer at its path */
-  public async update(sPath: string, oBody: unknown): Promise<ApiResponse> {
-    // Sends the write
-    const oResponse = await this.write('PUT', sPath, oBody);
-
-    // Returns a failed answer as is
-    if (!oResponse.success) return oResponse;
-
-    // Keeps the answer at its path, in the cache and for the views
-    this.client.setQueryData([sPath], oResponse);
-    this.keep(oResponse, sPath);
-    return oResponse;
+  /** `PUT <path>` */
+  public PUT(sPath: string, oBody: unknown): Promise<ApiResponse> {
+    return this.send('PUT', sPath, oBody);
   }
 
   /** `DELETE <path>` */
-  public delete(sPath: string): Promise<ApiResponse> {
-    return this.write('DELETE', sPath);
+  public DELETE(sPath: string): Promise<ApiResponse> {
+    return this.send('DELETE', sPath);
   }
 
-  /** Sends a write, and cancels and invalidates the reads of its path and its parents */
-  private async write(sMethod: string, sPath: string, oBody?: unknown): Promise<ApiResponse> {
-    // Sends it
-    const oResponse = await this.request(sPath, { method: sMethod, body: JSON.stringify(oBody) });
+  /** Sends a request: `/busy` while it is out, its answer as an `ApiResponse`, a failure in `/error/list` */
+  protected async send(sMethod: string, sPath: string, oBody?: unknown): Promise<ApiResponse> {
+    // Asks nothing on the server
+    if (IS_SERVER) return {};
 
-    // Cancels the reads out and marks them old
-    for (const sParent of ApiStore.parents(sPath)) {
-      await this.client.cancelQueries({ queryKey: [sParent] });
-      await this.client.invalidateQueries({ queryKey: [sParent] });
+    // Sets the store busy while the request is out
+    this.set('/busy', ++this.iCount > 0);
+
+    // Reads the answer as an `ApiResponse`, with its HTTP status
+    let oResponse: ApiResponse = { success: false, message: REQUEST_FAILED };
+    let sText: string | undefined;
+    try {
+      const oRes = await fetch(`${this.sUrl}${sPath}`, {
+        method: sMethod,
+        body: JSON.stringify(oBody),
+        headers: { 'content-type': 'application/json' },
+      });
+      sText = await oRes.text();
+      oResponse = { ...JSON.parse(sText), status: oRes.status };
+    } catch {
+      // Keeps the text of an answer that is not JSON
+      if (sText !== undefined) oResponse = { ...oResponse, result: sText };
+    }
+
+    // Sets the store not busy when no request is left
+    this.set('/busy', --this.iCount > 0);
+
+    // Keeps a failed answer with a message and the time, after the ones before
+    if (!oResponse.success) {
+      const oError: ApiError = {
+        ...oResponse,
+        message: oResponse.message || REQUEST_FAILED,
+        timestamp: Date.now(),
+      };
+      this.set('/error/list', [...(this.get('/error/list') ?? []), oError]);
+    }
+
+    // Keeps the answer of a read at its path and query, over what was there
+    if (sMethod === 'GET' || sMethod === 'QUERY') {
+      const sKey = ApiStore.key(sPath, oBody);
+      this.set(sKey, { ...super.get(sKey), ...oResponse });
     }
     return oResponse;
-  }
-
-  /** Keeps an answer at its path and query for the views, over what was there */
-  public keep(oResponse: ApiResponse, sPath: string, oQuery?: QueryParams): void {
-    // Sets the answer merged over the value at its key
-    const sKey = ApiStore.key(sPath, oQuery);
-    this.set(sKey, { ...super.get(sKey), ...oResponse });
-  }
-
-  /** A path and each of its parents */
-  private static parents(sPath: string): string[] {
-    // Joins the keys of the path up to each level
-    const aKeys = sPath.split('/').filter(Boolean);
-    return aKeys.map((_sKey, iIndex) => `/${aKeys.slice(0, iIndex + 1).join('/')}`);
   }
 
   /** Key of a read: its path, with its query when it has one */
