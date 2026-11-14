@@ -288,7 +288,7 @@ GET /unknown                                        // → 404 { success: false,
 | `createPlugin(creator)` | Types a plugin factory and its options. |
 | `createPluginCallbacks(callbacks)` | Types the callbacks of a plugin (`createPluginCallbacks<{ db: MyDb }>` types `db`), e.g. to keep them in their own file. |
 
-Also exported: the `NanoApp` class that `createNanoApp` returns, the configuration types (`NanoAppConfig`, `PackagesConfig`, `PluginConfig`, `PluginStage`, `MainPluginConfig`, `DatabaseConfig`), the Express `Request` type and the HTTP contract (`ApiResponse`, `ApiPromise`, `QueryParams`, `RouteEntry`, `Handler`, `HandlerParams`, `Handlers`, `NanoObject`) and the callback types (`Params`, `Callbacks`, `PluginCallbacks`).
+Also exported: `NanoError`, `isGranted`, the Express `Request` type, the HTTP contract (`ApiResponse`, `ApiPromise`, `RouteEntry`, `HandlerParams`, `NanoObject`) and what the creators return (`PluginConfig`, `PluginOptions`, `PluginCallbacks`).
 
 ## Development
 
