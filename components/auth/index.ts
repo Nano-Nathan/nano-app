@@ -1,5 +1,5 @@
 import { createController } from '@nano-app/frontend';
-import { DEFAULT_STORE } from '@nano-app/core/const';
+import { AUTH_PATH, DEFAULT_STORE } from '@nano-app/core/const';
 import type { ApiResponse } from '@nano-app/core/types/api';
 import type { AuthOptions } from '../types/auth';
 
@@ -14,15 +14,15 @@ export default function auth(oOptions: AuthOptions = {}) {
     return {
       async signIn(oBody: unknown): Promise<ApiResponse> {
         // Better Auth's sign-in of the kind of the options
-        return oApi.post(`/sign-in/${kind}`, oBody);
+        return oApi.POST(`${AUTH_PATH}/sign-in/${kind}`, oBody);
       },
       async signUp(oBody: unknown): Promise<ApiResponse> {
         // Better Auth's sign-up of the kind of the options
-        return oApi.post(`/sign-up/${kind}`, oBody);
+        return oApi.POST(`${AUTH_PATH}/sign-up/${kind}`, oBody);
       },
       async signOut(): Promise<ApiResponse> {
         // Better Auth's sign-out
-        return oApi.post('/sign-out');
+        return oApi.POST(`${AUTH_PATH}/sign-out`, {});
       },
       navTo(sUrl: string): void {
         // Goes to a url of the app

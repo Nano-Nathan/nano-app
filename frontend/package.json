@@ -51,7 +51,6 @@
     "react": ">=19.0.0"
   },
   "dependencies": {
-    "better-auth": "^1.7.18",
     "glob": "^14.0.4",
     "jiti": "^2.7.0",
     "mobx": "^7.1.5",

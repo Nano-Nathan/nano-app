@@ -1,7 +1,6 @@
-import { API_STORE_TYPE, APP_NAME, AUTH_PATH } from '@nano-app/core/const';
+import { API_STORE_TYPE, APP_NAME } from '@nano-app/core/const';
 import NanoError from '@nano-app/core/utils/NanoError';
 import ApiStore from '../stores/ApiStore';
-import AuthStore from '../stores/AuthStore';
 import Store from '../stores/Store';
 import { STORES } from '../utils/state';
 import type { StoreFile, Stores } from '../types/store';
@@ -27,14 +26,7 @@ export default function createStores(): Stores {
   });
 }
 
-/** Store of one file: an api store reads its backend, with Better Auth when it declares `auth` */
+/** Store of one file: an api store reads its backend, any other keeps UI state */
 function createStore(sName: string, oFile: StoreFile): Store {
-  // A store of UI state
-  if (oFile.type !== API_STORE_TYPE) return new Store(oFile.data);
-
-  // An api store with Better Auth at its base path
-  if (oFile.auth) return new AuthStore(sName, oFile.auth.path ?? AUTH_PATH, oFile.data);
-
-  // An api store
-  return new ApiStore(sName, oFile.data);
+  return oFile.type === API_STORE_TYPE ? new ApiStore(sName, oFile.data) : new Store(oFile.data);
 }
