@@ -4,8 +4,8 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import { reaction } from 'mobx';
-import { STORES_ENV } from '@nano-app/core/const';
-import { withNanoApp } from '../src/next';
+import { STORES_DEFINE } from '@nano-app/core/const';
+import { withNanoApp } from '../src/app/next';
 import Store from '../src/stores/Store';
 import createStores from '../src/creators/createStores';
 
@@ -66,10 +66,10 @@ describe('withNanoApp', () => {
 
       assert.equal(oConfig.reactStrictMode, true);
       assert.equal(oConfig.env?.API, '/api');
-      assert.deepEqual(JSON.parse(oConfig.env?.[STORES_ENV] ?? ''), {
-        admin_users: { type: 'app', data: { aUsers: [] } },
-        app: { type: 'app', data: { iCount: 0 } },
-      });
+      assert.deepEqual(JSON.parse(String(oConfig.compiler?.define?.[STORES_DEFINE])), [
+        ['admin_users', { type: 'app', data: { aUsers: [] } }],
+        ['app', { type: 'app', data: { iCount: 0 } }],
+      ]);
     } finally {
       process.chdir(sCwd);
     }

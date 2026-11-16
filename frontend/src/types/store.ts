@@ -19,6 +19,3 @@ export type StoreFile = {
   /** Initial state */
   data?: NanoObject;
 };
-
-/** Stores of the app by name (`src/stores/app.store.ts` → `app`), as their files export them */
-export type StoreFiles = NanoObject<StoreFile>;

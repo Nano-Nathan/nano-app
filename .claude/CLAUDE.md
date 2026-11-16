@@ -49,7 +49,7 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 - `public`, `protected` or `private` on every class method and field; constructors go without.
 - Declared functions and methods state their return type (`: Promise<void>`); inline callbacks infer it, and so does the factory of a component (`list`), from the controller it returns.
 - Prefer `unknown` and validate over `any`.
-- Types are declared where values are born and inferred from there. Data from outside (JSON, env) gets a typed variable where it enters (`const oFiles: StoreFiles = JSON.parse(…)`).
+- Types are declared where values are born and inferred from there. Data from outside (JSON, env) gets a typed variable where it enters (`const FILES: [string, StoreFile][] = JSON.parse(…)`).
 - `core/` holds only what two or more packages use; what one package uses lives in it. Module constants go in the `const.ts` of their package (`core/const.ts` for the shared ones). A file exports only what another file uses.
 - Types in a `types/` folder of the package, one file per area (`types/app.ts`, `types/plugin.ts`). `type`, not `interface`. `import type` for types.
 - Generic objects are `NanoObject` (`core/types/objects.ts`), with the value type when it is known (`NanoObject<Store>`), never `object` or `Record<string, …>`.

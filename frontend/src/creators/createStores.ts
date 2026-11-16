@@ -2,7 +2,7 @@ import { API_STORE_TYPE, APP_NAME } from '@nano-app/core/const';
 import NanoError from '@nano-app/core/utils/NanoError';
 import ApiStore from '../stores/ApiStore';
 import Store from '../stores/Store';
-import { STORES } from '../utils/state';
+import { STORES } from '../app/state';
 import type { StoreFile, Stores } from '../types/store';
 
 /** Stores of one React tree; reading one the app has not throws */

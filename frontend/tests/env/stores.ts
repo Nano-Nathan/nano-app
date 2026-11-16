@@ -1,7 +1,11 @@
-import { STORES_ENV } from '@nano-app/core/const';
+import { STORES_DEFINE } from '@nano-app/core/const';
 
-// Stores of stores.test.ts, as `withNanoApp` inlines them: set before the frontend loads
-process.env[STORES_ENV] = JSON.stringify({
-  ui: { type: 'app', data: { busy: false } },
-  backend: { type: 'api', data: { page: 1 } },
+// Stores of stores.test.ts, as `withNanoApp` writes them: set before the frontend loads
+Object.assign(globalThis, {
+  [STORES_DEFINE]: JSON.stringify(
+    Object.entries({
+      ui: { type: 'app', data: { busy: false } },
+      backend: { type: 'api', data: { page: 1 } },
+    }),
+  ),
 });

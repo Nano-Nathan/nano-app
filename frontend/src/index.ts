@@ -1,4 +1,4 @@
-export { NanoAppProvider } from './react/NanoAppProvider';
+export { NanoAppProvider } from './app/NanoAppProvider';
 export { default as createController } from './creators/createController';
 export type {
   ComponentContext,

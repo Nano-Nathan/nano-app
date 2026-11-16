@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { enableStaticRendering, observer } from 'mobx-react-lite';
 import { IS_SERVER } from '../const';
-import { useStores } from '../react/NanoAppProvider';
+import { useStores } from '../app/NanoAppProvider';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type {
   ComponentContext,

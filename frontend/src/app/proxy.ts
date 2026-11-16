@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { API_STORE_TYPE } from '@nano-app/core/const';
 import Logger from '@nano-app/core/utils/Logger';
-import { PROXY_PATH } from './const';
-import { STORES } from './utils/state';
+import { PROXY_PATH } from '../const';
+import { STORES } from './state';
 import type { NextRequest } from 'next/server';
 
 /** Env var with the backend URL of each api store (`admin_users` → `API_ADMIN_USERS_URL`) */

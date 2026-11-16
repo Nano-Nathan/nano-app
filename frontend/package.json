@@ -9,13 +9,13 @@
       "import": "./build/index.js"
     },
     "./next": {
-      "types": "./build/next.d.ts",
-      "import": "./build/next.js",
-      "default": "./build/next.js"
+      "types": "./build/app/next.d.ts",
+      "import": "./build/app/next.js",
+      "default": "./build/app/next.js"
     },
     "./proxy": {
-      "types": "./build/proxy.d.ts",
-      "import": "./build/proxy.js"
+      "types": "./build/app/proxy.d.ts",
+      "import": "./build/app/proxy.js"
     }
   },
   "files": [

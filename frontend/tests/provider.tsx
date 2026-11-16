@@ -1,5 +1,5 @@
 import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime';
-import { NanoAppProvider } from '../src/react/NanoAppProvider';
+import { NanoAppProvider } from '../src/app/NanoAppProvider';
 import type { ReactNode } from 'react';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 

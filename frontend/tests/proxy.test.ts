@@ -4,7 +4,7 @@ import { test, describe, before, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { NextRequest } from 'next/server';
-import { proxy } from '../src/proxy';
+import { proxy } from '../src/app/proxy';
 import { follow } from './helpers';
 import type { NanoObject } from '@nano-app/core/types/objects';
 
