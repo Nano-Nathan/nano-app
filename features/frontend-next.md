@@ -43,7 +43,7 @@ updated: 2026-11-16
 ## Pending
 
 1. **`createController`**: build the methods once per mount, read props and stores fresh.
-2. **Route protection**: `redirects` with `missing` cookie (optimistic, checks the cookie exists only) or Better Auth's `getSessionCookie` in the proxy; the real check stays in the backend.
+2. **Route protection**: `createPage` in `@nano-app/frontend/server` (done, uncommitted): a server component asks Better Auth's `get-session` at the store's backend and redirects without a session. Every kind of auth (cookie, API key, bearer, client credentials, JWT) is verified by Better Auth in the backend; the frontend only carries the cookie.
 3. **Tests**: they no longer match the code (auth, `AuthStore`, store headers, default store); update them apart.
 4. `pnpm install` is pending (ask first).
 

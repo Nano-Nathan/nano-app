@@ -193,6 +193,27 @@ export default createController(({ stores: { app, backend } }) => ({
 // The view gets backend.get('/users', { where: { name: { ilike: `%${app.get('/search/applied')}%` } } })
 ```
 
+### Pages with a session
+
+A page that needs a session wraps itself with `createPage`, from `@nano-app/frontend/server`. Better Auth in the backend of the store answers the session; without one the page redirects:
+
+```tsx
+// app/dashboard/page.tsx
+import { createPage } from '@nano-app/frontend/server';
+
+export default createPage({ store: 'api', redirect: '/login' }, ({ session }) => (
+  <Dashboard user={session.user} />
+));
+```
+
+- `store` names the api store whose backend has Better Auth; `redirect` is where the page goes without a session.
+- The view gets Next's props and `session`, Better Auth's answer as is (`{ session, user }`).
+- It is optional: a page without it is a public page of Next.
+- On each render the server asks `GET <API_<STORE>_URL>/auth/get-session` with the browser's cookie, once per render. Turn on Better Auth's cookie cache in the backend (`session: { cookieCache: { enabled: true, maxAge: 300 } }`) so it does not read the database each time.
+- The path is `/auth`, Better Auth's `basePath` by default: a backend that moves it breaks the page, as it breaks the `auth` component.
+- The page only keeps itself from showing: the data stays protected by the backend.
+- `@nano-app/frontend/server` runs on the server only: import it from pages and server components, never from a client component.
+
 ### Sessions
 
 With [Better Auth](../backend/README.md#better-auth) on in the backend, its store declares `auth`: `path`, the `basePath` of Better Auth there (`/auth` by default, as the backend's), and `routes`, the pages that need a session. Without it the store stays as is.
