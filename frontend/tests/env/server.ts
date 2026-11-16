@@ -2,5 +2,7 @@ import { STORES_DEFINE } from '@nano-app/core/const';
 
 // Stores of server.test.ts, as `withNanoApp` writes them: set before the frontend loads
 Object.assign(globalThis, {
-  [STORES_DEFINE]: JSON.stringify(Object.entries({ backend: { type: 'api' } })),
+  [STORES_DEFINE]: JSON.stringify(
+    Object.entries({ app: { type: 'app' }, backend: { type: 'api' } }),
+  ),
 });

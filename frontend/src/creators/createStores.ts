@@ -1,22 +1,19 @@
-import { API_STORE_TYPE, APP_NAME } from '@nano-app/core/const';
+import { API_STORE_TYPE } from '@nano-app/core/const';
 import NanoError from '@nano-app/core/utils/NanoError';
+import { STORES } from '../defines/client';
 import ApiStore from '../stores/ApiStore';
 import Store from '../stores/Store';
-import { STORES } from '../app/state';
 import type { StoreFile, Stores } from '../types/store';
 
 /** Stores of one React tree; reading one the app has not throws */
 export default function createStores(): Stores {
-  // Creates each store with its own state
+  // Creates each store with its own state; `app` is among them, as `withNanoApp` adds it
   const oStores = Object.fromEntries(
-    [...STORES].map(([sName, oFile]) => [sName, createStore(sName, oFile)]),
-  );
-
-  // The app store is always a store of UI state, empty when the app has none
-  const oAll = { ...oStores, [APP_NAME]: new Store(STORES.get(APP_NAME)?.data) };
+    STORES.map(([sName, oFile]) => [sName, createStore(sName, oFile)]),
+  ) as Stores;
 
   // Reading a store by a name the app does not have fails, naming the file to add
-  return new Proxy(oAll, {
+  return new Proxy(oStores, {
     get: (oTarget, oKey) => {
       if (typeof oKey === 'string' && !(oKey in oTarget)) {
         throw new NanoError(`The store "${oKey}" does not exist. Add src/stores/${oKey}.store.ts.`);

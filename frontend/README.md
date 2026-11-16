@@ -38,7 +38,7 @@ export default function RootLayout({ children }: { children: ReactNode }): React
 
 ## Stores
 
-A `src/stores/**/*.store.ts` is a store of UI state, named after its path (`src/stores/admin/users.store.ts` → `admin_users`). `withNanoApp` loads them at build time; `NanoAppProvider` gives each React tree its own copy. The `app` store is always there, empty when the app has no `app.store.ts`.
+A `src/stores/**/*.store.ts` is a store of UI state, named after its path (`src/stores/admin/users.store.ts` → `admin_users`). `withNanoApp` loads them at build time; `NanoAppProvider` gives each React tree its own copy. The `app` store is always there, empty when the app has no `app.store.ts`; its file may make it an `api` store too.
 
 ```ts
 // src/stores/ui.store.ts
@@ -121,6 +121,7 @@ export default { type: 'api' };
 ```ts
 // proxy.ts, next to app/
 export { proxy } from '@nano-app/frontend/proxy';
+export const config = { matcher: '/api/:path*' };
 ```
 
 Each api store is served on `/api/<store>`, with its backend URL in `API_<STORE>_URL` (`api.store.ts` → `/api/api/...` and `API_API_URL`, `admin/users.store.ts` → `/api/admin_users/...` and `API_ADMIN_USERS_URL`; `/api/api/users/7?top=1` → `$API_API_URL/users/7?top=1`). The components use the store `api` when they name none. The URLs are read at runtime, once, on the server only: they never reach the browser. A backend with a `basePath` puts it in the URL (`API_API_URL=http://backend:3000/api`).
@@ -128,7 +129,7 @@ Each api store is served on `/api/<store>`, with its backend URL in `API_<STORE>
 - The request keeps its method, headers, cookies and body, and the backend's answer comes back as is, `Set-Cookie` and redirects included.
 - The proxy sends every header of the browser to the backend, cookies included: point a store only at a backend you trust with your users' cookies.
 - The client IP reaches the backend in `X-Forwarded-For`, which Next fills only when the request brings none. Put a proxy in front of Next that appends the client IP (nginx, a load balancer, Tailscale Funnel): with Next exposed directly, a browser that sends its own header chooses the IP it is counted by. See [Client IP](../backend/README.md#client-ip).
-- Without a `matcher`, Next runs the proxy on every request; to skip the rest, add `export const config = { matcher: ['/api/:path*', ...] };` to `proxy.ts` with `/api` and the pages of `auth.routes` (Next reads it only when it is written there).
+- The `matcher` keeps Next from running the proxy on every other request (pages, `_next/static`, images). Next reads it only when it is written in the app's `proxy.ts`: re-exported from the package, it is ignored. Without it the proxy still works, letting every other request go on. Keep it on `/api`, the path of the proxy.
 - While an api store has no URL, every `/api/` request answers 500 with the variables to define. `/api/<name>` of no api store, and any request outside `/api/`, goes on to the app's own routes.
 
 ### Reading and writing
@@ -231,24 +232,9 @@ export default createController(({ stores: { backend } }) => ({
 - Better Auth checks the `Origin` of every `POST`: add the URL of the frontend to its `trustedOrigins` in the backend.
 - With two backends with Better Auth, their cookies get the same name on the frontend's domain: give one of them another `advanced.cookiePrefix`.
 
-#### Guarded pages
-
-The proxy guards the pages of `auth.routes`; every other page is public. For each page it takes the first route that matches, across the stores with `auth`, and lets it through or redirects it:
-
-- `match`: the path of the page, exact (`/admin`) or it and every path below it (`/admin/*`).
-- `redirect`: where the page goes when the request is not allowed, `/` by default. A route whose `match` covers its own `redirect` is invalid.
-- Without `roles` nor `permissions`, the page needs a session: the proxy asks `GET <path>/get-session` with the browser's cookie.
-- `roles`: roles of Better Auth's admin plugin, separated by commas. Any role of the user (`user.role` of the session, also separated by commas) allows it.
-- `permissions`: actions per resource of the admin plugin, separated by commas. The proxy asks `POST <path>/admin/has-permission` with them as `{ permissions: { collections: ['read', 'update'] } }`, and every one is needed. A route with `roles` and `permissions` needs both.
-- `roles` and `permissions` need the admin plugin on in the backend. Their names are not checked against it: a role or an action it does not have never allows the page.
-- Every request of a guarded page asks `get-session` through the proxy, and `has-permission` too when the route has `permissions`. A session that ends while a page is open is caught on the next navigation.
-- To answer `get-session` without reading the database, turn on Better Auth's cookie cache in the backend's `auth` options (`session: { cookieCache: { enabled: true, maxAge: 300 } }`): the session comes from a signed cookie, so a revoked session or a new role shows up within `maxAge` seconds. `has-permission` always reads the database.
-
-The data stays protected by the backend: the proxy only keeps the pages from showing.
-
 ### With a proxy of your own
 
-Next takes one `proxy.ts`. To keep yours, call nano-app's from it for `/api` and the pages of `auth.routes`, and include them in your `matcher`:
+Next takes one `proxy.ts`. To keep yours, call nano-app's from it for `/api`, and include `/api` in your `matcher`:
 
 ```ts
 // proxy.ts
@@ -263,7 +249,7 @@ export function proxy(oReq: NextRequest) {
   return NextResponse.next();
 }
 
-export const config = { matcher: ['/api/:path*', '/admin/:path*', '/dashboard/:path*'] };
+export const config = { matcher: ['/api/:path*', '/dashboard/:path*'] };
 ```
 
 ## Test app

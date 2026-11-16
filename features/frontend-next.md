@@ -34,6 +34,7 @@ updated: 2026-11-16
 |---|---|
 | `withNanoApp` | Node, when Next reads `next.config.ts` (build and dev) |
 | `NANO_APP_STORES` | Written in every bundle by `compiler.define`, the browser's included |
+| `NANO_APP_BACKENDS` | Written in the server bundles only by `compiler.defineServer`: `[store, env var]` of each api store |
 | `proxy.ts` | Node, on every request (no `matcher`); only `/api/*` goes on |
 | `NanoAppProvider`, stores | Once per request in the SSR and once in the browser |
 | `createController` | SSR and browser; rebuilds and binds every method on each render |

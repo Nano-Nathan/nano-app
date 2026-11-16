@@ -4,6 +4,7 @@ import { STORES_DEFINE } from '@nano-app/core/const';
 Object.assign(globalThis, {
   [STORES_DEFINE]: JSON.stringify(
     Object.entries({
+      app: { type: 'app' },
       api: { type: 'api', auth: {} },
       admin: { type: 'api', auth: { path: '/auth' } },
     }),

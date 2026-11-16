@@ -8,5 +8,8 @@ export const IS_SERVER = typeof window === 'undefined';
 export const MISSING_PROVIDER =
   'A component has no stores. Wrap the root layout with NanoAppProvider.';
 
+/** Global that `compiler.defineServer` replaces with each api store and its URL's env var. Read as `NANO_APP_BACKENDS`, literal */
+export const BACKENDS_DEFINE = 'NANO_APP_BACKENDS';
+
 /** Base path of the proxy: `/api/<store>/<path>` goes to the backend of the store */
 export const PROXY_PATH = '/api';

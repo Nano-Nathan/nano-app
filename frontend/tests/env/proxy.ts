@@ -1,4 +1,5 @@
 import { STORES_DEFINE } from '@nano-app/core/const';
+import { BACKENDS_DEFINE } from '../../src/const';
 
 // Stores of proxy.test.ts, as `withNanoApp` writes them: set before the frontend loads
 Object.assign(globalThis, {
@@ -19,4 +20,9 @@ Object.assign(globalThis, {
       },
     }),
   ),
+  [BACKENDS_DEFINE]: JSON.stringify([
+    ['admin_users', 'API_ADMIN_USERS_URL'],
+    ['orders', 'API_ORDERS_URL'],
+    ['guarded', 'API_GUARDED_URL'],
+  ]),
 });
