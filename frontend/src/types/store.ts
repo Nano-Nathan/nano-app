@@ -18,8 +18,6 @@ export type StoreFile = {
   type: typeof APP_STORE_TYPE | typeof API_STORE_TYPE;
   /** Initial state */
   data?: NanoObject;
-  /** Headers the proxy adds, each value names its env var: `KEY` → `API_KEY_HEADER` */
-  headers?: NanoObject<string>;
 };
 
 /** Stores of the app by name (`src/stores/app.store.ts` → `app`), as their files export them */

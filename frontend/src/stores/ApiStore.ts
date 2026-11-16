@@ -1,4 +1,4 @@
-import { DEFAULT_STORE, REQUEST_FAILED } from '@nano-app/core/const';
+import { REQUEST_FAILED } from '@nano-app/core/const';
 import { IS_SERVER, PROXY_PATH } from '../const';
 import Store from './Store';
 import type { ApiResponse, QueryParams } from '@nano-app/core/types/api';
@@ -7,14 +7,14 @@ import type { ApiError } from '../types/store';
 
 /** Backend of an `api` store through the proxy: one method per HTTP method, as its routes */
 export default class ApiStore extends Store {
-  /** URL of the store in the proxy: `/api` for the default one, `/api/<store>` for the rest */
+  /** URL of the store in the proxy: `/api/<store>` */
   private readonly sUrl: string;
   private iCount = 0;
 
   /** Store of the backend `API_<NAME>_URL`, with the initial data of its file */
   constructor(sName: string, oData?: NanoObject) {
     super(oData);
-    this.sUrl = sName === DEFAULT_STORE ? PROXY_PATH : `${PROXY_PATH}/${sName}`;
+    this.sUrl = `${PROXY_PATH}/${sName}`;
   }
 
   /** Answer of a read, kept at its path and query */

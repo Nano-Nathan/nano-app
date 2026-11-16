@@ -20,19 +20,6 @@ import { withNanoApp } from '@nano-app/frontend/next';
 export default withNanoApp({});
 ```
 
-`withNanoApp` also adds `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` and `Referrer-Policy: strict-origin-when-cross-origin` to every page, and hides `X-Powered-By` (`poweredByHeader: false`). Your own `headers()` go after them, so a header with the same name replaces it; set `poweredByHeader: true` to show it again. `Content-Security-Policy` and `Strict-Transport-Security` depend on each app, so add them in your `headers()` (for the policy, see [Next's guide](https://nextjs.org/docs/app/guides/content-security-policy)) or in the proxy that serves HTTPS:
-
-```ts
-export default withNanoApp({
-  headers: async () => [
-    {
-      source: '/:path*',
-      headers: [{ key: 'Strict-Transport-Security', value: 'max-age=31536000' }],
-    },
-  ],
-});
-```
-
 ```tsx
 // app/layout.tsx
 import { NanoAppProvider } from '@nano-app/frontend';
@@ -136,10 +123,13 @@ export default { type: 'api' };
 export { proxy } from '@nano-app/frontend/proxy';
 ```
 
-The store `api` is the default one: the components use it when they name none, and the proxy serves it on `/api` itself, with its backend in `API_URL` (`/api/users/7?top=1` → `$API_URL/users/7?top=1`). An app with more backends adds a store per backend, served on `/api/<store>` with its URL in `API_<STORE>_URL` (`backend` → `/api/backend/...` and `API_BACKEND_URL`, `admin/users.store.ts` → `API_ADMIN_USERS_URL`). The URLs are read at runtime, on the server only: they never reach the browser. A backend with a `basePath` puts it in the URL (`API_URL=http://backend:3000/api`).
+Each api store is served on `/api/<store>`, with its backend URL in `API_<STORE>_URL` (`api.store.ts` → `/api/api/...` and `API_API_URL`, `admin/users.store.ts` → `/api/admin_users/...` and `API_ADMIN_USERS_URL`; `/api/api/users/7?top=1` → `$API_API_URL/users/7?top=1`). The components use the store `api` when they name none. The URLs are read at runtime, once, on the server only: they never reach the browser. A backend with a `basePath` puts it in the URL (`API_API_URL=http://backend:3000/api`).
 
 - The request keeps its method, headers, cookies and body, and the backend's answer comes back as is, `Set-Cookie` and redirects included.
-- `/api/<name>/...` goes to the api store `<name>` when the app has one, and any other `/api/...` to the store `api`: a path of the default backend that starts with the name of another store reaches that store, so name the stores apart from the default backend's routes. A store without its variable answers 500 with the name of the variable to define. A request outside `/api/` goes on to the app's own routes.
+- The proxy sends every header of the browser to the backend, cookies included: point a store only at a backend you trust with your users' cookies.
+- The client IP reaches the backend in `X-Forwarded-For`, which Next fills only when the request brings none. Put a proxy in front of Next that appends the client IP (nginx, a load balancer, Tailscale Funnel): with Next exposed directly, a browser that sends its own header chooses the IP it is counted by. See [Client IP](../backend/README.md#client-ip).
+- Without a `matcher`, Next runs the proxy on every request; to skip the rest, add `export const config = { matcher: ['/api/:path*', ...] };` to `proxy.ts` with `/api` and the pages of `auth.routes` (Next reads it only when it is written there).
+- While an api store has no URL, every `/api/` request answers 500 with the variables to define. `/api/<name>` of no api store, and any request outside `/api/`, goes on to the app's own routes.
 
 ### Reading and writing
 
@@ -201,24 +191,6 @@ export default createController(({ stores: { app, backend } }) => ({
 }));
 // The view gets backend.get('/users', { where: { name: { ilike: `%${app.get('/search/applied')}%` } } })
 ```
-
-### Headers per backend
-
-A backend that asks for a key (`x-api-key`) gets it from the proxy. The store names the header and the variable that holds its value, never the value itself, since store files reach the browser:
-
-```ts
-// src/stores/payments.store.ts
-export default { type: 'api', headers: { 'x-api-key': 'STRIPE_KEY' } };
-```
-
-The proxy sends `x-api-key` with the value of `API_STRIPE_KEY_HEADER` (the name in upper case) on every request to that store; a missing variable answers 500 with its name.
-
-- A store header wins over a browser header with the same name: the browser cannot replace or guess the key.
-- The proxy adds the key to every request to that store, from any visitor, with or without a session: anyone who reaches the app can call any path and method of that backend with it. Declare a key only for a backend whose every endpoint may be called by your visitors, and keep the rest protected there.
-- The proxy sends every header of the browser to the backend, cookies included: point a store only at a backend you trust with your users' cookies.
-- The client IP reaches the backend in `X-Forwarded-For`, which Next fills only when the request brings none. Put a proxy in front of Next that appends the client IP (nginx, a load balancer, Tailscale Funnel): with Next exposed directly, a browser that sends its own header chooses the IP it is counted by. See [Client IP](../backend/README.md#client-ip).
-- The user's own credentials (the session cookie, `Authorization`) still go as the browser sends them. Do not declare a header the user needs in the store, or every user goes with the store's value.
-- Without a `matcher`, Next runs the proxy on every request; to skip the rest, add `export const config = { matcher: ['/api/:path*', ...] };` to `proxy.ts` with `/api` and the pages of `auth.routes` (Next reads it only when it is written there).
 
 ### Sessions
 

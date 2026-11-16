@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { useRouter } from 'next/navigation';
 import { enableStaticRendering, observer } from 'mobx-react-lite';
 import { IS_SERVER } from '../const';
 import { useStores } from '../react/NanoAppProvider';
@@ -32,9 +32,7 @@ function controller<M extends NanoObject & { callbacks?: ControllerCallbacks }>(
     bindView: fnView =>
       observer((props: ComponentProps) => {
         // Gives the methods the props, the stores and the router of the app
-        const fnNavigate = useNavigate();
-        const router = { push: (sUrl: string) => fnNavigate(sUrl) };
-        const oContext = { props, stores: useStores(), router };
+        const oContext = { props, stores: useStores(), router: useRouter() };
         const oMethods = fnMethods(oContext);
 
         // Binds each method, so `this` reaches the others
