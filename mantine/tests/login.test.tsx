@@ -76,8 +76,9 @@ test('the login page signs in at the store with the values and goes to home', as
 test('the login page signs up with the same values, the email as the name, and goes to home', async () => {
   renderLogin();
 
-  // Creates the account
+  // Switches to sign-up and submits the form
   fireEvent.click(screen.getByText('Create account'));
+  fireEvent.submit(screen.getByRole('button', { name: 'Create account' }));
 
   // Better Auth's sign-up got the values with the name, and the router went home
   await waitFor(() => assert.deepEqual(aVisited, ['/home']));

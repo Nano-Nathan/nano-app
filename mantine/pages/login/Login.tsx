@@ -17,9 +17,39 @@ type LoginValues = {
   password: string;
 };
 
+/** Texts of the current mode: its button, and the question and link to the other mode */
+type ModeTexts = {
+  submit: string;
+  question: string;
+  link: string;
+};
+
 /** Auth of the store of the props: signs in or signs up and goes to the home */
 class LoginController extends AuthController {
   protected api: ApiStore = this.store();
+
+  /** Whether the card signs up instead of signing in */
+  public isSignUp(): boolean {
+    return this.stores.app.get('/login/isSignUp') ?? false;
+  }
+
+  /** Switches the card between signing in and signing up */
+  public toggle(): void {
+    this.stores.app.set('/login/isSignUp', !this.isSignUp());
+  }
+
+  /** Texts of the current mode */
+  public mode(): ModeTexts {
+    const { texts } = this.props;
+    const oSignIn = { submit: texts.submit, question: texts.noAccount, link: texts.register };
+    const oSignUp = { submit: texts.register, question: texts.haveAccount, link: texts.submit };
+    return this.isSignUp() ? oSignUp : oSignIn;
+  }
+
+  /** Signs in or signs up with the valid values of the form, by the mode */
+  public send(oValues: LoginValues): Promise<void> {
+    return this.isSignUp() ? this.register(oValues) : this.login(oValues);
+  }
 
   /** Signs in with the values of the form and goes to the home */
   public async login(oValues: LoginValues): Promise<void> {
@@ -28,11 +58,7 @@ class LoginController extends AuthController {
   }
 
   /** Signs up with the values of the form, the email as the name, and goes to the home */
-  public async register(): Promise<void> {
-    // Values of the login form
-    const oValues: LoginValues = this.stores.app.get('/form/login/values');
-
-    // Signs up and goes to the home
+  public async register(oValues: LoginValues): Promise<void> {
     const oResponse = await this.signUp({ ...oValues, name: oValues.email });
     if (oResponse.success) this.navTo(this.props.home);
   }
@@ -61,7 +87,7 @@ class LoginController extends AuthController {
   }
 }
 
-/** Login card: the providers, the form of email and password, and the link that signs up */
+/** Login card: the providers, the form of email and password, and the link to the other mode */
 export default createView(LoginController, (auth, { providers, texts }) => (
   <Paper withBorder shadow="md" radius="lg" p={{ base: 'lg', sm: 'xl' }}>
     <Stack gap="lg">
@@ -106,16 +132,16 @@ export default createView(LoginController, (auth, { providers, texts }) => (
             validation: z.string(texts.required),
           },
         ]}
-        onSubmit={auth.login}
+        onSubmit={auth.send}
       >
         <Button type="submit" radius="xl" size="md" mt="xs">
-          {texts.submit}
+          {auth.mode().submit}
         </Button>
       </Form>
       <Text size="sm" c="dimmed" ta="center">
-        {texts.noAccount}{' '}
-        <Anchor component="button" type="button" size="sm" fw={600} onClick={auth.register}>
-          {texts.register}
+        {auth.mode().question}{' '}
+        <Anchor component="button" type="button" size="sm" fw={600} onClick={auth.toggle}>
+          {auth.mode().link}
         </Anchor>
       </Text>
     </Stack>

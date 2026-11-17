@@ -8,6 +8,8 @@ export type LoginTexts = {
   divider: string;
   /** Question before the link that signs up */
   noAccount: string;
+  /** Question before the link that goes back to sign in */
+  haveAccount: string;
   /** Label of the email */
   email: string;
   /** Label of the password */

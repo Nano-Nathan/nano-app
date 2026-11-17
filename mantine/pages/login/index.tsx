@@ -9,6 +9,7 @@ const TEXTS: LoginTexts = {
   subtitle: 'Sign in to continue',
   divider: 'or with your email',
   noAccount: 'No account yet?',
+  haveAccount: 'Already have an account?',
   email: 'Email',
   password: 'Password',
   submit: 'Sign in',
