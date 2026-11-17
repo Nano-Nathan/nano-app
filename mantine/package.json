@@ -1,0 +1,71 @@
+{
+  "name": "@nano-app/mantine",
+  "version": "0.0.0-semantic-release",
+  "description": "Mantine for @nano-app/frontend: the root layout, views of @nano-app/components and ready pages",
+  "type": "module",
+  "exports": {
+    "./*": {
+      "types": "./build/*/index.d.ts",
+      "import": "./build/*/index.js"
+    }
+  },
+  "files": [
+    "build",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "test": "tsx --test --test-force-exit --test-concurrency=1 tests/*.test.tsx",
+    "prepublishOnly": "pnpm run build"
+  },
+  "keywords": [
+    "nano-app",
+    "next",
+    "react",
+    "mantine"
+  ],
+  "author": "Cristian Serrano",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nano-Nathan/nano-app.git",
+    "directory": "mantine"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": "^22.23.4 || ^24.22.1 || >=26.12.1"
+  },
+  "peerDependencies": {
+    "@mantine/core": ">=9.0.0",
+    "@mantine/hooks": ">=9.0.0",
+    "@nano-app/components": ">=0.13.0",
+    "@nano-app/frontend": ">=0.16.0",
+    "next": ">=16.3.0",
+    "react": ">=19.0.0"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@happy-dom/global-registrator": "^21.0.3",
+    "@mantine/core": "^9.8.1",
+    "@mantine/hooks": "^9.8.1",
+    "@nano-app/components": "workspace:*",
+    "@nano-app/frontend": "workspace:*",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "glob": "^14.0.4",
+    "happy-dom": "^21.0.3",
+    "next": "^16.4.6",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tsdown": "^0.23.7",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

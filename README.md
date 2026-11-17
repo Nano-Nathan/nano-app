@@ -4,11 +4,12 @@
 [![plugins](https://img.shields.io/npm/v/@nano-app/plugins?label=plugins)](https://www.npmjs.com/package/@nano-app/plugins)
 [![frontend](https://img.shields.io/npm/v/@nano-app/frontend?label=frontend)](https://www.npmjs.com/package/@nano-app/frontend)
 [![components](https://img.shields.io/npm/v/@nano-app/components?label=components)](https://www.npmjs.com/package/@nano-app/components)
+[![mantine](https://img.shields.io/npm/v/@nano-app/mantine?label=mantine)](https://www.npmjs.com/package/@nano-app/mantine)
 [![license](https://img.shields.io/npm/l/@nano-app/backend)](https://github.com/Nano-Nathan/nano-app/blob/main/LICENSE)
 
 File-convention framework for Node.js. In the backend you write `*.route.ts` files: `@nano-app/backend` discovers them, mounts an Express 5 server, and turns every `ApiResponse` into HTTP. In a Next.js frontend you write `*.store.ts` files and controllers: `@nano-app/frontend` keeps the UI state in stores and talks to the backend through its proxy.
 
-This repository publishes **`@nano-app/backend`**, **`@nano-app/plugins`** (the official backend plugins), **`@nano-app/frontend`** and **`@nano-app/components`** (the official frontend components). You add your own plugins with `createPlugin`, or publish them as separate packages.
+This repository publishes **`@nano-app/backend`**, **`@nano-app/plugins`** (the official backend plugins), **`@nano-app/frontend`**, **`@nano-app/components`** (the official frontend components) and **`@nano-app/mantine`** (their Mantine layout, views and pages). You add your own plugins with `createPlugin`, or publish them as separate packages.
 
 While the version is `0.x`, the public API can change.
 
@@ -55,7 +56,8 @@ The file path is the URL. Full API, database, and plugin contract: [`backend/REA
 | `@nano-app/plugins` | `plugins/` | published | Official backend plugins: `import <name> from '@nano-app/plugins/<name>'` |
 | `@nano-app/frontend` | `frontend/` | published | Next.js stores, controllers and the proxy to the backend |
 | `@nano-app/components` | `components/` | published | Official frontend components: `import <name> from '@nano-app/components/<name>'` |
-| `@nano-app/core` | `core/` | private | Convention loader, types and constants, inlined into the backend, frontend and components builds |
+| `@nano-app/mantine` | `mantine/` | published | Mantine for the frontend: `createLayout`, views of the components and ready pages |
+| `@nano-app/core` | `core/` | private | Convention loader, types and constants, inlined into the backend, frontend, components and mantine builds |
 
 Each package has its tests in its `tests/` folder (`frontend/tests/app` is a Next app that uses the frontend and the components). Each published package has its own version.
 
