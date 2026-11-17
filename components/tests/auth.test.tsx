@@ -39,6 +39,11 @@ const oRouter: AppRouterInstance = {
   bfcacheId: '',
 };
 
+/** Auth of the `api` store */
+class ApiAuthController extends AuthController {
+  protected api = this.stores.api;
+}
+
 /** View of an auth: its buttons */
 function view(auth: AuthController): ReactNode {
   return (
@@ -76,8 +81,8 @@ describe('auth', () => {
 
   test('signIn sends the body to Better Auth with the kind of the subclass', async () => {
     // Renders an auth of the username method and signs in
-    class UsernameController extends AuthController {
-      public kind = 'username';
+    class UsernameController extends ApiAuthController {
+      protected kind = 'username';
     }
     const Auth = createView(UsernameController, view);
     renderApp(<Auth />);
@@ -92,7 +97,7 @@ describe('auth', () => {
 
   test('signUp signs up with email by default, and signOut signs out', async () => {
     // Renders an auth, signs up and signs out
-    const Auth = createView(AuthController, view);
+    const Auth = createView(ApiAuthController, view);
     renderApp(<Auth />);
     fireEvent.click(screen.getByText('sign up'));
     fireEvent.click(screen.getByText('sign out'));
@@ -102,10 +107,10 @@ describe('auth', () => {
     assert.ok(aRequests.includes('POST /api/api/auth/sign-out {}'));
   });
 
-  test('a subclass reads the api store named in store', async () => {
+  test('a subclass reads the api store it gives', async () => {
     // Renders an auth of the admin store and signs out
     class AdminController extends AuthController {
-      public store = 'admin';
+      protected api = this.stores.admin;
     }
     const Auth = createView(AdminController, view);
     renderApp(<Auth />);
@@ -116,7 +121,7 @@ describe('auth', () => {
 
   test('navTo goes to the url with the router of the app', () => {
     // Renders an auth and goes to the private page
-    const Auth = createView(AuthController, view);
+    const Auth = createView(ApiAuthController, view);
     renderApp(<Auth />);
     fireEvent.click(screen.getByText('go'));
 

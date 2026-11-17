@@ -6,7 +6,7 @@ import Input from './Input';
 
 /** Form whose every field type is shown with the input */
 class InputFormController extends FormController {
-  public components = { text: Input };
+  protected components = { text: Input };
 }
 
 /** A form of a config of fields, and its button */

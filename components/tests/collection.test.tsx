@@ -44,9 +44,11 @@ const oBackend = createServer((oReq, oRes) => {
 
 /** Users two per page */
 class UsersController extends CollectionController {
-  public name = 'users';
-  public path = '/users';
-  public limit = 2;
+  protected api = this.stores.api;
+
+  protected root = '/collection/users';
+  protected path = '/users';
+  protected limit = 2;
 }
 
 /** View of a collection: its names, its page from the app store and its buttons */
@@ -114,11 +116,12 @@ describe('collection', () => {
     assert.ok(screen.getByText('page 0'));
   });
 
-  test('a subclass reads the api store named in store', async () => {
+  test('a subclass reads the api store it gives', async () => {
     // Renders the users of another api store, one per page
     class AdminUsersController extends UsersController {
-      public store = 'admin';
-      public limit = 1;
+      protected api = this.stores.admin;
+
+      protected limit = 1;
     }
     const Users = createView(AdminUsersController, view);
     renderApp(<Users />);

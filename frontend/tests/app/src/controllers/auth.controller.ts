@@ -2,7 +2,7 @@ import AuthController from '@nano-app/components/auth';
 
 /** Session of the backend store, shared by the login and the sign-out */
 export default class BackendAuthController extends AuthController {
-  public store = 'backend';
+  protected api = this.stores.backend;
 
   /** Signs in with the values of the form and goes to the private page */
   public async login(oValues: unknown): Promise<void> {

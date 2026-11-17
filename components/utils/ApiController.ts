@@ -1,14 +1,34 @@
-import { Controller } from '@nano-app/frontend';
-import { DEFAULT_STORE } from '@nano-app/core/const';
+import AppController from './AppController';
 import type { ApiStore } from '@nano-app/frontend';
+import type { ApiResponse, QueryParams } from '@nano-app/core/types/api';
 
-/** Controller of a component that reads an api store, named in `store` */
-export default class ApiController extends Controller {
-  /** Name of the api store it reads (`api` by default) */
-  public store: string = DEFAULT_STORE;
+/** Controller that requests the api store its subclass gives, besides its state in `app` */
+export default abstract class ApiController extends AppController {
+  /** Api store it requests (`protected api = this.stores.backend;`) */
+  protected abstract api: ApiStore;
 
-  /** The api store of a name, `store` by default */
-  protected api(sName: string = this.store): ApiStore {
-    return Reflect.get(this.stores, sName);
+  /** `api.GET` */
+  protected GET(sPath: string): Promise<ApiResponse> {
+    return this.api.GET(sPath);
+  }
+
+  /** `api.QUERY` */
+  protected QUERY(sPath: string, oQuery: QueryParams): Promise<ApiResponse> {
+    return this.api.QUERY(sPath, oQuery);
+  }
+
+  /** `api.POST` */
+  protected POST(sPath: string, oBody: unknown): Promise<ApiResponse> {
+    return this.api.POST(sPath, oBody);
+  }
+
+  /** `api.PUT` */
+  protected PUT(sPath: string, oBody: unknown): Promise<ApiResponse> {
+    return this.api.PUT(sPath, oBody);
+  }
+
+  /** `api.DELETE` */
+  protected DELETE(sPath: string): Promise<ApiResponse> {
+    return this.api.DELETE(sPath);
   }
 }

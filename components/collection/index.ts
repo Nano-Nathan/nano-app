@@ -1,14 +1,14 @@
 import ApiController from '../utils/ApiController';
 import type { ApiResponse, QueryParams } from '@nano-app/core/types/api';
 
-/** A backend path read by pages or page after page; its page and order at `/collection/<name>` */
+/** A backend path read by pages or page after page; its page and order under `root` */
 export default abstract class CollectionController extends ApiController {
-  /** Name of its state in `app`: `/collection/<name>` */
-  public abstract name: string;
+  /** Path of its state in `app`: page, order and pages (`/collection/users`) */
+  protected abstract root: string;
   /** Backend path it reads (`/users`) */
-  public abstract path: string;
+  protected abstract path: string;
   /** Items per page */
-  public limit: number = 50;
+  protected limit: number = 50;
 
   /** Reads the page when the view mounts */
   public onMount(): Promise<ApiResponse> {
@@ -17,52 +17,52 @@ export default abstract class CollectionController extends ApiController {
 
   /** The page chosen by the user, from 0 */
   public page(): number {
-    return this.stores.app.get(`${this.state()}/page`) ?? 0;
+    return this.get('/page') ?? 0;
   }
 
   /** The query of the current page, in the order chosen by the user */
-  public query(): QueryParams {
+  protected query(): QueryParams {
     return { offset: this.page() * this.limit, ...this.pagesQuery() };
   }
 
   /** Reads the current page */
   public load(): Promise<ApiResponse> {
-    return this.api().QUERY(this.path, this.query());
+    return this.QUERY(this.path, this.query());
   }
 
   /** The answer of the current page */
   public items(): ApiResponse | undefined {
-    return this.api().get(this.path, this.query());
+    return this.api.get(this.path, this.query());
   }
 
   /** Reads the page after the items read so far, and keeps every item in one answer */
   public async more(): Promise<ApiResponse> {
     // Reads the page after the items read so far
     const aItems = this.pages()?.result ?? [];
-    const oResponse = await this.api().QUERY(this.path, {
+    const oResponse = await this.QUERY(this.path, {
       ...this.pagesQuery(),
       offset: aItems.length,
     });
 
     // Keeps every item read so far in one answer
     const oPages = { ...oResponse, result: [...aItems, ...(oResponse.result ?? [])] };
-    this.api().set(`${this.state()}/pages`, oPages);
+    this.set('/pages', oPages);
     return oPages;
   }
 
   /** Every page read so far with `more`, its items in one list */
   public pages(): ApiResponse | undefined {
-    return this.api().get(`${this.state()}/pages`);
+    return this.get('/pages');
   }
 
   /** The page size and the order chosen by the user, without the page */
-  public pagesQuery(): QueryParams {
-    return { limit: this.limit, orderBy: this.stores.app.get(`${this.state()}/orderBy`) };
+  protected pagesQuery(): QueryParams {
+    return { limit: this.limit, orderBy: this.get('/orderBy') };
   }
 
   /** Moves to a page, never before the first one, and reads it */
   public goTo(iPage: number): Promise<ApiResponse> {
-    this.stores.app.set(`${this.state()}/page`, Math.max(iPage, 0));
+    this.set('/page', Math.max(iPage, 0));
     return this.load();
   }
 
@@ -79,17 +79,11 @@ export default abstract class CollectionController extends ApiController {
   /** Toggles the order of the field and starts the pages again */
   public sort(sField: string): Promise<ApiResponse> {
     // Toggles the order of the field and forgets the pages read
-    const sOrder = `${this.state()}/orderBy`;
-    const sDirection = this.stores.app.get(sOrder)?.[sField] === 'asc' ? 'desc' : 'asc';
-    this.stores.app.set(sOrder, { [sField]: sDirection });
-    this.api().set(`${this.state()}/pages`, undefined);
+    const sDirection = this.get('/orderBy')?.[sField] === 'asc' ? 'desc' : 'asc';
+    this.set('/orderBy', { [sField]: sDirection });
+    this.set('/pages', undefined);
 
     // Reads the first page
     return this.goTo(0);
-  }
-
-  /** Path of its state: `/collection/<name>` */
-  private state(): string {
-    return `/collection/${this.name}`;
   }
 }

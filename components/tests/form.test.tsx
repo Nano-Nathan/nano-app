@@ -51,7 +51,7 @@ const aReturned: unknown[] = [];
 
 /** Form whose fields are all texts */
 class LoginController extends FormController {
-  public components = { text: Field };
+  protected components = { text: Field };
 }
 
 // View of the login: its fields, a submit that keeps what it returns, and a reset
@@ -102,7 +102,7 @@ describe('form', () => {
   test('fields renders the view of each type in order, and the one of text without its own', () => {
     // Renders a form with views for text and checkbox
     class SignUpController extends FormController {
-      public components = { text: Input, checkbox: Checkbox };
+      protected components = { text: Input, checkbox: Checkbox };
     }
     const Form = createView(SignUpController, signUp => <form>{signUp.fields()}</form>);
     render(
@@ -119,7 +119,7 @@ describe('form', () => {
   test('fields fails with the fix when a field has no view nor text', () => {
     // Renders a form with only the checkbox view
     class CheckboxController extends FormController {
-      public components = { checkbox: Checkbox };
+      protected components = { checkbox: Checkbox };
     }
     const Form = createView(CheckboxController, checks => <form>{checks.fields()}</form>);
 

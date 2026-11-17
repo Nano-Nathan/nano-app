@@ -19,9 +19,10 @@ import { createView } from '@nano-app/frontend';
 import CollectionController from '@nano-app/components/collection';
 
 class UsersController extends CollectionController {
-  public name = 'users';
-  public path = '/users';
-  public limit = 20;
+  protected api = this.stores.backend;
+  protected root = '/collection/users';
+  protected path = '/users';
+  protected limit = 20;
 }
 
 export default createView(UsersController, users => (
@@ -39,20 +40,21 @@ export default createView(UsersController, users => (
 ```
 
 - Every component is a `Controller` class of `@nano-app/frontend`: use it with `createView`, and change or add methods by extending it (`class X extends AuthController { … }`, the original through `super`).
-- Its options are fields: a subclass sets them (`public store = 'admin';`). A field without a default is `abstract`: the class must be extended, and TypeScript asks for every one of them.
+- Its options are `protected` fields: a subclass sets them (`protected root = '/collection/users';`), and the view does not see them. A field without a default is `abstract`: the class must be extended, and TypeScript asks for every one of them.
 - The props of a view carry the data of each use (`form`, `field`, `name`, `fields`, `onSubmit`).
 - A component reads what it needs when its view mounts (`onMount`): the view only renders. The requests in progress are in the store's `/busy`.
-- A component that reads the backend uses the api store named in `store`, `api` by default (`src/stores/api.store.ts`).
+- A component keeps its state under `root` in `state`, the `app` store by default: a subclass moves it to another store with `protected state = this.stores.ui;`.
+- A component that reads the backend gets its api store from the subclass, as a field: `protected api = this.stores.backend;`, typed by the app's `nano-app-env.d.ts`. Any other store is used directly (`this.stores.payments.POST(…)`).
 
 ## Components
 
-| Component              | Import                                                          | Fields                                              | Methods                                                                                                                       | Props                         | State                                                                            |
-| ---------------------- | --------------------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------- | -------------------------------------------------------------------------------- |
-| `AuthController`       | `import AuthController from '@nano-app/components/auth'`             | `kind` (`'email'`), `store` (`'api'`)               | `signIn(body)`, `signUp(body)`, `signOut()`, `navTo(url)`                                                                     | —                             | —                                                                                |
-| `FieldController`      | `import FieldController from '@nano-app/components/field'`           | —                                                   | `value()`, `error()`, `change(value)`, `options()`, `parse(input)`, `validate(value)`                                         | `form`, `field`               | `app`: `/form/<form>/values`, `/form/<form>/errors`                              |
-| `FormController`       | `import FormController from '@nano-app/components/form'`             | `components` (abstract)                             | `fields()`, `submit(event)`, `reset()`                                                                                        | `name`, `fields`, `onSubmit`  | `app`: `/form/<name>`                                                            |
-| `ErrorController`      | `import ErrorController from '@nano-app/components/error'`           | —                                                   | `items()`, `remove(index)`, `clear()`, `last()`, `dismiss()`                                                                  | —                             | every store's `/error/list`                                                      |
-| `CollectionController` | `import CollectionController from '@nano-app/components/collection'` | `name`, `path`, `limit` (abstract), `store` (`'api'`) | `load()`, `items()`, `page()`, `query()`, `goTo(page)`, `next()`, `prev()`, `sort(field)`, `more()`, `pages()`, `pagesQuery()` | —                             | `app`: `/collection/<name>/page`, `/orderBy`; the api store: `/collection/<name>/pages` |
+| Component              | Import                                                               | Fields                                           | Methods                                                                                             | Props                        | State                                                  |
+| ---------------------- | -------------------------------------------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------- | ---------------------------- | ------------------------------------------------------ |
+| `AuthController`       | `import AuthController from '@nano-app/components/auth'`             | `api` (abstract), `kind` (`'email'`)             | `signIn(body)`, `signUp(body)`, `signOut()`, `navTo(url)`                                           | —                            | —                                                      |
+| `FieldController`      | `import FieldController from '@nano-app/components/field'`           | —                                                | `value()`, `error()`, `change(value)`, `options()`                                                  | `form`, `field`              | `app`: `/form/<form>/values`, `/form/<form>/errors`    |
+| `FormController`       | `import FormController from '@nano-app/components/form'`             | `components` (abstract)                          | `fields()`, `submit(event)`, `reset()`                                                              | `name`, `fields`, `onSubmit` | `app`: `/form/<name>`                                  |
+| `ErrorController`      | `import ErrorController from '@nano-app/components/error'`           | —                                                | `items()`, `remove(index)`, `clear()`, `last()`, `dismiss()`                                        | —                            | every store's `/error/list`                            |
+| `CollectionController` | `import CollectionController from '@nano-app/components/collection'` | `api`, `root`, `path` (abstract), `limit` (`50`) | `load()`, `items()`, `page()`, `goTo(page)`, `next()`, `prev()`, `sort(field)`, `more()`, `pages()` | —                            | `app`: `<root>/page`, `<root>/orderBy`, `<root>/pages` |
 
 ## Auth
 
@@ -61,6 +63,8 @@ export default createView(UsersController, users => (
 ```tsx
 // src/controllers/logout.controller.ts
 export default class LogoutController extends AuthController {
+  protected api = this.stores.backend;
+
   public async logout(): Promise<void> {
     // Signs out and goes to the login
     const oResponse = await this.signOut();
@@ -95,14 +99,17 @@ export default createView(FieldController, (input, { field: oField }) => (
   </label>
 ));
 
-<Input form="signUp" field={{ name: 'email', label: 'Email', type: 'email', validation: z.email() }} />;
+<Input
+  form="signUp"
+  field={{ name: 'email', label: 'Email', type: 'email', validation: z.email() }}
+/>;
 ```
 
 - A field is `{ name, type, validation, format, parse, options }`; its other keys (`label`, `disabled`) pass as is to its view.
 - `validation` holds the rules of its value, a [zod](https://zod.dev) schema written by the app (`z.email('Invalid email')`, `z.string().min(3, 'Too short')`, `z.number().optional()`). A rule between fields (a password and its repeat) goes in the `onSubmit` of the form.
-- `change(value)` keeps the value at `/form/<form>/values/<name>` as the view gives it (a text, a boolean, the ISO day of a date input), an empty text as no value (`undefined`), and a `number` field as a number when its text is that number as is (`'12'`, while `'1.'` stays a text). Then it keeps at `/form/<form>/errors/<name>` the message of the first rule of its validation the value breaks. `error()` gives that message, and `validate(value)` the one of a value.
+- `change(value)` keeps the value at `/form/<form>/values/<name>` as the view gives it (a text, a boolean, the ISO day of a date input), an empty text as no value (`undefined`), and a `number` field as a number when its text is that number as is (`'12'`, while `'1.'` stays a text). Then it keeps at `/form/<form>/errors/<name>` the message of the first rule of its validation the value breaks. `error()` gives that message.
 - `parse(input)` replaces what `change` keeps, and `format(value)` what `value()` gives: a price kept as `1234` and shown as `$1.234`.
-- A select takes `options: { path, store }` (`store` is `'api'` by default): the field reads `path` with `GET` when its view mounts, and `options()` gives the `result` of the answer, for the view to take the keys it shows.
+- A select takes `options: { path }`, and its controller gives the api store (`class SelectController extends FieldController { protected api = this.stores.backend; }`): the field reads `path` with `GET` when its view mounts, and `options()` gives the `result` of the answer, for the view to take the keys it shows.
 - Without a `validation` a field breaks no rule.
 - The browser validates native inputs (`type="email"`, `required`) and shows its own bubbles. To show only the field's messages, put `noValidate` on the `<form>` of the view.
 
@@ -118,7 +125,7 @@ export default createView(FieldController, (input, { field: oField }) => (
 ```tsx
 // src/components/SignUp.tsx
 class SignUpFormController extends FormController {
-  public components = { text: Input, select: Select };
+  protected components = { text: Input, select: Select };
 }
 
 export default createView(SignUpFormController, signUp => (
@@ -132,7 +139,7 @@ export default createView(SignUpFormController, signUp => (
 ));
 
 // src/components/SignUpPage.tsx: auth gives the form its sign-up
-export default createView(AuthController, auth => (
+export default createView(LogoutController, auth => (
   <SignUp
     name="signUp"
     fields={[
@@ -150,9 +157,9 @@ export default createView(AuthController, auth => (
 
 ## Collection
 
-`load()` reads the current page of `path` with a `QUERY` (`offset`, `limit`, `orderBy`) through the store, and `items()` gets the `ApiResponse` it kept. The collection reads its current page when its view mounts. `next`, `prev` and `sort` change the page or the order and read it. `sort` orders by one field, ascending and then descending, and goes back to the first page. `prev` stays on the first page. `page()` gives the current page (from 0), `query()` the query it reads, and `goTo(page)` moves to a page and reads it.
+`load()` reads the current page of `path` with a `QUERY` (`offset`, `limit`, `orderBy`) through the store, and `items()` gets the `ApiResponse` it kept. The collection reads its current page when its view mounts. `next`, `prev` and `sort` change the page or the order and read it. `sort` orders by one field, ascending and then descending, and goes back to the first page. `prev` stays on the first page. `page()` gives the current page (from 0), and `goTo(page)` moves to a page and reads it.
 
-To read page after page instead (a "load more" button, an endless scroll), the view calls `more()`: it reads the page after the items read so far, in the current order, and keeps every item in one `ApiResponse` that `pages()` gives; `pagesQuery()` is the query they are read with. A change of order starts the pages again.
+To read page after page instead (a "load more" button, an endless scroll), the view calls `more()`: it reads the page after the items read so far, in the current order, and keeps every item in one `ApiResponse` that `pages()` gives. A change of order starts the pages again.
 
 ## Layout
 
@@ -161,5 +168,6 @@ components/
 ├── <name>/
 │   └── index.ts        default-exports the component's class: the import path
 └── utils/
-    └── ApiController.ts  base of the components that read an api store (`store`, `api()`)
+    ├── AppController.ts  base of the components with state: `state` (`app` by default), `root`, and `get`/`set` under it
+    └── ApiController.ts  `AppController` plus `GET`, `QUERY`, `POST`, `PUT`, `DELETE` of the api store its subclass gives (`api`)
 ```

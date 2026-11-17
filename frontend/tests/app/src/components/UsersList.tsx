@@ -5,10 +5,10 @@ import CollectionController from '@nano-app/components/collection';
 
 /** Users of the backend store, five per page */
 class UsersPageController extends CollectionController {
-  public name = 'users';
-  public path = '/users';
-  public limit = 5;
-  public store = 'backend';
+  protected root = '/collection/users';
+  protected path = '/users';
+  protected limit = 5;
+  protected api = this.stores.backend;
 }
 
 /** Users of the backend store, a page at a time, sortable by name */

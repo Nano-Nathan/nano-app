@@ -1,6 +1,6 @@
 import { createElement } from 'react';
-import { Controller } from '@nano-app/frontend';
 import NanoError from '@nano-app/core/utils/NanoError';
+import AppController from '../utils/AppController';
 import validate from '../field/validate';
 import type { ReactNode, SubmitEvent } from 'react';
 import type { ComponentProps } from '@nano-app/frontend';
@@ -8,9 +8,12 @@ import type { NanoObject } from '@nano-app/core/types/objects';
 import type { FormField } from '../types/field';
 
 /** A form from a config of fields: their views, and their submit at `/form/<name>` of `app` */
-export default abstract class FormController extends Controller {
+export default abstract class FormController extends AppController {
+  /** Path of its state, from the props when it mounts */
+  protected root = `/form/${this.props.name}`;
+
   /** View of each field type (`{ text: Input, select: Select }`); `text` shows the types without one */
-  public abstract components: NanoObject<(props: ComponentProps) => ReactNode>;
+  protected abstract components: NanoObject<(props: ComponentProps) => ReactNode>;
 
   /** The view of each field, with its form and its config */
   public fields(): ReactNode[] {
@@ -35,13 +38,12 @@ export default abstract class FormController extends Controller {
     oEvent.preventDefault();
 
     // Validates every field with its value and keeps their messages
-    const { app } = this.stores;
-    const oValues = app.get(`${this.path()}/values`) ?? {};
+    const oValues = this.get('/values') ?? {};
     const aErrors = this.config().map(oField => [
       oField.name,
       validate(oField, oValues[oField.name]),
     ]);
-    app.set(`${this.path()}/errors`, Object.fromEntries(aErrors));
+    this.set('/errors', Object.fromEntries(aErrors));
 
     // Sends the values only when no field breaks a rule
     if (aErrors.some(([, sError]) => sError)) return;
@@ -50,16 +52,11 @@ export default abstract class FormController extends Controller {
 
   /** Empties the values and the errors */
   public reset(): void {
-    this.stores.app.set(this.path(), {});
+    this.set('', {});
   }
 
   /** The configs of its fields, from the props */
   private config(): FormField[] {
     return this.props.fields;
-  }
-
-  /** Path of its state in `app`: `/form/<name>` */
-  private path(): string {
-    return `/form/${this.props.name}`;
   }
 }
