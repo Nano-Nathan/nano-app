@@ -20,5 +20,5 @@ test('createLayout renders the html of its language, the color scheme script and
   // Its html, the script of its color scheme and the children inside the providers
   assert.match(sHtml, /^<html lang="es" data-mantine-color-scheme="light">/);
   assert.match(sHtml, /<head><script data-mantine-script="true">[^<]*: "dark";/);
-  assert.match(sHtml, /<body>.*<p>child<\/p>.*<\/body>/);
+  assert.match(sHtml, /<body>.*<p>child<\/p><\/body>/s);
 });
