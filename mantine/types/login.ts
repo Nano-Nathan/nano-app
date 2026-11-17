@@ -2,6 +2,12 @@
 export type LoginTexts = {
   /** Title of the card */
   title: string;
+  /** Line under the title */
+  subtitle: string;
+  /** Line between the providers and the email */
+  divider: string;
+  /** Question before the link that signs up */
+  noAccount: string;
   /** Label of the email */
   email: string;
   /** Label of the password */

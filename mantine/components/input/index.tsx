@@ -8,6 +8,7 @@ import FieldController from '@nano-app/components/field';
 export default createView(FieldController, (input, { field: oField }) => (
   <TextInput
     label={oField.label}
+    radius="md"
     type={oField.type ?? 'text'}
     value={input.value() ?? ''}
     error={input.error()}

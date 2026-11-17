@@ -5,7 +5,10 @@ import type { LoginOptions, LoginTexts } from '../../types/login';
 
 /** English texts of the login */
 const TEXTS: LoginTexts = {
-  title: 'Sign in',
+  title: 'Welcome',
+  subtitle: 'Sign in to continue',
+  divider: 'or with your email',
+  noAccount: 'No account yet?',
   email: 'Email',
   password: 'Password',
   submit: 'Sign in',

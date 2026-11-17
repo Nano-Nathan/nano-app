@@ -4,10 +4,11 @@ import { Stack } from '@mantine/core';
 import { createView } from '@nano-app/frontend';
 import FormController from '@nano-app/components/form';
 import Input from '../input';
+import Password from '../password';
 
-/** Form whose every field type is shown with the input */
+/** Form whose passwords show with their own input, every other type with the input */
 class InputFormController extends FormController {
-  protected components = { text: Input };
+  protected components = { text: Input, password: Password };
 }
 
 /** A form of a config of fields: its inputs, then its children (the buttons) */
