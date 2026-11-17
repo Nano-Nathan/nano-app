@@ -2,6 +2,7 @@
 import './env/stores';
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { reaction } from 'mobx';
 import { STORES_DEFINE } from '@nano-app/core/const';
@@ -70,7 +71,13 @@ describe('withNanoApp', () => {
         ['admin_users', { type: 'app', data: { aUsers: [] } }],
         ['app', { type: 'app', data: { iCount: 0 } }],
       ]);
+
+      // Writes the type of each store for the app
+      const sTypes = await readFile('nano-app-env.d.ts', 'utf8');
+      assert.match(sTypes, /"admin_users": import\('@nano-app\/frontend'\)\.Store;/);
+      assert.match(sTypes, /"app": import\('@nano-app\/frontend'\)\.Store;/);
     } finally {
+      await rm('nano-app-env.d.ts', { force: true });
       process.chdir(sCwd);
     }
   });

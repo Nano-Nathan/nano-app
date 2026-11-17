@@ -1,6 +1,7 @@
+import { writeFile } from 'node:fs/promises';
 import FileLoader from '@nano-app/core/files/FileLoader';
 import { API_STORE_TYPE, APP_NAME, STORES_DEFINE } from '@nano-app/core/const';
-import { APP_STORE_TYPE, BACKENDS_DEFINE } from '../const';
+import { APP_STORE_TYPE, BACKENDS_DEFINE, STORE_CLASSES, TYPES_FILE } from '../const';
 import { STORE } from '../utils/validations';
 import type { NextConfig } from 'next';
 import type { StoreFile } from '../types/store';
@@ -26,6 +27,25 @@ export function withNanoApp(oNextConfig: NextConfig = {}): () => Promise<NextCon
     const aBackends = aStores
       .filter(([, { type }]) => type === API_STORE_TYPE)
       .map(([sName]) => [sName, `API_${sName.toUpperCase()}_URL`]);
+
+    // Writes the type of each store, for `stores.<name>` in the app
+    const aTypes = aStores.map(
+      ([sName, { type }]) =>
+        `    ${JSON.stringify(sName)}: import('@nano-app/frontend').${STORE_CLASSES[type]};`,
+    );
+    await writeFile(
+      TYPES_FILE,
+      [
+        '// Written by withNanoApp from src/stores. Do not edit.',
+        'export {};',
+        "declare module '@nano-app/frontend' {",
+        '  interface Stores {',
+        ...aTypes,
+        '  }',
+        '}',
+        '',
+      ].join('\n'),
+    );
 
     // Writes the stores in every bundle and the backends only in the server's, as JSON
     const { compiler } = oNextConfig;

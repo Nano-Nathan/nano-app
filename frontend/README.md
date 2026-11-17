@@ -47,6 +47,8 @@ export default { type: 'app', data: { isOpen: false } };
 
 Each store reads and writes by path: `app.get('/drawer/isOpen')`, `app.set('/drawer/isOpen', true)`. A missing level reads as `undefined`, and `set` creates it.
 
+`withNanoApp` also writes `nano-app-env.d.ts` next to `next.config.ts`, with the type of each store (`stores.ui` is a `Store`, `stores.api` an `ApiStore`). Add it to `.gitignore`, as `next-env.d.ts`; the `**/*.ts` of Next's `tsconfig.json` already includes it.
+
 ## Controllers and views
 
 A controller holds the methods; a view binds to one controller and gets its methods, the props, the stores and `router` (since 0.7, Next's `useRouter()`, to navigate without hooks). Several views can bind to the same controller.
@@ -75,8 +77,9 @@ export default counterController.bindView(({ stores: { app }, increment }) => (
 
 - A file that calls `bindView` needs `'use client'`. A component without stores or methods is a plain React function and can stay a server component.
 - The view re-renders only when a store path it read changes.
-- The context has `props`, `stores` and `router`; a method with one of those names is hidden by it. Reading a store the app does not have (`stores.missing`) throws naming the store file to add.
+- The context has `props`, `stores` and `router`; a method with one of those names is hidden by it. Reading a store the app does not have (`stores.missing`) is a type error.
 - Before its `return`, the function only keeps what it reads from the context (`const oApi = stores.backend;`). A method reaches the others with `this` (`last() { return this.items()[0]; }`), also when the view calls it alone; `this` needs the method syntax, not an arrow. `onMount` gets the same `this`.
+- Each method is one function for the whole mount, so a child that gets it as a prop does not render again for it. It runs the method of the last render on screen: a method called while the view renders sees the props of the render before, so what is shown reads `props` in the view.
 
 `callbacks` (since 0.7), first in that object, is not a method: `onMount` runs once when each bound view mounts (never on the server), to read what the view needs, and `onUnmount` once when it unmounts. To act when a value changes, the view calls a method from a `useEffect` with that value as its dependency (see [Sessions](#sessions)); the logic stays in the method.
 
@@ -107,7 +110,7 @@ export default counterController.extend(({ stores: { app } }) => ({
 }));
 ```
 
-The types of a controller and its views come from `@nano-app/frontend`: `Controller`, `View`, `ComponentContext` (`props`, `stores` and `router`), `ComponentProps` and `ControllerCallbacks`.
+The types of a controller and its views come from `@nano-app/frontend`: `Controller`, `View`, `ComponentContext` (`props`, `stores` and `router`), `ComponentProps` and `ControllerCallbacks`; the stores' types are `Stores`, `Store` and `ApiStore`.
 
 ## Backend
 
