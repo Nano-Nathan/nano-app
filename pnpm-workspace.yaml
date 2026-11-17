@@ -4,6 +4,7 @@ packages:
   - "plugins"
   - "frontend"
   - "components"
+  - "mantine"
   - "frontend/tests/app"
   - "site"
 allowBuilds:

@@ -4,6 +4,7 @@ core/build
 plugins/build
 frontend/build
 components/build
+mantine/build
 .env
 .env.*
 !.env.example
