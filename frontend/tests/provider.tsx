@@ -1,7 +1,11 @@
+import { render } from '@testing-library/react';
 import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime';
-import { NanoAppProvider } from '../src/react/NanoAppProvider';
+import { NanoAppProvider } from '../src/app/NanoAppProvider';
+import Controller from '../src/controllers/Controller';
+import createView from '../src/creators/createView';
 import type { ReactNode } from 'react';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
+import type { Stores } from '../src/types/store';
 
 // Router of the app that goes nowhere
 const oRouter: AppRouterInstance = {
@@ -21,4 +25,20 @@ export default function TestApp({ children }: { children: ReactNode }): ReactNod
       <NanoAppProvider>{children}</NanoAppProvider>
     </AppRouterContext.Provider>
   );
+}
+
+/** Stores of a rendered tree, as a controller gets them */
+export function renderStores(): Stores {
+  // Renders a view that keeps the stores of its controller
+  let oStores = {} as Stores;
+  const Grab = createView(Controller, oController => {
+    oStores = oController.stores;
+    return null;
+  });
+  render(
+    <TestApp>
+      <Grab />
+    </TestApp>,
+  );
+  return oStores;
 }

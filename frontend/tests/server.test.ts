@@ -2,15 +2,15 @@
 import './env/server';
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import createStores from '../src/creators/createStores';
+import ApiStore from '../src/stores/ApiStore';
 
 describe('api store on the server', () => {
-  test('read asks nothing and returns an empty ApiResponse', async () => {
+  test('a request asks nothing and returns an empty ApiResponse', async () => {
     // Reads the backend outside a browser
-    const { backend } = createStores();
-    const oResult = await backend.read('/users');
+    const oBackend = new ApiStore('backend');
+    const oResult = await oBackend.GET('/users');
 
     assert.deepEqual(oResult, {});
-    assert.equal(backend.get('/busy'), undefined);
+    assert.equal(oBackend.get('/busy'), undefined);
   });
 });

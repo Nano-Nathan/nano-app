@@ -11,6 +11,7 @@ components/build
 # Next.js output of the frontend test app
 frontend/tests/app/.next
 frontend/tests/app/next-env.d.ts
+frontend/tests/app/nano-app-env.d.ts
 
 # VitePress output of the documentation site
 site/.vitepress/*

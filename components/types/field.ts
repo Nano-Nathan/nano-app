@@ -17,10 +17,8 @@ export type FormField = NanoObject & {
   options?: FieldOptions;
 };
 
-/** Items of a select: a path of an api store */
+/** Items of a select: a path of the api store of its controller */
 export type FieldOptions = {
   /** Path of the items (`/roles`) */
   path: string;
-  /** Name of the api store, `api` by default */
-  store?: string;
 };

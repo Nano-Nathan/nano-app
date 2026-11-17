@@ -9,8 +9,12 @@ export async function follow(oRes: Response, oInit: RequestInit = {}): Promise<R
   const sTarget = oRes.headers.get('x-middleware-rewrite');
   if (!sTarget) return oRes;
 
+  // Without headers set by the proxy, the request goes with its own
+  const sNames = oRes.headers.get('x-middleware-override-headers');
+  if (!sNames) return fetch(sTarget, oInit);
+
   // Reads the request headers the proxy set for the backend
-  const aNames = (oRes.headers.get('x-middleware-override-headers') ?? '').split(',');
+  const aNames = sNames.split(',');
   const oHeaders = new Headers(
     aNames.map((sName): [string, string] => [
       sName,

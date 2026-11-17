@@ -5,17 +5,18 @@ import { test, describe, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { z } from 'zod';
-import field from '../field';
-import form from '../form';
+import { createView } from '@nano-app/frontend';
+import FieldController from '../field';
+import FormController from '../form';
 import TestApp from './provider';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { FormField } from '../types/field';
 
 // Views of the fields: a text and a checkbox, each with its form and name
-const Input = field().bindView(({ props }) => (
+const Input = createView(FieldController, (_oInput, props) => (
   <output>{`text ${props.form}.${props.field.name}`}</output>
 ));
-const Checkbox = field().bindView(({ props }) => (
+const Checkbox = createView(FieldController, (_oCheckbox, props) => (
   <output>{`checkbox ${props.form}.${props.field.name}`}</output>
 ));
 
@@ -33,14 +34,14 @@ const LOGIN: FormField[] = [
 ];
 
 // View of a field with an input and its error
-const Field = field().bindView(({ props: { field: oField }, value, error, change }) => (
+const Field = createView(FieldController, (input, { field: oField }) => (
   <label>
     <input
       aria-label={oField.name}
-      value={value() ?? ''}
-      onChange={oEvent => change(oEvent.target.value)}
+      value={input.value() ?? ''}
+      onChange={oEvent => input.change(oEvent.target.value)}
     />
-    <output>{`${oField.name}: ${error() ?? 'ok'}`}</output>
+    <output>{`${oField.name}: ${input.error() ?? 'ok'}`}</output>
   </label>
 ));
 
@@ -48,12 +49,17 @@ const Field = field().bindView(({ props: { field: oField }, value, error, change
 const aSent: NanoObject[] = [];
 const aReturned: unknown[] = [];
 
+/** Form whose fields are all texts */
+class LoginController extends FormController {
+  protected components = { text: Field };
+}
+
 // View of the login: its fields, a submit that keeps what it returns, and a reset
-const Login = form({ components: { text: Field } }).bindView(({ fields, submit, reset }) => (
-  <form onSubmit={oEvent => aReturned.push(submit(oEvent))}>
-    {fields()}
+const Login = createView(LoginController, login => (
+  <form onSubmit={oEvent => aReturned.push(login.submit(oEvent))}>
+    {login.fields()}
     <button>send</button>
-    <button type="button" onClick={reset}>
+    <button type="button" onClick={login.reset}>
       reset
     </button>
   </form>
@@ -95,9 +101,10 @@ afterEach(() => {
 describe('form', () => {
   test('fields renders the view of each type in order, and the one of text without its own', () => {
     // Renders a form with views for text and checkbox
-    const Form = form({ components: { text: Input, checkbox: Checkbox } }).bindView(
-      ({ fields }) => <form>{fields()}</form>,
-    );
+    class SignUpController extends FormController {
+      protected components = { text: Input, checkbox: Checkbox };
+    }
+    const Form = createView(SignUpController, signUp => <form>{signUp.fields()}</form>);
     render(
       <TestApp>
         <Form name="signUp" fields={SIGN_UP} />
@@ -111,9 +118,10 @@ describe('form', () => {
 
   test('fields fails with the fix when a field has no view nor text', () => {
     // Renders a form with only the checkbox view
-    const Form = form({ components: { checkbox: Checkbox } }).bindView(({ fields }) => (
-      <form>{fields()}</form>
-    ));
+    class CheckboxController extends FormController {
+      protected components = { checkbox: Checkbox };
+    }
+    const Form = createView(CheckboxController, checks => <form>{checks.fields()}</form>);
 
     // The first field without a view stops the render
     assert.throws(
@@ -125,7 +133,7 @@ describe('form', () => {
         ),
       {
         message:
-          'Form "signUp": the field "name" of type "text" has no view, and components has no "text" view to show it. Add one: form({ components: { text: Input } }).',
+          'Form "signUp": the field "name" of type "text" has no view, and components has no "text" view to show it. Add one: components = { text: Input }.',
       },
     );
   });

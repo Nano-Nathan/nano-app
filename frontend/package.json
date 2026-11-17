@@ -8,14 +8,18 @@
       "types": "./build/index.d.ts",
       "import": "./build/index.js"
     },
+    "./server": {
+      "types": "./build/server.d.ts",
+      "import": "./build/server.js"
+    },
     "./next": {
-      "types": "./build/next.d.ts",
-      "import": "./build/next.js",
-      "default": "./build/next.js"
+      "types": "./build/app/next.d.ts",
+      "import": "./build/app/next.js",
+      "default": "./build/app/next.js"
     },
     "./proxy": {
-      "types": "./build/proxy.d.ts",
-      "import": "./build/proxy.js"
+      "types": "./build/app/proxy.d.ts",
+      "import": "./build/app/proxy.js"
     }
   },
   "files": [
@@ -51,8 +55,6 @@
     "react": ">=19.0.0"
   },
   "dependencies": {
-    "@tanstack/query-core": "^5.107.1",
-    "better-auth": "^1.7.18",
     "glob": "^14.0.4",
     "jiti": "^2.7.0",
     "mobx": "^7.1.5",

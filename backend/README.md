@@ -181,7 +181,7 @@ createNanoApp({ auth: { emailAndPassword: { enabled: true } } });
 - It uses the pool of `DATABASE_URL`, with or without a database of the app: startup fails if it is missing.
 - Its tables live in the Postgres schema `nano_auth`, and Better Auth decides them from its options (plugins, `user.additionalFields`).
 - `auth.database` says how they are applied at startup, `{ push: true }` by default: `push` creates them with Better Auth's migrations and adds what new options need, never dropping anything; `migrate` is a folder of Drizzle migrations of them (`npx auth generate --adapter drizzle`, then `drizzle-kit generate`), applied in `nano_auth`.
-- Its endpoints are mounted before your routes, at its `basePath` (default `/api/auth`), and stay public.
+- Its endpoints are mounted before your routes, at its `basePath` (default `/auth`), and stay public.
 - In production, Better Auth limits sign-in, sign-up and password reset to a few attempts per client IP (its `rateLimit`): see [Client IP](#client-ip).
 - With it on, every route of the app and of every plugin needs a session: without one it answers 401 `Not authenticated`.
 - `createRoute({ public: true, ... })` answers without a session. An unknown path answers 404.

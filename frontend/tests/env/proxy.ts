@@ -1,18 +1,15 @@
-import { STORES_ENV } from '@nano-app/core/const';
+import { STORES_DEFINE } from '@nano-app/core/const';
+import { BACKENDS_DEFINE } from '../../src/const';
 
-// Stores of proxy.test.ts, as `withNanoApp` inlines them: set before the frontend loads
-process.env[STORES_ENV] = JSON.stringify({
-  admin_users: { type: 'api', headers: { 'x-api-key': 'users_key' } },
-  orders: { type: 'api', headers: { 'x-api-key': 'ORDERS_KEY' } },
-  guarded: {
-    type: 'api',
-    auth: {
-      path: '/auth',
-      routes: [
-        { match: '/dashboard', redirect: '/login' },
-        { match: '/admin/*', roles: 'admin,editor' },
-        { match: '/reports', permissions: { collections: 'read,update' } },
-      ],
-    },
-  },
+// Stores of proxy.test.ts and their backend URLs: set before the proxy loads
+Object.assign(globalThis, {
+  [STORES_DEFINE]: JSON.stringify(
+    Object.entries({ admin_users: { type: 'api' }, orders: { type: 'api' } }),
+  ),
+  [BACKENDS_DEFINE]: JSON.stringify([
+    ['admin_users', 'API_ADMIN_USERS_URL'],
+    ['orders', 'API_ORDERS_URL'],
+  ]),
 });
+process.env.API_ADMIN_USERS_URL = 'http://localhost:4100/api';
+process.env.API_ORDERS_URL = 'http://localhost:4100';

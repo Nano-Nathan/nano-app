@@ -4,8 +4,11 @@ export const APP_NAME = 'app';
 /** Type of a `*.store.ts` that reads and writes a backend, through the frontend proxy */
 export const API_STORE_TYPE = 'api';
 
-/** Env var that carries the stores to the bundle. Read as `process.env.NANO_APP_STORES`, literal */
-export const STORES_ENV = 'NANO_APP_STORES';
+/** Global that `compiler.define` replaces with the stores in the bundle. Read as `NANO_APP_STORES`, literal */
+export const STORES_DEFINE = 'NANO_APP_STORES';
 
 /** Message of a failed request whose answer brings none */
 export const REQUEST_FAILED = 'Request failed';
+
+/** Base path of Better Auth in the backend */
+export const AUTH_PATH = '/auth';

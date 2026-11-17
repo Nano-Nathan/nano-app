@@ -59,8 +59,8 @@ export type ServerConfig = {
 
 /** A route NanoApp registers */
 export type Mount = {
-  /** Express path of the route */
-  path: string;
+  /** Express path of the route; without one it is a middleware, run on every request */
+  path?: string;
   /** Its handler */
   handler: RequestHandler;
 };

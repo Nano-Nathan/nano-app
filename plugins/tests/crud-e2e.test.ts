@@ -8,11 +8,15 @@ import DatabaseManager from '../../backend/src/database/DatabaseManager';
 import Drizzle from '../../backend/src/database/clients/Drizzle';
 import { push, startApp } from '../../backend/tests/helpers';
 import * as schema from '../../backend/tests/fixtures/database/crud';
-import { proxy } from '../../frontend/src/proxy';
 import { follow } from '../../frontend/tests/helpers';
 import ApiStore from '../../frontend/src/stores/ApiStore';
+import { BACKENDS_DEFINE } from '../../frontend/src/const';
 import crud from '../crud';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import type { proxy } from '../../frontend/src/app/proxy';
+
+// Proxy of the frontend, imported once its backend URL is in the env
+let fnProxy: typeof proxy;
 
 /** Answers a request of the browser with the frontend's proxy, as Next does */
 async function serve(oReq: IncomingMessage, oRes: ServerResponse): Promise<void> {
@@ -22,13 +26,12 @@ async function serve(oReq: IncomingMessage, oRes: ServerResponse): Promise<void>
 
   // Sends it through the proxy, and its rewrite to the backend
   const { method, url, headers } = oReq;
-  const oInit = { method, body: sBody || undefined };
-  const oRewrite = await proxy(
-    new NextRequest(`http://localhost:${APP_PORT}${url}`, {
-      ...oInit,
-      headers: { 'content-type': headers['content-type'] ?? '' },
-    }),
-  );
+  const oInit = {
+    method,
+    body: sBody || undefined,
+    headers: { 'content-type': headers['content-type'] ?? '' },
+  };
+  const oRewrite = await fnProxy(new NextRequest(`http://localhost:${APP_PORT}${url}`, oInit));
   const oResponse = await follow(oRewrite, oInit);
 
   // Answers with the backend's status and body
@@ -57,8 +60,12 @@ describe(
         oAppDB,
       );
 
-      // Points the store `backend` to it and serves the app's origin
-      process.env.API_BACKEND_URL = `${oBackend.url}/api`;
+      // Points the store `api` to it: the proxy reads its URL when it loads
+      Object.assign(globalThis, { [BACKENDS_DEFINE]: JSON.stringify([['api', 'API_API_URL']]) });
+      process.env.API_API_URL = `${oBackend.url}/api`;
+      ({ proxy: fnProxy } = await import('../../frontend/src/app/proxy'));
+
+      // Serves the app's origin
       await new Promise<void>(fnResolve => oApp.listen(APP_PORT, fnResolve));
     });
 
@@ -73,25 +80,25 @@ describe(
 
     test('an api store reads, filters, creates, updates and deletes a model', async () => {
       // The store of the app, as a controller gets it
-      const oStore = new ApiStore('backend');
+      const oStore = new ApiStore('api');
       const oQuery = {
         where: { title: { like: `${sTag}%` } },
         orderBy: { title: 'asc' as const },
       };
 
       // Creates two notes and reads the first
-      const { result: oFirst } = await oStore.create('/note', { title: `${sTag}-a` });
-      await oStore.create('/note', { title: `${sTag}-b` });
-      const { result: oRead } = await oStore.read(`/note/${oFirst.id}`);
+      const { result: oFirst } = await oStore.POST('/note', { title: `${sTag}-a` });
+      await oStore.POST('/note', { title: `${sTag}-b` });
+      const { result: oRead } = await oStore.GET(`/note/${oFirst.id}`);
 
       // Filters them, updates the first and filters again
-      const { result: aCreated } = await oStore.read('/note', oQuery);
-      await oStore.update(`/note/${oFirst.id}`, { title: `${sTag}-c` });
-      const { result: aUpdated } = await oStore.read('/note', oQuery);
+      const { result: aCreated } = await oStore.QUERY('/note', oQuery);
+      await oStore.PUT(`/note/${oFirst.id}`, { title: `${sTag}-c` });
+      const { result: aUpdated } = await oStore.QUERY('/note', oQuery);
 
       // Deletes the first and filters again
-      await oStore.delete(`/note/${oFirst.id}`);
-      const { result: aDeleted } = await oStore.read('/note', oQuery);
+      await oStore.DELETE(`/note/${oFirst.id}`);
+      const { result: aDeleted } = await oStore.QUERY('/note', oQuery);
 
       // Checks each step, and the last answer kept in the store
       const fnTitles = (aNotes: { title: string }[]) => aNotes.map(oNote => oNote.title);

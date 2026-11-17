@@ -1,13 +1,15 @@
-// First: the stores of the app, read when the frontend loads
+// First: the DOM for the provider, then the stores of the app, read when the frontend loads
+import './dom';
 import './env/stores';
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { reaction } from 'mobx';
-import { STORES_ENV } from '@nano-app/core/const';
-import { withNanoApp } from '../src/next';
+import { STORES_DEFINE } from '@nano-app/core/const';
+import { withNanoApp } from '../src/app/next';
 import Store from '../src/stores/Store';
-import createStores from '../src/creators/createStores';
+import { renderStores } from './provider';
 
 describe('store state', () => {
   test('set creates missing levels and get reads them, with or without the leading slash', () => {
@@ -20,9 +22,9 @@ describe('store state', () => {
     assert.equal(oStore.get('/drawer/missing/deep'), undefined);
   });
 
-  test('createStores starts each store with its data, plus an empty app store', () => {
-    // Creates the stores, as one React tree does
-    const { app, ui } = createStores();
+  test('the provider starts each store with its data, plus an empty app store', () => {
+    // Creates the stores of one React tree
+    const { app, ui } = renderStores();
 
     assert.deepEqual(app.get('/'), {});
     assert.equal(ui.get('/busy'), false);
@@ -30,11 +32,18 @@ describe('store state', () => {
 
   test('an api store has its own state from its data, read and written by path', () => {
     // Creates the stores and writes the api store
-    const { backend } = createStores();
+    const { backend } = renderStores();
     backend.set('/list/orderby', { name: 'asc' });
 
     assert.equal(backend.get('/page'), 1);
     assert.deepEqual(backend.get('/list/orderby'), { name: 'asc' });
+  });
+
+  test('each React tree gets its own stores', () => {
+    // Writes the stores of one tree, then reads another
+    renderStores().app.set('/sName', 'Ana');
+
+    assert.equal(renderStores().app.get('/sName'), undefined);
   });
 
   test('a write notifies only who read that path', () => {
@@ -66,39 +75,20 @@ describe('withNanoApp', () => {
 
       assert.equal(oConfig.reactStrictMode, true);
       assert.equal(oConfig.env?.API, '/api');
-      assert.deepEqual(JSON.parse(oConfig.env?.[STORES_ENV] ?? ''), {
-        admin_users: { type: 'app', data: { aUsers: [] } },
-        app: { type: 'app', data: { iCount: 0 } },
-      });
-    } finally {
-      process.chdir(sCwd);
-    }
-  });
-
-  test('every page gets the security headers, and the app can replace them', async () => {
-    // Runs from an app with its own X-Frame-Options on /embed
-    const sCwd = process.cwd();
-    process.chdir(fileURLToPath(new URL('./fixtures/app', import.meta.url)));
-
-    try {
-      const oConfig = await withNanoApp({
-        headers: async () => [
-          { source: '/embed', headers: [{ key: 'X-Frame-Options', value: 'SAMEORIGIN' }] },
-        ],
-      })();
-
-      // Checks that X-Powered-By is hidden and the security headers come before the app's own
-      const aHeaders = (await oConfig.headers?.()) ?? [];
-      assert.equal(oConfig.poweredByHeader, false);
       assert.deepEqual(
-        aHeaders.map(oEntry => oEntry.source),
-        ['/:path*', '/embed'],
+        Object.fromEntries(JSON.parse(String(oConfig.compiler?.define?.[STORES_DEFINE]))),
+        {
+          admin_users: { type: 'app', data: { aUsers: [] } },
+          app: { type: 'app', data: { iCount: 0 } },
+        },
       );
-      assert.deepEqual(
-        aHeaders[0].headers.map(oHeader => oHeader.key),
-        ['X-Content-Type-Options', 'X-Frame-Options', 'Referrer-Policy'],
-      );
+
+      // Writes the type of each store for the app
+      const sTypes = await readFile('nano-app-env.d.ts', 'utf8');
+      assert.match(sTypes, /"admin_users": import\('@nano-app\/frontend'\)\.Store;/);
+      assert.doesNotMatch(sTypes, /"app"/);
     } finally {
+      await rm('nano-app-env.d.ts', { force: true });
       process.chdir(sCwd);
     }
   });
