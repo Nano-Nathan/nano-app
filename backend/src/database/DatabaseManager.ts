@@ -38,11 +38,11 @@ export default abstract class DatabaseManager {
     const oClient = this.oClients.get(oConfig);
     if (oClient !== undefined) return oClient;
 
-    // The pool, created by the first database
-    await this.pool();
-
-    // Its tables follow the nano_* rule, then its client: how it is made is up to it
+    // Its tables follow the nano_* rule, before the env or the pool
     await oDB.checkTables();
+
+    // The pool, created by the first database, then its client: how it is made is up to it
+    await this.pool();
     const oDBClient = await oDB.connect(this.oPool);
 
     // One connection holds the lock while its changes run
