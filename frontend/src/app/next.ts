@@ -28,11 +28,13 @@ export function withNanoApp(oNextConfig: NextConfig = {}): () => Promise<NextCon
       .filter(([, { type }]) => type === API_STORE_TYPE)
       .map(([sName]) => [sName, `API_${sName.toUpperCase()}_URL`]);
 
-    // Writes the type of each store, for `stores.<name>` in the app
-    const aTypes = aStores.map(
-      ([sName, { type }]) =>
-        `    ${JSON.stringify(sName)}: import('@nano-app/frontend').${STORE_CLASSES[type]};`,
-    );
+    // Writes the type of each store but `app`, which `Stores` always has
+    const aTypes = aStores
+      .filter(([sName]) => sName !== APP_NAME)
+      .map(
+        ([sName, { type }]) =>
+          `    ${JSON.stringify(sName)}: import('@nano-app/frontend').${STORE_CLASSES[type]};`,
+      );
     await writeFile(
       TYPES_FILE,
       [

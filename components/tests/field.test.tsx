@@ -6,7 +6,8 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { z } from 'zod';
-import field from '../field';
+import { createView } from '@nano-app/frontend';
+import FieldController from '../field';
 import TestApp from './provider';
 import type { FormField } from '../types/field';
 
@@ -23,23 +24,24 @@ const oBackend = createServer((_oReq, oRes) => {
 });
 
 // View of a select: shows its options
-const Select = field().bindView(({ options }) => (
+const Select = createView(FieldController, select => (
   <output>
-    {options()
+    {select
+      .options()
       .map(oRole => `${oRole.id}:${oRole.name}`)
       .join(',')}
   </output>
 ));
 
 // View of a field: a text input with its error
-const Input = field().bindView(({ props: { field: oField }, value, error, change }) => (
+const Input = createView(FieldController, (input, { field: oField }) => (
   <label>
     <input
       aria-label={oField.name}
-      value={value() ?? ''}
-      onChange={oEvent => change(oEvent.target.value)}
+      value={input.value() ?? ''}
+      onChange={oEvent => input.change(oEvent.target.value)}
     />
-    <output>{`${oField.name}: ${error() ?? 'ok'}`}</output>
+    <output>{`${oField.name}: ${input.error() ?? 'ok'}`}</output>
   </label>
 ));
 

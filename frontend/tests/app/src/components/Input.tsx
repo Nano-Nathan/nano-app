@@ -1,16 +1,17 @@
 'use client';
 
-import field from '@nano-app/components/field';
+import { createView } from '@nano-app/frontend';
+import FieldController from '@nano-app/components/field';
 
 /** An input of the field's type, with its error */
-export default field().bindView(({ props: { field: oField }, value, error, change }) => (
+export default createView(FieldController, (input, { field: oField }) => (
   <label>
     {oField.name}
     <input
       type={oField.type ?? 'text'}
-      value={value() ?? ''}
-      onChange={oEvent => change(oEvent.target.value)}
+      value={input.value() ?? ''}
+      onChange={oEvent => input.change(oEvent.target.value)}
     />
-    <small>{error()}</small>
+    <small>{input.error()}</small>
   </label>
 ));

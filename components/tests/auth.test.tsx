@@ -6,32 +6,25 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime';
-import { NanoAppProvider } from '@nano-app/frontend';
-import auth from '../auth';
+import { NanoAppProvider, createView } from '@nano-app/frontend';
+import AuthController from '../auth';
 import type { ReactNode } from 'react';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 
 const PORT = 4201;
 
-// Requests the backend received, the urls the router went to, and whether there is a session
+// Requests the backend received, and the urls the router went to
 const aRequests: string[] = [];
 const aVisited: string[] = [];
-let isSignedIn = false;
 
-// Backend behind the proxy: answers Better Auth's sign-in, sign-up, sign-out and get-session
+// Backend behind the proxy: keeps each request and answers it as done
 const oBackend = createServer((oReq, oRes) => {
   let sBody = '';
   oReq.on('data', oChunk => (sBody += oChunk));
   oReq.on('end', () => {
     // Keeps the request, with its store
     aRequests.push(`${oReq.method} ${oReq.url} ${sBody}`);
-
-    // Signs in or up and out, and answers the session when there is one
-    if (oReq.url?.includes('/sign-in/') || oReq.url?.includes('/sign-up/')) isSignedIn = true;
-    if (oReq.url?.endsWith('/sign-out')) isSignedIn = false;
-    const oSession = { user: { email: 'ana@nano.app' }, session: { id: 's1' } };
-    const sAnswer = JSON.stringify(isSignedIn ? oSession : null);
-    oRes.writeHead(200, { 'content-type': 'application/json' }).end(sAnswer);
+    oRes.writeHead(200, { 'content-type': 'application/json' }).end('{"success":true}');
   });
 });
 
@@ -46,22 +39,21 @@ const oRouter: AppRouterInstance = {
   bfcacheId: '',
 };
 
-/** View of an auth: the email of the session and its buttons */
-const fnView: Parameters<ReturnType<typeof auth>['bindView']>[0] = ({
-  stores,
-  signIn,
-  signUp,
-  signOut,
-  navTo,
-}) => (
-  <div>
-    <output>{stores.api?.get('/session')?.user.email ?? 'none'}</output>
-    <button onClick={() => signIn({ email: 'ana@nano.app', password: 'secret' })}>sign in</button>
-    <button onClick={() => signUp({ email: 'ana@nano.app', password: 'secret' })}>sign up</button>
-    <button onClick={signOut}>sign out</button>
-    <button onClick={() => navTo('/private')}>go</button>
-  </div>
-);
+/** View of an auth: its buttons */
+function view(auth: AuthController): ReactNode {
+  return (
+    <div>
+      <button onClick={() => auth.signIn({ email: 'ana@nano.app', password: 'secret' })}>
+        sign in
+      </button>
+      <button onClick={() => auth.signUp({ email: 'ana@nano.app', password: 'secret' })}>
+        sign up
+      </button>
+      <button onClick={auth.signOut}>sign out</button>
+      <button onClick={() => auth.navTo('/private')}>go</button>
+    </div>
+  );
+}
 
 /** Renders a view inside the provider and the router of the app */
 function renderApp(oNode: ReactNode): void {
@@ -72,76 +64,62 @@ function renderApp(oNode: ReactNode): void {
   );
 }
 
-/** Waits until the view shows this email of the session */
-async function expectEmail(sEmail: string): Promise<void> {
-  await waitFor(() => assert.equal(screen.getByRole('status').textContent, sEmail));
-}
-
 describe('auth', () => {
   before(() => new Promise<void>(fnResolve => oBackend.listen(PORT, fnResolve)));
   after(() => oBackend.close());
   afterEach(cleanup);
   beforeEach(() => {
-    // Starts each test without requests, visits nor session
+    // Starts each test without requests nor visits
     aRequests.length = 0;
     aVisited.length = 0;
-    isSignedIn = false;
   });
 
-  test('signIn sends the body to the kind of the options, and the session is read again', async () => {
+  test('signIn sends the body to Better Auth with the kind of the subclass', async () => {
     // Renders an auth of the username method and signs in
-    const Auth = auth({ kind: 'username' }).bindView(fnView);
+    class UsernameController extends AuthController {
+      public kind = 'username';
+    }
+    const Auth = createView(UsernameController, view);
     renderApp(<Auth />);
     fireEvent.click(screen.getByText('sign in'));
-    await expectEmail('ana@nano.app');
 
-    assert.ok(
-      aRequests.includes(
-        'POST /api/auth/sign-in/username {"email":"ana@nano.app","password":"secret"}',
-      ),
+    await waitFor(() =>
+      assert.deepEqual(aRequests, [
+        'POST /api/api/auth/sign-in/username {"email":"ana@nano.app","password":"secret"}',
+      ]),
     );
   });
 
-  test('signUp signs up with email by default, and signOut clears the session', async () => {
-    // Renders an auth and signs up
-    const Auth = auth().bindView(fnView);
+  test('signUp signs up with email by default, and signOut signs out', async () => {
+    // Renders an auth, signs up and signs out
+    const Auth = createView(AuthController, view);
     renderApp(<Auth />);
     fireEvent.click(screen.getByText('sign up'));
-    await expectEmail('ana@nano.app');
-
-    // Signs out
     fireEvent.click(screen.getByText('sign out'));
-    await expectEmail('none');
 
-    assert.ok(aRequests.some(sRequest => sRequest.startsWith('POST /api/auth/sign-up/email ')));
-    assert.ok(aRequests.some(sRequest => sRequest.startsWith('POST /api/auth/sign-out ')));
+    await waitFor(() => assert.equal(aRequests.length, 2));
+    assert.ok(aRequests.some(sRequest => sRequest.startsWith('POST /api/api/auth/sign-up/email ')));
+    assert.ok(aRequests.includes('POST /api/api/auth/sign-out {}'));
   });
 
-  test('every api store with auth reads its session when the app starts', async () => {
-    // Renders an auth: the app has two api stores with Better Auth
-    const Auth = auth({ store: 'admin' }).bindView(fnView);
+  test('a subclass reads the api store named in store', async () => {
+    // Renders an auth of the admin store and signs out
+    class AdminController extends AuthController {
+      public store = 'admin';
+    }
+    const Auth = createView(AdminController, view);
     renderApp(<Auth />);
+    fireEvent.click(screen.getByText('sign out'));
 
-    await waitFor(() => assert.ok(aRequests.includes('GET /api/auth/get-session ')));
-    await waitFor(() => assert.ok(aRequests.includes('GET /api/admin/auth/get-session ')));
+    await waitFor(() => assert.deepEqual(aRequests, ['POST /api/admin/auth/sign-out {}']));
   });
 
   test('navTo goes to the url with the router of the app', () => {
     // Renders an auth and goes to the private page
-    const Auth = auth().bindView(fnView);
+    const Auth = createView(AuthController, view);
     renderApp(<Auth />);
     fireEvent.click(screen.getByText('go'));
 
     assert.deepEqual(aVisited, ['/private']);
-  });
-
-  test('without its api store it fails, naming the store', () => {
-    // Renders an auth of a store the app does not have
-    const Auth = auth({ store: 'missing' }).bindView(fnView);
-
-    // Checks that the render stops with the store to add
-    assert.throws(() => renderApp(<Auth />), {
-      message: 'The store "missing" does not exist. Add src/stores/missing.store.ts.',
-    });
   });
 });

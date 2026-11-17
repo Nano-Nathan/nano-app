@@ -47,7 +47,7 @@ export default { type: 'app', data: { isOpen: false } };
 
 Each store reads and writes by path: `app.get('/drawer/isOpen')`, `app.set('/drawer/isOpen', true)`. A missing level reads as `undefined`, and `set` creates it.
 
-`withNanoApp` also writes `nano-app-env.d.ts` next to `next.config.ts`, with the type of each store (`stores.ui` is a `Store`, `stores.api` an `ApiStore`). Add it to `.gitignore`, as `next-env.d.ts`; the `**/*.ts` of Next's `tsconfig.json` already includes it.
+`withNanoApp` also writes `nano-app-env.d.ts` next to `next.config.ts`, with the type of each store (`stores.ui` is a `Store`, `stores.api` an `ApiStore`). `stores.app` is always a `Store`, also when `app.store.ts` makes it an api store. Add it to `.gitignore`, as `next-env.d.ts`; the `**/*.ts` of Next's `tsconfig.json` already includes it.
 
 ## Controllers and views
 

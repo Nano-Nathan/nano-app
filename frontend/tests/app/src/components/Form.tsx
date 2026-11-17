@@ -1,12 +1,18 @@
 'use client';
 
-import form from '@nano-app/components/form';
+import { createView } from '@nano-app/frontend';
+import FormController from '@nano-app/components/form';
 import Input from './Input';
 
-/** A form of a config of fields, every type shown with the input, and its button */
-export default form({ components: { text: Input } }).bindView(({ fields, submit }) => (
-  <form noValidate onSubmit={submit}>
-    {fields()}
+/** Form whose every field type is shown with the input */
+class InputFormController extends FormController {
+  public components = { text: Input };
+}
+
+/** A form of a config of fields, and its button */
+export default createView(InputFormController, form => (
+  <form noValidate onSubmit={form.submit}>
+    {form.fields()}
     <button>sign in</button>
   </form>
 ));

@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: review
 owner: claude
 depends_on: []
 updated: 2026-11-17
@@ -30,6 +30,8 @@ updated: 2026-11-17
 - Controllers as classes (2026-11-17): `Controller` holds `props`, `stores` and `router`, binds its methods once per instance and has `onMount`/`onUnmount` as plain methods; inheritance with `extends`/`super` replaces `extend` and `callbacks`. `createView(Controller, view)` makes one instance per mount, sets `this.props` in `useLayoutEffect` (a method sees the props of the last render on screen) and renders `view(controller, props)`. Rejected: spreading the instance into the view (copies each render, loses getters), an unbound instance with a "do not destructure" rule, `render()` inside the class, MobX `autoBind` (no subclasses).
 - `enableStaticRendering` moved to `NanoAppProvider`.
 - Route protection: `createPage` in `@nano-app/frontend/server`: a server component asks Better Auth's `get-session` at the store's backend and redirects without a session. Every kind of auth (cookie, API key, bearer, client credentials, JWT) is verified by Better Auth in the backend; the frontend only carries the cookie.
+- `@nano-app/components` as classes (2026-11-17): `AuthController`, `FieldController`, `FormController`, `ErrorController` and `CollectionController` (was `list`); options are fields the subclass sets, `abstract` without a default (rejected: a factory that returns a class, static options, options in `createView`, a shared instance). `ApiController` holds `store` and `api()`. Peer `@nano-app/frontend >=0.16.0`. `tests/app` on the new API; `/private` uses `createPage`.
+- `Stores` always has `app: Store`; `withNanoApp` writes the others (an api `app` store is typed `Store`).
 - Tests and README rewritten for the current code: `AuthStore`, store headers, `auth.routes`, the default store and the read cache are gone; the proxy without URLs is tested in its own process (`missing.test.ts`), as the URLs are read once when the module loads.
 - `withNanoApp` writes `nano-app-env.d.ts` in the app (not in `.next/types`: Next empties its `distDir` on build) with the type of each store, through module augmentation of `Stores` (an `interface`, the only kind that merges). The runtime `Proxy` is gone: a missing store is a type error. `createStores` moved into `NanoAppProvider`, its only caller (`useState`, once per tree: never at module level, the server would share one set across requests).
 
@@ -47,9 +49,7 @@ updated: 2026-11-17
 
 ## Pending
 
-1. **`@nano-app/components`**: still on `createController`/`bindView` through `workspace:*`; migrate it to `Controller` and `createView` before the pull request.
-2. **`tests/app`**: its controllers and components use the old API and `@nano-app/components`; migrate it with the components.
-3. **`createPage`**: no unit test (it needs Next's request scope for `headers()`); checked in `tests/app` (`/private`).
+1. **`createPage`**: no unit test (it needs Next's request scope for `headers()`); checked in `tests/app` (`/private`).
 
 ## Next.js options that help (checked in `next.config` docs and `config-shared.ts`, canary)
 
@@ -62,4 +62,4 @@ updated: 2026-11-17
 
 ## Next step
 
-Migrate `@nano-app/components` and `tests/app` (pending 1 and 2), then the pull request.
+Pull request to `main`; then finance moves to the new API.

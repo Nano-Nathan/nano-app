@@ -83,7 +83,7 @@ describe('withNanoApp', () => {
       // Writes the type of each store for the app
       const sTypes = await readFile('nano-app-env.d.ts', 'utf8');
       assert.match(sTypes, /"admin_users": import\('@nano-app\/frontend'\)\.Store;/);
-      assert.match(sTypes, /"app": import\('@nano-app\/frontend'\)\.Store;/);
+      assert.doesNotMatch(sTypes, /"app"/);
     } finally {
       await rm('nano-app-env.d.ts', { force: true });
       process.chdir(sCwd);

@@ -5,7 +5,7 @@
 Official components for [`@nano-app/frontend`](https://www.npmjs.com/package/@nano-app/frontend). A component is the logic of a piece of UI, a controller ready to use: you write only the view. One import path per component: `@nano-app/components/<name>`. No markup and no styles.
 
 - Node.js 22.23.4, 24.22.1 or 26.12.1 and newer. ESM only.
-- `@nano-app/frontend` 0.7, Next 16.3 and React 19 or newer, as peer dependencies.
+- `@nano-app/frontend` 0.16, Next 16.3 and React 19 or newer, as peer dependencies.
 
 ```bash
 pnpm add @nano-app/frontend @nano-app/components
@@ -15,72 +15,83 @@ pnpm add @nano-app/frontend @nano-app/components
 // src/components/Users.tsx
 'use client';
 
-import list from '@nano-app/components/list';
+import { createView } from '@nano-app/frontend';
+import CollectionController from '@nano-app/components/collection';
 
-export default list({ path: '/users', limit: 20 }).bindView(
-  ({ stores: { api }, items, next, prev, sort }) => (
-    <section>
-      <button onClick={() => sort('name')}>name</button>
-      <ul>
-        {items()?.result?.map(oUser => (
-          <li key={oUser.id}>{oUser.name}</li>
-        ))}
-      </ul>
-      <button onClick={prev}>←</button> {(api.get('/list/page') ?? 0) + 1}{' '}
-      <button onClick={next}>→</button>
-    </section>
-  ),
-);
+class UsersController extends CollectionController {
+  public name = 'users';
+  public path = '/users';
+  public limit = 20;
+}
+
+export default createView(UsersController, users => (
+  <section>
+    <button onClick={() => users.sort('name')}>name</button>
+    <ul>
+      {users.items()?.result?.map(oUser => (
+        <li key={oUser.id}>{oUser.name}</li>
+      ))}
+    </ul>
+    <button onClick={users.prev}>←</button> {users.page() + 1}{' '}
+    <button onClick={users.next}>→</button>
+  </section>
+));
 ```
 
-- Every component is a function, also without options (`error()`): its options configure the logic once and are shared by every view bound to it, and the props of a view carry the data of each use.
-- Each call (`list({ … })`) returns a controller of `@nano-app/frontend`: bind views to it with `bindView`, and change or add methods with `extend(({ props, stores }) => ({ … }))`.
-- A component reads what it needs when its view mounts (`callbacks.onMount`): the view only renders.
-- A component gives its view only methods. Its state lives in its api store, under its name (`/list/page`): the view reads it with `get`, and the requests in progress with the store's `/busy`. Two components of the same kind on the same store share it. `field` keeps its own in the `app` store, under the name of its form.
-- A component that reads the backend uses the store named in `store`, `api` by default (`src/stores/api.store.ts`). Without it, the render throws naming the store file to add.
+- Every component is a `Controller` class of `@nano-app/frontend`: use it with `createView`, and change or add methods by extending it (`class X extends AuthController { … }`, the original through `super`).
+- Its options are fields: a subclass sets them (`public store = 'admin';`). A field without a default is `abstract`: the class must be extended, and TypeScript asks for every one of them.
+- The props of a view carry the data of each use (`form`, `field`, `name`, `fields`, `onSubmit`).
+- A component reads what it needs when its view mounts (`onMount`): the view only renders. The requests in progress are in the store's `/busy`.
+- A component that reads the backend uses the api store named in `store`, `api` by default (`src/stores/api.store.ts`).
 
 ## Components
 
-| Component | Import                                           | Options                                               | The view receives                                                                                                                                                                                                |
-| --------- | ------------------------------------------------ | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `auth`    | `import auth from '@nano-app/components/auth'`   | `kind` (default `'email'`), `store` (default `'api'`) | `signIn(body)`, `signUp(body)`, `signOut()`, `navTo(url)`; in the store: `/session`                                                                                                                    |
-| `field`   | `import field from '@nano-app/components/field'` | —                                                     | `value()`, `error()`, `change(value)`, `options()`, `parse(input)`, `validate(value)`; props `form`, `field`; in `app`: `/form/<form>/values`, `/form/<form>/errors`                                            |
-| `form`    | `import form from '@nano-app/components/form'`   | `components`                                          | `fields()`, `submit(event)`, `reset()`; props `name`, `fields`, `onSubmit`; in `app`: `/form/<name>`                                                                                                             |
-| `error`   | `import error from '@nano-app/components/error'` | —                                                     | `items()`, `remove(index)`, `clear()`, `last()`, `dismiss()`                                                                                                                                                     |
-| `list`    | `import list from '@nano-app/components/list'`   | `path`, `limit`, `store` (default `'api'`)            | `load()`, `items()`, `page()`, `query()`, `goTo(page)`, `next()`, `prev()`, `sort(field)`, `more()`, `pages()`, `pagesQuery()`; in the store: `/list/page` (from 0, `undefined` until it moves), `/list/orderBy` |
+| Component              | Import                                                          | Fields                                              | Methods                                                                                                                       | Props                         | State                                                                            |
+| ---------------------- | --------------------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------- | -------------------------------------------------------------------------------- |
+| `AuthController`       | `import AuthController from '@nano-app/components/auth'`             | `kind` (`'email'`), `store` (`'api'`)               | `signIn(body)`, `signUp(body)`, `signOut()`, `navTo(url)`                                                                     | —                             | —                                                                                |
+| `FieldController`      | `import FieldController from '@nano-app/components/field'`           | —                                                   | `value()`, `error()`, `change(value)`, `options()`, `parse(input)`, `validate(value)`                                         | `form`, `field`               | `app`: `/form/<form>/values`, `/form/<form>/errors`                              |
+| `FormController`       | `import FormController from '@nano-app/components/form'`             | `components` (abstract)                             | `fields()`, `submit(event)`, `reset()`                                                                                        | `name`, `fields`, `onSubmit`  | `app`: `/form/<name>`                                                            |
+| `ErrorController`      | `import ErrorController from '@nano-app/components/error'`           | —                                                   | `items()`, `remove(index)`, `clear()`, `last()`, `dismiss()`                                                                  | —                             | every store's `/error/list`                                                      |
+| `CollectionController` | `import CollectionController from '@nano-app/components/collection'` | `name`, `path`, `limit` (abstract), `store` (`'api'`) | `load()`, `items()`, `page()`, `query()`, `goTo(page)`, `next()`, `prev()`, `sort(field)`, `more()`, `pages()`, `pagesQuery()` | —                             | `app`: `/collection/<name>/page`, `/orderBy`; the api store: `/collection/<name>/pages` |
 
-`auth()` uses the [sessions](../frontend/README.md#sessions) of an api store that declares `auth`: `signIn(body)` and `signUp(body)` send `body` to Better Auth's method `kind` (`{ email, password }` for `email`) and `signOut()` signs out. Each one returns the store's `ApiResponse`. The store keeps the session at `/session` on its own. `navTo(url)` goes to a url of the app with the `router` of the context; the view decides when. Create the controller once and bind every view to it:
+## Auth
+
+`signIn(body)` and `signUp(body)` send `body` to Better Auth's `POST /auth/sign-in/<kind>` and `/auth/sign-up/<kind>` of the store's backend (`{ email, password }` for `email`), and `signOut()` to `/auth/sign-out`. Each one returns the store's `ApiResponse`. Better Auth keeps the session in its cookie; a page that needs it uses `createPage` of `@nano-app/frontend/server`. `navTo(url)` goes to a url of the app with the `router`; the view decides when.
 
 ```tsx
-// src/controllers/auth.controller.ts
-export default auth();
+// src/controllers/logout.controller.ts
+export default class LogoutController extends AuthController {
+  public async logout(): Promise<void> {
+    // Signs out and goes to the login
+    const oResponse = await this.signOut();
+    if (oResponse.success) this.navTo('/login');
+  }
+}
 
 // src/components/Logout.tsx
-export default authController
-  .extend(() => ({
-    async logout(): Promise<void> {
-      // Signs out and goes to the login
-      const oResponse = await this.signOut();
-      if (oResponse.success) this.navTo('/login');
-    },
-  }))
-  .bindView(({ logout }) => <button onClick={logout}>sign out</button>);
+export default createView(LogoutController, logout => (
+  <button onClick={logout.logout}>sign out</button>
+));
 ```
 
-`field` is the controller of a field view: bind one view per kind of input (a text, a select, a date picker) and give it the props `form` (the name of its form) and `field` (its config).
+- Better Auth checks the `Origin` of every `POST`: add the URL of the frontend to its `trustedOrigins` in the backend.
+
+## Field
+
+`FieldController` is the controller of a field view: create one view per kind of input (a text, a select, a date picker) and give it the props `form` (the name of its form) and `field` (its config).
 
 ```tsx
 // src/components/Input.tsx: an input of the field's type with its error
-export default field().bindView(({ props: { field: oField }, value, error, change }) => (
+export default createView(FieldController, (input, { field: oField }) => (
   <label>
     {oField.label}
     <input
       type={oField.type ?? 'text'}
       disabled={oField.disabled}
-      value={value() ?? ''}
-      onChange={oEvent => change(oEvent.target.value)}
+      value={input.value() ?? ''}
+      onChange={oEvent => input.change(oEvent.target.value)}
     />
-    <small>{error()}</small>
+    <small>{input.error()}</small>
   </label>
 ));
 
@@ -91,49 +102,64 @@ export default field().bindView(({ props: { field: oField }, value, error, chang
 - `validation` holds the rules of its value, a [zod](https://zod.dev) schema written by the app (`z.email('Invalid email')`, `z.string().min(3, 'Too short')`, `z.number().optional()`). A rule between fields (a password and its repeat) goes in the `onSubmit` of the form.
 - `change(value)` keeps the value at `/form/<form>/values/<name>` as the view gives it (a text, a boolean, the ISO day of a date input), an empty text as no value (`undefined`), and a `number` field as a number when its text is that number as is (`'12'`, while `'1.'` stays a text). Then it keeps at `/form/<form>/errors/<name>` the message of the first rule of its validation the value breaks. `error()` gives that message, and `validate(value)` the one of a value.
 - `parse(input)` replaces what `change` keeps, and `format(value)` what `value()` gives: a price kept as `1234` and shown as `$1.234`.
-- A select takes `options: { path, store }` (`store` is `'api'` by default): the field reads `path` from the backend when its view mounts, and `options()` gives its items as the backend gave them, for the view to take the keys it shows.
+- A select takes `options: { path, store }` (`store` is `'api'` by default): the field reads `path` with `GET` when its view mounts, and `options()` gives the `result` of the answer, for the view to take the keys it shows.
 - Without a `validation` a field breaks no rule.
 - The browser validates native inputs (`type="email"`, `required`) and shows its own bubbles. To show only the field's messages, put `noValidate` on the `<form>` of the view.
 
-`form({ components })` renders a form from a config of fields: `components` gives the view of each field type, and the view of the form gets the props `name` (its name) and `fields` (the configs of its fields). `fields()` gives the view of each field, in their order, with the props `form` and `field`: the view of its `type`, or the one of `text` when its type has none. A field with no view and no `text` stops the render with an error. `submit(event)` stops the browser's submit, validates every field of `fields` (also the untouched ones) and keeps their messages at `/form/<name>/errors`; when none breaks a rule it calls the prop `onSubmit(values)` with the values kept and returns what it returns, otherwise `undefined`. `onSubmit` is a method of the controller of the page that renders the form, so its view only passes it. `reset()` empties the values and the errors.
+## Form
+
+`FormController` renders a form from a config of fields. Its subclass sets `components`, the view of each field type; the view of the form gets the props `name` (its name), `fields` (the configs of its fields) and `onSubmit`.
+
+- `fields()` gives the view of each field, in their order, with the props `form` and `field`: the view of its `type`, or the one of `text` when its type has none. A field with no view and no `text` stops the render with an error.
+- `submit(event)` stops the browser's submit, validates every field of `fields` (also the untouched ones) and keeps their messages at `/form/<name>/errors`; when none breaks a rule it calls the prop `onSubmit(values)` with the values kept and returns what it returns, otherwise `undefined`.
+- `reset()` empties the values and the errors.
+- `fields()` reads the props of the last render on screen: `name` and `fields` are set once per form, not changed while it is mounted.
 
 ```tsx
 // src/components/SignUp.tsx
-export default form({ components: { text: Input, select: Select } }).bindView(
-  ({ fields, submit, reset }) => (
-    <form noValidate onSubmit={submit}>
-      {fields()}
-      <button>send</button>
-      <button type="button" onClick={reset}>
-        reset
-      </button>
-    </form>
-  ),
-);
+class SignUpFormController extends FormController {
+  public components = { text: Input, select: Select };
+}
+
+export default createView(SignUpFormController, signUp => (
+  <form noValidate onSubmit={signUp.submit}>
+    {signUp.fields()}
+    <button>send</button>
+    <button type="button" onClick={signUp.reset}>
+      reset
+    </button>
+  </form>
+));
 
 // src/components/SignUpPage.tsx: auth gives the form its sign-up
-export default authController.bindView(({ signUp }) => (
+export default createView(AuthController, auth => (
   <SignUp
     name="signUp"
     fields={[
       { name: 'email', type: 'email', validation: z.email() },
       { name: 'password', type: 'password', validation: z.string().min(8) },
     ]}
-    onSubmit={signUp}
+    onSubmit={auth.signUp}
   />
 ));
 ```
 
-`error()` gathers the `/error/list` of every api store: `items()` gives all the errors (the `ApiResponse` of each failed request with its `timestamp`) from the newest, `remove(index)` removes the one at that index of `items()` from its store and `clear()` empties them all: a panel of errors uses them. `last()` gives the newest one and `dismiss()` removes it: an alert uses them.
+## Error
 
-`load()` reads the current page of `path` with a `QUERY` (`offset`, `limit`, `orderBy`) through the store, and `items()` gets the `ApiResponse` it kept. The list reads its current page when its view mounts. `next`, `prev` and `sort` change the page or the order and read it. `sort` orders by one field, ascending and then descending, and goes back to the first page. `prev` stays on the first page. `page()` gives the current page (from 0), `query()` the query it reads, and `goTo(page)` moves to a page and reads it.
+`ErrorController` gathers the `/error/list` of every api store: `items()` gives all the errors (the `ApiResponse` of each failed request with its `timestamp`) from the newest, `remove(index)` removes the one at that index of `items()` from its store and `clear()` empties them all: a panel of errors uses them. `last()` gives the newest one and `dismiss()` removes it: an alert uses them.
 
-To read page after page instead (a "load more" button, an endless scroll), the view calls `more()`: it adds the next page of `path` in the current order to the pages read so far, with `more` of the api store, and `pages()` gives them in one `ApiResponse`; `pagesQuery()` is the query they are read with. A page with fewer than `limit` items is the last one. A change of order starts the pages again. While the view is mounted a write on `path` reads its pages again; pages left old while no view showed them are read again when one mounts.
+## Collection
+
+`load()` reads the current page of `path` with a `QUERY` (`offset`, `limit`, `orderBy`) through the store, and `items()` gets the `ApiResponse` it kept. The collection reads its current page when its view mounts. `next`, `prev` and `sort` change the page or the order and read it. `sort` orders by one field, ascending and then descending, and goes back to the first page. `prev` stays on the first page. `page()` gives the current page (from 0), `query()` the query it reads, and `goTo(page)` moves to a page and reads it.
+
+To read page after page instead (a "load more" button, an endless scroll), the view calls `more()`: it reads the page after the items read so far, in the current order, and keeps every item in one `ApiResponse` that `pages()` gives; `pagesQuery()` is the query they are read with. A change of order starts the pages again.
 
 ## Layout
 
 ```
 components/
-└── <name>/
-    └── index.ts        default-exports the component's factory: the import path
+├── <name>/
+│   └── index.ts        default-exports the component's class: the import path
+└── utils/
+    └── ApiController.ts  base of the components that read an api store (`store`, `api()`)
 ```

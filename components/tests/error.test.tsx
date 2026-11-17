@@ -6,7 +6,8 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { REQUEST_FAILED } from '@nano-app/core/const';
-import error from '../error';
+import { createView } from '@nano-app/frontend';
+import ErrorController from '../error';
 import TestApp from './provider';
 import type { ApiError } from '@nano-app/frontend';
 
@@ -20,35 +21,37 @@ const oBackend = createServer((oReq, oRes) => {
   oRes.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(oAnswer));
 });
 
+/** The errors with two methods that fail a request on each store */
+class ErrorsController extends ErrorController {
+  public failApi(): Promise<unknown> {
+    // Reads a path that fails
+    return this.stores.api.GET('/users');
+  }
+
+  public warnAdmin(): Promise<unknown> {
+    // Writes a path that answers a warning
+    return this.stores.admin.PUT('/warn', {});
+  }
+}
+
 // The errors of every store, the last one and buttons that fail a request on each store
-const Errors = error()
-  .extend(({ stores: { api, admin } }) => ({
-    failApi(): Promise<unknown> {
-      // Reads a path that fails
-      return api.read('/users');
-    },
-    warnAdmin(): Promise<unknown> {
-      // Writes a path that answers a warning
-      return admin.update('/warn', {});
-    },
-  }))
-  .bindView(({ items, remove, last, dismiss, clear, failApi, warnAdmin }) => (
-    <div>
-      <ul>
-        {items().map((oError: ApiError, iIndex) => (
-          <li key={iIndex}>
-            {oError.warning ? `warning ${oError.message}` : oError.message}
-            <button onClick={() => remove(iIndex)}>remove</button>
-          </li>
-        ))}
-      </ul>
-      <output>{last()?.message ?? 'none'}</output>
-      <button onClick={failApi}>fail</button>
-      <button onClick={warnAdmin}>warn</button>
-      <button onClick={dismiss}>dismiss</button>
-      <button onClick={clear}>clear</button>
-    </div>
-  ));
+const Errors = createView(ErrorsController, errors => (
+  <div>
+    <ul>
+      {errors.items().map((oError: ApiError, iIndex) => (
+        <li key={iIndex}>
+          {oError.warning ? `warning ${oError.message}` : oError.message}
+          <button onClick={() => errors.remove(iIndex)}>remove</button>
+        </li>
+      ))}
+    </ul>
+    <output>{errors.last()?.message ?? 'none'}</output>
+    <button onClick={errors.failApi}>fail</button>
+    <button onClick={errors.warnAdmin}>warn</button>
+    <button onClick={errors.dismiss}>dismiss</button>
+    <button onClick={errors.clear}>clear</button>
+  </div>
+));
 
 /** Fails a request on `api`, then a later one on `admin` */
 async function failBoth(): Promise<void> {

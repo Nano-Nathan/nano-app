@@ -1,20 +1,23 @@
 'use client';
 
-import usersController from '../controllers/users.controller';
+import { createView } from '@nano-app/frontend';
+import UsersController from '../controllers/users.controller';
 
 /** Users of the backend store: read, added, renamed and removed */
-export default usersController.bindView(({ stores: { backend }, add, rename, remove }) => (
+export default createView(UsersController, users => (
   <section>
-    <p>{backend.get('/busy') ? 'Loading…' : 'Users'}</p>
+    <p>{users.stores.backend.get('/busy') ? 'Loading…' : 'Users'}</p>
     <ul>
-      {(backend.get('/users')?.result ?? []).map((oUser: { id: number; name: string }) => (
-        <li key={oUser.id}>
-          {oUser.name}
-          <button onClick={() => rename(oUser.id, `${oUser.name}!`)}>rename</button>
-          <button onClick={() => remove(oUser.id)}>remove</button>
-        </li>
-      ))}
+      {(users.stores.backend.get('/users')?.result ?? []).map(
+        (oUser: { id: number; name: string }) => (
+          <li key={oUser.id}>
+            {oUser.name}
+            <button onClick={() => users.rename(oUser.id, `${oUser.name}!`)}>rename</button>
+            <button onClick={() => users.remove(oUser.id)}>remove</button>
+          </li>
+        ),
+      )}
     </ul>
-    <button onClick={() => add('New user')}>add</button>
+    <button onClick={() => users.add('New user')}>add</button>
   </section>
 ));

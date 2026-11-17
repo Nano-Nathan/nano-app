@@ -1,19 +1,26 @@
 'use client';
 
-import list from '@nano-app/components/list';
+import { createView } from '@nano-app/frontend';
+import CollectionController from '@nano-app/components/collection';
 
-/** Users of the backend store, five per page, sortable by name */
-export default list({ path: '/users', limit: 5, store: 'backend' }).bindView(
-  ({ stores: { backend }, items, next, prev, sort }) => (
-    <section>
-      <button onClick={() => sort('name')}>name</button>
-      <ul>
-        {(items()?.result ?? []).map((oUser: { id: number; name: string }) => (
-          <li key={oUser.id}>{oUser.name}</li>
-        ))}
-      </ul>
-      <button onClick={prev}>←</button> {(backend.get('/list/page') ?? 0) + 1}{' '}
-      <button onClick={next}>→</button>
-    </section>
-  ),
-);
+/** Users of the backend store, five per page */
+class UsersPageController extends CollectionController {
+  public name = 'users';
+  public path = '/users';
+  public limit = 5;
+  public store = 'backend';
+}
+
+/** Users of the backend store, a page at a time, sortable by name */
+export default createView(UsersPageController, users => (
+  <section>
+    <button onClick={() => users.sort('name')}>name</button>
+    <ul>
+      {(users.items()?.result ?? []).map((oUser: { id: number; name: string }) => (
+        <li key={oUser.id}>{oUser.name}</li>
+      ))}
+    </ul>
+    <button onClick={users.prev}>←</button> {users.page() + 1}{' '}
+    <button onClick={users.next}>→</button>
+  </section>
+));

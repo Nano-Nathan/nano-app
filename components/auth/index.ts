@@ -1,33 +1,29 @@
-import { createController } from '@nano-app/frontend';
-import { AUTH_PATH, DEFAULT_STORE } from '@nano-app/core/const';
+import { AUTH_PATH } from '@nano-app/core/const';
+import ApiController from '../utils/ApiController';
 import type { ApiResponse } from '@nano-app/core/types/api';
-import type { AuthOptions } from '../types/auth';
 
 /** Sign-in, sign-up and sign-out of an api store with Better Auth, and the navigation after them */
-export default function auth(oOptions: AuthOptions = {}) {
-  const { kind = 'email', store = DEFAULT_STORE } = oOptions;
+export default class AuthController extends ApiController {
+  /** Better Auth method of `signIn` and `signUp` (`email` by default) */
+  public kind = 'email';
 
-  return createController(({ stores, router }) => {
-    // Takes the api store of the options
-    const oApi = stores[store];
+  /** Better Auth's sign-in of the kind */
+  public signIn(oBody: unknown): Promise<ApiResponse> {
+    return this.api().POST(`${AUTH_PATH}/sign-in/${this.kind}`, oBody);
+  }
 
-    return {
-      async signIn(oBody: unknown): Promise<ApiResponse> {
-        // Better Auth's sign-in of the kind of the options
-        return oApi.POST(`${AUTH_PATH}/sign-in/${kind}`, oBody);
-      },
-      async signUp(oBody: unknown): Promise<ApiResponse> {
-        // Better Auth's sign-up of the kind of the options
-        return oApi.POST(`${AUTH_PATH}/sign-up/${kind}`, oBody);
-      },
-      async signOut(): Promise<ApiResponse> {
-        // Better Auth's sign-out
-        return oApi.POST(`${AUTH_PATH}/sign-out`, {});
-      },
-      navTo(sUrl: string): void {
-        // Goes to a url of the app
-        router.push(sUrl);
-      },
-    };
-  });
+  /** Better Auth's sign-up of the kind */
+  public signUp(oBody: unknown): Promise<ApiResponse> {
+    return this.api().POST(`${AUTH_PATH}/sign-up/${this.kind}`, oBody);
+  }
+
+  /** Better Auth's sign-out */
+  public signOut(): Promise<ApiResponse> {
+    return this.api().POST(`${AUTH_PATH}/sign-out`, {});
+  }
+
+  /** Goes to a url of the app */
+  public navTo(sUrl: string): void {
+    this.router.push(sUrl);
+  }
 }
