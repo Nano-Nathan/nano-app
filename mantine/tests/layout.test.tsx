@@ -1,10 +1,12 @@
-// First: CSS and the stores, before the layout loads
-import './css';
+// First: the stores, before the frontend loads
 import './env';
+import './css';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderToStaticMarkup } from 'react-dom/server';
-import createLayout from '../layout';
+
+// The layout once the hook of css.ts runs: static imports load before any of them runs
+const { default: createLayout } = await import('../layout');
 
 test('createLayout renders the html of its language, the color scheme script and the children', () => {
   // Layout in Spanish, dark by default

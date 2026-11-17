@@ -1,6 +1,7 @@
 import { registerHooks } from 'node:module';
 
-// Node does not load CSS: Mantine's styles, imported by the layout, load as an empty module
+// Node does not load CSS: Mantine's styles, imported by the layout, load as an empty module.
+// It covers only what is imported after it runs: a dynamic `import()`
 registerHooks({
   load: (sUrl, oContext, fnNext) =>
     sUrl.endsWith('.css')
