@@ -1,4 +1,4 @@
-import { Container } from '@mantine/core';
+import { Container, Stack } from '@mantine/core';
 import Login from './Login';
 import type { ReactNode } from 'react';
 import type { LoginOptions, LoginTexts } from '../../types/login';
@@ -18,10 +18,12 @@ const TEXTS: LoginTexts = {
 export default function createLoginPage(oOptions: LoginOptions): () => ReactNode {
   const { store, home, texts } = oOptions;
   return function LoginPage(): ReactNode {
-    // The login with the given texts over the English ones
+    // The login in the middle of the screen, with the given texts over the English ones
     return (
-      <Container size="xs" py="xl">
-        <Login store={store} home={home} texts={{ ...TEXTS, ...texts }} />
+      <Container size="xs">
+        <Stack justify="center" mih="100dvh" py="xl">
+          <Login store={store} home={home} texts={{ ...TEXTS, ...texts }} />
+        </Stack>
       </Container>
     );
   };
