@@ -4,7 +4,7 @@ import pkg from './package.json' with { type: 'json' };
 
 export default defineConfig({
   // One folder per piece: `<name>/index.tsx` is its import path
-  entry: globSync(['layout/index.tsx', 'components/*/index.tsx', 'pages/*/index.tsx']),
+  entry: globSync(['layout/index.tsx', 'components/*/index.{ts,tsx}', 'pages/*/index.tsx']),
   // One output file per source file: Next reads `'use client'` per module
   unbundle: true,
   root: '.',

@@ -42,11 +42,11 @@ export default createTheme({ primaryColor: 'teal' });
 
 Views of `@nano-app/components`, with Mantine. Their logic is the component's: see [its README](../components/README.md).
 
-| Component  | Import                                                         | Controller        | Props                                    |
-| ---------- | -------------------------------------------------------------- | ----------------- | ---------------------------------------- |
-| `Input`    | `import Input from '@nano-app/mantine/components/input'`       | `FieldController` | `form`, `field` (`label`, `type`)        |
-| `Password` | `import Password from '@nano-app/mantine/components/password'` | `FieldController` | `form`, `field` (`label`)                |
-| `Form`     | `import Form from '@nano-app/mantine/components/form'`         | `FormController`  | `name`, `fields`, `onSubmit`, `children` |
+| Component  | Import                                                           | Controller        | Props                                    |
+| ---------- | ---------------------------------------------------------------- | ----------------- | ---------------------------------------- |
+| `Input`    | `import { Input } from '@nano-app/mantine/components/fields'`    | `FieldController` | `form`, `field` (`label`, `type`)        |
+| `Password` | `import { Password } from '@nano-app/mantine/components/fields'` | `FieldController` | `form`, `field` (`label`)                |
+| `Form`     | `import Form from '@nano-app/mantine/components/form'`           | `FormController`  | `name`, `fields`, `onSubmit`, `children` |
 
 `Input` is a `TextInput` with the field's `label` and `type`, its value and its error. `Password` is a `PasswordInput`, with a toggle that shows the password. `Form` shows each `password` field with `Password`, every other one with `Input`, and then its `children`, the buttons:
 
@@ -89,8 +89,14 @@ export default createLoginPage({
 
 ```
 mantine/
-├── layout/index.tsx          createLayout: the root layout
-├── components/<name>/index.tsx  a view of @nano-app/components
-├── pages/<name>/index.tsx    create<Name>Page: a server page, with its client view next to it
-└── types/                    the options of each piece
+├── layout/index.tsx               createLayout: the root layout
+├── components/<type>/             views of @nano-app/components, grouped by type
+│   ├── index.ts                   the import path: exports each view of the type
+│   └── <View>.tsx                 one view (fields/Input.tsx, fields/Password.tsx)
+├── pages/<name>/                  a ready page
+│   ├── index.tsx                  create<Name>Page, the server page, and its English texts
+│   ├── <Name>Controller.ts        the controller of the page
+│   ├── <Name>.tsx                 its client view
+│   └── components/                the pieces only this page uses
+└── types/                         the options and the types of each piece
 ```

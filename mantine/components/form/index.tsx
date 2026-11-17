@@ -3,8 +3,7 @@
 import { Stack } from '@mantine/core';
 import { createView } from '@nano-app/frontend';
 import FormController from '@nano-app/components/form';
-import Input from '../input';
-import Password from '../password';
+import { Input, Password } from '../fields';
 
 /** Form whose passwords show with their own input, every other type with the input */
 class InputFormController extends FormController {
