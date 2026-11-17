@@ -24,7 +24,12 @@ const oBackend = createServer((oReq, oRes) => {
 });
 
 // Login page of the api store, titled finance, that goes to /home
-const LoginPage = createLoginPage({ store: 'api', home: '/home', texts: { title: 'finance' } });
+const LoginPage = createLoginPage({
+  store: 'api',
+  home: '/home',
+  providers: ['google'],
+  texts: { title: 'finance' },
+});
 
 before(() => new Promise<void>(fnResolve => oBackend.listen(PORT, fnResolve)));
 after(() => oBackend.close());
@@ -79,4 +84,18 @@ test('the login page signs up with the same values, the email as the name, and g
   assert.deepEqual(aRequests, [
     'POST /api/api/auth/sign-up/email {"email":"ana@nano.app","password":"secret","name":"ana@nano.app"}',
   ]);
+});
+
+test('the login page asks Better Auth the page of Google, back to home', async () => {
+  renderLogin();
+
+  // Clicks the button of Google
+  fireEvent.click(screen.getByText('Continue with Google'));
+
+  // Better Auth's social sign-in got the provider and the home
+  await waitFor(() =>
+    assert.deepEqual(aRequests, [
+      'POST /api/api/auth/sign-in/social {"provider":"google","callbackURL":"/home"}',
+    ]),
+  );
 });

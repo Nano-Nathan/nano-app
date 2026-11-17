@@ -7,6 +7,8 @@ import AuthController from '@nano-app/components/auth';
 import NanoError from '@nano-app/core/utils/NanoError';
 import Form from '../../components/form';
 import type { ApiStore } from '@nano-app/frontend';
+import type { ApiResponse } from '@nano-app/core/types/api';
+import type { LoginProvider } from '../../types/login';
 
 /** Values of the login form */
 type LoginValues = {
@@ -34,6 +36,18 @@ class LoginController extends AuthController {
     if (oResponse.success) this.navTo(this.props.home);
   }
 
+  /** Signs in with a provider: its page, then back to the home */
+  public async social(sProvider: LoginProvider): Promise<void> {
+    // Asks Better Auth the provider's page, back to the home
+    const { success, url }: ApiResponse & { url?: string } = await this.signIn(
+      { provider: sProvider, callbackURL: this.props.home },
+      'social',
+    );
+
+    // Goes to the provider's page, outside the app
+    if (success && url) window.location.assign(url);
+  }
+
   /** The api store of the props; fails when the app has none of that name */
   private store(): ApiStore {
     const { store } = this.props;
@@ -47,7 +61,7 @@ class LoginController extends AuthController {
 }
 
 /** Login card: the form of email and password, the sign-in and the sign-up */
-export default createView(LoginController, (auth, { texts }) => (
+export default createView(LoginController, (auth, { providers, texts }) => (
   <Card withBorder>
     <Stack>
       <Title order={2}>{texts.title}</Title>
@@ -74,6 +88,11 @@ export default createView(LoginController, (auth, { texts }) => (
       <Button variant="outline" onClick={auth.register}>
         {texts.register}
       </Button>
+      {providers.map((sProvider: LoginProvider) => (
+        <Button key={sProvider} variant="default" onClick={() => auth.social(sProvider)}>
+          {texts[sProvider]}
+        </Button>
+      ))}
     </Stack>
   </Card>
 ));

@@ -18,7 +18,7 @@ const PORT = 4200;
 let iDelay = 0;
 let isCounted = false;
 
-/** Answers the backend's routes: `/fail`, `/silent`, `/count` and `/html`, any other echoes */
+/** Answers the backend's routes: `/fail`, `/silent`, `/count`, `/html`, `/plain` and `/refused`, any other echoes */
 function answer(sMethod: string, sUrl: string, sBody: string): [number, string, string] {
   const sPath = sUrl.replace('/api/backend', '');
   const fnJson = (iStatus: number, oValue: NanoObject): [number, string, string] => [
@@ -31,6 +31,8 @@ function answer(sMethod: string, sUrl: string, sBody: string): [number, string, 
   if (sPath === '/html') return [404, 'text/html', '<h1>Not found</h1>'];
   if (sPath === '/fail') return fnJson(400, { success: false, message: 'Failed' });
   if (sPath === '/silent') return fnJson(500, { success: false });
+  if (sPath === '/plain') return fnJson(200, { token: 't' });
+  if (sPath === '/refused') return fnJson(401, { message: 'Refused' });
   if (sPath === '/count') {
     const oAnswer = isCounted ? { success: true } : { success: true, count: 5 };
     isCounted = true;
@@ -156,6 +158,21 @@ describe('api store', () => {
       ],
     );
     assert.equal(typeof aErrors[0].timestamp, 'number');
+  });
+
+  test('an answer without success takes it from its HTTP status', async () => {
+    // Reads a 2xx and a 4xx that bring no success, as Better Auth answers
+    const { backend } = renderStores();
+    const oPlain = await backend.POST('/plain', {});
+    const oRefused = await backend.POST('/refused', {});
+
+    // The 2xx succeeds, and only the 4xx is an error of the store
+    assert.deepEqual(oPlain, { success: true, token: 't', status: 200 });
+    assert.deepEqual(oRefused, { success: false, message: 'Refused', status: 401 });
+    assert.deepEqual(
+      backend.get('/error/list').map(({ message }: ApiError) => message),
+      ['Refused'],
+    );
   });
 
   test('an answer without JSON, or no answer, is a failed ApiResponse', async () => {

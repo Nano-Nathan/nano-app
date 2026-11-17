@@ -167,7 +167,7 @@ export default createView(UsersController, users => (
 
 - `GET(path)` and `QUERY(path, query)` (the query as JSON body) return a promise of the `ApiResponse` and keep it in the store at their path and query, over what the store had there: a field the new answer does not bring stays from the last one. The view gets it with `get(path, query?)`, and renders again when a read keeps a new one.
 - `POST(path, body)`, `PUT(path, body)` and `DELETE(path)` return a promise of the `ApiResponse` and keep nothing: read again after a write.
-- Each answer is an `ApiResponse` with the HTTP `status`. When the backend fails it is the backend's (`success: false`, `message`); an answer that is not JSON becomes `{ success: false, message: 'Request failed', result: <the text> }`, and no answer `{ success: false, message: 'Request failed' }`.
+- Each answer is an `ApiResponse` with the HTTP `status`. An answer without `success` (Better Auth's) takes it from that status: `true` for a 2xx. When the backend fails it is the backend's (`success: false`, `message`); an answer that is not JSON becomes `{ success: false, message: 'Request failed', result: <the text> }`, and no answer `{ success: false, message: 'Request failed' }`.
 - Each failed request adds its `ApiResponse` to the store's `/error/list` as an `ApiError`, with `message` set to `'Request failed'` when the backend brings none and `timestamp` (`Date.now()`) of when it failed. The views get it with `get('/error/list')`, or through the `error` component of `@nano-app/components`.
 - `/busy` is `true` while a request of the store is out (`backend.get('/busy') ? 'Loading…' : …`).
 - On the server (the first HTML that Next renders) a request asks nothing and resolves with an empty `ApiResponse` (`{}`).

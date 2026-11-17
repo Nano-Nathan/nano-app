@@ -14,7 +14,12 @@ export type LoginTexts = {
   invalidEmail: string;
   /** Error of a missing value */
   required: string;
+  /** Button that signs in with Google */
+  google: string;
 };
+
+/** Social providers of Better Auth the login offers */
+export type LoginProvider = 'google';
 
 /** Options of `createLoginPage`: the api store with Better Auth, where to go after it, and its texts */
 export type LoginOptions = {
@@ -22,6 +27,8 @@ export type LoginOptions = {
   store: string;
   /** Path the page goes to once signed in or signed up */
   home: string;
+  /** Social providers, each with its button, configured in the backend's Better Auth */
+  providers?: LoginProvider[];
   /** Texts that replace the English ones */
   texts?: Partial<LoginTexts>;
 };
