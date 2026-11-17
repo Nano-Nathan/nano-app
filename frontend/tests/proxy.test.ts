@@ -29,7 +29,7 @@ async function send(
   oInit: { method?: string; headers?: NanoObject<string>; body?: string } = {},
 ): Promise<Response> {
   const oRes = await proxy(new NextRequest(`http://localhost:3100${sPath}`, oInit));
-  return follow(oRes, { method: oInit.method, body: oInit.body });
+  return follow(oRes, oInit);
 }
 
 describe('proxy', () => {

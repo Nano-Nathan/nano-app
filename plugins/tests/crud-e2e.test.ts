@@ -26,13 +26,12 @@ async function serve(oReq: IncomingMessage, oRes: ServerResponse): Promise<void>
 
   // Sends it through the proxy, and its rewrite to the backend
   const { method, url, headers } = oReq;
-  const oInit = { method, body: sBody || undefined };
-  const oRewrite = await fnProxy(
-    new NextRequest(`http://localhost:${APP_PORT}${url}`, {
-      ...oInit,
-      headers: { 'content-type': headers['content-type'] ?? '' },
-    }),
-  );
+  const oInit = {
+    method,
+    body: sBody || undefined,
+    headers: { 'content-type': headers['content-type'] ?? '' },
+  };
+  const oRewrite = await fnProxy(new NextRequest(`http://localhost:${APP_PORT}${url}`, oInit));
   const oResponse = await follow(oRewrite, oInit);
 
   // Answers with the backend's status and body

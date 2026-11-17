@@ -75,10 +75,13 @@ describe('withNanoApp', () => {
 
       assert.equal(oConfig.reactStrictMode, true);
       assert.equal(oConfig.env?.API, '/api');
-      assert.deepEqual(JSON.parse(String(oConfig.compiler?.define?.[STORES_DEFINE])), [
-        ['admin_users', { type: 'app', data: { aUsers: [] } }],
-        ['app', { type: 'app', data: { iCount: 0 } }],
-      ]);
+      assert.deepEqual(
+        Object.fromEntries(JSON.parse(String(oConfig.compiler?.define?.[STORES_DEFINE]))),
+        {
+          admin_users: { type: 'app', data: { aUsers: [] } },
+          app: { type: 'app', data: { iCount: 0 } },
+        },
+      );
 
       // Writes the type of each store for the app
       const sTypes = await readFile('nano-app-env.d.ts', 'utf8');
