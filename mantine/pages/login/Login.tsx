@@ -88,7 +88,7 @@ class LoginController extends AuthController {
 }
 
 /** Login card: the providers, the form of email and password, and the link to the other mode */
-export default createView(LoginController, (auth, { providers, texts }) => (
+export default createView(LoginController, (auth, { providers, signUp, texts }) => (
   <Paper withBorder shadow="md" radius="lg" p={{ base: 'lg', sm: 'xl' }}>
     <Stack gap="lg">
       <Stack gap="xs" align="center">
@@ -138,12 +138,14 @@ export default createView(LoginController, (auth, { providers, texts }) => (
           {auth.mode().submit}
         </Button>
       </Form>
-      <Text size="sm" c="dimmed" ta="center">
-        {auth.mode().question}{' '}
-        <Anchor component="button" type="button" size="sm" fw={600} onClick={auth.toggle}>
-          {auth.mode().link}
-        </Anchor>
-      </Text>
+      {signUp && (
+        <Text size="sm" c="dimmed" ta="center">
+          {auth.mode().question}{' '}
+          <Anchor component="button" type="button" size="sm" fw={600} onClick={auth.toggle}>
+            {auth.mode().link}
+          </Anchor>
+        </Text>
+      )}
     </Stack>
   </Paper>
 ));

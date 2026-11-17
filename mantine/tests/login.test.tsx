@@ -100,3 +100,17 @@ test('the login page asks Better Auth the page of Google, back to home', async (
     ]),
   );
 });
+
+test('the login page without sign-up offers no link to create an account', () => {
+  // Renders a login only for users that exist
+  const ClosedLogin = createLoginPage({ store: 'api', home: '/home', signUp: false });
+  render(
+    <TestApp>
+      <ClosedLogin />
+    </TestApp>,
+  );
+
+  // Signs in, and offers nothing to sign up
+  assert.ok(screen.getByText('Sign in'));
+  assert.equal(screen.queryByText('Create account'), null);
+});

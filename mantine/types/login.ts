@@ -37,6 +37,8 @@ export type LoginOptions = {
   home: string;
   /** Social providers, each with its button, configured in the backend's Better Auth */
   providers?: LoginProvider[];
+  /** Whether the card offers to sign up (`true` by default); `false` when only an admin creates users */
+  signUp?: boolean;
   /** Texts that replace the English ones */
   texts?: Partial<LoginTexts>;
 };
