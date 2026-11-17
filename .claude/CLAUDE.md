@@ -63,6 +63,7 @@ The views of `@nano-app/mantine`, and of any app on it:
 
 - **Responsive by default**: every view works on a phone, a tablet and a desktop with no extra step. Layout comes from Mantine's components (`Container`, `Stack`, `Group` with `wrap`, `SimpleGrid`, `Grid`, `Flex`) and their props.
 - Sizes and spacing are theme tokens (`size="xs"`, `p="md"`, `gap="lg"`, `fz="sm"`), changed per breakpoint with an object (`cols={{ base: 1, sm: 2, lg: 3 }}`, `p={{ base: 'sm', md: 'xl' }}`) or with `visibleFrom` and `hiddenFrom`.
+- A view with columns uses `Grid`, always of 12 columns, with a `span` per breakpoint (`<Grid.Col span={{ base: 12, sm: 6, lg: 4 }}>`): never another `columns` count.
 - No fixed values: no `px`, `rem` or plain numbers for widths, heights, fonts or spacing, and no `style` with sizes. A full width or height is a relative unit (`w="100%"`, `mih="100dvh"`).
 
 ### Names
