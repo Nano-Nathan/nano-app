@@ -10,8 +10,5 @@ export const STORES_DEFINE = 'NANO_APP_STORES';
 /** Message of a failed request whose answer brings none */
 export const REQUEST_FAILED = 'Request failed';
 
-/** Store the components use when none is named: the proxy serves it on `/api` itself */
-export const DEFAULT_STORE = 'api';
-
-/** Base path of Better Auth in the backend, and of an api store's `auth` */
+/** Base path of Better Auth in the backend */
 export const AUTH_PATH = '/auth';
