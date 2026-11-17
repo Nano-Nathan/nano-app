@@ -57,6 +57,14 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 - `export default` when a file exports one thing, also the official plugins (`import health from '@nano-app/plugins/health'`). Named exports for files that export several.
 - Imports in groups: Node built-ins with `node:` (`node:fs`), dependencies, `@nano-app/*`, relative files, then every `import type` in the same order. Optional dependencies are imported when needed (`await import('pg')`), never at the top.
 
+### Views
+
+The views of `@nano-app/mantine`, and of any app on it:
+
+- **Responsive by default**: every view works on a phone, a tablet and a desktop with no extra step. Layout comes from Mantine's components (`Container`, `Stack`, `Group` with `wrap`, `SimpleGrid`, `Grid`, `Flex`) and their props.
+- Sizes and spacing are theme tokens (`size="xs"`, `p="md"`, `gap="lg"`, `fz="sm"`), changed per breakpoint with an object (`cols={{ base: 1, sm: 2, lg: 3 }}`, `p={{ base: 'sm', md: 'xl' }}`) or with `visibleFrom` and `hiddenFrom`.
+- No fixed values: no `px`, `rem` or plain numbers for widths, heights, fonts or spacing, and no `style` with sizes. A full width or height is a relative unit (`w="100%"`, `mih="100dvh"`).
+
 ### Names
 
 Prefix by type on every internal name: local variables, parameters, class fields, loop and callback variables, `catch`, and Express's `oReq`, `oRes`, `fnNext`. No prefix on: public API (exported types and their fields, plugin options, responses), names destructured from it (`const { name, routesDir } = oConfig`), declared functions and methods, module constants (`PRIVATE_NETWORKS`), type parameters (`T`, `DB`) and tool configs (`tsdown.config.ts`).
