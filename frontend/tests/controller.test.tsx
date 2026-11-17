@@ -4,7 +4,8 @@ import './env/controller';
 import { test, describe, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import createController from '../src/creators/createController';
+import Controller from '../src/controllers/Controller';
+import createView from '../src/creators/createView';
 import { MISSING_PROVIDER } from '../src/const';
 import TestApp from './provider';
 import type { ReactNode } from 'react';
@@ -17,35 +18,41 @@ function renderApp(oNode: ReactNode): void {
 /** Renders of the counter, to check which writes render it */
 let iRenders = 0;
 
-const counterController = createController(({ props, stores: { app } }) => ({
-  increment(): void {
+/** Counter on the `app` store */
+class CounterController extends Controller {
+  /** Adds one */
+  public increment(): void {
     // Adds one
+    const { app } = this.stores;
     app.set('/iCount', app.get('/iCount') + 1);
-  },
-  update(iValue: number): void {
-    // Adds the value and keeps who added it
-    app.set('/iCount', app.get('/iCount') + iValue);
-    app.set('/sReason', `${props.sName} ${iValue}`);
-  },
-}));
+  }
 
-const Counter = counterController.bindView(({ props, stores: { app }, increment, update }) => {
+  /** Adds a value and keeps who added it */
+  public update(iValue: number): void {
+    // Adds the value and keeps the name of the props
+    const { app } = this.stores;
+    app.set('/iCount', app.get('/iCount') + iValue);
+    app.set('/sReason', `${this.props.sName} ${iValue}`);
+  }
+}
+
+const Counter = createView(CounterController, (counter, props) => {
   iRenders++;
   return (
     <div>
-      <output>{app.get('/iCount')}</output>
-      <span>{`${props.sName}: ${app.get('/sReason')}`}</span>
-      <button onClick={increment}>+</button>
-      <button onClick={() => update(-5)}>-5</button>
+      <output>{counter.stores.app.get('/iCount')}</output>
+      <span>{`${props.sName}: ${counter.stores.app.get('/sReason')}`}</span>
+      <button onClick={counter.increment}>+</button>
+      <button onClick={() => counter.update(-5)}>-5</button>
     </div>
   );
 });
 
 afterEach(cleanup);
 
-describe('createController', () => {
+describe('createView', () => {
   test('a method gets its arguments, the stores and the props; the view shows the result', () => {
-    // Clicks the method without arguments, then the one with an argument
+    // Clicks the method passed alone, then the one with an argument
     renderApp(<Counter sName="Ana" />);
     fireEvent.click(screen.getByText('+'));
     fireEvent.click(screen.getByText('-5'));
@@ -54,10 +61,10 @@ describe('createController', () => {
     assert.ok(screen.getByText('Ana: Ana -5'));
   });
 
-  test('two views bound to one controller share its methods and the stores', () => {
-    // Binds a second view that only increments
-    const Increment = counterController.bindView(({ increment }) => (
-      <button onClick={increment}>inc</button>
+  test('two views of one controller share the stores', () => {
+    // Creates a second view that only increments
+    const Increment = createView(CounterController, counter => (
+      <button onClick={counter.increment}>inc</button>
     ));
     renderApp(
       <>
@@ -74,12 +81,16 @@ describe('createController', () => {
 
   test('several writes in one method render once, and other paths render nothing', () => {
     // Renders the counter next to a view that writes a path the counter does not read
-    const Toggle = createController(({ stores: { ui } }) => ({
-      toggle(): void {
+    class ToggleController extends Controller {
+      public toggle(): void {
         // Opens or closes
+        const { ui } = this.stores;
         ui.set('/isOpen', !ui.get('/isOpen'));
-      },
-    })).bindView(({ toggle }) => <button onClick={toggle}>toggle</button>);
+      }
+    }
+    const Toggle = createView(ToggleController, toggle => (
+      <button onClick={toggle.toggle}>toggle</button>
+    ));
     renderApp(
       <>
         <Counter sName="Eva" />
@@ -95,96 +106,156 @@ describe('createController', () => {
     assert.equal(iRenders, 1);
   });
 
-  test('extend merges its methods over the controller, which keeps its own', () => {
-    // Extends the counter with a method on the context and one that replaces `increment`
-    const Extended = counterController
-      .extend(({ props, stores: { app } }) => ({
-        increment(): void {
-          // Adds ten
-          app.set('/iCount', app.get('/iCount') + 10);
-        },
-        sayHi(): string {
-          // Greets the name of the props
-          return `hi ${props.sName}`;
-        },
-      }))
-      .bindView(({ props, stores: { app }, increment, update, sayHi }) => (
-        <div>
-          <span>{`${props.sName} ${sayHi()} ${app.get('/iCount')}`}</span>
-          <button onClick={increment}>inc</button>
-          <button onClick={() => update(3)}>+3</button>
-        </div>
-      ));
+  test('a method reads the props of the last render on screen', () => {
+    // A view whose method reads the name of the props
+    class NameController extends Controller {
+      public name(): void {
+        // Keeps the name of the props
+        this.stores.app.set('/sReason', this.props.sName);
+      }
+    }
+    const Name = createView(NameController, names => <button onClick={names.name}>name</button>);
+    const { rerender } = render(
+      <TestApp>
+        <Name sName="old" />
+        <Counter sName="x" />
+      </TestApp>,
+    );
+
+    // Renders new props, then calls the method
+    rerender(
+      <TestApp>
+        <Name sName="new" />
+        <Counter sName="x" />
+      </TestApp>,
+    );
+    fireEvent.click(screen.getByText('name'));
+
+    assert.ok(screen.getByText('x: new'));
+  });
+
+  test('a method keeps one function for the whole mount', () => {
+    // A view that keeps each function it passes
+    const aMethods: unknown[] = [];
+    const Kept = createView(CounterController, (counter, props) => {
+      aMethods.push(counter.increment);
+      return <span>{props.sName}</span>;
+    });
+    const { rerender } = render(
+      <TestApp>
+        <Kept sName="a" />
+      </TestApp>,
+    );
+
+    // Renders again with other props
+    rerender(
+      <TestApp>
+        <Kept sName="b" />
+      </TestApp>,
+    );
+
+    assert.equal(aMethods.length, 2);
+    assert.equal(aMethods[0], aMethods[1]);
+  });
+
+  test('a subclass replaces a method and reaches the original with super', () => {
+    // A counter whose increment adds ten through the original update
+    class TenController extends CounterController {
+      public increment(): void {
+        // Adds ten with the original update
+        super.update(10);
+      }
+    }
+    const Ten = createView(TenController, ten => <button onClick={ten.increment}>ten</button>);
     renderApp(
       <>
-        <Extended sName="Leo" />
+        <Ten sName="Leo" />
         <Counter sName="Leo" />
       </>,
     );
 
-    // Clicks the replaced method, the kept one and the original controller's increment
-    fireEvent.click(screen.getByText('inc'));
-    fireEvent.click(screen.getByText('+3'));
+    // Clicks the replaced method, then the original controller's
+    fireEvent.click(screen.getByText('ten'));
     fireEvent.click(screen.getByText('+'));
 
-    assert.ok(screen.getByText('Leo hi Leo 14'));
+    assert.equal(screen.getByRole('status').textContent, '11');
   });
 
-  test('onMount runs once when the view mounts, and extend runs both in order', () => {
-    // A controller that logs its mount, extended with another log
-    const mountController = createController(({ props, stores: { app } }) => ({
-      callbacks: {
-        onMount(): void {
-          // Logs the name of the props
-          app.set('/sLog', `${app.get('/sLog') ?? ''}${props.sName}`);
-        },
-      },
-    }));
-    const Mounted = mountController.bindView(({ stores: { app } }) => (
-      <output>{app.get('/sLog')}</output>
-    ));
-    const Extended = mountController
-      .extend(({ stores: { app } }) => ({
-        callbacks: {
-          onMount(): void {
-            // Logs a mark
-            app.set('/sLog', `${app.get('/sLog')}+`);
-          },
-        },
-      }))
-      .bindView(() => null);
+  test('a method reaches the others with this, also when the view passes it alone', () => {
+    // A controller whose last item comes from its items, and a subclass with other items
+    class ItemsController extends Controller {
+      public items(): string[] {
+        return ['a', 'b'];
+      }
 
-    // Mounts the view, then the extended one
+      public last(): string {
+        return this.items()[1];
+      }
+    }
+    class OtherItemsController extends ItemsController {
+      public items(): string[] {
+        return ['c', 'd'];
+      }
+    }
+    const fnView = ({ last }: ItemsController): ReactNode => <span>{last()}</span>;
+    const Items = createView(ItemsController, fnView);
+    const Others = createView(OtherItemsController, fnView);
+
+    // Renders both: each view calls last alone
+    renderApp(
+      <>
+        <Items />
+        <Others />
+      </>,
+    );
+
+    assert.ok(screen.getByText('b'));
+    assert.ok(screen.getByText('d'));
+  });
+
+  test('onMount runs once when the view mounts, and a subclass runs both with super', () => {
+    // A controller that logs its mount, and a subclass with another log
+    class MountController extends Controller {
+      public onMount(): void {
+        // Logs the name of the props
+        const { app } = this.stores;
+        app.set('/sLog', `${app.get('/sLog') ?? ''}${this.props.sName}`);
+      }
+    }
+    class MarkController extends MountController {
+      public onMount(): void {
+        // Logs the original, then a mark
+        super.onMount();
+        const { app } = this.stores;
+        app.set('/sLog', `${app.get('/sLog')}+`);
+      }
+    }
+    const Mounted = createView(MountController, mount => (
+      <output>{mount.stores.app.get('/sLog')}</output>
+    ));
+    const Marked = createView(MarkController, () => null);
+
+    // Mounts the view, then the subclass's
     renderApp(
       <>
         <Mounted sName="a" />
-        <Extended sName="b" />
+        <Marked sName="b" />
       </>,
     );
 
     assert.equal(screen.getByRole('status').textContent, 'ab+');
   });
 
-  test('onUnmount runs when the view unmounts, and extend runs both in order', () => {
-    // A controller that logs its unmount outside the stores, extended with another log
+  test('onUnmount runs when the view unmounts', () => {
+    // A controller that logs its unmount outside the stores
     const aLog: string[] = [];
-    const Unmounted = createController(() => ({
-      callbacks: {
-        onUnmount(): void {
-          // Logs its own mark
-          aLog.push('a');
-        },
-      },
-    }))
-      .extend(() => ({
-        callbacks: {
-          onUnmount(): void {
-            // Logs the extension's mark
-            aLog.push('b');
-          },
-        },
-      }))
-      .bindView(() => null);
+    class UnmountController extends Controller {
+      public onUnmount(): void {
+        // Logs its mark
+        aLog.push('a');
+      }
+    }
+    const Unmounted = createView(UnmountController, () => null);
 
     // Mounts and unmounts the view
     const { unmount } = render(
@@ -195,39 +266,23 @@ describe('createController', () => {
     assert.deepEqual(aLog, []);
     unmount();
 
-    assert.deepEqual(aLog, ['a', 'b']);
+    assert.deepEqual(aLog, ['a']);
   });
 
-  test('a method reaches the others with this, also from an extension', () => {
-    // A controller whose last item comes from its items, and an extension with other items
-    const itemsController = createController(() => ({
-      items(): string[] {
-        return ['a', 'b'];
-      },
-      last(): string {
-        return this.items()[1];
-      },
-    }));
-    const fnView = ({ last }: { last: () => string }) => <span>{last()}</span>;
-    const Items = itemsController.bindView(fnView);
-    const Extended = itemsController
-      .extend(() => ({
-        items(): string[] {
-          return ['c', 'd'];
-        },
-      }))
-      .bindView(fnView);
-
-    // Renders both: each view calls last alone
+  test('a view without logic takes the base Controller and reads the stores', () => {
+    // A view that only shows a store path
+    const Count = createView(Controller, view => <output>{view.stores.app.get('/iCount')}</output>);
     renderApp(
       <>
-        <Items />
-        <Extended />
+        <Count />
+        <Counter sName="Mia" />
       </>,
     );
 
-    assert.ok(screen.getByText('b'));
-    assert.ok(screen.getByText('d'));
+    // Writes the path from the counter: the view shows it
+    fireEvent.click(screen.getByText('+'));
+
+    assert.equal(screen.getAllByRole('status')[0].textContent, '1');
   });
 
   test('a view without NanoAppProvider fails with the fix', () => {

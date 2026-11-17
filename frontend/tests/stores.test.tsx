@@ -1,4 +1,5 @@
-// First: the stores of the app, read when the frontend loads
+// First: the DOM for the provider, then the stores of the app, read when the frontend loads
+import './dom';
 import './env/stores';
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
@@ -8,7 +9,7 @@ import { reaction } from 'mobx';
 import { STORES_DEFINE } from '@nano-app/core/const';
 import { withNanoApp } from '../src/app/next';
 import Store from '../src/stores/Store';
-import createStores from '../src/creators/createStores';
+import { renderStores } from './provider';
 
 describe('store state', () => {
   test('set creates missing levels and get reads them, with or without the leading slash', () => {
@@ -21,9 +22,9 @@ describe('store state', () => {
     assert.equal(oStore.get('/drawer/missing/deep'), undefined);
   });
 
-  test('createStores starts each store with its data, plus an empty app store', () => {
-    // Creates the stores, as one React tree does
-    const { app, ui } = createStores();
+  test('the provider starts each store with its data, plus an empty app store', () => {
+    // Creates the stores of one React tree
+    const { app, ui } = renderStores();
 
     assert.deepEqual(app.get('/'), {});
     assert.equal(ui.get('/busy'), false);
@@ -31,11 +32,18 @@ describe('store state', () => {
 
   test('an api store has its own state from its data, read and written by path', () => {
     // Creates the stores and writes the api store
-    const { backend } = createStores();
+    const { backend } = renderStores();
     backend.set('/list/orderby', { name: 'asc' });
 
     assert.equal(backend.get('/page'), 1);
     assert.deepEqual(backend.get('/list/orderby'), { name: 'asc' });
+  });
+
+  test('each React tree gets its own stores', () => {
+    // Writes the stores of one tree, then reads another
+    renderStores().app.set('/sName', 'Ana');
+
+    assert.equal(renderStores().app.get('/sName'), undefined);
   });
 
   test('a write notifies only who read that path', () => {

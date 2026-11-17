@@ -4,46 +4,41 @@ import './env/api';
 import { test, describe, before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { REQUEST_FAILED } from '@nano-app/core/const';
-import createController from '../src/creators/createController';
-import { count } from './helpers';
-import TestApp from './provider';
+import Controller from '../src/controllers/Controller';
+import createView from '../src/creators/createView';
+import TestApp, { renderStores } from './provider';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { ApiError } from '../src/types/store';
 
 const PORT = 4200;
 
-// Requests the backend received, by method and path
-const aRequests: string[] = [];
-
-// Users of the backend, and a delay for its answers
-let aUsers: NanoObject[];
+// Delay of the backend's answers, and whether `/count` already answered
 let iDelay = 0;
+let isCounted = false;
 
-/** Answers the backend's routes: `/users` and `/users/:id` in memory, `/fail` and `/html` */
-function answer(sMethod: string, sUrl: string, sBody: string): [string, string] {
-  const [, , , sEntity, sId] = sUrl.split('/');
-  const oBody = sBody ? JSON.parse(sBody) : {};
-  const fnJson = (oValue: NanoObject): [string, string] => [
+/** Answers the backend's routes: `/fail`, `/silent`, `/count` and `/html`, any other echoes */
+function answer(sMethod: string, sUrl: string, sBody: string): [number, string, string] {
+  const sPath = sUrl.replace('/api/backend', '');
+  const fnJson = (iStatus: number, oValue: NanoObject): [number, string, string] => [
+    iStatus,
     'application/json',
     JSON.stringify(oValue),
   ];
 
-  if (sEntity === 'html') return ['text/html', '<h1>Not found</h1>'];
-  if (sEntity === 'fail') return fnJson({ success: false, message: 'Failed' });
-  if (sEntity === 'orders') return fnJson({ success: true, result: [] });
-  if (sMethod === 'QUERY') {
-    const iOffset = oBody.offset ?? 0;
-    return fnJson({ success: true, result: aUsers.slice(iOffset, iOffset + oBody.limit) });
+  // Answers each special route
+  if (sPath === '/html') return [404, 'text/html', '<h1>Not found</h1>'];
+  if (sPath === '/fail') return fnJson(400, { success: false, message: 'Failed' });
+  if (sPath === '/silent') return fnJson(500, { success: false });
+  if (sPath === '/count') {
+    const oAnswer = isCounted ? { success: true } : { success: true, count: 5 };
+    isCounted = true;
+    return fnJson(200, oAnswer);
   }
-  if (sMethod === 'POST') aUsers = [...aUsers, oBody];
-  if (sMethod === 'PUT') aUsers = aUsers.map(oUser => (oUser.id === Number(sId) ? oBody : oUser));
-  if (sMethod === 'DELETE') aUsers = aUsers.filter(oUser => oUser.id !== Number(sId));
-  if (sId && (sMethod === 'GET' || sMethod === 'PUT'))
-    return fnJson({ success: true, result: aUsers.find(oUser => oUser.id === Number(sId)) });
 
-  return fnJson({ success: true, result: aUsers });
+  // Echoes the request
+  return fnJson(200, { success: true, result: { method: sMethod, path: sPath, body: sBody } });
 }
 
 // Backend behind the proxy: the test serves `/api/backend/...` on the DOM's origin
@@ -51,279 +46,128 @@ const oBackend = createServer((oReq, oRes) => {
   let sBody = '';
   oReq.on('data', oChunk => (sBody += oChunk));
   oReq.on('end', () => {
-    const { method = '', url = '' } = oReq;
-    aRequests.push(`${method} ${url}`);
-
     // Closes `/drop` without an answer
+    const { method = '', url = '' } = oReq;
     if (url.endsWith('/drop')) return oReq.socket.destroy();
-    const [sType, sAnswer] = answer(method, url, sBody);
-    setTimeout(() => oRes.writeHead(200, { 'content-type': sType }).end(sAnswer), iDelay);
+
+    // Answers after the delay
+    const [iStatus, sType, sAnswer] = answer(method, url, sBody);
+    setTimeout(() => oRes.writeHead(iStatus, { 'content-type': sType }).end(sAnswer), iDelay);
   });
 });
-
-/** Stores of a rendered tree, to call the api store as a controller does */
-function renderStores(): NanoObject {
-  let oStores: NanoObject = {};
-  const Grab = createController(({ stores }) => {
-    oStores = stores;
-    return {};
-  }).bindView(() => null);
-  render(
-    <TestApp>
-      <Grab />
-    </TestApp>,
-  );
-  return oStores;
-}
 
 describe('api store', () => {
   before(() => new Promise<void>(fnResolve => oBackend.listen(PORT, fnResolve)));
   after(() => oBackend.close());
   afterEach(cleanup);
   beforeEach(() => {
-    // Starts each test with a fresh backend and requests
-    aRequests.length = 0;
-    aUsers = [
-      { id: 3, name: 'Ana' },
-      { id: 7, name: 'Beto' },
-    ];
+    // Starts each test with no delay and `/count` unanswered
     iDelay = 0;
+    isCounted = false;
   });
 
-  test('a read keeps its ApiResponse at its path and query, and the views get it', async () => {
-    // A controller reads the users and the first one; a view gets both
-    const oUsersController = createController(({ stores: { backend } }) => ({
-      load(): Promise<unknown> {
-        // Reads the users twice: without a query and with one
-        return Promise.all([backend.read('/users'), backend.read('/users', { limit: 1 })]);
-      },
-    }));
-    const List = oUsersController.bindView(({ stores: { backend }, load }) => (
-      <div>
-        <ul>
-          {(backend.get('/users')?.result ?? []).map((oUser: NanoObject) => (
-            <li key={oUser.id}>{oUser.name}</li>
-          ))}
-        </ul>
-        <p>{`first ${backend.get('/users', { limit: 1 })?.result?.[0]?.name}`}</p>
-        <button onClick={load}>load</button>
-      </div>
-    ));
+  test('GET keeps its ApiResponse and status at its path, and the view renders it', async () => {
+    // A controller that reads the users when its view mounts
+    class UsersController extends Controller {
+      public onMount(): void {
+        // Reads the users
+        this.stores.backend.GET('/users');
+      }
+    }
+    const Users = createView(UsersController, users => {
+      const oRead = users.stores.backend.get('/users');
+      return <p>{`${oRead?.result?.method} ${oRead?.result?.path} ${oRead?.status}`}</p>;
+    });
     render(
       <TestApp>
-        <List />
+        <Users />
       </TestApp>,
     );
-    fireEvent.click(screen.getByText('load'));
 
-    // Waits for the views: the first requests of the suite can take a while
-    await waitFor(() => {
-      assert.ok(screen.getByText('Beto', { selector: 'li' }));
-      assert.ok(screen.getByText('first Ana'));
-    });
-    assert.deepEqual([...aRequests].sort(), ['GET /api/backend/users', 'QUERY /api/backend/users']);
+    // Waits for the view: the first request of the suite can take a while
+    await waitFor(() => assert.ok(screen.getByText('GET /users 200')), { timeout: 5000 });
   });
 
-  test('a read answers from the store until a write on its path or a child', async () => {
-    // Reads the list and a user twice: each is asked once
+  test('QUERY sends the query as its body and keeps its answer apart from GET', async () => {
+    // Reads the same path without a query and with one
     const { backend } = renderStores();
-    await backend.read('/users');
-    await backend.read('/users/7');
-    const oKept = await backend.read('/users');
-    await backend.read('/users/7');
+    await backend.GET('/users');
+    const oQuery = await backend.QUERY('/users', { limit: 1 });
 
-    assert.deepEqual(oKept.result, aUsers);
-    assert.equal(count(aRequests, 'GET /api/backend/users'), 1);
-    assert.equal(count(aRequests, 'GET /api/backend/users/7'), 1);
-
-    // Writes another path, then deletes `/users/7`: both ask again
-    await backend.create('/orders', { id: 1 });
-    await backend.read('/users');
-    assert.equal(count(aRequests, 'GET /api/backend/users'), 1);
-    await backend.delete('/users/7');
-    await backend.read('/users/7');
-    await backend.read('/users');
-
-    assert.equal(count(aRequests, 'GET /api/backend/users/7'), 2);
-    assert.equal(count(aRequests, 'GET /api/backend/users'), 2);
+    assert.deepEqual(oQuery.result, { method: 'QUERY', path: '/users', body: '{"limit":1}' });
+    assert.equal(backend.get('/users').result.method, 'GET');
+    assert.equal(backend.get('/users', { limit: 1 }).result.method, 'QUERY');
   });
 
-  test('a successful update keeps its answer at its path, and its parents ask again', async () => {
-    // Reads the list and a user, then renames the user
+  test('a read keeps the fields of the last answer that the new one does not bring', async () => {
+    // Reads a path twice: only the first answer brings a count
     const { backend } = renderStores();
-    await backend.read('/users');
-    await backend.read('/users/7');
-    await backend.update('/users/7', { id: 7, name: 'Bruno' });
+    await backend.GET('/count');
+    await backend.GET('/count');
 
-    // Reads both again: only the list asks the backend
-    const oRead = await backend.read('/users/7');
-    await backend.read('/users');
-
-    assert.equal(oRead.result.name, 'Bruno');
-    assert.equal(count(aRequests, 'GET /api/backend/users/7'), 1);
-    assert.equal(count(aRequests, 'GET /api/backend/users'), 2);
+    assert.equal(backend.get('/count').count, 5);
   });
 
-  test('a read answered after an update does not replace its answer', async () => {
-    // Slows the update more than the read, and renames while the read is out
+  test('POST, PUT and DELETE send their method and body, and keep nothing', async () => {
+    // Writes the same path with each method
     const { backend } = renderStores();
-    iDelay = 100;
-    const oRead = backend.read('/users/7');
-    await new Promise(fnResolve => setTimeout(fnResolve, 20));
-    iDelay = 200;
-    const oUpdate = backend.update('/users/7', { id: 7, name: 'Bruno' });
-
-    // The read answers first, then the update, and the path is read again
-    await oRead;
-    await oUpdate;
-    await backend.read('/users/7');
-
-    assert.equal(backend.get('/users/7').result.name, 'Bruno');
-    assert.equal(count(aRequests, 'GET /api/backend/users/7'), 1);
-  });
-
-  test('a failed update keeps nothing, and its path asks again', async () => {
-    // Reads a path that fails, and updates it
-    const { backend } = renderStores();
-    await backend.read('/fail');
-    await backend.update('/fail', {});
-    await backend.read('/fail');
-
-    assert.equal(backend.get('/fail').success, false);
-    assert.equal(count(aRequests, 'GET /api/backend/fail'), 2);
-  });
-
-  test('a read keeps what the store had at its path', async () => {
-    // Sets a value at `/users`, then reads `/users/7` and `/users`
-    const { backend } = renderStores();
-    backend.set('/users/page', 2);
-    await backend.read('/users/7');
-    await backend.read('/users');
-
-    // Reads `/users/7` again from the store
-    await backend.read('/users/7');
-
-    assert.equal(backend.get('/users/page'), 2);
-    assert.equal(backend.get('/users/7').result.name, 'Beto');
-    assert.equal(count(aRequests, 'GET /api/backend/users/7'), 1);
-  });
-
-  test('a read answered after a write is asked again', async () => {
-    // Slows the delete more than the read, and deletes while the read is out
-    const { backend } = renderStores();
-    iDelay = 100;
-    const oRead = backend.read('/users/7');
-    await new Promise(fnResolve => setTimeout(fnResolve, 20));
-    iDelay = 200;
-    const oDelete = backend.delete('/users/7');
-
-    // The read answers first, then the delete, and the path is read again
-    await oRead;
-    await oDelete;
-    await backend.read('/users/7');
-
-    assert.equal(count(aRequests, 'GET /api/backend/users/7'), 2);
-  });
-
-  test('a read still out when a write on its path answers is cancelled', async () => {
-    // Slows the read, and answers the update before it
-    const { backend } = renderStores();
-    iDelay = 150;
-    const oRead = backend.read('/users/7');
-    await new Promise(fnResolve => setTimeout(fnResolve, 20));
-    iDelay = 0;
-    await backend.update('/users/7', { id: 7, name: 'Bruno' });
-
-    // The read rejects, and the store keeps the update's answer
-    await assert.rejects(oRead, { message: 'CancelledError' });
-    assert.equal(backend.get('/users/7').result.name, 'Bruno');
-  });
-
-  test('concurrent reads of a path and query send one request', async () => {
-    // Reads the same path twice and the same query twice, at once
-    iDelay = 50;
-    const { backend } = renderStores();
-    await Promise.all([
-      backend.read('/users'),
-      backend.read('/users'),
-      backend.read('/users', { limit: 1 }),
-      backend.read('/users', { limit: 1 }),
-    ]);
-
-    assert.equal(count(aRequests, 'GET /api/backend/users'), 1);
-    assert.equal(count(aRequests, 'QUERY /api/backend/users'), 1);
-  });
-
-  test('more adds the next page of a query, and a write reads again the pages a view shows', async () => {
-    // A view shows the pages, and reads two of one user
-    const { backend } = renderStores();
-    backend.watch('/users', { limit: 1 });
-    await backend.more('/users', { limit: 1 });
-    await backend.more('/users', { limit: 1 });
+    const aResults = [
+      await backend.POST('/users', { name: 'Ana' }),
+      await backend.PUT('/users', { name: 'Eva' }),
+      await backend.DELETE('/users'),
+    ];
 
     assert.deepEqual(
-      backend.get('/users', { limit: 1 }).result.map((oUser: NanoObject) => oUser.name),
-      ['Ana', 'Beto'],
+      aResults.map(oResult => oResult.result),
+      [
+        { method: 'POST', path: '/users', body: '{"name":"Ana"}' },
+        { method: 'PUT', path: '/users', body: '{"name":"Eva"}' },
+        { method: 'DELETE', path: '/users', body: '' },
+      ],
     );
-
-    // Renames the second user: both pages are read again
-    await backend.update('/users/7', { id: 7, name: 'Bruno' });
-    await waitFor(() => assert.equal(backend.get('/users', { limit: 1 }).result[1].name, 'Bruno'));
-  });
-
-  test('pages no view shows are only marked old by a write, and read again when one shows them', async () => {
-    // Reads two pages of one user without a view, and renames the second user
-    const { backend } = renderStores();
-    await backend.more('/users', { limit: 1 });
-    await backend.more('/users', { limit: 1 });
-    await backend.update('/users/7', { id: 7, name: 'Bruno' });
-
-    // The pages keep the old name until a view shows them
-    assert.equal(backend.get('/users', { limit: 1 }).result[1].name, 'Beto');
-    backend.watch('/users', { limit: 1 });
-    await waitFor(() => assert.equal(backend.get('/users', { limit: 1 }).result[1].name, 'Bruno'));
+    assert.equal(backend.get('/users'), undefined);
   });
 
   test('busy is true while a request is out', async () => {
-    // Slows the backend and reads
-    iDelay = 100;
+    // Sends a slow request and reads busy before and after its answer
+    iDelay = 50;
     const { backend } = renderStores();
-    const oRead = backend.read('/users');
+    const oRead = backend.GET('/users');
 
     assert.equal(backend.get('/busy'), true);
-
     await oRead;
-
     assert.equal(backend.get('/busy'), false);
   });
 
   test('a failed request returns its ApiResponse and adds its error to the store', async () => {
-    // Reads and writes a path that answers success: false
+    // Fails with a message, then without one
     const { backend } = renderStores();
-    const oFailed = { success: false, message: 'Failed' };
+    const oFailed = await backend.POST('/fail', {});
+    await backend.GET('/silent');
 
-    assert.deepEqual(await backend.read('/fail'), oFailed);
-    assert.deepEqual(backend.get('/fail'), oFailed);
-    assert.deepEqual(await backend.create('/fail', {}), oFailed);
+    // Checks the answer and both errors, the second with the default message
+    assert.deepEqual(oFailed, { success: false, message: 'Failed', status: 400 });
     const aErrors: ApiError[] = backend.get('/error/list');
-    assert.deepEqual(aErrors, [
-      { ...oFailed, timestamp: aErrors[0].timestamp },
-      { ...oFailed, timestamp: aErrors[1].timestamp },
-    ]);
+    assert.deepEqual(
+      aErrors.map(({ message, status }) => [message, status]),
+      [
+        ['Failed', 400],
+        [REQUEST_FAILED, 500],
+      ],
+    );
     assert.equal(typeof aErrors[0].timestamp, 'number');
   });
 
   test('an answer without JSON, or no answer, is a failed ApiResponse', async () => {
-    // Reads a path that answers HTML and one that closes without an answer
+    // Reads an HTML page, then a path that closes without an answer
     const { backend } = renderStores();
 
-    assert.deepEqual(await backend.read('/html'), {
+    assert.deepEqual(await backend.GET('/html'), {
       success: false,
       message: REQUEST_FAILED,
       result: '<h1>Not found</h1>',
     });
-    assert.deepEqual(await backend.delete('/drop'), { success: false, message: REQUEST_FAILED });
-    assert.equal(backend.get('/error/list')[0].result, '<h1>Not found</h1>');
+    assert.deepEqual(await backend.DELETE('/drop'), { success: false, message: REQUEST_FAILED });
     assert.equal(backend.get('/error/list').length, 2);
     assert.equal(backend.get('/busy'), false);
   });

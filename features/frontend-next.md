@@ -27,8 +27,10 @@ updated: 2026-11-17
 - `const.ts`: `SECURITY_HEADERS` removed.
 - `README.md`: the security headers paragraph removed.
 - `tests/stores.test.ts`: the security headers test removed.
-- `createController` (2026-11-17): one function per method for the whole mount, calling the method of the last committed render (`useLayoutEffect`); `onMount` and `onUnmount` see the last render. A method called while rendering sees the props of the render before. A getter `props` was dropped (destructuring it freezes the value); writing the ref while rendering was dropped (React's ref rule).
+- Controllers as classes (2026-11-17): `Controller` holds `props`, `stores` and `router`, binds its methods once per instance and has `onMount`/`onUnmount` as plain methods; inheritance with `extends`/`super` replaces `extend` and `callbacks`. `createView(Controller, view)` makes one instance per mount, sets `this.props` in `useLayoutEffect` (a method sees the props of the last render on screen) and renders `view(controller, props)`. Rejected: spreading the instance into the view (copies each render, loses getters), an unbound instance with a "do not destructure" rule, `render()` inside the class, MobX `autoBind` (no subclasses).
 - `enableStaticRendering` moved to `NanoAppProvider`.
+- Route protection: `createPage` in `@nano-app/frontend/server`: a server component asks Better Auth's `get-session` at the store's backend and redirects without a session. Every kind of auth (cookie, API key, bearer, client credentials, JWT) is verified by Better Auth in the backend; the frontend only carries the cookie.
+- Tests and README rewritten for the current code: `AuthStore`, store headers, `auth.routes`, the default store and the read cache are gone; the proxy without URLs is tested in its own process (`missing.test.ts`), as the URLs are read once when the module loads.
 - `withNanoApp` writes `nano-app-env.d.ts` in the app (not in `.next/types`: Next empties its `distDir` on build) with the type of each store, through module augmentation of `Stores` (an `interface`, the only kind that merges). The runtime `Proxy` is gone: a missing store is a type error. `createStores` moved into `NanoAppProvider`, its only caller (`useState`, once per tree: never at module level, the server would share one set across requests).
 
 ## Where each part runs today
@@ -40,14 +42,14 @@ updated: 2026-11-17
 | `NANO_APP_BACKENDS`       | Written in the server bundles only by `compiler.defineServer`: `[store, env var]` of each api store |
 | `proxy.ts`                | Node, on every request (no `matcher`); only `/api/*` goes on                                        |
 | `NanoAppProvider`, stores | Once per request in the SSR and once in the browser                                                 |
-| `createController`        | SSR and browser; methods built on each render, one stable function per method per mount             |
+| `createView`              | SSR and browser; one controller instance per mount, methods bound once                              |
 | `ApiStore.send`           | Browser only (`{}` on the server), `fetch('/api/<store>/<path>')`                                   |
 
 ## Pending
 
-1. **Route protection**: `createPage` in `@nano-app/frontend/server` (done): a server component asks Better Auth's `get-session` at the store's backend and redirects without a session. Every kind of auth (cookie, API key, bearer, client credentials, JWT) is verified by Better Auth in the backend; the frontend only carries the cookie.
-2. **Tests**: they no longer match the code (auth, `AuthStore`, store headers, default store); update them apart.
-3. `pnpm install` is pending (ask first).
+1. **`@nano-app/components`**: still on `createController`/`bindView` through `workspace:*`; migrate it to `Controller` and `createView` before the pull request.
+2. **`tests/app`**: its controllers and components use the old API and `@nano-app/components`; migrate it with the components.
+3. **`createPage`**: no unit test (it needs Next's request scope for `headers()`); checked in `tests/app` (`/private`).
 
 ## Next.js options that help (checked in `next.config` docs and `config-shared.ts`, canary)
 
@@ -60,4 +62,4 @@ updated: 2026-11-17
 
 ## Next step
 
-Update the tests (pending 2).
+Migrate `@nano-app/components` and `tests/app` (pending 1 and 2), then the pull request.
