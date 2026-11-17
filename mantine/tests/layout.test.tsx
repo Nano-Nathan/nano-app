@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 // The layout once the hook of css.ts runs: static imports load before any of them runs
-const { default: createLayout } = await import('../layout');
+const { default: createLayout } = await import('../src/layout');
 
 test('createLayout renders the html of its language, the color scheme script and the children', () => {
   // Layout in Spanish, dark by default

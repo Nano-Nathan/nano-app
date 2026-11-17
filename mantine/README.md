@@ -88,7 +88,7 @@ export default createLoginPage({
 ## Layout of the package
 
 ```
-mantine/
+mantine/src/
 ├── layout/index.tsx               createLayout: the root layout
 ├── components/<type>/             views of @nano-app/components, grouped by type
 │   ├── index.ts                   the import path: exports each view of the type

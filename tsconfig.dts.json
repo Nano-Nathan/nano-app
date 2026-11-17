@@ -18,6 +18,6 @@
       "@nano-app/core/*": ["./core/*"]
     }
   },
-  "include": ["backend/src", "backend/bin", "backend/plugins", "core", "plugins/*/**/*.ts", "frontend/src", "components/*/**/*.ts", "mantine/*/**/*.ts", "mantine/*/**/*.tsx"],
-  "exclude": ["**/node_modules", "**/build", "plugins/tests", "components/tests", "mantine/tests"]
+  "include": ["backend/src", "backend/bin", "backend/plugins", "core", "plugins/*/**/*.ts", "frontend/src", "components/*/**/*.ts", "mantine/src"],
+  "exclude": ["**/node_modules", "**/build", "plugins/tests", "components/tests"]
 }

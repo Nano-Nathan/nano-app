@@ -5,7 +5,7 @@ import { test, before, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import createLoginPage from '../pages/login';
+import createLoginPage from '../src/pages/login';
 import TestApp, { aVisited } from './provider';
 
 const PORT = 4202;
