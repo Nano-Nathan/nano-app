@@ -1,11 +1,11 @@
 // First: Testing Library needs the DOM when it loads
 import './dom';
 import './env';
-import { test } from 'node:test';
+import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Controller, createView } from '@nano-app/frontend';
-import { Errors, Notifications } from '../src';
+import { NotificationCenter, Notifications } from '../src';
 import TestApp from './provider';
 
 // Probe that keeps a failed request in the api store and shows how many it has
@@ -21,18 +21,20 @@ const Probe = createView(Controller, probe => (
   </button>
 ));
 
-test('Errors shows a failed request of an api store and takes it from the store', async () => {
-  // Renders the errors and keeps a failed request
+afterEach(cleanup);
+
+test('a failed request shows as a notification once, and stays in the history', async () => {
+  // Renders the notifications and the center, and fails a request
   render(
     <TestApp>
       <Notifications />
-      <Errors />
+      <NotificationCenter />
       <Probe />
     </TestApp>,
   );
   fireEvent.click(screen.getByText('errors 0'));
 
-  // The notification shows its message, and the store has no error left
+  // The toast shows its message, and the store keeps no error
   await waitFor(() => assert.ok(screen.getByText('Invalid email')));
   assert.ok(screen.getByText('errors 0'));
 });

@@ -11,10 +11,12 @@ export type NotificationInput = {
   title?: string;
 };
 
-/** A notification kept at `/notification/list` of `app`, until a view shows it */
+/** A notification of the history at `/notification/list` of `app` */
 export type Notification = NotificationInput & {
   /** Its id, unique in the list */
   id: string;
   /** Milliseconds since the epoch, from `Date.now()` */
   timestamp: number;
+  /** Whether a view already showed it once (a toast) */
+  shown: boolean;
 };

@@ -9,3 +9,13 @@ export type NotificationsOptions = NotificationsProps & {
   /** Mantine color of each kind (`{ error: 'red' }`), over the defaults */
   colors?: Partial<NanoObject<string>>;
 };
+
+/** Texts of the notification center */
+export type NotificationCenterTexts = {
+  /** Title of the history, and the name of the bell */
+  title: string;
+  /** Button that empties the history */
+  clear: string;
+  /** Line of an empty history */
+  empty: string;
+};

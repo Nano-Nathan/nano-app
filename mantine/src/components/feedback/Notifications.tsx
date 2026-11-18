@@ -4,36 +4,31 @@ import { useEffect } from 'react';
 import { Notifications as MantineNotifications, notifications } from '@mantine/notifications';
 import { createView } from '@nano-app/frontend';
 import NotificationController from '@nano-app/components/notification';
+import { NOTIFICATION_COLORS } from '../../const';
 
-/** Mantine color of each kind */
-const COLORS = { success: 'green', error: 'red', info: 'blue', warning: 'yellow' };
-
-/** Shows the notifications of the app with Mantine's, the kinds of the props only */
-class ShowController extends NotificationController {
-  /** Shows each notification kept, of the kinds of the props, and empties the list */
+/** Shows each new notification of the app once, of the kinds of the props */
+class ToastController extends NotificationController {
+  /** Moves the api errors to the history and shows what was never shown */
   public show(): void {
-    // Nothing to show
-    const aItems = this.items();
-    if (!aItems.length) return;
+    // Takes the failed requests of the stores
+    this.collect();
 
-    // Shows each one of a kind the app shows, with its color
+    // Shows each new one of a kind the app shows, with its color, once
     const { types, colors } = this.props;
-    const oColors = { ...COLORS, ...colors };
-    for (const { id, type, title, message } of aItems) {
+    const oColors = { ...NOTIFICATION_COLORS, ...colors };
+    for (const { id, type, title, message } of this.fresh()) {
       if (!types || types.includes(type))
         notifications.show({ id, color: oColors[type], title, message });
+      this.markShown(id);
     }
-
-    // Leaves them to Mantine
-    this.clear();
   }
 }
 
-/** Mantine's notifications, fed by the notifications of the app */
+/** Mantine's notifications, fed by the history of the app */
 export default createView(
-  ShowController,
-  (notify, { types: _aTypes, colors: _oColors, ...oProps }) => {
-    useEffect(notify.show, [notify.items()]);
+  ToastController,
+  (toasts, { types: _aTypes, colors: _oColors, ...oProps }) => {
+    useEffect(toasts.show, [toasts.items(), toasts.errors().length]);
     return <MantineNotifications position="top-center" autoClose={3000} {...oProps} />;
   },
 );

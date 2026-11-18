@@ -62,7 +62,9 @@ Views of `@nano-app/components`, with Mantine. Their logic is the component's: s
 
 ## Notifications
 
-`createLayout` mounts `Notifications`, which shows the notifications of the app (see [`NotificationController`](../components/README.md#notification)) with Mantine's, one under the other, and `Errors`, which turns every failed request of an api store (its `/error/list`) into a notification of type `error` with the backend's `message`. An app does nothing to show its errors; to notify something else, a controller calls `notify`.
+`createLayout` mounts `Notifications`: it moves every failed request of an api store (its `/error/list`) to the history of the app's notifications (see [`NotificationController`](../components/README.md#notification)) as an `error` with the backend's `message`, and shows each new notification once with Mantine's, one under the other. An app does nothing to show its errors; to notify something else, a controller calls `notify`.
+
+`NotificationCenter` is a bell that opens that history, from the newest, to remove one notification or all of them. The app puts it where it wants (a header) and gives its `texts` (`title`, `clear`, `empty`) and `colors`.
 
 `notifications` of `createLayout` sets them, every key optional:
 
@@ -82,7 +84,7 @@ createLayout({
 - `colors`: the Mantine color of a kind, over `success: 'green'`, `error: 'red'`, `info: 'blue'` and `warning: 'yellow'`.
 - Any other key is a prop of Mantine's `Notifications`: `position` (`top-center` by default), `autoClose` (3000 ms by default, `false` to keep them until closed), `limit`…
 
-`Notifications` and `Errors` are exported too, for an app with a layout of its own.
+`Notifications` is exported too, for an app with a layout of its own.
 
 ## Pages
 
