@@ -1,14 +1,9 @@
 import { defineConfig } from 'tsdown';
-import { globSync } from 'glob';
 import pkg from './package.json' with { type: 'json' };
 
 export default defineConfig({
-  // One folder per piece under src: `<name>/index.tsx` is its import path
-  entry: globSync([
-    'src/layout/index.tsx',
-    'src/components/*/index.{ts,tsx}',
-    'src/pages/*/index.tsx',
-  ]),
+  // One entry: every piece leaves from `@nano-app/mantine`
+  entry: ['src/index.ts'],
   // One output file per source file: Next reads `'use client'` per module
   unbundle: true,
   root: 'src',

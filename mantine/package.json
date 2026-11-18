@@ -4,9 +4,9 @@
   "description": "Mantine for @nano-app/frontend: the root layout, views of @nano-app/components and ready pages",
   "type": "module",
   "exports": {
-    "./*": {
-      "types": "./build/*/index.d.ts",
-      "import": "./build/*/index.js"
+    ".": {
+      "types": "./build/index.d.ts",
+      "import": "./build/index.js"
     }
   },
   "files": [
@@ -59,7 +59,6 @@
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "glob": "^14.0.4",
     "happy-dom": "^21.0.3",
     "next": "^16.4.6",
     "react": "^19.3.1",

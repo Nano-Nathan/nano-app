@@ -65,7 +65,7 @@ The views of `@nano-app/mantine`, and of any app on it:
 - Sizes and spacing are theme tokens (`size="xs"`, `p="md"`, `gap="lg"`, `fz="sm"`), changed per breakpoint with an object (`cols={{ base: 1, sm: 2, lg: 3 }}`, `p={{ base: 'sm', md: 'xl' }}`) or with `visibleFrom` and `hiddenFrom`.
 - A view with columns uses `Grid`, always of 12 columns, with a `span` per breakpoint (`<Grid.Col span={{ base: 12, sm: 6, lg: 4 }}>`): never another `columns` count.
 - No fixed values: no `px`, `rem` or plain numbers for widths, heights, fonts or spacing, and no `style` with sizes. A full width or height is a relative unit (`w="100%"`, `mih="100dvh"`).
-- `@nano-app/mantine` keeps its pieces by kind. `components/<type>/` groups the views of a type (`fields/Input.tsx`, `fields/Password.tsx`), with an `index.ts` that exports them: its import path. `pages/<name>/` holds `index.tsx` (`create<Name>Page` and its texts), `<Name>Controller.ts`, `<Name>.tsx` (the view) and `components/` with the pieces only that page uses; a piece another page needs moves up to `components/`.
+- `@nano-app/mantine` keeps its pieces by kind. `components/<type>/` groups the views of a type (`fields/Input.tsx`, `fields/Password.tsx`), with an `index.ts` that exports them. Every piece and its public types leave from `src/index.ts`: the only import path, `@nano-app/mantine`. `pages/<name>/` holds `index.tsx` (`create<Name>Page` and its texts), `<Name>Controller.ts`, `<Name>.tsx` (the view) and `components/` with the pieces only that page uses; a piece another page needs moves up to `components/`.
 
 ### Names
 

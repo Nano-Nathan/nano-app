@@ -2,7 +2,7 @@
 
 [![mantine](https://img.shields.io/npm/v/@nano-app/mantine?label=mantine)](https://www.npmjs.com/package/@nano-app/mantine)
 
-[Mantine](https://mantine.dev) for [`@nano-app/frontend`](https://www.npmjs.com/package/@nano-app/frontend): the root layout, the views of [`@nano-app/components`](https://www.npmjs.com/package/@nano-app/components) and ready pages. One import path per piece: `@nano-app/mantine/layout`, `@nano-app/mantine/components/<name>`, `@nano-app/mantine/pages/<name>`.
+[Mantine](https://mantine.dev) for [`@nano-app/frontend`](https://www.npmjs.com/package/@nano-app/frontend): the root layout, the views of [`@nano-app/components`](https://www.npmjs.com/package/@nano-app/components) and ready pages. Every piece leaves from one import: `import { createLayout, createLoginPage, Input } from '@nano-app/mantine'`. Each client view keeps its `'use client'`, so a server page and a client component import from the same place.
 
 - Node.js 22.23.4, 24.22.1 or 26.12.1 and newer. ESM only.
 - `@mantine/core` and `@mantine/hooks` 9, `@nano-app/frontend` 0.16, `@nano-app/components` 0.13, Next 16.3 and React 19 or newer, as peer dependencies.
@@ -17,7 +17,7 @@ pnpm add @nano-app/mantine @nano-app/frontend @nano-app/components @mantine/core
 
 ```tsx
 // app/layout.tsx
-import createLayout from '@nano-app/mantine/layout';
+import { createLayout } from '@nano-app/mantine';
 import theme from '@/theme';
 
 export const metadata = { title: 'finance' };
@@ -42,11 +42,11 @@ export default createTheme({ primaryColor: 'teal' });
 
 Views of `@nano-app/components`, with Mantine. Their logic is the component's: see [its README](../components/README.md).
 
-| Component  | Import                                                           | Controller        | Props                                    |
-| ---------- | ---------------------------------------------------------------- | ----------------- | ---------------------------------------- |
-| `Input`    | `import { Input } from '@nano-app/mantine/components/fields'`    | `FieldController` | `form`, `field` (`label`, `type`)        |
-| `Password` | `import { Password } from '@nano-app/mantine/components/fields'` | `FieldController` | `form`, `field` (`label`)                |
-| `Form`     | `import Form from '@nano-app/mantine/components/form'`           | `FormController`  | `name`, `fields`, `onSubmit`, `children` |
+| Component  | Import                                         | Controller        | Props                                    |
+| ---------- | ---------------------------------------------- | ----------------- | ---------------------------------------- |
+| `Input`    | `import { Input } from '@nano-app/mantine'`    | `FieldController` | `form`, `field` (`label`, `type`)        |
+| `Password` | `import { Password } from '@nano-app/mantine'` | `FieldController` | `form`, `field` (`label`)                |
+| `Form`     | `import { Form } from '@nano-app/mantine'`     | `FormController`  | `name`, `fields`, `onSubmit`, `children` |
 
 `Input` is a `TextInput` with the field's `label` and `type`, its value and its error. `Password` is a `PasswordInput`, with a toggle that shows the password. `Form` shows each `password` field with `Password`, every other one with `Input`, and then its `children`, the buttons:
 
@@ -70,7 +70,7 @@ A page is a server component made by its `create` function, for a file of `app/`
 
 ```tsx
 // app/login/page.tsx
-import createLoginPage from '@nano-app/mantine/pages/login';
+import { createLoginPage } from '@nano-app/mantine';
 
 export default createLoginPage({
   store: 'api',
@@ -89,9 +89,10 @@ export default createLoginPage({
 
 ```
 mantine/src/
+├── index.ts                       the import path: exports every piece and its types
 ├── layout/index.tsx               createLayout: the root layout
 ├── components/<type>/             views of @nano-app/components, grouped by type
-│   ├── index.ts                   the import path: exports each view of the type
+│   ├── index.ts                   exports each view of the type
 │   └── <View>.tsx                 one view (fields/Input.tsx, fields/Password.tsx)
 ├── pages/<name>/                  a ready page
 │   ├── index.tsx                  create<Name>Page, the server page, and its English texts
