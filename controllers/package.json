@@ -1,7 +1,7 @@
 {
-  "name": "@nano-app/components",
+  "name": "@nano-app/controllers",
   "version": "0.0.0-semantic-release",
-  "description": "Official components for @nano-app/frontend: the logic, ready to bind to your view",
+  "description": "Official controllers for @nano-app/frontend: the logic, ready to bind to your view",
   "type": "module",
   "exports": {
     "./*": {
@@ -22,14 +22,14 @@
     "nano-app",
     "next",
     "react",
-    "components"
+    "controllers"
   ],
   "author": "Cristian Serrano",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Nano-Nathan/nano-app.git",
-    "directory": "components"
+    "directory": "controllers"
   },
   "publishConfig": {
     "access": "public"

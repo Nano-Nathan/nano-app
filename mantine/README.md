@@ -2,13 +2,13 @@
 
 [![mantine](https://img.shields.io/npm/v/@nano-app/mantine?label=mantine)](https://www.npmjs.com/package/@nano-app/mantine)
 
-[Mantine](https://mantine.dev) for [`@nano-app/frontend`](https://www.npmjs.com/package/@nano-app/frontend): the root layout, the views of [`@nano-app/components`](https://www.npmjs.com/package/@nano-app/components) and ready pages. Every piece leaves from one import: `import { createLayout, createLoginPage, Input } from '@nano-app/mantine'`. Each client view keeps its `'use client'`, so a server page and a client component import from the same place.
+[Mantine](https://mantine.dev) for [`@nano-app/frontend`](https://www.npmjs.com/package/@nano-app/frontend): the root layout, the views of [`@nano-app/controllers`](https://www.npmjs.com/package/@nano-app/controllers) and ready pages. Every piece leaves from one import: `import { createLayout, createLoginPage, Input } from '@nano-app/mantine'`. Each client view keeps its `'use client'`, so a server page and a client component import from the same place.
 
 - Node.js 22.23.4, 24.22.1 or 26.12.1 and newer. ESM only.
-- `@mantine/core`, `@mantine/hooks` and `@mantine/notifications` 9, `@nano-app/frontend` 0.16, `@nano-app/components` 0.13, Next 16.3 and React 19 or newer, as peer dependencies.
+- `@mantine/core`, `@mantine/hooks` and `@mantine/notifications` 9, `@nano-app/frontend` 0.16, `@nano-app/controllers` 0.13, Next 16.3 and React 19 or newer, as peer dependencies.
 
 ```bash
-pnpm add @nano-app/mantine @nano-app/frontend @nano-app/components @mantine/core @mantine/hooks @mantine/notifications
+pnpm add @nano-app/mantine @nano-app/frontend @nano-app/controllers @mantine/core @mantine/hooks @mantine/notifications
 ```
 
 ## Layout
@@ -40,7 +40,7 @@ export default createTheme({ primaryColor: 'teal' });
 
 ## Components
 
-Views of `@nano-app/components`, with Mantine. Their logic is the component's: see [its README](../components/README.md).
+Views of `@nano-app/controllers`, with Mantine. Their logic is the component's: see [its README](../components/README.md).
 
 | Component  | Import                                         | Controller        | Props                                    |
 | ---------- | ---------------------------------------------- | ----------------- | ---------------------------------------- |
@@ -117,7 +117,7 @@ export default createLoginPage({
 mantine/src/
 ├── index.ts                         the import path: exports every piece and its types
 ├── layout/index.tsx                 createLayout: the root layout
-├── components/<type>/               views of @nano-app/components, grouped by type
+├── components/<type>/               views of @nano-app/controllers, grouped by type
 │   ├── index.ts                     exports each view of the type
 │   ├── <View>.tsx                   a view alone (fields/Input.tsx)
 │   └── <View>/                      a view with its controller (notification/Toasts/)

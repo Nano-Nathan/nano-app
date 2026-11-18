@@ -168,7 +168,7 @@ export default createView(UsersController, users => (
 - `GET(path)` and `QUERY(path, query)` (the query as JSON body) return a promise of the `ApiResponse` and keep it in the store at their path and query, over what the store had there: a field the new answer does not bring stays from the last one. The view gets it with `get(path, query?)`, and renders again when a read keeps a new one.
 - `POST(path, body)`, `PUT(path, body)` and `DELETE(path)` return a promise of the `ApiResponse` and keep nothing: read again after a write.
 - Each answer is an `ApiResponse` with the HTTP `status`. An answer without `success` (Better Auth's) takes it from that status: `true` for a 2xx. When the backend fails it is the backend's (`success: false`, `message`); an answer that is not JSON becomes `{ success: false, message: 'Request failed', result: <the text> }`, and no answer `{ success: false, message: 'Request failed' }`.
-- Each failed request adds its `ApiResponse` to the store's `/error/list` as an `ApiError`, with `message` set to `'Request failed'` when the backend brings none and `timestamp` (`Date.now()`) of when it failed. The views get it with `get('/error/list')`, or through the `notification` component of `@nano-app/components`, which moves them to the app's notifications.
+- Each failed request adds its `ApiResponse` to the store's `/error/list` as an `ApiError`, with `message` set to `'Request failed'` when the backend brings none and `timestamp` (`Date.now()`) of when it failed. The views get it with `get('/error/list')`, or through the `notification` component of `@nano-app/controllers`, which moves them to the app's notifications.
 - `/busy` is `true` while a request of the store is out (`backend.get('/busy') ? 'Loading…' : …`).
 - On the server (the first HTML that Next renders) a request asks nothing and resolves with an empty `ApiResponse` (`{}`).
 
@@ -223,7 +223,7 @@ pnpm --filter nano-frontend-test-app build
 API_BACKEND_URL=http://localhost:3000 pnpm --filter nano-frontend-test-app start   # http://localhost:3100
 ```
 
-The `Users` component reads and writes `/users` of the `backend` store, and `UsersList` pages and sorts it with `list` of [`@nano-app/components`](../components/README.md): point it at any backend that answers `GET`, `QUERY` (`offset`, `limit`, `orderBy`), `POST`, `PUT` and `DELETE` on `/users` with an `ApiResponse`. `/private` is a page with a session: the backend has Better Auth with `emailAndPassword`, and the URL of the app (`http://localhost:3100`) in its `trustedOrigins`.
+The `Users` component reads and writes `/users` of the `backend` store, and `UsersList` pages and sorts it with `list` of [`@nano-app/controllers`](../components/README.md): point it at any backend that answers `GET`, `QUERY` (`offset`, `limit`, `orderBy`), `POST`, `PUT` and `DELETE` on `/users` with an `ApiResponse`. `/private` is a page with a session: the backend has Better Auth with `emailAndPassword`, and the URL of the app (`http://localhost:3100`) in its `trustedOrigins`.
 
 ## Design
 

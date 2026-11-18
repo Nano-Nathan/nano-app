@@ -1,5 +1,5 @@
 import { notifications } from '@mantine/notifications';
-import NotificationController from '@nano-app/components/notification';
+import NotificationController from '@nano-app/controllers/notification';
 import { NOTIFICATION_COLORS } from '../../../const';
 
 /** Shows each new notification of the app once, of the kinds of the props */

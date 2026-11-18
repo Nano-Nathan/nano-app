@@ -1,6 +1,6 @@
 {
   "branches": ["main"],
-  "tagFormat": "components-v${version}",
+  "tagFormat": "controllers-v${version}",
   "plugins": [
     [
       "@semantic-release/commit-analyzer",

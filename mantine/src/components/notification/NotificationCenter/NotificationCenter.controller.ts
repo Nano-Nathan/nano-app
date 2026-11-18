@@ -1,6 +1,6 @@
-import NotificationController from '@nano-app/components/notification';
+import NotificationController from '@nano-app/controllers/notification';
 import { NOTIFICATION_COLORS } from '../../../const';
-import type { Notification as AppNotification } from '@nano-app/components/notification';
+import type { Notification as AppNotification } from '@nano-app/controllers/notification';
 import type { NotificationCenterTexts } from '../../../types/notifications';
 
 /** English texts of the center */

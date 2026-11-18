@@ -2,7 +2,7 @@
 
 import { PasswordInput } from '@mantine/core';
 import { createView } from '@nano-app/frontend';
-import FieldController from '@nano-app/components/field';
+import FieldController from '@nano-app/controllers/field';
 
 /** A Mantine password input, with a toggle to show it, its label and its error */
 export default createView(FieldController, (input, { field: oField }) => (

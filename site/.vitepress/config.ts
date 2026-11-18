@@ -22,7 +22,7 @@ export default defineConfig({
           { text: 'Backend', link: '/backend/README' },
           { text: 'Plugins', link: '/plugins/README' },
           { text: 'Frontend', link: '/frontend/README' },
-          { text: 'Components', link: '/components/README' },
+          { text: 'Controllers', link: '/controllers/README' },
         ],
       },
       {

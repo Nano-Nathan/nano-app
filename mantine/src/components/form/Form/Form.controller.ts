@@ -1,4 +1,4 @@
-import FormController from '@nano-app/components/form';
+import FormController from '@nano-app/controllers/form';
 import { Input, Password } from '../../fields';
 
 /** Form whose passwords show with their own input, every other type with the input */

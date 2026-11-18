@@ -252,7 +252,7 @@ importers:
         specifier: ^7.0.2
         version: 7.0.2
 
-  components:
+  controllers:
     dependencies:
       zod:
         specifier: ^4.6.7
@@ -377,9 +377,9 @@ importers:
 
   frontend/tests/app:
     dependencies:
-      '@nano-app/components':
+      '@nano-app/controllers':
         specifier: workspace:*
-        version: link:../../../components
+        version: link:../../../controllers
       '@nano-app/frontend':
         specifier: workspace:*
         version: link:../..
@@ -421,9 +421,9 @@ importers:
       '@mantine/notifications':
         specifier: ^9.8.1
         version: 9.8.1(@mantine/core@9.8.1(@mantine/hooks@9.8.1(react@19.3.1))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(@mantine/hooks@9.8.1(react@19.3.1))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@nano-app/components':
+      '@nano-app/controllers':
         specifier: workspace:*
-        version: link:../components
+        version: link:../controllers
       '@nano-app/frontend':
         specifier: workspace:*
         version: link:../frontend

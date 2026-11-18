@@ -1,6 +1,6 @@
 # nano-app
 
-pnpm monorepo: `core/` (private, inlined into the backend, frontend, components and mantine), `backend/` (`@nano-app/backend`), `plugins/` (`@nano-app/plugins`), `frontend/` (`@nano-app/frontend`), `components/` (`@nano-app/components`), `mantine/` (`@nano-app/mantine`). Read the README of the package you touch before changing it.
+pnpm monorepo: `core/` (private, inlined into the backend, frontend, controllers and mantine), `backend/` (`@nano-app/backend`), `plugins/` (`@nano-app/plugins`), `frontend/` (`@nano-app/frontend`), `controllers/` (`@nano-app/controllers`), `mantine/` (`@nano-app/mantine`). Read the README of the package you touch before changing it.
 
 This file holds the code guidelines. Branches, pull requests, releases and how a development is planned and approved are in [CONTRIBUTING.md](../CONTRIBUTING.md); planned features in [`features/`](../features/README.md).
 
@@ -10,7 +10,7 @@ Before opening a pull request, read [Pull requests](../CONTRIBUTING.md#pull-requ
 
 - The title is `feat:` (minor) or `fix:` (patch) when a package must be published, another type when not. Never a `!` after the type: the `angular` preset ignores the whole commit.
 - A breaking change ends the description with `BREAKING CHANGE: <what breaks>`.
-- Only a merge that touches a package's paths (`backend/`, `core/`, `plugins/`, `frontend/`, `components/`, `mantine/`) runs its publish workflow.
+- Only a merge that touches a package's paths (`backend/`, `core/`, `plugins/`, `frontend/`, `controllers/`, `mantine/`) runs its publish workflow.
 
 ## Clean core
 

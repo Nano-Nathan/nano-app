@@ -1,7 +1,7 @@
 'use client';
 
 import { createView } from '@nano-app/frontend';
-import NotificationController from '@nano-app/components/notification';
+import NotificationController from '@nano-app/controllers/notification';
 
 /** Notifications with two methods that fail a read and a write */
 class ErrorsController extends NotificationController {

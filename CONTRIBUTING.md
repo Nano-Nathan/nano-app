@@ -18,7 +18,7 @@ Set `DATABASE_URL` in a `.env` at the repository root, pointing at a disposable 
 
 ## What to send
 
-- Bug fixes in `backend/`, `core/`, `plugins/`, `frontend/`, `components/` and `mantine/`: a pull request here.
+- Bug fixes in `backend/`, `core/`, `plugins/`, `frontend/`, `controllers/` and `mantine/`: a pull request here.
 - A plugin: your own repository and npm package. See [`plugins/README.md`](plugins/README.md#write-a-plugin). Do not add `plugins/<name>` unless a maintainer asked for that plugin in an issue.
 
 Public API, comments, and these files are English: `README.md` and the README of each package.
@@ -40,7 +40,7 @@ Each development (a feature, a fix, a refactor) is one branch and one pull reque
 3. If `main` moves, merge `main` into the feature branch (no rebase: module branches start from it).
 4. When the feature is done, open one pull request from the feature branch to `main`. Its title decides the release.
 
-Each package's publish workflow runs its tests and build on every pull request that touches the package, to `main` or to a feature branch. Their jobs (`test-backend`, `test-plugins`, `test-frontend`, `test-components`, `test-mantine`) are the checks required to merge, with the `dependency-review` and `audit` jobs of `security.yml`, which fail on a dependency with a high or critical advisory. The PostgreSQL suite runs on a Neon branch created for the run; pull requests from forks and Dependabot skip it.
+Each package's publish workflow runs its tests and build on every pull request that touches the package, to `main` or to a feature branch. Their jobs (`test-backend`, `test-plugins`, `test-frontend`, `test-controllers`, `test-mantine`) are the checks required to merge, with the `dependency-review` and `audit` jobs of `security.yml`, which fail on a dependency with a high or critical advisory. The PostgreSQL suite runs on a Neon branch created for the run; pull requests from forks and Dependabot skip it.
 
 ## Planning a development
 
@@ -69,23 +69,23 @@ A feature split into modules is planned and reviewed module by module. A large i
 
 Each published package has its own version, its own tags and its own publish workflow, which runs on a merge to `main` that touches the package:
 
-| Package | Touched paths | Tags | Workflow |
-|---|---|---|---|
-| `@nano-app/backend` | `backend/`, `core/` | `backend-vX.Y.Z` | `publish-backend.yml` |
-| `@nano-app/plugins` | `plugins/` | `plugins-vX.Y.Z` | `publish-plugins.yml` |
-| `@nano-app/frontend` | `frontend/`, `core/` | `frontend-vX.Y.Z` | `publish-frontend.yml` |
-| `@nano-app/components` | `components/`, `core/` | `components-vX.Y.Z` | `publish-components.yml` |
-| `@nano-app/mantine` | `mantine/`, `core/` | `mantine-vX.Y.Z` | `publish-mantine.yml` |
+| Package                 | Touched paths           | Tags                 | Workflow                  |
+| ----------------------- | ----------------------- | -------------------- | ------------------------- |
+| `@nano-app/backend`     | `backend/`, `core/`     | `backend-vX.Y.Z`     | `publish-backend.yml`     |
+| `@nano-app/plugins`     | `plugins/`              | `plugins-vX.Y.Z`     | `publish-plugins.yml`     |
+| `@nano-app/frontend`    | `frontend/`, `core/`    | `frontend-vX.Y.Z`    | `publish-frontend.yml`    |
+| `@nano-app/controllers` | `controllers/`, `core/` | `controllers-vX.Y.Z` | `publish-controllers.yml` |
+| `@nano-app/mantine`     | `mantine/`, `core/`     | `mantine-vX.Y.Z`     | `publish-mantine.yml`     |
 
 [semantic-release](https://github.com/semantic-release/semantic-release) reads the commits since the package's last tag, with the `angular` preset of each `.releaserc.json`, and publishes it only when one of them asks for it. It reads every commit since that tag, also the ones that touched only another package:
 
-| Commit | Release |
-|---|---|
-| `fix: …`, `fix(<scope>): …` | patch (`0.7.0` → `0.7.1`) |
-| `feat: …`, `feat(<scope>): …` | minor (`0.7.0` → `0.8.0`) |
-| A `BREAKING CHANGE:` line in the description | minor while the version is `0.x` |
-| A `!` after the type (`feat!: …`) | none: the `angular` preset does not read it, so the whole commit is ignored |
-| Any other message (`refactor:`, `docs:`, `chore:`…) | none |
+| Commit                                              | Release                                                                     |
+| --------------------------------------------------- | --------------------------------------------------------------------------- |
+| `fix: …`, `fix(<scope>): …`                         | patch (`0.7.0` → `0.7.1`)                                                   |
+| `feat: …`, `feat(<scope>): …`                       | minor (`0.7.0` → `0.8.0`)                                                   |
+| A `BREAKING CHANGE:` line in the description        | minor while the version is `0.x`                                            |
+| A `!` after the type (`feat!: …`)                   | none: the `angular` preset does not read it, so the whole commit is ignored |
+| Any other message (`refactor:`, `docs:`, `chore:`…) | none                                                                        |
 
 A merge that touches only files outside the packages (the root `package.json`, `.github/`, the docs) runs no publish workflow: its commit is published with the next merge that touches the package.
 

@@ -1,14 +1,14 @@
-# @nano-app/components
+# @nano-app/controllers
 
-[![components](https://img.shields.io/npm/v/@nano-app/components?label=components)](https://www.npmjs.com/package/@nano-app/components)
+[![controllers](https://img.shields.io/npm/v/@nano-app/controllers?label=controllers)](https://www.npmjs.com/package/@nano-app/controllers)
 
-Official components for [`@nano-app/frontend`](https://www.npmjs.com/package/@nano-app/frontend). A component is the logic of a piece of UI, a controller ready to use: you write only the view. One import path per component: `@nano-app/components/<name>`. No markup and no styles.
+Official controllers for [`@nano-app/frontend`](https://www.npmjs.com/package/@nano-app/frontend). Each one is the logic of a piece of UI, ready to use: you write only the view, or take it from [`@nano-app/mantine`](../mantine/README.md). One import path per controller: `@nano-app/controllers/<name>`. No markup and no styles.
 
 - Node.js 22.23.4, 24.22.1 or 26.12.1 and newer. ESM only.
 - `@nano-app/frontend` 0.16, Next 16.3 and React 19 or newer, as peer dependencies.
 
 ```bash
-pnpm add @nano-app/frontend @nano-app/components
+pnpm add @nano-app/frontend @nano-app/controllers
 ```
 
 ```tsx
@@ -16,7 +16,7 @@ pnpm add @nano-app/frontend @nano-app/components
 'use client';
 
 import { createView } from '@nano-app/frontend';
-import CollectionController from '@nano-app/components/collection';
+import CollectionController from '@nano-app/controllers/collection';
 
 class UsersController extends CollectionController {
   protected api = this.stores.backend;
@@ -39,22 +39,22 @@ export default createView(UsersController, users => (
 ));
 ```
 
-- Every component is a `Controller` class of `@nano-app/frontend`: use it with `createView`, and change or add methods by extending it (`class X extends AuthController { … }`, the original through `super`).
+- Every controller is a `Controller` class of `@nano-app/frontend`: use it with `createView`, and change or add methods by extending it (`class X extends AuthController { … }`, the original through `super`).
 - Its options are `protected` fields: a subclass sets them (`protected root = '/collection/users';`), and the view does not see them. A field without a default is `abstract`: the class must be extended, and TypeScript asks for every one of them.
 - The props of a view carry the data of each use (`form`, `field`, `name`, `fields`, `onSubmit`).
-- A component reads what it needs when its view mounts (`onMount`): the view only renders. The requests in progress are in the store's `/busy`.
-- A component keeps its state under `root` in `state`, the `app` store by default: a subclass moves it to another store with `protected state = this.stores.ui;`.
-- A component that reads the backend gets its api store from the subclass, as a field: `protected api = this.stores.backend;`, typed by the app's `nano-app-env.d.ts`. Any other store is used directly (`this.stores.payments.POST(…)`).
+- A controller reads what it needs when its view mounts (`onMount`): the view only renders. The requests in progress are in the store's `/busy`.
+- A controller keeps its state under `root` in `state`, the `app` store by default: a subclass moves it to another store with `protected state = this.stores.ui;`.
+- A controller that reads the backend gets its api store from the subclass, as a field: `protected api = this.stores.backend;`, typed by the app's `nano-app-env.d.ts`. Any other store is used directly (`this.stores.payments.POST(…)`).
 
-## Components
+## Controllers
 
-| Component                | Import                                                                   | Fields                                           | Methods                                                                                                  | Props                        | State                                                    |
-| ------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------- | ---------------------------- | -------------------------------------------------------- |
-| `AuthController`         | `import AuthController from '@nano-app/components/auth'`                 | `api` (abstract), `kind` (`'email'`)             | `signIn(body)`, `signUp(body)`, `signOut()`, `navTo(url)`                                                | —                            | —                                                        |
-| `FieldController`        | `import FieldController from '@nano-app/components/field'`               | —                                                | `value()`, `error()`, `change(value)`, `options()`                                                       | `form`, `field`              | `app`: `/form/<form>/values`, `/form/<form>/errors`      |
-| `FormController`         | `import FormController from '@nano-app/components/form'`                 | `components` (abstract)                          | `fields()`, `submit(event)`, `reset()`                                                                   | `name`, `fields`, `onSubmit` | `app`: `/form/<name>`                                    |
-| `NotificationController` | `import NotificationController from '@nano-app/components/notification'` | —                                                | `notify(input)`, `items()`, `fresh()`, `markShown(id)`, `errors()`, `collect()`, `remove(id)`, `clear()` | —                            | `app`: `/notification/list`; every store's `/error/list` |
-| `CollectionController`   | `import CollectionController from '@nano-app/components/collection'`     | `api`, `root`, `path` (abstract), `limit` (`50`) | `load()`, `items()`, `page()`, `goTo(page)`, `next()`, `prev()`, `sort(field)`, `more()`, `pages()`      | —                            | `app`: `<root>/page`, `<root>/orderBy`, `<root>/pages`   |
+| Component                | Import                                                                    | Fields                                           | Methods                                                                                                  | Props                        | State                                                    |
+| ------------------------ | ------------------------------------------------------------------------- | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------- | ---------------------------- | -------------------------------------------------------- |
+| `AuthController`         | `import AuthController from '@nano-app/controllers/auth'`                 | `api` (abstract), `kind` (`'email'`)             | `signIn(body)`, `signUp(body)`, `signOut()`, `navTo(url)`                                                | —                            | —                                                        |
+| `FieldController`        | `import FieldController from '@nano-app/controllers/field'`               | —                                                | `value()`, `error()`, `change(value)`, `options()`                                                       | `form`, `field`              | `app`: `/form/<form>/values`, `/form/<form>/errors`      |
+| `FormController`         | `import FormController from '@nano-app/controllers/form'`                 | `components` (abstract)                          | `fields()`, `submit(event)`, `reset()`                                                                   | `name`, `fields`, `onSubmit` | `app`: `/form/<name>`                                    |
+| `NotificationController` | `import NotificationController from '@nano-app/controllers/notification'` | —                                                | `notify(input)`, `items()`, `fresh()`, `markShown(id)`, `errors()`, `collect()`, `remove(id)`, `clear()` | —                            | `app`: `/notification/list`; every store's `/error/list` |
+| `CollectionController`   | `import CollectionController from '@nano-app/controllers/collection'`     | `api`, `root`, `path` (abstract), `limit` (`50`) | `load()`, `items()`, `page()`, `goTo(page)`, `next()`, `prev()`, `sort(field)`, `more()`, `pages()`      | —                            | `app`: `<root>/page`, `<root>/orderBy`, `<root>/pages`   |
 
 ## Auth
 
@@ -168,10 +168,10 @@ To read page after page instead (a "load more" button, an endless scroll), the v
 ## Layout
 
 ```
-components/
+controllers/
 ├── <name>/
-│   └── index.ts        default-exports the component's class: the import path
+│   └── index.ts        default-exports the controller's class: the import path
 └── utils/
-    ├── AppController.ts  base of the components with state: `state` (`app` by default), `root`, and `get`/`set` under it
+    ├── AppController.ts  base of the controllers with state: `state` (`app` by default), `root`, and `get`/`set` under it
     └── ApiController.ts  `AppController` plus `GET`, `QUERY`, `POST`, `PUT`, `DELETE` of the api store its subclass gives (`api`)
 ```

@@ -2,7 +2,7 @@
 
 import { TextInput } from '@mantine/core';
 import { createView } from '@nano-app/frontend';
-import FieldController from '@nano-app/components/field';
+import FieldController from '@nano-app/controllers/field';
 
 /** A Mantine input of the field's type, with its label and its error */
 export default createView(FieldController, (input, { field: oField }) => (

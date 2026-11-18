@@ -140,4 +140,4 @@ Optional. Pass `database: { relations }` on the plugin config: what `defineRelat
 
 ### What belongs in this repository
 
-Pull requests to `backend/`, `core/`, `plugins/`, `frontend/` and `components/` are welcome. A pull request that adds `plugins/<name>` is not, until the maintainers ask for that plugin. Official plugins live in `plugins/<name>/`, are exported as `import <name> from '@nano-app/plugins/<name>'`, and `@nano-app/plugins` has its own version.
+Pull requests to `backend/`, `core/`, `plugins/`, `frontend/`, `controllers/` and `mantine/` are welcome. A pull request that adds `plugins/<name>` is not, until the maintainers ask for that plugin. Official plugins live in `plugins/<name>/`, are exported as `import <name> from '@nano-app/plugins/<name>'`, and `@nano-app/plugins` has its own version.

@@ -1,4 +1,4 @@
-import AuthController from '@nano-app/components/auth';
+import AuthController from '@nano-app/controllers/auth';
 import NanoError from '@nano-app/core/utils/NanoError';
 import type { ApiStore } from '@nano-app/frontend';
 import type { ApiResponse } from '@nano-app/core/types/api';

@@ -1,7 +1,7 @@
 'use client';
 
 import { createView } from '@nano-app/frontend';
-import FormController from '@nano-app/components/form';
+import FormController from '@nano-app/controllers/form';
 import Input from './Input';
 
 /** Form whose every field type is shown with the input */
