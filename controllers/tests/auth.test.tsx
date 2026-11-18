@@ -89,7 +89,7 @@ describe('auth', () => {
 
     await waitFor(() =>
       assert.deepEqual(aRequests, [
-        'POST /api/api/auth/sign-in/username {"email":"ana@nano.app","password":"secret"}',
+        'POST /api/api/auth/sign-in/username {"email":"ana@nano.app","password":"secret","callbackURL":"/"}',
       ]),
     );
   });

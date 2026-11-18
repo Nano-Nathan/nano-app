@@ -17,7 +17,7 @@ const MODES = {
 /** Login card: the providers, the form of email and password, and the link to the other mode */
 export default createView(AuthController, (auth, { providers, signUp, texts }) => {
   // The keys of the texts of the current mode
-  const oMode = auth.isSignUp() ? MODES.signUp : MODES.signIn;
+  const oMode = auth.isToggled() ? MODES.signUp : MODES.signIn;
   return (
     <Paper withBorder shadow="md" radius="lg" p={{ base: 'lg', sm: 'xl' }}>
       <Stack gap="lg">
@@ -39,7 +39,7 @@ export default createView(AuthController, (auth, { providers, signUp, texts }) =
                 size="md"
                 leftSection={<GoogleIcon />}
                 disabled={auth.isBusy()}
-                onClick={() => auth.social(sProvider)}
+                onClick={() => auth.signIn({ provider: sProvider }, 'social')}
               >
                 {texts[sProvider]}
               </Button>

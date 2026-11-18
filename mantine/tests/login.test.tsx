@@ -68,7 +68,7 @@ test('the login page signs in at the store with the values and goes to home', as
   // Better Auth's sign-in got the values, and the router went home
   await waitFor(() => assert.deepEqual(aVisited, ['/home']));
   assert.deepEqual(aRequests, [
-    'POST /api/api/auth/sign-in/email {"email":"ana@nano.app","password":"secret"}',
+    'POST /api/api/auth/sign-in/email {"email":"ana@nano.app","password":"secret","callbackURL":"/home"}',
   ]);
 });
 
@@ -82,7 +82,7 @@ test('the login page signs up with the same values, the email as the name, and g
   // Better Auth's sign-up got the values with the name, and the router went home
   await waitFor(() => assert.deepEqual(aVisited, ['/home']));
   assert.deepEqual(aRequests, [
-    'POST /api/api/auth/sign-up/email {"email":"ana@nano.app","password":"secret","name":"ana@nano.app"}',
+    'POST /api/api/auth/sign-up/email {"email":"ana@nano.app","password":"secret","name":"ana@nano.app","callbackURL":"/home"}',
   ]);
 });
 

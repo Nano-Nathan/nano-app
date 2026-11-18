@@ -17,4 +17,14 @@ export default class AppController extends Controller {
   protected set(sPath: string, oValue: unknown): void {
     this.state.set(`${this.root}${sPath}`, oValue);
   }
+
+  /** Whether its flag is on: one on/off state of the controller, at `<root>/isToggled` */
+  public isToggled(): boolean {
+    return this.get('/isToggled') ?? false;
+  }
+
+  /** Switches its flag on or off */
+  public toggle(): void {
+    this.set('/isToggled', !this.isToggled());
+  }
 }

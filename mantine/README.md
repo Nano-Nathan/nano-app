@@ -82,7 +82,7 @@ A page is a server component made by its `create` function, for a file of `app/`
 
 ### Login
 
-`createLoginPage` gives a card in the middle of the screen with its title and subtitle, a button per provider, the email and the password, and a link that switches the card between signing in and signing up (the email as the name), at Better Auth of the `api` store. The form validates both, and both go to `home` when the backend answers `success`. While a request of the store is out, the submit button shows its loader and the providers are disabled. The mode is kept at `/auth/isSignUp` of `app`.
+`createLoginPage` gives a card in the middle of the screen with its title and subtitle, a button per provider, the email and the password, and a link that switches the card between signing in and signing up (the email as the name), at Better Auth of the `api` store. The form validates both, and both go to `home` when the backend answers `success`. While a request of the store is out, the submit button shows its loader and the providers are disabled. The mode is the flag of `AuthController`, at `/auth/isToggled` of `app`.
 
 ```tsx
 // app/login/page.tsx

@@ -45,7 +45,7 @@ class HomeAuthController extends AuthController {
 // View of the login: its mode and buttons
 const Login = createView(HomeAuthController, login => (
   <div>
-    <output>{login.isSignUp() ? 'sign up' : 'sign in'}</output>
+    <output>{login.isToggled() ? 'sign up' : 'sign in'}</output>
     <button onClick={login.toggle}>toggle</button>
     <button onClick={() => login.send({ email: 'ana@nano.app', password: 'secret' })}>send</button>
   </div>
@@ -79,7 +79,7 @@ describe('auth login', () => {
     // Better Auth's sign-in got the values, and the router went home
     await waitFor(() => assert.deepEqual(aVisited, ['/home']));
     assert.deepEqual(aRequests, [
-      'POST /api/api/auth/sign-in/email {"email":"ana@nano.app","password":"secret"}',
+      'POST /api/api/auth/sign-in/email {"email":"ana@nano.app","password":"secret","callbackURL":"/home"}',
     ]);
   });
 
@@ -92,7 +92,7 @@ describe('auth login', () => {
     // Better Auth's sign-up got the values with the name, and the router went home
     await waitFor(() => assert.deepEqual(aVisited, ['/home']));
     assert.deepEqual(aRequests, [
-      'POST /api/api/auth/sign-up/email {"email":"ana@nano.app","password":"secret","name":"ana@nano.app"}',
+      'POST /api/api/auth/sign-up/email {"email":"ana@nano.app","password":"secret","name":"ana@nano.app","callbackURL":"/home"}',
     ]);
   });
 });
