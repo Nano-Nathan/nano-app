@@ -13,7 +13,7 @@ A new app starts with one command, with what the first apps showed is needed.
 
 ## Scope
 
-- `create-nano-app` generates the skeleton: `src/routes`, `src/stores`, `next.config` with `withNanoApp`, the base configuration, `backend/Dockerfile` and `frontend/Dockerfile` (repository root as context, see [image-contract](image-contract.md)).
+- `create-nano-app` generates the skeleton: `src/routes`, `src/stores`, `next.config` with `withNanoApp`, the base configuration, `backend/Dockerfile` and `frontend/Dockerfile` (repository root as context), as in `template/`.
 - Published from this repository like the other packages, with its own release workflow.
 - It goes last on purpose: the template is built with what the apps on nano-app taught.
 
