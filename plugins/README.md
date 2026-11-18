@@ -21,6 +21,7 @@ createNanoApp({ plugins: { before: [health()] } });
 | -------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
 | `health` | `import health from '@nano-app/plugins/health'` | `GET /health` → `{ success: true, result: { status: "ok" } }`. Public: it answers without a session                                                                                                                                                                             | `basePath` (default `"/health"`) |
 | `crud`   | `import crud from '@nano-app/plugins/crud'`     | One route per table of `models`, keyed by its name in the app's relations (any other answers 404): `GET` and `QUERY` on `/<model>{/<id>}` → a list `{ result }` or one record, with `QueryParams` as the body of `QUERY`: Drizzle's relational query (`where`, `columns`, `orderBy`, `limit`, `offset`, `with`); `POST /<model>`, `PUT` and `DELETE` on `/<model>/<id>` → the record created, updated or deleted. Postgres casts `<id>` to the type of the `id` column. With Better Auth, each method asks for a permission on the table, 403 without it: `read` (`GET`, `QUERY`), `create`, `update`, `delete`, see [crud and related tables](#crud-and-related-tables) | `models` (the published tables, `{ note, comment }`), `validations` (zod schemas of the bodies, see [crud and the bodies](#crud-and-the-bodies)), `basePath` (default none: `/<model>`)    |
+| `scheduler` | `import scheduler from '@nano-app/plugins/scheduler'` | None: it runs functions on a cron, see [scheduler](#scheduler) | `jobs` (`{ name, cron, run }`), `timezone` |
 
 Every plugin takes `basePath` besides its own options, over its default: `crud({ models, basePath: '/api' })` answers on `/api/<model>`.
 
@@ -50,6 +51,29 @@ crud({
 ### crud and related tables
 
 A `crud` query runs on the app's client, so it reaches the related tables Drizzle's relations give: `with` loads them and `where` filters by them, also the ones that are not in `models`. With Better Auth, the permission asked is only the one of the URL's table. What a query may load is up to the app: the `read` validation of the model decides it (a `z.strictObject` without `with` keeps a query in its table). Better Auth's tables live in `nano_auth`, outside the app's relations: `crud` does not reach them. A Postgres error of a write (a duplicate, a missing reference) answers 500.
+
+### scheduler
+
+```ts
+import scheduler from '@nano-app/plugins/scheduler';
+
+createNanoApp({
+  plugins: {
+    before: [
+      scheduler({
+        timezone: 'America/Argentina/Mendoza',
+        jobs: [{ name: 'debt-mails', cron: '0 12 25,1,10 * *', run: async ({ db }) => sendMails(db) }],
+      }),
+    ],
+  },
+});
+```
+
+- Each job runs `run` on its `cron` once the app starts, with the params of a route callback: the plugin's options and `db`. A sixth field in front of the cron is the seconds (`30 0 12 * * *`).
+- `timezone` is an IANA name for every cron; without it, the process's.
+- Each run logs its start and its end with the name of its job. A run that throws is logged and the next ones go on, and the other jobs too. A run still going when its next one comes skips that one, with a warning.
+- The name of a job is unique in the app: two jobs of the same name stop the startup.
+- The jobs run in the process, with no database: a run is lost while the process is down, and two replicas of the app run each job twice. Run one replica, or the scheduler in a process of its own.
 
 ### Layout
 

@@ -1,6 +1,6 @@
 ---
-status: todo
-owner: null
+status: review
+owner: claude
 depends_on: []
 updated: 2026-11-18
 ---
@@ -62,7 +62,12 @@ Not in scope. personal-app runs one replica today but may scale, and then every 
 - `backend/package.json` has `node-schedule ^2.1.1`: use the same major in `plugins/`.
 - Moving personal-app onto the plugin is not tracked here (see `features/README.md`).
 
+## Decisions
+
+Decided 2026-11-18: 1A `croner` instead of `node-schedule` (no dependencies, native timezones, `nextRun()`, `catch` and `protect`), a dependency of `@nano-app/plugins`; 2A a run still going skips the next one, with a warning.
+
 ## Log
 
 - 2026-10-29 · kleo · `migrations` closed without a `migrate` command: the plugin's table is migrated at startup, as an official plugin.
 - 2026-11-18 · claude · From the drizzle feature, closed: the tables of an official plugin by push (`database` of the plugin) are checked with the first plugin that has them, this one when it adds `runs`.
+- 2026-11-18 · claude · Done on `feat/scheduler`: `scheduler({ jobs, timezone })` on croner, its tests in `plugins/tests/scheduler.test.ts` (runs every second, a failing job beside a working one, a run that skips the next, noon in Mendoza at 15:00 UTC, in an app with no routes) and its section in `plugins/README.md`. `routesDir` was already optional. Tests run only in CI.
