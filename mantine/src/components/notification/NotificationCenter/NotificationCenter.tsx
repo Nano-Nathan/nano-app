@@ -10,8 +10,8 @@ import {
   Stack,
   Text,
 } from '@mantine/core';
+import { IconBell } from '@tabler/icons-react';
 import { createView } from '@nano-app/frontend';
-import BellIcon from './components/BellIcon';
 import NotificationCenterController from './NotificationCenter.controller';
 
 /** A bell that opens the history from the newest, to remove one or all */
@@ -19,7 +19,7 @@ export default createView(NotificationCenterController, center => (
   <Popover position="bottom-end" shadow="md" radius="md">
     <Popover.Target>
       <ActionIcon variant="subtle" radius="xl" size="lg" aria-label={center.texts().title}>
-        <BellIcon />
+        <IconBell size="1.25em" stroke={1.5} />
       </ActionIcon>
     </Popover.Target>
     <Popover.Dropdown w={{ base: '90vw', sm: '50vw', md: '30vw' }}>

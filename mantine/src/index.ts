@@ -1,6 +1,6 @@
 export { default as createLayout } from './layout';
 export { Input, Password } from './components/fields';
-export { Form } from './components/form';
+export { Form } from './components/input';
 export { NotificationCenter, Toasts } from './components/notification';
 export { default as createLoginPage } from './pages/login';
 export type { LayoutOptions } from './types/layout';

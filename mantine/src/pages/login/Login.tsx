@@ -3,7 +3,7 @@
 import { Anchor, Button, Divider, Paper, Stack, Text, Title } from '@mantine/core';
 import { z } from 'zod';
 import { createView } from '@nano-app/frontend';
-import { Form } from '../../components/form';
+import { Form } from '../../components/input';
 import GoogleIcon from './components/GoogleIcon';
 import LoginController from './Login.controller';
 import type { LoginProvider } from '../../types/login';
