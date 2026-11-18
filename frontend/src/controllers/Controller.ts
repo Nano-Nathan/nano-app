@@ -34,7 +34,7 @@ export default class Controller {
     }
   }
 
-  /** The text of a key (`nano.login.title`) in the locale at `/locale` of the app store, `en` by default; the key itself without one */
+  /** The text of a key (`nano.login.title`) in the locale at `/locale` of the app store, `en` by default; `i18n.<key>` without one */
   public text(sKey: string): string {
     // The texts live in the app store, by locale
     const { app } = this.stores;

@@ -285,7 +285,7 @@ describe('createView', () => {
     assert.equal(screen.getAllByRole('status')[0].textContent, '1');
   });
 
-  test('text reads a key in the texts of /locale, English by default, and gives the key without one', () => {
+  test('text reads a key in the texts of /locale, English by default, and i18n.<key> without one', () => {
     // A view with a text of the app, one no locale has and a switch to Spanish
     const Title = createView(Controller, view => (
       <>
@@ -296,11 +296,11 @@ describe('createView', () => {
       </>
     ));
     renderApp(<Title />);
-    assert.equal(screen.getByRole('status').textContent, 'Home home.missing');
+    assert.equal(screen.getByRole('status').textContent, 'Home i18n.home.missing');
 
     // Another locale renders it again
     fireEvent.click(screen.getByText('es'));
-    assert.equal(screen.getByRole('status').textContent, 'Inicio home.missing');
+    assert.equal(screen.getByRole('status').textContent, 'Inicio i18n.home.missing');
   });
 
   test('a view without NanoAppProvider fails with the fix', () => {
