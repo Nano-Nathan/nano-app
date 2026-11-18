@@ -22,7 +22,7 @@ import theme from '@/theme';
 
 export const metadata = { title: 'finance' };
 
-export default createLayout({ lang: 'es', theme, defaultColorScheme: 'auto' });
+export default createLayout({ lang: 'es', theme });
 ```
 
 ```ts
@@ -34,7 +34,7 @@ import { createTheme } from '@mantine/core';
 export default createTheme({ primaryColor: 'teal' });
 ```
 
-- `lang` is the language of the html; every other option is a prop of `MantineProvider` (`theme`, `defaultColorScheme`, `forceColorScheme`…), and `defaultColorScheme` and `forceColorScheme` also reach the script.
+- `lang` is the language of the html; every other option is a prop of `MantineProvider` (`theme`, `defaultColorScheme`, `forceColorScheme`…), and `defaultColorScheme` and `forceColorScheme` also reach the script. `defaultColorScheme` is `auto` by default: the app follows the color scheme of the system until the user picks one.
 - The layout is a server component and `MantineProvider` a client one: a prop that holds a function (a theme with `Button.extend`, `styles` or `vars` as functions, a `colorSchemeManager`) fails on the server. Start `theme.ts` with `'use client'`, as above: then any theme works.
 - The page's `<head>` comes from Next: `metadata` in the layout or in each page, and an app installable on a phone from `app/manifest.ts` and the icons `app/icon.png` and `app/apple-icon.png`, which Next links by itself.
 

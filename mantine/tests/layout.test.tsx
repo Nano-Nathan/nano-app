@@ -22,3 +22,16 @@ test('createLayout renders the html of its language, the color scheme script and
   assert.match(sHtml, /<head><script data-mantine-script="true">[^<]*: "dark";/);
   assert.match(sHtml, /<body>.*<p>child<\/p><\/body>/s);
 });
+
+test('createLayout follows the color scheme of the system by default', () => {
+  // Layout without a color scheme
+  const RootLayout = createLayout({ lang: 'es' });
+  const sHtml = renderToStaticMarkup(
+    <RootLayout>
+      <p>child</p>
+    </RootLayout>,
+  );
+
+  // The script falls back to auto
+  assert.match(sHtml, /<head><script data-mantine-script="true">[^<]*: "auto";/);
+});

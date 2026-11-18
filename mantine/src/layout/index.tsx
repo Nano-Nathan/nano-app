@@ -11,7 +11,8 @@ export default function createLayout(
   oOptions: LayoutOptions,
 ): (props: { children: ReactNode }) => ReactNode {
   // The language goes to the html, the notifications to theirs, the rest to MantineProvider
-  const { lang, notifications, ...oProvider } = oOptions;
+  const { lang, notifications, defaultColorScheme = 'auto', ...oRest } = oOptions;
+  const oProvider = { ...oRest, defaultColorScheme };
   return function RootLayout({ children }: { children: ReactNode }): ReactNode {
     return (
       <html lang={lang} {...mantineHtmlProps}>
