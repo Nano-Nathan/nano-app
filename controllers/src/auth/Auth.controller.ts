@@ -23,6 +23,16 @@ export default class AuthController extends ApiController {
     return this.enter(`${AUTH_PATH}/sign-up/${sKind}`, oBody);
   }
 
+  /** Sends the body, coming back to `home` from a provider, and goes where a success leads */
+  private async enter(sPath: string, oBody: NanoObject): Promise<ApiResponse> {
+    // Sends it with the page a provider comes back to
+    const oResponse = await this.POST(sPath, { ...oBody, callbackURL: this.home });
+
+    // A provider's page (its `url`), or home
+    if (oResponse.success) this.router.push(oResponse.result?.url ?? this.home);
+    return oResponse;
+  }
+
   /** Better Auth's sign-out */
   public signOut(): Promise<ApiResponse> {
     return this.POST(`${AUTH_PATH}/sign-out`, {});
@@ -33,15 +43,5 @@ export default class AuthController extends ApiController {
     return this.isToggled()
       ? this.signUp({ ...oValues, name: oValues.email })
       : this.signIn(oValues);
-  }
-
-  /** Sends the body, coming back to `home` from a provider, and goes where a success leads */
-  private async enter(sPath: string, oBody: NanoObject): Promise<ApiResponse> {
-    // Sends it with the page a provider comes back to
-    const oResponse = await this.POST(sPath, { ...oBody, callbackURL: this.home });
-
-    // A provider's page (its `url`), or home
-    if (oResponse.success) this.router.push(oResponse.result?.url ?? this.home);
-    return oResponse;
   }
 }

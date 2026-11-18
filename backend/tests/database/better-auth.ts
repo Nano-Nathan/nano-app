@@ -99,6 +99,14 @@ describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is no
     assert.equal(oWrong.status, 401);
     assert.equal(oWrong.body.success, false);
     assert.equal(oWrong.body.type, 'error');
+
+    // An error of its validation fails too, with its status
+    const oInvalid = await request(oApp.url, '/auth/sign-up/email', {
+      ...oInit,
+      body: JSON.stringify(oCredentials),
+    });
+    assert.equal(oInvalid.status, 400);
+    assert.equal(oInvalid.body.success, false);
   });
 
   test('the routes of the app need a session, and their handlers receive it', async () => {
