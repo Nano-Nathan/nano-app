@@ -1,5 +1,6 @@
 import { AUTH_PATH } from '@nano-app/core/const';
 import ApiController from '../utils/ApiController';
+import type { ApiMessage } from '@nano-app/frontend';
 import type { ApiResponse } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { LoginValues } from '../types/login';
@@ -13,6 +14,23 @@ export default class AuthController extends ApiController {
   /** Path it goes to once signed in or signed up: the prop `home`, `/` by default */
   protected home: string = this.props.home ?? '/';
 
+  /** Shows the error a provider came back with (`?error=signup_disabled`) as a message of `api` */
+  public onMount(): void {
+    // Nothing to show without an error in the url
+    const sError = new URLSearchParams(location.search).get('error');
+    if (!sError) return;
+
+    // Its key among the messages of the api store, and the url without it
+    const oMessage: ApiMessage = {
+      success: false,
+      message: `nano.auth.${sError}`,
+      type: 'error',
+      timestamp: Date.now(),
+    };
+    this.api.set('/message/list', [...(this.api.get('/message/list') ?? []), oMessage]);
+    this.router.replace(location.pathname);
+  }
+
   /** Better Auth's sign-in of a kind (`social` with a `provider`), then where it leads */
   public signIn(oBody: NanoObject, sKind: string = this.kind): Promise<ApiResponse> {
     return this.enter(`${AUTH_PATH}/sign-in/${sKind}`, oBody);
@@ -23,10 +41,14 @@ export default class AuthController extends ApiController {
     return this.enter(`${AUTH_PATH}/sign-up/${sKind}`, oBody);
   }
 
-  /** Sends the body, coming back to `home` from a provider, and goes where a success leads */
+  /** Sends the body, coming back from a provider to `home`, or to this page on an error, and goes where a success leads */
   private async enter(sPath: string, oBody: NanoObject): Promise<ApiResponse> {
-    // Sends it with the page a provider comes back to
-    const oResponse = await this.POST(sPath, { ...oBody, callbackURL: this.home });
+    // Sends it with the pages a provider comes back to
+    const oResponse = await this.POST(sPath, {
+      ...oBody,
+      callbackURL: this.home,
+      errorCallbackURL: location.pathname,
+    });
 
     // A provider's page (its `url`), or home
     if (oResponse.success) this.router.push(oResponse.result?.url ?? this.home);

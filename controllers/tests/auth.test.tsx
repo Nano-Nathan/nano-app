@@ -34,7 +34,7 @@ const oRouter: AppRouterInstance = {
   forward: () => {},
   refresh: () => {},
   push: sHref => aVisited.push(sHref),
-  replace: () => {},
+  replace: sHref => aVisited.push(sHref),
   prefetch: () => {},
   bfcacheId: '',
 };
@@ -89,7 +89,7 @@ describe('auth', () => {
 
     await waitFor(() =>
       assert.deepEqual(aRequests, [
-        'POST /api/api/auth/sign-in/username {"email":"ana@nano.app","password":"secret","callbackURL":"/"}',
+        'POST /api/api/auth/sign-in/username {"email":"ana@nano.app","password":"secret","callbackURL":"/","errorCallbackURL":"/"}',
       ]),
     );
   });
@@ -104,6 +104,22 @@ describe('auth', () => {
     await waitFor(() => assert.equal(aRequests.length, 2));
     assert.ok(aRequests.some(sRequest => sRequest.startsWith('POST /api/api/auth/sign-up/email ')));
     assert.ok(aRequests.includes('POST /api/api/auth/sign-out {}'));
+  });
+
+  test('the error a provider came back with goes to the messages, and the url drops it', async () => {
+    // Comes back from a provider with an error, and renders an auth
+    history.replaceState(null, '', '/login?error=signup_disabled');
+    const Auth = createView(ApiAuthController, auth => (
+      <output>{auth.stores.api.get('/message/list')?.[0]?.message}</output>
+    ));
+    renderApp(<Auth />);
+
+    // The message is the key of the error, and the router replaces the url
+    await waitFor(() =>
+      assert.equal(screen.getByRole('status').textContent, 'nano.auth.signup_disabled'),
+    );
+    assert.deepEqual(aVisited, ['/login']);
+    history.replaceState(null, '', '/');
   });
 
   test('a subclass reads the api store it gives', async () => {

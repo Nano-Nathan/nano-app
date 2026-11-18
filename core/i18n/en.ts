@@ -25,4 +25,6 @@ export default {
   'nano.auth.USER_ALREADY_EXISTS': 'User already exists',
   'nano.auth.USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL': 'User already exists, use another email',
   'nano.auth.VALIDATION_ERROR': 'Check the data',
+  'nano.auth.signup_disabled': 'This account has no access',
+  'nano.auth.account_not_linked': 'This account is not linked to the user',
 };
