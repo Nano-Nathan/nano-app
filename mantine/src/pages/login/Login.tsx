@@ -5,11 +5,11 @@ import { z } from 'zod';
 import { createView } from '@nano-app/frontend';
 import { Form } from '../../components/input';
 import GoogleIcon from './components/GoogleIcon';
-import LoginController from './Login.controller';
+import LoginPageController from './Login.controller';
 import type { LoginProvider } from '../../types/login';
 
 /** Login card: the providers, the form of email and password, and the link to the other mode */
-export default createView(LoginController, (auth, { providers, signUp, texts }) => (
+export default createView(LoginPageController, (auth, { providers, signUp, texts }) => (
   <Paper withBorder shadow="md" radius="lg" p={{ base: 'lg', sm: 'xl' }}>
     <Stack gap="lg">
       <Stack gap="xs" align="center">

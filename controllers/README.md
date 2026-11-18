@@ -51,6 +51,7 @@ export default createView(UsersController, users => (
 | Component              | Import                                                                | Fields                                           | Methods                                                                                             | Props                        | State                                                  |
 | ---------------------- | --------------------------------------------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------- | ---------------------------- | ------------------------------------------------------ |
 | `AuthController`       | `import AuthController from '@nano-app/controllers/auth'`             | `api` (abstract), `kind` (`'email'`)             | `signIn(body)`, `signUp(body)`, `signOut()`, `navTo(url)`                                           | —                            | —                                                      |
+| `LoginController`      | `import LoginController from '@nano-app/controllers/login'`           | `api`, `home` (abstract)                         | `isSignUp()`, `toggle()`, `isBusy()`, `send(values)`, `social(provider)`                            | —                            | `app`: `/login/isSignUp`                               |
 | `FieldController`      | `import FieldController from '@nano-app/controllers/field'`           | —                                                | `value()`, `error()`, `change(value)`, `options()`                                                  | `form`, `field`              | `app`: `/form/<form>/values`, `/form/<form>/errors`    |
 | `FormController`       | `import FormController from '@nano-app/controllers/form'`             | `components` (abstract)                          | `fields()`, `submit(event)`, `reset()`                                                              | `name`, `fields`, `onSubmit` | `app`: `/form/<name>`                                  |
 | `MessageController`    | `import MessageController from '@nano-app/controllers/message'`       | —                                                | `items()`, `remove(index)`, `clear()`, `last()`, `dismiss()`                                        | —                            | every store's `/message/list`                          |
@@ -79,6 +80,15 @@ export default createView(LogoutController, logout => (
 ```
 
 - Better Auth checks the `Origin` of every `POST`: add the URL of the frontend to its `trustedOrigins` in the backend.
+
+## Login
+
+`LoginController` extends `AuthController` with what a login card does, for any view of it. Its subclass gives `api` and `home`, the path it goes to once in.
+
+- `isSignUp()` says whether it signs up instead of signing in, kept at `/login/isSignUp` of `app`; `toggle()` switches it.
+- `send(values)` signs in with `{ email, password }`, or signs up with the email as the name, by the mode, and goes to `home` when the backend answers `success`.
+- `social(provider)` asks Better Auth the page of a provider (`google`), back to `home`, and goes to it.
+- `isBusy()` says whether a request of `api` is out, for the view to show its loader.
 
 ## Field
 

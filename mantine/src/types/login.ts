@@ -43,12 +43,6 @@ export type LoginOptions = {
   texts?: Partial<LoginTexts>;
 };
 
-/** Values of the login form */
-export type LoginValues = {
-  email: string;
-  password: string;
-};
-
 /** Texts of the current mode of the login: its button, and the question and link to the other mode */
 export type ModeTexts = {
   submit: string;
