@@ -53,7 +53,7 @@ export default createView(UsersController, users => (
 | `AuthController`       | `import AuthController from '@nano-app/controllers/auth'`             | `api` (abstract), `kind` (`'email'`)             | `signIn(body)`, `signUp(body)`, `signOut()`, `navTo(url)`                                           | —                            | —                                                      |
 | `FieldController`      | `import FieldController from '@nano-app/controllers/field'`           | —                                                | `value()`, `error()`, `change(value)`, `options()`                                                  | `form`, `field`              | `app`: `/form/<form>/values`, `/form/<form>/errors`    |
 | `FormController`       | `import FormController from '@nano-app/controllers/form'`             | `components` (abstract)                          | `fields()`, `submit(event)`, `reset()`                                                              | `name`, `fields`, `onSubmit` | `app`: `/form/<name>`                                  |
-| `ErrorController`      | `import ErrorController from '@nano-app/controllers/error'`           | —                                                | `items()`, `remove(index)`, `clear()`, `last()`, `dismiss()`                                        | —                            | every store's `/error/list`                            |
+| `MessageController`    | `import MessageController from '@nano-app/controllers/message'`       | —                                                | `items()`, `remove(index)`, `clear()`, `last()`, `dismiss()`                                        | —                            | every store's `/message/list`                          |
 | `CollectionController` | `import CollectionController from '@nano-app/controllers/collection'` | `api`, `root`, `path` (abstract), `limit` (`50`) | `load()`, `items()`, `page()`, `goTo(page)`, `next()`, `prev()`, `sort(field)`, `more()`, `pages()` | —                            | `app`: `<root>/page`, `<root>/orderBy`, `<root>/pages` |
 
 ## Auth
@@ -151,9 +151,9 @@ export default createView(LogoutController, auth => (
 ));
 ```
 
-## Error
+## Message
 
-`ErrorController` gathers the `/error/list` of every api store: `items()` gives all the errors (the `ApiResponse` of each failed request with its `timestamp`) from the newest, `remove(index)` removes the one at that index of `items()` from its store and `clear()` empties them all: a panel of errors uses them. `last()` gives the newest one and `dismiss()` removes it: an alert uses them.
+`MessageController` gathers the `/message/list` of every api store: the answers that brought a `message` and the failed requests, each `ApiResponse` with its `timestamp`. `items()` gives them from the newest, `remove(index)` removes the one at that index of `items()` from its store and `clear()` empties them all: a panel of messages uses them. `last()` gives the newest one and `dismiss()` removes it: an alert uses them. A message is a success, an error (`success: false`) or a warning (`warning: true`).
 
 ## Collection
 

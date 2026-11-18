@@ -12,12 +12,12 @@ import TestApp from './provider';
 const Probe = createView(Controller, probe => (
   <button
     onClick={() =>
-      probe.stores.api.set('/error/list', [
+      probe.stores.api.set('/message/list', [
         { success: false, message: 'Invalid email', timestamp: 1 },
       ])
     }
   >
-    {`errors ${probe.stores.api.get('/error/list')?.length ?? 0}`}
+    {`errors ${probe.stores.api.get('/message/list')?.length ?? 0}`}
   </button>
 ));
 

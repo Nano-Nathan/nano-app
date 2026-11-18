@@ -1,15 +1,15 @@
 // First: Testing Library needs the DOM when it loads
 import './dom';
-import './env/error';
+import './env/message';
 import { test, describe, before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { REQUEST_FAILED } from '@nano-app/core/const';
 import { createView } from '@nano-app/frontend';
-import ErrorController from '../error';
+import MessageController from '../message';
 import TestApp from './provider';
-import type { ApiError } from '@nano-app/frontend';
+import type { ApiMessage } from '@nano-app/frontend';
 
 const PORT = 4201;
 
@@ -22,7 +22,7 @@ const oBackend = createServer((oReq, oRes) => {
 });
 
 /** The errors with two methods that fail a request on each store */
-class ErrorsController extends ErrorController {
+class MessagesController extends MessageController {
   public failApi(): Promise<unknown> {
     // Reads a path that fails
     return this.stores.api.GET('/users');
@@ -35,10 +35,10 @@ class ErrorsController extends ErrorController {
 }
 
 // The errors of every store, the last one and buttons that fail a request on each store
-const Errors = createView(ErrorsController, errors => (
+const Errors = createView(MessagesController, errors => (
   <div>
     <ul>
-      {errors.items().map((oError: ApiError, iIndex) => (
+      {errors.items().map((oError: ApiMessage, iIndex) => (
         <li key={iIndex}>
           {oError.warning ? `warning ${oError.message}` : oError.message}
           <button onClick={() => errors.remove(iIndex)}>remove</button>
@@ -65,7 +65,7 @@ async function failBoth(): Promise<void> {
   await waitFor(() => assert.equal(screen.getAllByRole('listitem').length, 2));
 }
 
-describe('error', () => {
+describe('message', () => {
   before(() => new Promise<void>(fnResolve => oBackend.listen(PORT, fnResolve)));
   after(() => oBackend.close());
   afterEach(cleanup);

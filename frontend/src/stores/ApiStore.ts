@@ -3,7 +3,7 @@ import { IS_SERVER, PROXY_PATH } from '../const';
 import Store from './Store';
 import type { ApiResponse, QueryParams } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
-import type { ApiError } from '../types/store';
+import type { ApiMessage } from '../types/store';
 
 /** Backend of an `api` store through the proxy: one method per HTTP method, as its routes */
 export default class ApiStore extends Store {
@@ -47,7 +47,7 @@ export default class ApiStore extends Store {
     return this.send('DELETE', sPath);
   }
 
-  /** Sends a request: `/busy` while it is out, its answer as an `ApiResponse`, a failure in `/error/list` */
+  /** Sends a request: `/busy` while it is out, its answer as an `ApiResponse`, its message in `/message/list` */
   private async send(sMethod: string, sPath: string, oBody?: unknown): Promise<ApiResponse> {
     // Asks nothing on the server
     if (IS_SERVER) return {};
@@ -74,14 +74,14 @@ export default class ApiStore extends Store {
     // Sets the store not busy when no request is left
     this.set('/busy', --this.iCount > 0);
 
-    // Keeps a failed answer with a message and the time, after the ones before
-    if (!oResponse.success) {
-      const oError: ApiError = {
+    // Keeps an answer with a message, and every failed one, with the time
+    if (oResponse.message || !oResponse.success) {
+      const oMessage: ApiMessage = {
         ...oResponse,
         message: oResponse.message || REQUEST_FAILED,
         timestamp: Date.now(),
       };
-      this.set('/error/list', [...(this.get('/error/list') ?? []), oError]);
+      this.set('/message/list', [...(this.get('/message/list') ?? []), oMessage]);
     }
 
     // Keeps the answer of a read at its path and query, over what was there

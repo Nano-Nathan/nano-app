@@ -4,8 +4,8 @@ import type { NanoObject } from '@nano-app/core/types/objects';
 import type Store from '../stores/Store';
 import type { APP_STORE_TYPE } from '../const';
 
-/** A failed request in the `/error/list` of its api store: its `ApiResponse` and when it failed */
-export type ApiError = ApiResponse & {
+/** An answer with a message, or a failed one, in the `/message/list` of its api store, and when it came */
+export type ApiMessage = ApiResponse & {
   /** Milliseconds since the epoch, from `Date.now()` */
   timestamp: number;
 };
