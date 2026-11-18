@@ -1,8 +1,8 @@
 ---
 status: todo
 owner: null
-depends_on: [example-app]
-updated: 2026-11-07
+depends_on: []
+updated: 2026-11-18
 ---
 
 # Image contract
@@ -32,10 +32,11 @@ Migrating the app's schema: the consumer does it with Prisma, not nano-app.
 
 ## Done when
 
-The image of the [example app](example-app.md) meets the written contract: the backend listens on `:3000`, the frontend on `:80`, both are configured only by env, both run with `runAsNonRoot` and no `runAsUser` override, and the app's schema is migrated by hand with Prisma.
+The images of the example app, `template/`, build in a CI job of this repository and meet the written contract: the backend listens on `:3000`, the frontend on `:80`, both are configured only by env, both run with `runAsNonRoot` and no `runAsUser` override, and the app's schema is migrated by hand with Prisma.
 
 ## Log
 
 - 2026-10-24 · projects-thread · The frontend side (module 4 of the frontend feature) moved here when that feature closed.
 - 2026-10-29 · kleo · `migrations` closed: nano-app has no `migrate` command. The consumer migrates the app's schema with Prisma; the startup migrates only the official plugins' schemas.
 - 2026-11-07 · public-exposure · The image requirements of the cluster (numeric non-root uid, writes only in `/tmp`, Node LTS) moved here from public-exposure.
+- 2026-11-18 · claude · The example app is `template/` (example-app closed): its Dockerfiles already declare uids 1000 and 1001, `:3000` and `:80`, and env-only config. Its images were never built; building them in CI moves here.

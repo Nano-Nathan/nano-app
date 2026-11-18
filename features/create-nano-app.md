@@ -1,8 +1,8 @@
 ---
 status: todo
 owner: null
-depends_on: [example-app]
-updated: 2026-10-29
+depends_on: []
+updated: 2026-11-18
 ---
 
 # create-nano-app
@@ -28,3 +28,4 @@ An app generated with `create-nano-app` starts, migrates and builds its images.
 ## Log
 
 - 2026-10-29 · kleo · `migrations` closed: nano-app has no `migrate` command. The consumer migrates the app's schema with Prisma; the startup migrates only the official plugins' schemas.
+- 2026-11-18 · claude · `template/` is the app the command copies: a backend with `health` and a frontend with a Hello World page, on the published packages.
