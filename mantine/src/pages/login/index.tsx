@@ -13,7 +13,7 @@ export default function createLoginPage(
   return createPage<NanoObject>({ auth: false, redirect: home }, () => (
     // The login in the middle of the screen
     <Container size="xs">
-      <Stack justify="center" mih="100dvh" py="xl">
+      <Stack justify="center" mih="100svh" py="xl">
         <Login
           home={home}
           providers={providers}
