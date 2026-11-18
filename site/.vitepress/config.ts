@@ -23,6 +23,7 @@ export default defineConfig({
           { text: 'Plugins', link: '/plugins/README' },
           { text: 'Frontend', link: '/frontend/README' },
           { text: 'Controllers', link: '/controllers/README' },
+          { text: 'Create', link: '/create/README' },
         ],
       },
       {

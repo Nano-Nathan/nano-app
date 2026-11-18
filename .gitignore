@@ -5,6 +5,7 @@ plugins/build
 frontend/build
 controllers/build
 mantine/build
+create/build
 .env
 .env.*
 !.env.example

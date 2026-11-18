@@ -5,6 +5,7 @@ packages:
   - "frontend"
   - "controllers"
   - "mantine"
+  - "create"
   - "frontend/tests/app"
   - "site"
 allowBuilds:

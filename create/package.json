@@ -1,0 +1,42 @@
+{
+  "name": "@nano-app/create",
+  "version": "0.0.0-semantic-release",
+  "description": "Creates an app on nano-app: pnpm create @nano-app my-app",
+  "type": "module",
+  "bin": {
+    "create-nano-app": "./build/index.js"
+  },
+  "files": [
+    "build",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "test": "pnpm run build && tsx --test --test-concurrency=1 tests/*.test.ts",
+    "prepublishOnly": "pnpm run build"
+  },
+  "keywords": [
+    "nano-app",
+    "create",
+    "template"
+  ],
+  "author": "Cristian Serrano",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nano-Nathan/nano-app.git",
+    "directory": "create"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": "^22.23.4 || ^24.22.1 || >=26.12.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsdown": "^0.23.7",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

@@ -5,11 +5,12 @@
 [![frontend](https://img.shields.io/npm/v/@nano-app/frontend?label=frontend)](https://www.npmjs.com/package/@nano-app/frontend)
 [![controllers](https://img.shields.io/npm/v/@nano-app/controllers?label=controllers)](https://www.npmjs.com/package/@nano-app/controllers)
 [![mantine](https://img.shields.io/npm/v/@nano-app/mantine?label=mantine)](https://www.npmjs.com/package/@nano-app/mantine)
+[![create](https://img.shields.io/npm/v/@nano-app/create?label=create)](https://www.npmjs.com/package/@nano-app/create)
 [![license](https://img.shields.io/npm/l/@nano-app/backend)](https://github.com/Nano-Nathan/nano-app/blob/main/LICENSE)
 
 File-convention framework for Node.js. In the backend you write `*.route.ts` files: `@nano-app/backend` discovers them, mounts an Express 5 server, and turns every `ApiResponse` into HTTP. In a Next.js frontend you write `*.store.ts` files and controllers: `@nano-app/frontend` keeps the UI state in stores and talks to the backend through its proxy.
 
-This repository publishes **`@nano-app/backend`**, **`@nano-app/plugins`** (the official backend plugins), **`@nano-app/frontend`**, **`@nano-app/controllers`** (the official frontend controllers) and **`@nano-app/mantine`** (their Mantine layout, views and pages). You add your own plugins with `createPlugin`, or publish them as separate packages.
+This repository publishes **`@nano-app/backend`**, **`@nano-app/plugins`** (the official backend plugins), **`@nano-app/frontend`**, **`@nano-app/controllers`** (the official frontend controllers), **`@nano-app/mantine`** (their Mantine layout, views and pages) and **`@nano-app/create`** (a new app: `pnpm create @nano-app my-app`). You add your own plugins with `createPlugin`, or publish them as separate packages.
 
 While the version is `0.x`, the public API can change.
 
@@ -57,7 +58,8 @@ The file path is the URL. Full API, database, and plugin contract: [`backend/REA
 | `@nano-app/frontend`    | `frontend/`    | published | Next.js stores, controllers and the proxy to the backend                                                   |
 | `@nano-app/controllers` | `controllers/` | published | Official frontend controllers: `import { AuthController } from '@nano-app/controllers'`                    |
 | `@nano-app/mantine`     | `mantine/`     | published | Mantine for the frontend: `createLayout`, views of the controllers and ready pages                         |
-| `@nano-app/core`        | `core/`        | private   | Convention loader, types and constants, inlined into the backend, frontend, controllers and mantine builds |
+| `@nano-app/create`      | `create/`      | published | A new app from `template/`: `pnpm create @nano-app my-app`                                                 |
+| `@nano-app/core`        | `core/`        | private   | Convention loader, types and constants, inlined into the backend, frontend, controllers, mantine and create builds |
 
 Each package has its tests in its `tests/` folder (`frontend/tests/app` is a Next app that uses the frontend and the controllers). Each published package has its own version.
 
