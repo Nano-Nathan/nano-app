@@ -15,6 +15,10 @@ export default {
   'nano.shell.home': 'Inicio',
   'nano.shell.menu': 'Menú',
   'nano.shell.logout': 'Cerrar sesión',
+  'nano.notFound.title': 'Acá no hay nada para ver',
+  'nano.notFound.description':
+    'La página que intentás abrir no existe. Puede que hayas escrito mal la dirección o que la página se haya movido a otra URL. Si creés que es un error, contactá a soporte.',
+  'nano.notFound.home': 'Volver a la página de inicio',
   'nano.error.notFound': 'No encontrado',
   'nano.error.notAuthenticated': 'No autenticado',
   'nano.error.forbidden': 'Sin permiso',

@@ -119,6 +119,20 @@ export default createLoginPage({ providers: ['google'] });
 - Its texts are the keys `nano.login.*` of the app's texts (see [Texts](../frontend/README.md#texts)): `title`, `subtitle`, `divider`, `noAccount`, `haveAccount`, `email`, `password`, `submit`, `register`, `invalidEmail`, `required` and `google`, in English and Spanish by default; an app replaces them, or gives other locales, in `src/i18n/<locale>.i18n.ts`.
 - The form keeps its state at `/form/login` of `app`. A page that needs the session uses `createPage` of `@nano-app/frontend/server`.
 
+### Not found
+
+`createNotFoundPage` gives the 404: a faint 404 behind a title, a description and a button to `home` (`/` by default), in a narrow column in the middle of the screen.
+
+```tsx
+// app/not-found.tsx
+import { createNotFoundPage } from '@nano-app/mantine';
+
+export default createNotFoundPage({});
+```
+
+- In `app/`, outside the groups' layouts, it takes every URL that matches no page, with a session or without one.
+- Its texts are the keys `nano.notFound.*`: `title`, `description` and `home`, in English and Spanish by default.
+
 ## Layout of the package
 
 ```
