@@ -20,7 +20,10 @@ export default class AuthController extends ApiController {
     const sError = new URLSearchParams(location.search).get('error');
     if (!sError) return;
 
-    // Its key among the messages of the api store, and the url without it
+    // Drops it from the url at once
+    history.replaceState(null, '', location.pathname);
+
+    // Its key among the messages of the api store
     const oMessage: ApiMessage = {
       success: false,
       message: `nano.auth.${sError}`,
@@ -28,7 +31,6 @@ export default class AuthController extends ApiController {
       timestamp: Date.now(),
     };
     this.api.set('/message/list', [...(this.api.get('/message/list') ?? []), oMessage]);
-    this.router.replace(location.pathname);
   }
 
   /** Better Auth's sign-in of a kind (`social` with a `provider`), then where it leads */

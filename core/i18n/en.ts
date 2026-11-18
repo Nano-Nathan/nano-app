@@ -1,6 +1,6 @@
 /** English texts of the framework: the defaults of the `en` locale of every app, one level of keys */
 export default {
-  'nano.login.title': 'Welcome',
+  'nano.login.title': 'Welcome!',
   'nano.login.subtitle': 'Sign in to continue',
   'nano.login.divider': 'or with your email',
   'nano.login.noAccount': 'No account yet?',

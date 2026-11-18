@@ -34,7 +34,7 @@ const oRouter: AppRouterInstance = {
   forward: () => {},
   refresh: () => {},
   push: sHref => aVisited.push(sHref),
-  replace: sHref => aVisited.push(sHref),
+  replace: () => {},
   prefetch: () => {},
   bfcacheId: '',
 };
@@ -114,11 +114,11 @@ describe('auth', () => {
     ));
     renderApp(<Auth />);
 
-    // The message is the key of the error, and the router replaces the url
+    // The message is the key of the error, once, and the url drops it
     await waitFor(() =>
       assert.equal(screen.getByRole('status').textContent, 'nano.auth.signup_disabled'),
     );
-    assert.deepEqual(aVisited, ['/login']);
+    assert.equal(location.href, 'http://localhost:4201/login');
     history.replaceState(null, '', '/');
   });
 

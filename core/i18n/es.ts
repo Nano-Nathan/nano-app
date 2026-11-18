@@ -1,6 +1,6 @@
 /** Spanish texts of the framework: the defaults of the `es` locale of every app, one level of keys */
 export default {
-  'nano.login.title': 'Bienvenido',
+  'nano.login.title': 'Bienvenido!',
   'nano.login.subtitle': 'Ingresá para continuar',
   'nano.login.divider': 'o con tu email',
   'nano.login.noAccount': '¿No tenés cuenta?',
