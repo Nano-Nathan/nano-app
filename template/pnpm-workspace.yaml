@@ -1,0 +1,8 @@
+packages:
+  - backend
+  - frontend
+# The framework's packages install as soon as they are published
+minimumReleaseAgeExclude:
+  - '@nano-app/*'
+# Packages inside node_modules: Turbopack compiles nothing outside the workspace root
+enableGlobalVirtualStore: false

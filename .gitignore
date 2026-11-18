@@ -18,3 +18,5 @@ frontend/tests/app/nano-app-env.d.ts
 site/.vitepress/*
 !site/.vitepress/config.ts
 *.tsbuildinfo
+# The template resolves its versions when an app is created
+template/pnpm-lock.yaml
