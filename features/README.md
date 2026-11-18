@@ -4,11 +4,11 @@ Planned work on this repository, one file per feature. A file says what the feat
 
 | Feature | Done when | Depends on |
 |---|---|---|
-| [scheduler](scheduler.md) | A job declared in the `scheduler` plugin runs on its cron, in its timezone | — |
-| [mail](mail.md) | A route sends an email through the `mail` plugin | scheduler |
+| [mail](mail.md) | A route sends an email through the `mail` plugin | — |
 | [plugins-rebuild](plugins-rebuild.md) | `crud` and `health` run on the refactored backend, with the app's schema passed once | The responsibilities refactor |
 | [prisma](prisma.md) | An app mounts its database with Prisma through the same `DatabaseManager` | — |
 | [sse](sse.md) | The backend pushes an event and a component updates | Only when the maintainer asks |
+| [scheduler-replicas](scheduler-replicas.md) | Each firing of a job runs once across the replicas of an app | Only when an app asks |
 
 The order of the table is the order of work. Work outside this repository (cluster, deploys, apps) is not tracked here.
 
