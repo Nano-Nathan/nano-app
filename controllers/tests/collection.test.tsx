@@ -9,6 +9,7 @@ import { createView } from '@nano-app/frontend';
 import { CollectionController } from '../src';
 import TestApp from './provider';
 import type { ReactNode } from 'react';
+import type { ApiResponse } from '@nano-app/core/types/api';
 
 const PORT = 4201;
 
@@ -114,6 +115,30 @@ describe('collection', () => {
     await expectNames('Eva,Dora');
 
     assert.ok(screen.getByText('page 0'));
+  });
+
+  test('isBusy is on only while a request of its own controller is out', async () => {
+    // Renders the users and a controller of another root that requests nothing
+    class IdleController extends UsersController {
+      protected root = '/collection/idle';
+
+      public onMount(): Promise<ApiResponse> {
+        return Promise.resolve({});
+      }
+    }
+    const Users = createView(UsersController, users => <span>{`users ${users.isBusy()}`}</span>);
+    const Idle = createView(IdleController, idle => <span>{`idle ${idle.isBusy()}`}</span>);
+    renderApp(
+      <>
+        <Users />
+        <Idle />
+      </>,
+    );
+
+    // The users are busy while their page is out, the other never
+    await waitFor(() => assert.ok(screen.getByText('users true')));
+    assert.ok(screen.getByText('idle false'));
+    await waitFor(() => assert.ok(screen.getByText('users false')));
   });
 
   test('a subclass reads the api store it gives', async () => {

@@ -1,21 +1,18 @@
-import AppController from '../utils/AppController';
+import ApiController from '../utils/ApiController';
 import validate from './validate';
-import type { ApiStore } from '@nano-app/frontend';
 import type { ApiResponse } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { FormField } from '../types/field';
 
 /** A field of a form: its value and error at `/form/<form>` of `app`, and its select items */
-export default class FieldController extends AppController {
-  /** Api store of its options: `api` by default, another one from a subclass */
-  protected api: ApiStore = this.stores.api;
+export default class FieldController extends ApiController {
   /** Path of the state of its form, from the props when it mounts */
   protected root = `/form/${this.props.form}`;
 
   /** Reads the items of its options from the backend when the view mounts */
   public onMount(): Promise<ApiResponse> | undefined {
     const { path } = this.field().options ?? {};
-    return path ? this.api.GET(path) : undefined;
+    return path ? this.GET(path) : undefined;
   }
 
   /** The value kept, through the field's format when it has one */

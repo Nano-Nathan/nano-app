@@ -187,7 +187,7 @@ export default createView(UsersController, users => (
 - `POST(path, body)`, `PUT(path, body)` and `DELETE(path)` return a promise of the `ApiResponse` and keep nothing: read again after a write.
 - Each answer is an `ApiResponse` with the HTTP `status`. An answer that breaks the contract, without `success`, is a failure. When the backend fails it is the backend's (`success: false`, `message`); an answer that is not JSON becomes `{ success: false, message: 'nano.error.requestFailed', result: <the text> }`, and no answer `{ success: false, message: 'nano.error.requestFailed' }`.
 - Each answer that brings a `message`, and each failed one, adds its `ApiResponse` to the store's `/message/list` as an `ApiMessage`, with `message` set to `'nano.error.requestFailed'` when a failed answer brings none, `type` set to `success` or `error` by its result when the backend sends none, and `timestamp` (`Date.now()`) of when it came. The views get it with `get('/message/list')`, or through the `message` controller of `@nano-app/controllers`.
-- `/busy` is `true` while a request of the store is out (`backend.get('/busy') ? 'Loading…' : …`).
+- `/requests` counts the requests of the store that are out (`backend.get('/requests') ? 'Loading…' : …`); a controller of `@nano-app/controllers` gives its own with `isBusy()`.
 - On the server (the first HTML that Next renders) a request asks nothing and resolves with an empty `ApiResponse` (`{}`).
 
 ### Pages with a session

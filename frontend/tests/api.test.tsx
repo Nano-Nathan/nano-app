@@ -132,14 +132,14 @@ describe('api store', () => {
   });
 
   test('busy is true while a request is out', async () => {
-    // Sends a slow request and reads busy before and after its answer
+    // Sends a slow request and reads its count before and after its answer
     iDelay = 50;
     const { backend } = renderStores();
     const oRead = backend.GET('/users');
 
-    assert.equal(backend.get('/busy'), true);
+    assert.equal(backend.get('/requests'), 1);
     await oRead;
-    assert.equal(backend.get('/busy'), false);
+    assert.equal(backend.get('/requests'), 0);
   });
 
   test('a failed request returns its ApiResponse and adds its message to the store', async () => {
@@ -200,6 +200,6 @@ describe('api store', () => {
     });
     assert.deepEqual(await backend.DELETE('/drop'), { success: false, message: REQUEST_FAILED });
     assert.equal(backend.get('/message/list').length, 2);
-    assert.equal(backend.get('/busy'), false);
+    assert.equal(backend.get('/requests'), 0);
   });
 });
