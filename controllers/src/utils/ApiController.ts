@@ -2,10 +2,10 @@ import AppController from './AppController';
 import type { ApiStore } from '@nano-app/frontend';
 import type { ApiResponse, QueryParams } from '@nano-app/core/types/api';
 
-/** Controller that requests the api store its subclass gives, besides its state in `app` */
-export default abstract class ApiController extends AppController {
-  /** Api store it requests (`protected api = this.stores.backend;`) */
-  protected abstract api: ApiStore;
+/** Controller that requests an api store, `api` by default, besides its state in `app` */
+export default class ApiController extends AppController {
+  /** Api store it requests: `api` by default, another one from a subclass (`protected api = this.stores.admin;`) */
+  protected api: ApiStore = this.stores.api;
 
   /** `api.GET` */
   protected GET(sPath: string): Promise<ApiResponse> {

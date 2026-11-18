@@ -29,10 +29,8 @@ export type LoginTexts = {
 /** Social providers of Better Auth the login offers */
 export type LoginProvider = 'google';
 
-/** Options of `createLoginPage`: the api store with Better Auth, where to go after it, and its texts */
+/** Options of `createLoginPage`: where to go once in, the providers, the sign-up and its texts */
 export type LoginOptions = {
-  /** Name of the api store whose backend has Better Auth */
-  store: string;
   /** Path the page goes to once signed in or signed up */
   home: string;
   /** Social providers, each with its button, configured in the backend's Better Auth */

@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { cache } from 'react';
 import { AUTH_PATH } from '@nano-app/core/const';
 import NanoError from '@nano-app/core/utils/NanoError';
+import { API_NAME } from '../const';
 import { URLS } from '../defines/server';
 import type { ReactNode } from 'react';
 import type { NanoObject } from '@nano-app/core/types/objects';
@@ -21,18 +22,19 @@ export default function createPage<P>(
   oOptions: PageOptions,
   fnView: PageView<P>,
 ): (oProps: P) => Promise<ReactNode> {
+  const { store = API_NAME, redirect: sRedirect } = oOptions;
   return async function Page(oProps: P): Promise<ReactNode> {
     // Fails when the store has no backend URL
-    const sUrl = URLS.get(oOptions.store);
+    const sUrl = URLS.get(store);
     if (!sUrl) {
       throw new NanoError(
-        `The page asks the session of the store "${oOptions.store}", which has no backend URL. Add src/stores/${oOptions.store}.store.ts with type 'api' and define its API_${oOptions.store.toUpperCase()}_URL.`,
+        `The page asks the session of the store "${store}", which has no backend URL. Define API_${store.toUpperCase()}_URL, and add src/stores/${store}.store.ts with type 'api' for a store other than ${API_NAME}.`,
       );
     }
 
     // Without a session the page redirects; with one the view gets it
     const oSession = await getSession(sUrl);
-    if (!oSession) redirect(oOptions.redirect);
+    if (!oSession) redirect(sRedirect);
     return fnView({ ...oProps, session: oSession });
   };
 }

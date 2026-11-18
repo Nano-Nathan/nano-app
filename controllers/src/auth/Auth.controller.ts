@@ -3,7 +3,7 @@ import ApiController from '../utils/ApiController';
 import type { ApiResponse } from '@nano-app/core/types/api';
 
 /** Sign-in, sign-up and sign-out of an api store with Better Auth, and the navigation after them */
-export default abstract class AuthController extends ApiController {
+export default class AuthController extends ApiController {
   /** Better Auth method of `signIn` and `signUp` (`email` by default) */
   protected kind = 'email';
 

@@ -19,7 +19,6 @@ import { createView } from '@nano-app/frontend';
 import { CollectionController } from '@nano-app/controllers';
 
 class UsersController extends CollectionController {
-  protected api = this.stores.backend;
   protected root = '/collection/users';
   protected path = '/users';
   protected limit = 20;
@@ -44,28 +43,26 @@ export default createView(UsersController, users => (
 - The props of a view carry the data of each use (`form`, `field`, `name`, `fields`, `onSubmit`).
 - A controller reads what it needs when its view mounts (`onMount`): the view only renders. The requests in progress are in the store's `/busy`.
 - A controller keeps its state under `root` in `state`, the `app` store by default: a subclass moves it to another store with `protected state = this.stores.ui;`.
-- A controller that reads the backend gets its api store from the subclass, as a field: `protected api = this.stores.backend;`, typed by the app's `nano-app-env.d.ts`. Any other store is used directly (`this.stores.payments.POST(…)`).
+- A controller that reads the backend uses the `api` store, which every app has (its URL in `API_API_URL`). A subclass moves it to another api store as a field: `protected api = this.stores.admin;`, typed by the app's `nano-app-env.d.ts`. Any other store is used directly (`this.stores.payments.POST(…)`).
 
 ## Controllers
 
-| Component              | Import                                                         | Fields                                           | Methods                                                                                             | Props                        | State                                                  |
-| ---------------------- | -------------------------------------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------- | ---------------------------- | ------------------------------------------------------ |
-| `AuthController`       | `import { AuthController } from '@nano-app/controllers'`       | `api` (abstract), `kind` (`'email'`)             | `signIn(body)`, `signUp(body)`, `signOut()`, `navTo(url)`                                           | —                            | —                                                      |
-| `LoginController`      | `import { LoginController } from '@nano-app/controllers'`      | `api`, `home` (from the props `store`, `home`)   | `isSignUp()`, `toggle()`, `isBusy()`, `send(values)`, `social(provider)`                            | —                            | `app`: `/login/isSignUp`                               |
-| `FieldController`      | `import { FieldController } from '@nano-app/controllers'`      | —                                                | `value()`, `error()`, `change(value)`, `options()`                                                  | `form`, `field`              | `app`: `/form/<form>/values`, `/form/<form>/errors`    |
-| `FormController`       | `import { FormController } from '@nano-app/controllers'`       | `components` (the prop)                          | `fields()`, `submit(event)`, `reset()`                                                              | `name`, `fields`, `onSubmit` | `app`: `/form/<name>`                                  |
-| `MessageController`    | `import { MessageController } from '@nano-app/controllers'`    | —                                                | `items()`, `remove(index)`, `clear()`, `last()`, `dismiss()`                                        | —                            | every store's `/message/list`                          |
-| `CollectionController` | `import { CollectionController } from '@nano-app/controllers'` | `api`, `root`, `path` (abstract), `limit` (`50`) | `load()`, `items()`, `page()`, `goTo(page)`, `next()`, `prev()`, `sort(field)`, `more()`, `pages()` | —                            | `app`: `<root>/page`, `<root>/orderBy`, `<root>/pages` |
+| Component              | Import                                                         | Fields                                                   | Methods                                                                                             | Props                        | State                                                  |
+| ---------------------- | -------------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ---------------------------- | ------------------------------------------------------ |
+| `AuthController`       | `import { AuthController } from '@nano-app/controllers'`       | `api` (`api`), `kind` (`'email'`)                        | `signIn(body)`, `signUp(body)`, `signOut()`, `navTo(url)`                                           | —                            | —                                                      |
+| `LoginController`      | `import { LoginController } from '@nano-app/controllers'`      | `api` (`api`), `home` (the prop)                         | `isSignUp()`, `toggle()`, `isBusy()`, `send(values)`, `social(provider)`                            | —                            | `app`: `/login/isSignUp`                               |
+| `FieldController`      | `import { FieldController } from '@nano-app/controllers'`      | —                                                        | `value()`, `error()`, `change(value)`, `options()`                                                  | `form`, `field`              | `app`: `/form/<form>/values`, `/form/<form>/errors`    |
+| `FormController`       | `import { FormController } from '@nano-app/controllers'`       | `components` (the prop)                                  | `fields()`, `submit(event)`, `reset()`                                                              | `name`, `fields`, `onSubmit` | `app`: `/form/<name>`                                  |
+| `MessageController`    | `import { MessageController } from '@nano-app/controllers'`    | —                                                        | `items()`, `remove(index)`, `clear()`, `last()`, `dismiss()`                                        | —                            | every store's `/message/list`                          |
+| `CollectionController` | `import { CollectionController } from '@nano-app/controllers'` | `api` (`api`), `root`, `path` (abstract), `limit` (`50`) | `load()`, `items()`, `page()`, `goTo(page)`, `next()`, `prev()`, `sort(field)`, `more()`, `pages()` | —                            | `app`: `<root>/page`, `<root>/orderBy`, `<root>/pages` |
 
 ## Auth
 
 `signIn(body)` and `signUp(body)` send `body` to Better Auth's `POST /auth/sign-in/<kind>` and `/auth/sign-up/<kind>` of the store's backend (`{ email, password }` for `email`), and `signOut()` to `/auth/sign-out`. Each one returns the store's `ApiResponse`. Better Auth keeps the session in its cookie; a page that needs it uses `createPage` of `@nano-app/frontend/server`. `navTo(url)` goes to a url of the app with the `router`; the view decides when.
 
 ```tsx
-// src/controllers/logout.controller.ts
+// src/Logout.controller.ts
 export default class LogoutController extends AuthController {
-  protected api = this.stores.backend;
-
   public async logout(): Promise<void> {
     // Signs out and goes to the login
     const oResponse = await this.signOut();
@@ -83,7 +80,7 @@ export default createView(LogoutController, logout => (
 
 ## Login
 
-`LoginController` extends `AuthController` with what a login card does, for any view of it. Its props give `store`, the name of the api store with Better Auth (it fails when the app has none of that name), and `home`, the path it goes to once in; a subclass may set `api` and `home` instead.
+`LoginController` extends `AuthController` with what a login card does, for any view of it. Its prop `home` is the path it goes to once in, and it reads Better Auth of the `api` store; a subclass may set `api` and `home` instead.
 
 - `isSignUp()` says whether it signs up instead of signing in, kept at `/login/isSignUp` of `app`; `toggle()` switches it.
 - `send(values)` signs in with `{ email, password }`, or signs up with the email as the name, by the mode, and goes to `home` when the backend answers `success`.
@@ -119,7 +116,7 @@ export default createView(FieldController, (input, { field: oField }) => (
 - `validation` holds the rules of its value, a [zod](https://zod.dev) schema written by the app (`z.email('Invalid email')`, `z.string().min(3, 'Too short')`, `z.number().optional()`). A rule between fields (a password and its repeat) goes in the `onSubmit` of the form.
 - `change(value)` keeps the value at `/form/<form>/values/<name>` as the view gives it (a text, a boolean, the ISO day of a date input), an empty text as no value (`undefined`), and a `number` field as a number when its text is that number as is (`'12'`, while `'1.'` stays a text). Then it keeps at `/form/<form>/errors/<name>` the message of the first rule of its validation the value breaks. `error()` gives that message.
 - `parse(input)` replaces what `change` keeps, and `format(value)` what `value()` gives: a price kept as `1234` and shown as `$1.234`.
-- A select takes `options: { path }`, and its controller gives the api store (`class SelectController extends FieldController { protected api = this.stores.backend; }`): the field reads `path` with `GET` when its view mounts, and `options()` gives the `result` of the answer, for the view to take the keys it shows.
+- A select takes `options: { path }`: the field reads `path` with `GET` when its view mounts, and `options()` gives the `result` of the answer, for the view to take the keys it shows. It reads the `api` store; a subclass moves it (`protected api = this.stores.admin;`).
 - Without a `validation` a field breaks no rule.
 - The browser validates native inputs (`type="email"`, `required`) and shows its own bubbles. To show only the field's messages, put `noValidate` on the `<form>` of the view.
 

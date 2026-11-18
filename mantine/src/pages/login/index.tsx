@@ -19,21 +19,15 @@ const TEXTS: LoginTexts = {
   google: 'Continue with Google',
 };
 
-/** Login page: signs in or signs up at the store's Better Auth and goes to `home` */
+/** Login page: signs in or signs up at Better Auth of the `api` store and goes to `home` */
 export default function createLoginPage(oOptions: LoginOptions): () => ReactNode {
-  const { store, home, providers = [], signUp = true, texts } = oOptions;
+  const { home, providers = [], signUp = true, texts } = oOptions;
   return function LoginPage(): ReactNode {
     // The login in the middle of the screen, with the given texts over the English ones
     return (
       <Container size="xs">
         <Stack justify="center" mih="100dvh" py="xl">
-          <Login
-            store={store}
-            home={home}
-            providers={providers}
-            signUp={signUp}
-            texts={{ ...TEXTS, ...texts }}
-          />
+          <Login home={home} providers={providers} signUp={signUp} texts={{ ...TEXTS, ...texts }} />
         </Stack>
       </Container>
     );

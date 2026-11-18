@@ -25,7 +25,6 @@ const oBackend = createServer((oReq, oRes) => {
 
 // Login page of the api store, titled finance, that goes to /home
 const LoginPage = createLoginPage({
-  store: 'api',
   home: '/home',
   providers: ['google'],
   texts: { title: 'finance' },
@@ -103,7 +102,7 @@ test('the login page asks Better Auth the page of Google, back to home', async (
 
 test('the login page without sign-up offers no link to create an account', () => {
   // Renders a login only for users that exist
-  const ClosedLogin = createLoginPage({ store: 'api', home: '/home', signUp: false });
+  const ClosedLogin = createLoginPage({ home: '/home', signUp: false });
   render(
     <TestApp>
       <ClosedLogin />

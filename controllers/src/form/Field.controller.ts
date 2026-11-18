@@ -1,4 +1,3 @@
-import NanoError from '@nano-app/core/utils/NanoError';
 import AppController from '../utils/AppController';
 import validate from './validate';
 import type { ApiStore } from '@nano-app/frontend';
@@ -8,15 +7,15 @@ import type { FormField } from '../types/field';
 
 /** A field of a form: its value and error at `/form/<form>` of `app`, and its select items */
 export default class FieldController extends AppController {
-  /** Api store of its options; a select's controller gives it (`protected api = this.stores.backend;`) */
-  protected api?: ApiStore;
+  /** Api store of its options: `api` by default, another one from a subclass */
+  protected api: ApiStore = this.stores.api;
   /** Path of the state of its form, from the props when it mounts */
   protected root = `/form/${this.props.form}`;
 
   /** Reads the items of its options from the backend when the view mounts */
   public onMount(): Promise<ApiResponse> | undefined {
     const { path } = this.field().options ?? {};
-    return path ? this.optionsStore().GET(path) : undefined;
+    return path ? this.api.GET(path) : undefined;
   }
 
   /** The value kept, through the field's format when it has one */
@@ -56,16 +55,7 @@ export default class FieldController extends AppController {
   /** The items read for its options, as the backend gave them */
   public options(): NanoObject[] {
     const { path } = this.field().options ?? {};
-    return path ? (this.optionsStore().get(path)?.result ?? []) : [];
-  }
-
-  /** The api store of its options; fails when its controller gives none */
-  private optionsStore(): ApiStore {
-    if (!this.api)
-      throw new NanoError(
-        `Field "${this.field().name}" reads options: give its controller an api store (protected api = this.stores.backend;).`,
-      );
-    return this.api;
+    return path ? (this.api.get(path)?.result ?? []) : [];
   }
 
   /** Its config, from the props */

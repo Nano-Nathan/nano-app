@@ -82,20 +82,18 @@ A page is a server component made by its `create` function, for a file of `app/`
 
 ### Login
 
-`createLoginPage` gives a card in the middle of the screen with its title and subtitle, a button per provider, the email and the password, and a link that switches the card between signing in and signing up (the email as the name), at Better Auth of the api store `store`. The form validates both, and both go to `home` when the backend answers `success`. While a request of the store is out, the submit button shows its loader and the providers are disabled. The mode is kept at `/login/isSignUp` of `app`.
+`createLoginPage` gives a card in the middle of the screen with its title and subtitle, a button per provider, the email and the password, and a link that switches the card between signing in and signing up (the email as the name), at Better Auth of the `api` store. The form validates both, and both go to `home` when the backend answers `success`. While a request of the store is out, the submit button shows its loader and the providers are disabled. The mode is kept at `/login/isSignUp` of `app`.
 
 ```tsx
 // app/login/page.tsx
 import { createLoginPage } from '@nano-app/mantine';
 
 export default createLoginPage({
-  store: 'api',
   home: '/',
   texts: { title: 'finance', submit: 'Ingresar' },
 });
 ```
 
-- `store` is the name of an api store of the app (`src/stores/api.store.ts`): the page fails when the app has none of that name.
 - `providers` adds a button per social provider of Better Auth (`['google']`): it asks `POST /auth/sign-in/social` and goes to the provider's page, which comes back to `home`. Configure the provider in the backend's `auth.socialProviders`, with a `redirectURI` through the proxy of the store (`https://app.example.com/api/api/auth/callback/google`): the provider comes back through it, and the session cookie stays on the app's domain.
 - `signUp: false` hides the link to sign up, for an app where only an admin creates users. Turn off the sign-up of each social provider in the backend too (`disableSignUp: true`), so a provider only signs in users that exist.
 - `texts` replaces the English texts: `title`, `subtitle`, `divider`, `noAccount`, `haveAccount`, `email`, `password`, `submit`, `register`, `invalidEmail`, `required` and `google`.

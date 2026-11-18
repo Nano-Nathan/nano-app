@@ -38,7 +38,7 @@ export default function RootLayout({ children }: { children: ReactNode }): React
 
 ## Stores
 
-A `src/stores/**/*.store.ts` is a store of UI state, named after its path (`src/stores/admin/users.store.ts` → `admin_users`). `withNanoApp` loads them at build time; `NanoAppProvider` gives each React tree its own copy. The `app` store is always there, empty when the app has no `app.store.ts`; its file may make it an `api` store too.
+A `src/stores/**/*.store.ts` is a store of UI state, named after its path (`src/stores/admin/users.store.ts` → `admin_users`). `withNanoApp` loads them at build time; `NanoAppProvider` gives each React tree its own copy. The `app` store (UI state) and the `api` store (the backend of `API_API_URL`) are always there, empty when the app has no file for them; `app.store.ts` may make `app` an `api` store too, and `api.store.ts` must keep `api` of type `api`.
 
 ```ts
 // src/stores/ui.store.ts
@@ -47,7 +47,7 @@ export default { type: 'app', data: { isOpen: false } };
 
 Each store reads and writes by path: `app.get('/drawer/isOpen')`, `app.set('/drawer/isOpen', true)`. A missing level reads as `undefined`, and `set` creates it.
 
-`withNanoApp` also writes `nano-app-env.d.ts` next to `next.config.ts`, with the type of each store (`stores.ui` is a `Store`, `stores.api` an `ApiStore`). `stores.app` is always a `Store`, also when `app.store.ts` makes it an api store. Add it to `.gitignore`, as `next-env.d.ts`; the `**/*.ts` of Next's `tsconfig.json` already includes it.
+`withNanoApp` also writes `nano-app-env.d.ts` next to `next.config.ts`, with the type of each store (`stores.ui` is a `Store`, `stores.api` an `ApiStore`). `stores.app` is always a `Store`, also when `app.store.ts` makes it an api store, and `stores.api` always an `ApiStore`. Add it to `.gitignore`, as `next-env.d.ts`; the `**/*.ts` of Next's `tsconfig.json` already includes it.
 
 ## Controllers and views
 
@@ -115,8 +115,10 @@ The types come from `@nano-app/frontend`: `Controller`, `View` and `ComponentPro
 
 A store of type `api` connects the app to a backend. The browser never talks to the backend: it calls `/api/...` on the Next server, and the proxy sends the request there. The proxy is a [rewrite](https://nextjs.org/docs/app/api-reference/functions/next-response#rewrite) of Next: Next sends the request to the backend and answers with what it answers.
 
+Every app has the `api` store, with its backend in `API_API_URL`: an app with one backend writes no store file. A second backend is one more api store:
+
 ```ts
-// src/stores/api.store.ts
+// src/stores/admin.store.ts
 export default { type: 'api' };
 ```
 
@@ -126,13 +128,13 @@ export { proxy } from '@nano-app/frontend/proxy';
 export const config = { matcher: '/api/:path*' };
 ```
 
-Each api store is served on `/api/<store>`, with its backend URL in `API_<STORE>_URL` (`api.store.ts` → `/api/api/...` and `API_API_URL`, `admin/users.store.ts` → `/api/admin_users/...` and `API_ADMIN_USERS_URL`; `/api/api/users/7?top=1` → `$API_API_URL/users/7?top=1`). The URLs are read at runtime, once, on the server only: they never reach the browser. A backend with a `basePath` puts it in the URL (`API_API_URL=http://backend:3000/api`).
+Each api store is served on `/api/<store>`, with its backend URL in `API_<STORE>_URL` (`api` → `/api/api/...` and `API_API_URL`, `admin/users.store.ts` → `/api/admin_users/...` and `API_ADMIN_USERS_URL`; `/api/api/users/7?top=1` → `$API_API_URL/users/7?top=1`). The URLs are read at runtime, once, on the server only: they never reach the browser. A backend with a `basePath` puts it in the URL (`API_API_URL=http://backend:3000/api`).
 
 - The request keeps its method, headers, cookies and body, and the backend's answer comes back as is, `Set-Cookie` and redirects included.
 - The proxy sends every header of the browser to the backend, cookies included: point a store only at a backend you trust with your users' cookies.
 - The client IP reaches the backend in `X-Forwarded-For`, which Next fills only when the request brings none. Put a proxy in front of Next that appends the client IP (nginx, a load balancer, Tailscale Funnel): with Next exposed directly, a browser that sends its own header chooses the IP it is counted by. See [Client IP](../backend/README.md#client-ip).
 - The `matcher` keeps Next from running the proxy on every other request (pages, `_next/static`, images). Next reads it only when it is written in the app's `proxy.ts`: re-exported from the package, it is ignored. Without it the proxy still works, letting every other request go on. Keep it on `/api`, the path of the proxy.
-- While an api store has no URL, every `/api/` request answers 500 with the variables to define. `/api/<name>` of no api store, and any request outside `/api/`, goes on to the app's own routes.
+- A request to an api store without its URL answers 500 with the variable to define; the other stores keep working, and an app that never asks `/api/` (a static app) needs no URL. `/api/<name>` of no api store, and any request outside `/api/`, goes on to the app's own routes.
 
 ### Reading and writing
 
@@ -180,12 +182,12 @@ A page that needs a session wraps itself with `createPage`, from `@nano-app/fron
 // app/dashboard/page.tsx
 import { createPage } from '@nano-app/frontend/server';
 
-export default createPage({ store: 'api', redirect: '/login' }, ({ session }) => (
+export default createPage({ redirect: '/login' }, ({ session }) => (
   <Dashboard user={session.user} />
 ));
 ```
 
-- `store` names the api store whose backend has Better Auth; `redirect` is where the page goes without a session.
+- `store` names the api store whose backend has Better Auth, `api` by default; `redirect` is where the page goes without a session.
 - The view gets Next's props and `session`, Better Auth's answer as is (`{ session, user }`).
 - It is optional: a page without it is a public page of Next.
 - On each render the server asks `GET <API_<STORE>_URL>/auth/get-session` with the browser's cookie, once per render. Turn on Better Auth's cookie cache in the backend (`session: { cookieCache: { enabled: true, maxAge: 300 } }`) so it does not read the database each time.

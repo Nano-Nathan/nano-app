@@ -160,25 +160,6 @@ describe('field', () => {
     assert.equal(errorOf('count'), 'count: ok');
   });
 
-  test('options without the api store of the controller fail with the fix', () => {
-    // Renders a select of the base controller, which has no api store
-    const oRole: FormField = { name: 'role', options: { path: '/roles' } };
-    const Bare = createView(FieldController, bare => <output>{bare.options().length}</output>);
-
-    assert.throws(
-      () =>
-        render(
-          <TestApp>
-            <Bare form="user" field={oRole} />
-          </TestApp>,
-        ),
-      {
-        message:
-          'Field "role" reads options: give its controller an api store (protected api = this.stores.backend;).',
-      },
-    );
-  });
-
   test('options are the items of their path, read when the view mounts', async () => {
     // Renders a select of roles
     const oRole: FormField = { name: 'role', options: { path: '/roles' } };

@@ -3,8 +3,8 @@ import type { NanoObject } from '@nano-app/core/types/objects';
 
 /** Options of `createPage`: the api store whose backend has Better Auth, and where to go without a session */
 export type PageOptions = {
-  /** Name of the api store whose backend answers the session */
-  store: string;
+  /** Name of the api store whose backend answers the session, `api` by default */
+  store?: string;
   /** Path the page redirects to without a session */
   redirect: string;
 };
