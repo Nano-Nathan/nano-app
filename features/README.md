@@ -9,10 +9,8 @@ Planned work on this repository, one file per feature. A file says what the feat
 | [create-nano-app](create-nano-app.md) | A generated app starts, migrates and builds its images | example-app |
 | [scheduler](scheduler.md) | A job declared in the `scheduler` plugin runs on its cron, in its timezone | — |
 | [mail](mail.md) | A route sends an email through the `mail` plugin | scheduler |
-| [drizzle](drizzle.md) | An app with Better Auth, `crud` and an official plugin with tables runs on Drizzle, with no generated client and no plugin migration files | — |
 | [plugins-rebuild](plugins-rebuild.md) | `crud` and `health` run on the refactored backend, with the app's schema passed once | The responsibilities refactor |
-| [prisma](prisma.md) | An app mounts its database with Prisma through the same `DatabaseManager` | drizzle |
-| [i18n](i18n.md) | The test app shows the login page in two languages, chosen by the user | — |
+| [prisma](prisma.md) | An app mounts its database with Prisma through the same `DatabaseManager` | — |
 | [sse](sse.md) | The backend pushes an event and a component updates | Only when the maintainer asks |
 
 The order of the table is the order of work. Work outside this repository (cluster, deploys, apps) is not tracked here.
