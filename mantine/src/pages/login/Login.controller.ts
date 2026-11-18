@@ -31,6 +31,11 @@ export default class LoginController extends AuthController {
     return this.isSignUp() ? this.register(oValues) : this.login(oValues);
   }
 
+  /** Whether a request of the login's store is out */
+  public isBusy(): boolean {
+    return this.api.get('/busy') ?? false;
+  }
+
   /** Signs in with the values of the form and goes to the home */
   public async login(oValues: LoginValues): Promise<void> {
     const oResponse = await this.signIn(oValues);

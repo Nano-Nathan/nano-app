@@ -29,6 +29,7 @@ export default createView(LoginController, (auth, { providers, signUp, texts }) 
               radius="xl"
               size="md"
               leftSection={<GoogleIcon />}
+              disabled={auth.isBusy()}
               onClick={() => auth.social(sProvider)}
             >
               {texts[sProvider]}
@@ -55,7 +56,7 @@ export default createView(LoginController, (auth, { providers, signUp, texts }) 
         ]}
         onSubmit={auth.send}
       >
-        <Button type="submit" radius="xl" size="md" mt="xs">
+        <Button type="submit" radius="xl" size="md" mt="xs" loading={auth.isBusy()}>
           {auth.mode().submit}
         </Button>
       </Form>
