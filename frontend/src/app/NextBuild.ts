@@ -1,9 +1,9 @@
 import { writeFile } from 'node:fs/promises';
 import FileLoader from '@nano-app/core/files/FileLoader';
-import EN from '@nano-app/core/i18n/en';
+import TEXTS from '@nano-app/core/i18n';
 import { API_STORE_TYPE, APP_NAME } from '@nano-app/core/const';
 import NanoError from '@nano-app/core/utils/NanoError';
-import { API_NAME, APP_STORE_TYPE, DEFAULT_LOCALE, STORE_CLASSES, TYPES_FILE } from '../const';
+import { API_NAME, APP_STORE_TYPE, STORE_CLASSES, TYPES_FILE } from '../const';
 import { I18N, STORE } from '../utils/validations';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { StoreFile } from '../types/store';
@@ -35,14 +35,20 @@ export default abstract class NextBuild {
     ]);
   }
 
-  /** The texts of each locale of `src/i18n/*.i18n.ts`, each key of the app over the framework's English in `en` */
+  /** The texts of each locale of the framework and of `src/i18n/*.i18n.ts`, each key of the app over the framework's */
   public static async texts(): Promise<NanoObject<NanoObject<string>>> {
+    // The app's texts by locale, the file name without its path
     const oI18n = await FileLoader.findMany('i18n', I18N, 'src/i18n');
-    const oTexts = Object.fromEntries(
+    const oApp: NanoObject<NanoObject<string>> = Object.fromEntries(
       Object.entries(oI18n).map(([sPath, oLocale]) => [sPath.slice(1), oLocale]),
     );
-    oTexts[DEFAULT_LOCALE] = { ...EN, ...oTexts[DEFAULT_LOCALE] };
-    return oTexts;
+
+    // Each locale of either, the app's keys over the framework's
+    const oFramework: NanoObject<NanoObject<string>> = TEXTS;
+    const aLocales = [...new Set([...Object.keys(oFramework), ...Object.keys(oApp)])];
+    return Object.fromEntries(
+      aLocales.map(sLocale => [sLocale, { ...oFramework[sLocale], ...oApp[sLocale] }]),
+    );
   }
 
   /** Each api store with the env var of its backend URL, for the proxy */

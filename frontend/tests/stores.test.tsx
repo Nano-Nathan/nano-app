@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { readFile, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { reaction } from 'mobx';
-import EN from '@nano-app/core/i18n/en';
+import TEXTS from '@nano-app/core/i18n';
 import { STORES_DEFINE } from '@nano-app/core/const';
 import { withNanoApp } from '../src/app/next';
 import Store from '../src/stores/Store';
@@ -81,7 +81,7 @@ describe('withNanoApp', () => {
         {
           admin_users: { type: 'app', data: { aUsers: [] } },
           api: { type: 'api' },
-          app: { type: 'app', data: { iCount: 0, i18n: { en: EN } } },
+          app: { type: 'app', data: { iCount: 0, i18n: TEXTS } },
         },
       );
 

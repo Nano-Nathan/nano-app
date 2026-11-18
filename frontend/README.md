@@ -51,7 +51,7 @@ Each store reads and writes by path: `app.get('/drawer/isOpen')`, `app.set('/dra
 
 ## Texts
 
-An app writes its texts by locale in `src/i18n/<locale>.i18n.ts` (`es.i18n.ts`), a default-exported object of one level, its keys dotted (`'home.title'`). `withNanoApp` loads them into the `app` store, at `/i18n/<locale>`; in `en` each key of the app replaces the one of the framework's English (the `nano.*` keys of `@nano-app/mantine`):
+An app writes its texts by locale in `src/i18n/<locale>.i18n.ts` (`es.i18n.ts`), a default-exported object of one level, its keys dotted (`'home.title'`). `withNanoApp` loads them into the `app` store, at `/i18n/<locale>`, over the framework's texts of the same locale (the `nano.*` keys, in `en` and `es`): each key of the app replaces the framework's, and a locale of the framework the app has no file for keeps the framework's:
 
 ```ts
 // src/i18n/es.i18n.ts

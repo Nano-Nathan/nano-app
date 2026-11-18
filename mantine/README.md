@@ -95,7 +95,7 @@ export default createLoginPage({
 
 - `providers` adds a button per social provider of Better Auth (`['google']`): it asks `POST /auth/sign-in/social` and goes to the provider's page, which comes back to `home`. Configure the provider in the backend's `auth.socialProviders`, with a `redirectURI` through the proxy of the store (`https://app.example.com/api/api/auth/callback/google`): the provider comes back through it, and the session cookie stays on the app's domain.
 - `signUp: false` hides the link to sign up, for an app where only an admin creates users. Turn off the sign-up of each social provider in the backend too (`disableSignUp: true`), so a provider only signs in users that exist.
-- Its texts are the keys `nano.login.*` of the app's texts (see [Texts](../frontend/README.md#texts)): `title`, `subtitle`, `divider`, `noAccount`, `haveAccount`, `email`, `password`, `submit`, `register`, `invalidEmail`, `required` and `google`, English by default; an app gives other locales in `src/i18n/<locale>.i18n.ts`.
+- Its texts are the keys `nano.login.*` of the app's texts (see [Texts](../frontend/README.md#texts)): `title`, `subtitle`, `divider`, `noAccount`, `haveAccount`, `email`, `password`, `submit`, `register`, `invalidEmail`, `required` and `google`, in English and Spanish by default; an app replaces them, or gives other locales, in `src/i18n/<locale>.i18n.ts`.
 - The form keeps its state at `/form/login` of `app`. A page that needs the session uses `createPage` of `@nano-app/frontend/server`.
 
 ## Layout of the package
