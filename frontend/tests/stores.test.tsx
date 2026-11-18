@@ -23,19 +23,6 @@ describe('store state', () => {
     assert.equal(oStore.get('/drawer/missing/deep'), undefined);
   });
 
-  test('text reads a key in the texts of /locale, English by default, and gives the key without one', () => {
-    // A store with the texts of two locales
-    const oStore = new Store({
-      i18n: { en: { 'login.title': 'Welcome' }, es: { 'login.title': 'Bienvenido' } },
-    });
-    assert.equal(oStore.text('login.title'), 'Welcome');
-
-    // Another locale, and a key no locale has
-    oStore.set('/locale', 'es');
-    assert.equal(oStore.text('login.title'), 'Bienvenido');
-    assert.equal(oStore.text('login.missing'), 'login.missing');
-  });
-
   test('the provider starts each store with its data, plus an empty app store', () => {
     // Creates the stores of one React tree
     const { app, ui } = renderStores();

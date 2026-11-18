@@ -285,6 +285,24 @@ describe('createView', () => {
     assert.equal(screen.getAllByRole('status')[0].textContent, '1');
   });
 
+  test('text reads a key in the texts of /locale, English by default, and gives the key without one', () => {
+    // A view with a text of the app, one no locale has and a switch to Spanish
+    const Title = createView(Controller, view => (
+      <>
+        <output>
+          {view.text('home.title')} {view.text('home.missing')}
+        </output>
+        <button onClick={() => view.stores.app.set('/locale', 'es')}>es</button>
+      </>
+    ));
+    renderApp(<Title />);
+    assert.equal(screen.getByRole('status').textContent, 'Home home.missing');
+
+    // Another locale renders it again
+    fireEvent.click(screen.getByText('es'));
+    assert.equal(screen.getByRole('status').textContent, 'Inicio home.missing');
+  });
+
   test('a view without NanoAppProvider fails with the fix', () => {
     // Renders outside the provider
     assert.throws(() => render(<Counter />), { message: MISSING_PROVIDER });

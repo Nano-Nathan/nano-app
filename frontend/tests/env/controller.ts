@@ -4,7 +4,14 @@ import { STORES_DEFINE } from '@nano-app/core/const';
 Object.assign(globalThis, {
   [STORES_DEFINE]: JSON.stringify(
     Object.entries({
-      app: { type: 'app', data: { iCount: 0, sReason: '' } },
+      app: {
+        type: 'app',
+        data: {
+          iCount: 0,
+          sReason: '',
+          i18n: { en: { 'home.title': 'Home' }, es: { 'home.title': 'Inicio' } },
+        },
+      },
       ui: { type: 'app', data: { isOpen: false } },
     }),
   ),

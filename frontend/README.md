@@ -61,7 +61,7 @@ export default { 'nano.login.title': 'Bienvenido', 'home.title': 'Inicio' };
 export default { type: 'app', data: { locale: 'es' } };
 ```
 
-- `text(key)` of a store gives the text of a key (`app.text('home.title')`) in the locale at `/locale`, `en` by default, and the key itself when the locale has none.
+- `text(key)` of every controller gives the text of a key (`view.text('home.title')`) in the locale at `/locale` of the `app` store, `en` by default, and the key itself when the locale has none.
 - `app.set('/locale', 'en')` switches the locale: the views that read a text render again. The locale lives in the store: a reload starts again in the one of `app.store.ts`.
 - `/i18n` and `/locale` of the `app` store are the framework's: an app reads them, and writes only `/locale`.
 

@@ -1,3 +1,4 @@
+import { DEFAULT_LOCALE } from '../const';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { ComponentContext } from '../types/component';
 
@@ -31,6 +32,14 @@ export default class Controller {
         oSelf[sName] = oSelf[sName].bind(this);
       }
     }
+  }
+
+  /** The text of a key (`nano.login.title`) in the locale at `/locale` of the app store, `en` by default; the key itself without one */
+  public text(sKey: string): string {
+    // The texts live in the app store, by locale
+    const { app } = this.stores;
+    const sLocale = app.get('/locale') ?? DEFAULT_LOCALE;
+    return app.get(`/i18n/${sLocale}/${sKey}`) ?? `i18n.${sKey}`;
   }
 
   /** Runs once when the view mounts, never on the server */

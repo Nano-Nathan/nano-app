@@ -1,5 +1,4 @@
 import { observable, runInAction } from 'mobx';
-import { DEFAULT_LOCALE } from '../const';
 import type { NanoObject } from '@nano-app/core/types/objects';
 
 /** State of one store, read and written by path (`/drawer/isOpen`) */
@@ -33,12 +32,6 @@ export default class Store {
       }, this.oState);
       oParent[sLast] = oValue;
     });
-  }
-
-  /** The text of a key (`nano.login.title`) in the locale at `/locale` (`en` by default), from `/i18n`; the key itself without one */
-  public text(sKey: string): string {
-    const sLocale = this.get('/locale') ?? DEFAULT_LOCALE;
-    return this.get(`/i18n/${sLocale}/${sKey}`) ?? `i18n.${sKey}`;
   }
 
   /** Keys of a path, with or without the leading slash */

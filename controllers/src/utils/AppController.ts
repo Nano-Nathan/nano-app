@@ -18,11 +18,6 @@ export default class AppController extends Controller {
     this.state.set(`${this.root}${sPath}`, oValue);
   }
 
-  /** The text of a key (`nano.login.title`) in the app's locale, from the `app` store whatever its `state` */
-  public text(sKey: string): string {
-    return this.stores.app.text(sKey);
-  }
-
   /** Whether its flag is on: one on/off state of the controller, at `<root>/isToggled` */
   public isToggled(): boolean {
     return this.get('/isToggled') ?? false;
