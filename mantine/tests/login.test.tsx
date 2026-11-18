@@ -23,11 +23,10 @@ const oBackend = createServer((oReq, oRes) => {
   });
 });
 
-// Login page of the api store, titled finance, that goes to /home
+// Login page of the api store that goes to /home
 const LoginPage = createLoginPage({
   home: '/home',
   providers: ['google'],
-  texts: { title: 'finance' },
 });
 
 before(() => new Promise<void>(fnResolve => oBackend.listen(PORT, fnResolve)));
@@ -50,11 +49,11 @@ function renderLogin(): void {
   fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'secret' } });
 }
 
-test('the login page shows its texts: the given title, English for the rest', () => {
+test('the login page shows its texts from the messages', () => {
   renderLogin();
 
-  // The title given, and the English buttons
-  assert.ok(screen.getByText('finance'));
+  // The title and the buttons of the English messages
+  assert.ok(screen.getByText('Welcome'));
   assert.ok(screen.getByText('Sign in'));
   assert.ok(screen.getByText('Create account'));
 });

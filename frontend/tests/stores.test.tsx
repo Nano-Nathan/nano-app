@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { readFile, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { reaction } from 'mobx';
+import EN from '@nano-app/core/i18n/en';
 import { STORES_DEFINE } from '@nano-app/core/const';
 import { withNanoApp } from '../src/app/next';
 import Store from '../src/stores/Store';
@@ -20,6 +21,19 @@ describe('store state', () => {
     assert.equal(oStore.get('/drawer/isOpen'), true);
     assert.equal(oStore.get('drawer/isOpen'), true);
     assert.equal(oStore.get('/drawer/missing/deep'), undefined);
+  });
+
+  test('text reads a key in the texts of /locale, English by default, and gives the key without one', () => {
+    // A store with the texts of two locales
+    const oStore = new Store({
+      i18n: { en: { 'login.title': 'Welcome' }, es: { 'login.title': 'Bienvenido' } },
+    });
+    assert.equal(oStore.text('login.title'), 'Welcome');
+
+    // Another locale, and a key no locale has
+    oStore.set('/locale', 'es');
+    assert.equal(oStore.text('login.title'), 'Bienvenido');
+    assert.equal(oStore.text('login.missing'), 'login.missing');
   });
 
   test('the provider starts each store with its data, plus an empty app store', () => {
@@ -80,7 +94,7 @@ describe('withNanoApp', () => {
         {
           admin_users: { type: 'app', data: { aUsers: [] } },
           api: { type: 'api' },
-          app: { type: 'app', data: { iCount: 0 } },
+          app: { type: 'app', data: { iCount: 0, i18n: { en: EN } } },
         },
       );
 

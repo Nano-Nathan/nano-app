@@ -15,7 +15,7 @@ const MODES = {
 } as const;
 
 /** Login card: the providers, the form of email and password, and the link to the other mode */
-export default createView(AuthController, (auth, { providers, signUp, texts }) => {
+export default createView(AuthController, (auth, { providers, signUp }) => {
   // The keys of the texts of the current mode
   const oMode = auth.isToggled() ? MODES.signUp : MODES.signIn;
   return (
@@ -23,10 +23,10 @@ export default createView(AuthController, (auth, { providers, signUp, texts }) =
       <Stack gap="lg">
         <Stack gap="xs" align="center">
           <Title order={2} ta="center">
-            {texts.title}
+            {auth.stores.app.text('nano.login.title')}
           </Title>
           <Text c="dimmed" ta="center">
-            {texts.subtitle}
+            {auth.stores.app.text('nano.login.subtitle')}
           </Text>
         </Stack>
         {providers.length > 0 && (
@@ -41,10 +41,10 @@ export default createView(AuthController, (auth, { providers, signUp, texts }) =
                 disabled={auth.isBusy()}
                 onClick={() => auth.signIn({ provider: sProvider }, 'social')}
               >
-                {texts[sProvider]}
+                {auth.stores.app.text(`nano.login.${sProvider}`)}
               </Button>
             ))}
-            <Divider label={texts.divider} labelPosition="center" />
+            <Divider label={auth.stores.app.text('nano.login.divider')} labelPosition="center" />
           </>
         )}
         <Form
@@ -52,28 +52,28 @@ export default createView(AuthController, (auth, { providers, signUp, texts }) =
           fields={[
             {
               name: 'email',
-              label: texts.email,
+              label: auth.stores.app.text('nano.login.email'),
               type: 'email',
-              validation: z.email(texts.invalidEmail),
+              validation: z.email('nano.login.invalidEmail'),
             },
             {
               name: 'password',
-              label: texts.password,
+              label: auth.stores.app.text('nano.login.password'),
               type: 'password',
-              validation: z.string(texts.required),
+              validation: z.string('nano.login.required'),
             },
           ]}
           onSubmit={auth.send}
         >
           <Button type="submit" radius="xl" size="md" mt="xs" loading={auth.isBusy()}>
-            {texts[oMode.submit]}
+            {auth.stores.app.text(`nano.login.${oMode.submit}`)}
           </Button>
         </Form>
         {signUp && (
           <Text size="sm" c="dimmed" ta="center">
-            {texts[oMode.question]}{' '}
+            {auth.stores.app.text(`nano.login.${oMode.question}`)}{' '}
             <Anchor component="button" type="button" size="sm" fw={600} onClick={auth.toggle}>
-              {texts[oMode.link]}
+              {auth.stores.app.text(`nano.login.${oMode.link}`)}
             </Anchor>
           </Text>
         )}

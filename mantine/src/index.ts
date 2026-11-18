@@ -5,4 +5,4 @@ export { Toasts } from './components/notification';
 export { default as createLoginPage } from './pages/login';
 export type { LayoutOptions } from './types/layout';
 export type { NotificationsOptions } from './types/notifications';
-export type { LoginOptions, LoginProvider, LoginTexts } from './types/login';
+export type { LoginOptions, LoginProvider } from './types/login';

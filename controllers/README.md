@@ -108,6 +108,7 @@ export default createView(FieldController, (input, { field: oField }) => (
 - A field is `{ name, type, validation, format, parse, options }`; its other keys (`label`, `disabled`) pass as is to its view.
 - `validation` holds the rules of its value, a [zod](https://zod.dev) schema written by the app (`z.email('Invalid email')`, `z.string().min(3, 'Too short')`, `z.number().optional()`). A rule between fields (a password and its repeat) goes in the `onSubmit` of the form.
 - `change(value)` keeps the value at `/form/<form>/values/<name>` as the view gives it (a text, a boolean, the ISO day of a date input), an empty text as no value (`undefined`), and a `number` field as a number when its text is that number as is (`'12'`, while `'1.'` stays a text). Then it keeps at `/form/<form>/errors/<name>` the message of the first rule of its validation the value breaks. `error()` gives that message.
+- `error()` gives the message as the app's texts have it when the message is a key (`z.email('form.invalidEmail')`, see [Texts](../frontend/README.md#texts)), and as it is otherwise.
 - `parse(input)` replaces what `change` keeps, and `format(value)` what `value()` gives: a price kept as `1234` and shown as `$1.234`.
 - A select takes `options: { path }`: the field reads `path` with `GET` when its view mounts, and `options()` gives the `result` of the answer, for the view to take the keys it shows. It reads the `api` store; a subclass moves it (`protected api = this.stores.admin;`).
 - Without a `validation` a field breaks no rule.

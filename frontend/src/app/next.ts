@@ -1,12 +1,7 @@
-import { writeFile } from 'node:fs/promises';
-import FileLoader from '@nano-app/core/files/FileLoader';
-import { API_STORE_TYPE, APP_NAME, STORES_DEFINE } from '@nano-app/core/const';
-import NanoError from '@nano-app/core/utils/NanoError';
-import { API_NAME, APP_STORE_TYPE, BACKENDS_DEFINE, STORE_CLASSES, TYPES_FILE } from '../const';
-import { STORE } from '../utils/validations';
+import { STORES_DEFINE } from '@nano-app/core/const';
+import { BACKENDS_DEFINE } from '../const';
+import NextBuild from './NextBuild';
 import type { NextConfig } from 'next';
-import type { NanoObject } from '@nano-app/core/types/objects';
-import type { StoreFile } from '../types/store';
 
 /**
  * Wraps the app's Next config: loads its stores while Next reads `next.config.ts`, before compiling.
@@ -14,51 +9,8 @@ import type { StoreFile } from '../types/store';
  */
 export function withNanoApp(oNextConfig: NextConfig = {}): () => Promise<NextConfig> {
   return async () => {
-    // Finds and validates the app's `src/stores/**/*.store.ts`
-    const oFiles = await FileLoader.findMany('store', STORE);
-
-    // The api store is an api store also when the app has a file for it
-    if (oFiles[`/${API_NAME}`] && oFiles[`/${API_NAME}`].type !== API_STORE_TYPE)
-      throw new NanoError(
-        `src/stores/${API_NAME}.store.ts must have type '${API_STORE_TYPE}': the ${API_NAME} store reads the backend of API_API_URL. Rename the file to keep UI state.`,
-      );
-
-    // The app and api stores are always there, empty when the app has no file for them
-    const oDefaults: NanoObject<StoreFile> = {
-      [`/${APP_NAME}`]: { type: APP_STORE_TYPE },
-      [`/${API_NAME}`]: { type: API_STORE_TYPE },
-    };
-
-    // Pairs each with its name, its path with `_` for `/`
-    const aStores = Object.entries({ ...oDefaults, ...oFiles }).map(
-      ([sPath, oStore]): [string, StoreFile] => [sPath.slice(1).replaceAll('/', '_'), oStore],
-    );
-
-    // Pairs each api store with the env var of its backend URL, for the proxy
-    const aBackends = aStores
-      .filter(([, { type }]) => type === API_STORE_TYPE)
-      .map(([sName]) => [sName, `API_${sName.toUpperCase()}_URL`]);
-
-    // Writes the type of each store but `app` and `api`, which `Stores` always has
-    const aTypes = aStores
-      .filter(([sName]) => sName !== APP_NAME && sName !== API_NAME)
-      .map(
-        ([sName, { type }]) =>
-          `    ${JSON.stringify(sName)}: import('@nano-app/frontend').${STORE_CLASSES[type]};`,
-      );
-    await writeFile(
-      TYPES_FILE,
-      [
-        '// Written by withNanoApp from src/stores. Do not edit.',
-        'export {};',
-        "declare module '@nano-app/frontend' {",
-        '  interface Stores {',
-        ...aTypes,
-        '  }',
-        '}',
-        '',
-      ].join('\n'),
-    );
+    const aStores = await NextBuild.stores();
+    await NextBuild.writeTypes(aStores);
 
     // Writes the stores in every bundle and the backends only in the server's, as JSON
     const { compiler } = oNextConfig;
@@ -67,7 +19,10 @@ export function withNanoApp(oNextConfig: NextConfig = {}): () => Promise<NextCon
       compiler: {
         ...compiler,
         define: { ...compiler?.define, [STORES_DEFINE]: JSON.stringify(aStores) },
-        defineServer: { ...compiler?.defineServer, [BACKENDS_DEFINE]: JSON.stringify(aBackends) },
+        defineServer: {
+          ...compiler?.defineServer,
+          [BACKENDS_DEFINE]: JSON.stringify(NextBuild.backends(aStores)),
+        },
       },
     };
   };

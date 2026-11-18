@@ -49,6 +49,22 @@ Each store reads and writes by path: `app.get('/drawer/isOpen')`, `app.set('/dra
 
 `withNanoApp` also writes `nano-app-env.d.ts` next to `next.config.ts`, with the type of each store (`stores.ui` is a `Store`, `stores.api` an `ApiStore`). `stores.app` is always a `Store`, also when `app.store.ts` makes it an api store, and `stores.api` always an `ApiStore`. Add it to `.gitignore`, as `next-env.d.ts`; the `**/*.ts` of Next's `tsconfig.json` already includes it.
 
+## Texts
+
+An app writes its texts by locale in `src/i18n/<locale>.i18n.ts` (`es.i18n.ts`), a default-exported object of one level, its keys dotted (`'home.title'`). `withNanoApp` loads them into the `app` store, at `/i18n/<locale>`; in `en` each key of the app replaces the one of the framework's English (the `nano.*` keys of `@nano-app/mantine`):
+
+```ts
+// src/i18n/es.i18n.ts
+export default { 'nano.login.title': 'Bienvenido', 'home.title': 'Inicio' };
+
+// src/stores/app.store.ts: the locale the app starts in
+export default { type: 'app', data: { locale: 'es' } };
+```
+
+- `text(key)` of a store gives the text of a key (`app.text('home.title')`) in the locale at `/locale`, `en` by default, and the key itself when the locale has none.
+- `app.set('/locale', 'en')` switches the locale: the views that read a text render again. The locale lives in the store: a reload starts again in the one of `app.store.ts`.
+- `/i18n` and `/locale` of the `app` store are the framework's: an app reads them, and writes only `/locale`.
+
 ## Controllers and views
 
 A controller is a class that holds the logic of a view: it extends `Controller` and reaches the view's `props`, the app's `stores` and Next's `router` with `this`. `createView` creates the component: it renders the view with its own instance of the controller.

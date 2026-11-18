@@ -6,6 +6,9 @@ export const APP_STORE_TYPE = 'app';
 /** Name of the api store always present, with its backend in `API_API_URL` */
 export const API_NAME = 'api';
 
+/** Locale of the app store's `/locale` when it has none */
+export const DEFAULT_LOCALE = 'en';
+
 /** Whether the code runs on the server, where Next renders each component once for the HTML */
 export const IS_SERVER = typeof window === 'undefined';
 
