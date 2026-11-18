@@ -19,10 +19,16 @@ const oRouter: AppRouterInstance = {
 };
 
 /** The provider inside a router of the app, like the root layout of Next */
-export default function TestApp({ children }: { children: ReactNode }): ReactNode {
+export default function TestApp({
+  children,
+  locale,
+}: {
+  children: ReactNode;
+  locale?: string;
+}): ReactNode {
   return (
     <AppRouterContext.Provider value={oRouter}>
-      <NanoAppProvider>{children}</NanoAppProvider>
+      <NanoAppProvider locale={locale}>{children}</NanoAppProvider>
     </AppRouterContext.Provider>
   );
 }

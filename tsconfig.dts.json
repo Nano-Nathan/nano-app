@@ -13,6 +13,7 @@
     "paths": {
       "@nano-app/backend": ["./backend/src/index.ts"],
       "@nano-app/frontend": ["./frontend/src/index.ts"],
+      "@nano-app/frontend/server": ["./frontend/src/server.ts"],
       "@nano-app/controllers": ["./controllers/src/index.ts"],
       "@nano-app/core": ["./core/index.ts"],
       "@nano-app/core/*": ["./core/*"]

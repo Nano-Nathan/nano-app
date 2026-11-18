@@ -303,6 +303,35 @@ describe('createView', () => {
     assert.equal(screen.getByRole('status').textContent, 'Inicio i18n.home.missing');
   });
 
+  test('setLocale switches the texts, the language of the html and the cookie', () => {
+    // A view with a text of the app and a switch to Spanish
+    const Title = createView(Controller, view => (
+      <>
+        <output>{view.text('home.title')}</output>
+        <button onClick={() => view.setLocale('es')}>es</button>
+      </>
+    ));
+    renderApp(<Title />);
+    fireEvent.click(screen.getByText('es'));
+
+    // Spanish now, and kept for the next visits
+    assert.equal(screen.getByRole('status').textContent, 'Inicio');
+    assert.equal(document.documentElement.lang, 'es');
+    assert.match(document.cookie, /nano-locale=es/);
+  });
+
+  test('the provider starts in the locale it is given', () => {
+    // A tree in the locale of the user's cookie
+    const Title = createView(Controller, view => <output>{view.text('home.title')}</output>);
+    render(
+      <TestApp locale="es">
+        <Title />
+      </TestApp>,
+    );
+
+    assert.equal(screen.getByRole('status').textContent, 'Inicio');
+  });
+
   test('a view without NanoAppProvider fails with the fix', () => {
     // Renders outside the provider
     assert.throws(() => render(<Counter />), { message: MISSING_PROVIDER });

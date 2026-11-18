@@ -62,8 +62,9 @@ export default { type: 'app', data: { locale: 'es' } };
 ```
 
 - `text(key)` of every controller gives the text of a key (`view.text('home.title')`) in the locale at `/locale` of the `app` store (`en` by default), and `i18n.<key>` when the locale has none.
-- `app.set('/locale', 'en')` switches the locale: the views that read a text render again. The locale lives in the store: a reload starts again in the one of `app.store.ts`.
-- `/i18n` and `/locale` of the `app` store are the framework's: an app reads them, and writes only `/locale`.
+- `setLocale(locale)` of every controller switches the locale: the views that read a text render again, `<html lang>` follows, and the cookie `nano-locale` keeps it for a year.
+- `getLocale()` of `@nano-app/frontend/server` reads that cookie in a server component, and `<NanoAppProvider locale={…}>` starts the `app` store in it, over the `/locale` of `app.store.ts`: the server renders the page in the user's locale. Reading the cookie makes the page dynamic.
+- `/i18n` and `/locale` of the `app` store are the framework's: an app reads them, and switches the locale with `setLocale`.
 
 ## Controllers and views
 

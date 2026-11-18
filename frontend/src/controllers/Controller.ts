@@ -1,4 +1,4 @@
-import { DEFAULT_LOCALE } from '../const';
+import { DEFAULT_LOCALE, LOCALE_COOKIE, LOCALE_MAX_AGE } from '../const';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { ComponentContext } from '../types/component';
 
@@ -40,6 +40,13 @@ export default class Controller {
     const { app } = this.stores;
     const sLocale = app.get('/locale') ?? DEFAULT_LOCALE;
     return app.get(`/i18n/${sLocale}/${sKey}`) ?? `i18n.${sKey}`;
+  }
+
+  /** Switches the locale of the texts, kept in a cookie for the next visits */
+  public setLocale(sLocale: string): void {
+    this.stores.app.set('/locale', sLocale);
+    document.cookie = `${LOCALE_COOKIE}=${sLocale}; path=/; max-age=${LOCALE_MAX_AGE}; samesite=lax`;
+    document.documentElement.lang = sLocale;
   }
 
   /** Runs once when the view mounts, never on the server */

@@ -13,7 +13,7 @@ pnpm add @nano-app/mantine @nano-app/frontend @nano-app/controllers @mantine/cor
 
 ## Layout
 
-`createLayout` gives the root layout: the `<html>` of its language with Mantine's attributes, the script of the color scheme in `<head>`, Mantine's styles, `MantineProvider`, `NanoAppProvider` and the errors (see [Errors](#errors)).
+`createLayout` gives the root layout: the `<html>` of the user's locale (its cookie, see [Texts](../frontend/README.md#texts)) or of `lang` with Mantine's attributes, the script of the color scheme in `<head>`, Mantine's styles, `MantineProvider`, `NanoAppProvider` and the errors (see [Errors](#errors)).
 
 ```tsx
 // app/layout.tsx
@@ -35,7 +35,7 @@ export default createTheme({ primaryColor: 'teal' });
 ```
 
 - Its options go by the component they reach:
-  - `lang`: the language of the html.
+  - `lang`: the language of the html until the user picks one with `setLocale`. The layout reads the user's cookie, so every page is dynamic.
   - `colorScheme`: `light`, `dark` or `auto` (by default: the system's), until the user picks one. It reaches `MantineProvider` and the script of the `<head>` alike, so the first render has the right colors.
   - `provider`: the props of `MantineProvider` (`theme`…), as they are.
   - `notifications`: the props of Mantine's `Notifications` (see [Notifications](#notifications)), as they are.

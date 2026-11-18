@@ -21,6 +21,7 @@ export default defineConfig({
       ...Object.keys(pkg.peerDependencies),
       /^@mantine\//,
       /^@nano-app\/components\//,
+      /^@nano-app\/frontend\//,
       /^react\//,
       /^next\//,
     ],
