@@ -82,3 +82,15 @@ test('sign out signs out at Better Auth and goes to login', async () => {
   await waitFor(() => assert.deepEqual(aVisited, ['/login']));
   assert.deepEqual(aRequests, ['POST /api/api/auth/sign-out']);
 });
+
+test('change theme switches the color scheme between light and dark', async () => {
+  renderShell();
+  const oHtml = document.documentElement;
+  const oButton = screen.getByRole('button', { name: 'Change theme' });
+
+  // Light first, dark after a click, light again after another
+  fireEvent.click(oButton);
+  await waitFor(() => assert.equal(oHtml.getAttribute('data-mantine-color-scheme'), 'dark'));
+  fireEvent.click(oButton);
+  await waitFor(() => assert.equal(oHtml.getAttribute('data-mantine-color-scheme'), 'light'));
+});

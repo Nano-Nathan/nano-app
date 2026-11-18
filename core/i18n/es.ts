@@ -14,6 +14,7 @@ export default {
   'nano.login.google': 'Continuar con Google',
   'nano.shell.home': 'Inicio',
   'nano.shell.menu': 'Menú',
+  'nano.shell.theme': 'Cambiar tema',
   'nano.shell.logout': 'Cerrar sesión',
   'nano.notFound.title': 'Acá no hay nada para ver',
   'nano.notFound.description':

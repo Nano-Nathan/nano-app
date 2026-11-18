@@ -42,7 +42,7 @@ export default createView(NavController, (nav, { title, logo, links, login, user
   const oStaticStyles = { ...oLinkStyles, root: { ...SHELL_LINK, ...SHELL_STATIC } };
   const oBrandStyles = { ...oStaticStyles, label: SHELL_BRAND };
   const sMenu = nav.text('nano.shell.menu');
-  const oLogo = <Avatar src={logo} name={title} color="initials" size="md" radius="sm" />;
+  const oLogo = <Avatar src={logo} name={title} size="md" radius="sm" />;
   return (
     <AppShell
       layout="alt"
@@ -84,7 +84,7 @@ export default createView(NavController, (nav, { title, logo, links, login, user
                     aria-label={nav.text(oLink.label)}
                     label={nav.text(oLink.label)}
                     noWrap
-                    leftSection={<Slot>{oLink.icon}</Slot>}
+                    leftSection={<Slot isActive={nav.isActive(oLink.href)}>{oLink.icon}</Slot>}
                     styles={oLinkStyles}
                     active={nav.isActive(oLink.href)}
                     onClick={nav.close}
@@ -96,6 +96,7 @@ export default createView(NavController, (nav, { title, logo, links, login, user
               <Account
                 user={user}
                 login={login}
+                theme={nav.text('nano.shell.theme')}
                 isOpen={isOpen}
                 styles={oStaticStyles}
                 linkStyles={oLinkStyles}

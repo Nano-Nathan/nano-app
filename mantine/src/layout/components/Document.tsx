@@ -1,10 +1,12 @@
-import { ColorSchemeScript, MantineProvider, mantineHtmlProps } from '@mantine/core';
+import { ColorSchemeScript, mantineHtmlProps } from '@mantine/core';
 import { NanoAppProvider } from '@nano-app/frontend';
 import { Toasts } from '../../components/notification';
+import { GROUND } from './const';
+import Provider from './Provider';
 import type { ReactNode } from 'react';
 import type { LayoutOptions } from '../../types/layout';
 
-/** The html of the app: its language, the color scheme script, the providers and the notifications */
+/** The html of the app: its language, the color scheme script, its ground, the providers and the notifications */
 export default function Document({
   options,
   locale,
@@ -20,13 +22,13 @@ export default function Document({
       <head>
         <ColorSchemeScript defaultColorScheme={colorScheme} />
       </head>
-      <body>
-        <MantineProvider {...provider} defaultColorScheme={colorScheme}>
+      <body style={GROUND}>
+        <Provider provider={provider} colorScheme={colorScheme}>
           <NanoAppProvider locale={locale}>
             <Toasts {...notifications} />
             {children}
           </NanoAppProvider>
-        </MantineProvider>
+        </Provider>
       </body>
     </html>
   );

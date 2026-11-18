@@ -1,6 +1,13 @@
 import { z } from 'zod';
 import type { FormField } from '@nano-app/controllers';
 
+/** The theme's primary color, faint: the ground of the app and the 404 behind its texts */
+export const PRIMARY_TINT =
+  'color-mix(in srgb, var(--mantine-primary-color-filled) 20%, transparent)';
+
+/** The theme's primary color for texts and icons, in each color scheme */
+export const PRIMARY_TEXT = 'var(--mantine-primary-color-light-color)';
+
 /** Mantine color of each kind of notification */
 export const NOTIFICATION_COLORS = {
   success: 'green',
