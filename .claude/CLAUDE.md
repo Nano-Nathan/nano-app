@@ -66,7 +66,7 @@ The views of `@nano-app/mantine`, and of any app on it:
 - A view with columns uses `Grid`, always of 12 columns, with a `span` per breakpoint (`<Grid.Col span={{ base: 12, sm: 6, lg: 4 }}>`): never another `columns` count.
 - No fixed values: no `px`, `rem` or plain numbers for widths, heights, fonts or spacing, and no `style` with sizes. A full width or height is a relative unit (`w="100%"`, `mih="100dvh"`).
 - `@nano-app/mantine` keeps its pieces by kind. `components/<type>/` groups the views of a type, with an `index.ts` that exports them; every piece and its public types leave from `src/index.ts`, the only import path, `@nano-app/mantine`. A view alone is a file (`fields/Input.tsx`); a view with its own controller or pieces is a folder of its name: `<View>.tsx`, `<View>.controller.ts` and `components/` with the pieces only it uses (`notification/Toasts/Toasts.tsx`, `Toasts.controller.ts`). A page is the same folder under `pages/<name>/`, with an `index.tsx` that gives `create<Name>Page` and its texts. A piece another view needs moves up to `components/`.
-- A controller of a view lives in `<View>.controller.ts`: the one exception to PascalCase files that export a class.
+- A controller of a view lives in `<View>.controller.ts`: the one exception to PascalCase files that export a class. A small controller, one that only sets the fields of its base and has no methods (`protected components = { text: Input };`), stays in the file of its view, and that view stays a file.
 
 ### Names
 
