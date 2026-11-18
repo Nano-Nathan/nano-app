@@ -62,25 +62,21 @@ Views of `@nano-app/controllers`, with Mantine. Their logic is the component's: 
 
 ## Notifications
 
-`createLayout` mounts `Toasts`: it moves every failed request of an api store (its `/error/list`) to the app's notifications (see [`NotificationController`](../components/README.md#notification)) as an `error` with the backend's `message`, and shows each notification as a toast with Mantine's, one under the other. An app does nothing to show its errors; to notify something else, a controller calls `notify`.
+`notify({ type, message, title })` shows a notification now, as a toast in the color of its kind: `success` green, `error` red, `info` blue, `warning` yellow. Call it from any controller or client view:
 
-`notifications` of `createLayout` sets them, every key optional:
+```ts
+import { notify } from '@nano-app/mantine';
 
-```tsx
-createLayout({
-  lang: 'es',
-  notifications: {
-    types: ['error', 'success'],
-    position: 'bottom-right',
-    autoClose: 5000,
-    limit: 3,
-  },
-});
+notify({ type: 'success', message: 'Saved' });
 ```
 
-- `types`: the kinds shown, every kind by default.
-- `colors`: the Mantine color of a kind, over `success: 'green'`, `error: 'red'`, `info: 'blue'` and `warning: 'yellow'`.
-- Any other key is a prop of Mantine's `Notifications`: `position` (`top-center` by default), `autoClose` (3000 ms by default, `false` to keep them until closed), `limit`…
+`createLayout` mounts `Toasts`, Mantine's `Notifications` with the failed requests among them: every new error of an api store (its `/error/list`, see [`ErrorController`](../controllers/README.md#error)) shows as an `error` with the backend's `message`, and its list is emptied. An app does nothing to show its errors.
+
+`notifications` of `createLayout` takes the props of Mantine's `Notifications`: `position` (`top-center` by default), `autoClose` (3000 ms by default, `false` to keep them until closed), `limit`…
+
+```tsx
+createLayout({ lang: 'es', notifications: { position: 'bottom-right', autoClose: 5000 } });
+```
 
 `Toasts` is exported too, for an app with a layout of its own.
 

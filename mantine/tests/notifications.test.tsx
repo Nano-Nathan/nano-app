@@ -5,7 +5,7 @@ import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Controller, createView } from '@nano-app/frontend';
-import { Toasts } from '../src';
+import { notify, Toasts } from '../src';
 import TestApp from './provider';
 
 // Probe that keeps a failed request in the api store and shows how many it has
@@ -36,4 +36,15 @@ test('a failed request shows as a toast and leaves its store', async () => {
   // The toast shows its message, and the store keeps no error
   await waitFor(() => assert.ok(screen.getByText('Invalid email')));
   assert.ok(screen.getByText('errors 0'));
+});
+
+test('notify shows a notification of its kind now', async () => {
+  render(
+    <TestApp>
+      <Toasts />
+      <button onClick={() => notify({ type: 'success', message: 'Saved' })}>save</button>
+    </TestApp>,
+  );
+  fireEvent.click(screen.getByText('save'));
+  await waitFor(() => assert.ok(screen.getByText('Saved')));
 });

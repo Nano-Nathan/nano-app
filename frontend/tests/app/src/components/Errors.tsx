@@ -1,29 +1,30 @@
 'use client';
 
 import { createView } from '@nano-app/frontend';
-import NotificationController from '@nano-app/controllers/notification';
+import ErrorController from '@nano-app/controllers/error';
 
-/** Notifications with two methods that fail a read and a write */
-class ErrorsController extends NotificationController {
-  /** Reads a path the backend does not have, and collects its error */
-  public async failRead(): Promise<void> {
-    await this.stores.backend.GET('/missing');
-    this.collect();
+/** Errors with two methods that fail a read and a write */
+class ErrorsController extends ErrorController {
+  /** Reads a path the backend does not have */
+  public failRead(): Promise<unknown> {
+    return this.stores.backend.GET('/missing');
   }
 
-  /** Writes a path the backend does not have, and collects its error */
-  public async failWrite(): Promise<void> {
-    await this.stores.backend.PUT('/missing', {});
-    this.collect();
+  /** Writes a path the backend does not have */
+  public failWrite(): Promise<unknown> {
+    return this.stores.backend.PUT('/missing', {});
   }
 }
 
-/** Failed requests of the api stores as notifications, with buttons that fail a read and a write */
+/** Failed requests of the api stores, with buttons that fail a read and a write */
 export default createView(ErrorsController, errors => (
   <section>
     <ul>
-      {errors.items().map(oItem => (
-        <li key={oItem.id}>{oItem.message}</li>
+      {errors.items().map((oError, iIndex) => (
+        <li key={iIndex}>
+          {oError.message}
+          <button onClick={() => errors.remove(iIndex)}>remove</button>
+        </li>
       ))}
     </ul>
     <button onClick={errors.failRead}>fail read</button>
