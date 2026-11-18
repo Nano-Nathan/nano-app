@@ -25,9 +25,9 @@ export default class FieldController extends AppController {
     return oField.format ? oField.format(oValue) : oValue;
   }
 
-  /** The message of the first rule the value kept breaks, translated when it is a key */
+  /** The text of the message of the first rule the value kept breaks, a key of the texts */
   public error(): string | undefined {
-    // The message of its validation, its text when it is a key of the texts
+    // The message of its validation is a key of the texts
     const sError: string | undefined = this.get(this.key('errors'));
     return sError && this.text(sError);
   }
