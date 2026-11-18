@@ -1,6 +1,6 @@
 ---
-status: todo
-owner: null
+status: in-progress
+owner: claude
 depends_on: []
 updated: 2026-11-18
 ---
@@ -23,9 +23,23 @@ The image build workflow (outside this repository).
 
 ## Done when
 
-An app generated with `create-nano-app` starts, migrates and builds its images.
+An app created with `pnpm create @nano-app` installs, starts and builds both of its images in CI.
+
+## Modules
+
+| # | Task | Does | Done when | Depends on |
+|---|---|---|---|---|
+| 1 | The command | `@nano-app/create` in `create/`: a bin that copies the template to `<name>`, names its root `package.json` and renames `gitignore` | Its `node:test` suite creates an app in a temporary folder and checks its files | — |
+| 2 | The template inside | The build copies `../template` beside the command, without what an install writes | `pnpm pack` holds the template | 1 |
+| 3 | Release | `publish-create.yml` and `.releaserc.json`; the maintainer bootstraps the package on npm | The merge publishes its first version | 2 |
+| 4 | End to end in CI | `test-create` creates an app, installs it, builds its frontend and both images | The check passes on the pull request | 2 |
+
+## Decisions
+
+Decided 2026-11-18: 1A `@nano-app/create` (`create-nano-app` belongs to another author on npm), 2A the template travels inside the package, 3A the app has no database, so the done-when drops "migrates".
 
 ## Log
 
 - 2026-10-29 · kleo · `migrations` closed: nano-app has no `migrate` command. The consumer migrates the app's schema with Prisma; the startup migrates only the official plugins' schemas.
 - 2026-11-18 · claude · `template/` is the app the command copies: a backend with `health` and a frontend with a Hello World page, on the published packages.
+- 2026-11-18 · claude · Modules 1 to 4 on `feat/create`, one pull request: the template is copied in the `build:done` hook of tsdown with `cpSync` (its `copy` option nests the folder, drops extensions and skips dotfiles). Tests run only in CI.

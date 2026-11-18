@@ -4,7 +4,7 @@ Planned work on this repository, one file per feature. A file says what the feat
 
 | Feature | Done when | Depends on |
 |---|---|---|
-| [create-nano-app](create-nano-app.md) | A generated app starts, migrates and builds its images | — |
+| [create-nano-app](create-nano-app.md) | An app created with `pnpm create @nano-app` installs, starts and builds both of its images in CI | — |
 | [scheduler](scheduler.md) | A job declared in the `scheduler` plugin runs on its cron, in its timezone | — |
 | [mail](mail.md) | A route sends an email through the `mail` plugin | scheduler |
 | [plugins-rebuild](plugins-rebuild.md) | `crud` and `health` run on the refactored backend, with the app's schema passed once | The responsibilities refactor |
