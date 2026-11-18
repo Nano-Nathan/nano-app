@@ -4,7 +4,7 @@
   "description": "Creates an app on nano-app: pnpm create @nano-app my-app",
   "type": "module",
   "bin": {
-    "create-nano-app": "./build/index.js"
+    "create-nano-app": "build/index.js"
   },
   "files": [
     "build",
