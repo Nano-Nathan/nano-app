@@ -3,9 +3,9 @@
 import { Anchor, Button, Divider, Paper, Stack, Text, Title } from '@mantine/core';
 import { z } from 'zod';
 import { createView } from '@nano-app/frontend';
-import Form from '../../components/form';
+import { Form } from '../../components/form';
 import GoogleIcon from './components/GoogleIcon';
-import LoginController from './LoginController';
+import LoginController from './Login.controller';
 import type { LoginProvider } from '../../types/login';
 
 /** Login card: the providers, the form of email and password, and the link to the other mode */

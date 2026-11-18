@@ -115,15 +115,20 @@ export default createLoginPage({
 
 ```
 mantine/src/
-├── index.ts                       the import path: exports every piece and its types
-├── layout/index.tsx               createLayout: the root layout
-├── components/<type>/             views of @nano-app/components, grouped by type
-│   ├── index.ts                   exports each view of the type
-│   └── <View>.tsx                 one view (fields/Input.tsx, fields/Password.tsx)
-├── pages/<name>/                  a ready page
-│   ├── index.tsx                  create<Name>Page, the server page, and its English texts
-│   ├── <Name>Controller.ts        the controller of the page
-│   ├── <Name>.tsx                 its client view
-│   └── components/                the pieces only this page uses
-└── types/                         the options and the types of each piece
+├── index.ts                         the import path: exports every piece and its types
+├── layout/index.tsx                 createLayout: the root layout
+├── components/<type>/               views of @nano-app/components, grouped by type
+│   ├── index.ts                     exports each view of the type
+│   ├── <View>.tsx                   a view alone (fields/Input.tsx)
+│   └── <View>/                      a view with its controller (notification/Toasts/)
+│       ├── <View>.tsx
+│       ├── <View>.controller.ts
+│       └── components/              the pieces only that view uses
+├── pages/<name>/                    a ready page, the same folder as a view
+│   ├── index.tsx                    create<Name>Page, the server page, and its English texts
+│   ├── <Name>.tsx
+│   ├── <Name>.controller.ts
+│   └── components/
+├── types/                           the options and the types of each piece
+└── const.ts                         the defaults shared by the views
 ```

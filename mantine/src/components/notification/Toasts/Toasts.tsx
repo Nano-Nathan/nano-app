@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { Notifications as MantineNotifications } from '@mantine/notifications';
 import { createView } from '@nano-app/frontend';
-import ToastsController from './ToastsController';
+import ToastsController from './Toasts.controller';
 
 /** Mantine's notifications, fed by the history of the app */
 export default createView(

@@ -12,7 +12,7 @@ import {
 } from '@mantine/core';
 import { createView } from '@nano-app/frontend';
 import BellIcon from './components/BellIcon';
-import NotificationCenterController from './NotificationCenterController';
+import NotificationCenterController from './NotificationCenter.controller';
 
 /** A bell that opens the history from the newest, to remove one or all */
 export default createView(NotificationCenterController, center => (
