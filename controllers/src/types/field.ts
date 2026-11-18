@@ -7,6 +7,8 @@ export type FormField = NanoObject & {
   name: string;
   /** Type of its view (`text` by default); a `number` keeps its text as a number */
   type?: string;
+  /** Key of the text of its label (`form.email`) */
+  label?: string;
   /** Rules of its value, a zod schema (`z.email()`); a rule between fields goes in the `onSubmit` of the form */
   validation?: ZodType;
   /** What the view shows of the value kept (`1234` → `$1.234`) */

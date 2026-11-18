@@ -22,6 +22,12 @@ export default class FieldController extends ApiController {
     return oField.format ? oField.format(oValue) : oValue;
   }
 
+  /** The text of its label, a key of the texts; none without a label */
+  public label(): string | undefined {
+    const { label } = this.field();
+    return label && this.text(label);
+  }
+
   /** The text of the message of the first rule the value kept breaks, a key of the texts */
   public error(): string | undefined {
     // The message of its validation is a key of the texts

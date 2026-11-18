@@ -6,3 +6,4 @@ export { default as createLoginPage } from './pages/login';
 export type { LayoutOptions } from './types/layout';
 export type { NotificationsOptions } from './types/notifications';
 export type { LoginOptions, LoginProvider } from './types/login';
+export { LOGIN_FIELDS } from './const';

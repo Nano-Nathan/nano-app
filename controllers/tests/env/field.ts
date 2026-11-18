@@ -9,6 +9,7 @@ Object.assign(globalThis, {
         data: {
           i18n: {
             en: {
+              'form.email': 'Email',
               'form.invalidEmail': 'Invalid email',
               'form.required': 'Required',
               'form.invalidNumber': 'Invalid number',

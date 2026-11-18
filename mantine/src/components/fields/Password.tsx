@@ -5,9 +5,9 @@ import { createView } from '@nano-app/frontend';
 import { FieldController } from '@nano-app/controllers';
 
 /** A Mantine password input, with a toggle to show it, its label and its error */
-export default createView(FieldController, (input, { field: oField }) => (
+export default createView(FieldController, input => (
   <PasswordInput
-    label={oField.label}
+    label={input.label()}
     radius="md"
     value={input.value() ?? ''}
     error={input.error()}

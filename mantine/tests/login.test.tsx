@@ -5,6 +5,7 @@ import { test, before, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { LOGIN_FIELDS } from '../src/const';
 import createLoginPage from '../src/pages/login';
 import TestApp, { aVisited } from './provider';
 
@@ -53,7 +54,7 @@ test('the login page shows its texts from the messages', () => {
   renderLogin();
 
   // The title and the buttons of the English messages
-  assert.ok(screen.getByText('Welcome'));
+  assert.ok(screen.getByText('Welcome!'));
   assert.ok(screen.getByText('Sign in'));
   assert.ok(screen.getByText('Create account'));
 });
@@ -67,7 +68,7 @@ test('the login page signs in at the store with the values and goes to home', as
   // Better Auth's sign-in got the values, and the router went home
   await waitFor(() => assert.deepEqual(aVisited, ['/home']));
   assert.deepEqual(aRequests, [
-    'POST /api/api/auth/sign-in/email {"email":"ana@nano.app","password":"secret","callbackURL":"/home"}',
+    'POST /api/api/auth/sign-in/email {"email":"ana@nano.app","password":"secret","callbackURL":"/home","errorCallbackURL":"/"}',
   ]);
 });
 
@@ -81,7 +82,7 @@ test('the login page signs up with the same values, the email as the name, and g
   // Better Auth's sign-up got the values with the name, and the router went home
   await waitFor(() => assert.deepEqual(aVisited, ['/home']));
   assert.deepEqual(aRequests, [
-    'POST /api/api/auth/sign-up/email {"email":"ana@nano.app","password":"secret","name":"ana@nano.app","callbackURL":"/home"}',
+    'POST /api/api/auth/sign-up/email {"email":"ana@nano.app","password":"secret","name":"ana@nano.app","callbackURL":"/home","errorCallbackURL":"/"}',
   ]);
 });
 
@@ -94,7 +95,7 @@ test('the login page asks Better Auth the page of Google, back to home', async (
   // Better Auth's social sign-in got the provider and the home
   await waitFor(() =>
     assert.deepEqual(aRequests, [
-      'POST /api/api/auth/sign-in/social {"provider":"google","callbackURL":"/home"}',
+      'POST /api/api/auth/sign-in/social {"provider":"google","callbackURL":"/home","errorCallbackURL":"/"}',
     ]),
   );
 });
@@ -111,4 +112,22 @@ test('the login page without sign-up offers no link to create an account', () =>
   // Signs in, and offers nothing to sign up
   assert.ok(screen.getByText('Sign in'));
   assert.equal(screen.queryByText('Create account'), null);
+});
+
+test('the sign-up shows its own fields', () => {
+  // Renders a login that asks a phone to sign up
+  const PhoneLogin = createLoginPage({
+    home: '/home',
+    signUpFields: [...LOGIN_FIELDS, { name: 'phone', label: 'nano.login.email' }],
+  });
+  render(
+    <TestApp>
+      <PhoneLogin />
+    </TestApp>,
+  );
+
+  // The sign-in has no phone; the sign-up has it
+  assert.equal(screen.queryAllByRole('textbox').length, 1);
+  fireEvent.click(screen.getByText('Create account'));
+  assert.equal(screen.queryAllByRole('textbox').length, 2);
 });

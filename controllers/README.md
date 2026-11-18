@@ -88,7 +88,7 @@ export default createView(LogoutController, logout => (
 // src/components/Input.tsx: an input of the field's type with its error
 export default createView(FieldController, (input, { field: oField }) => (
   <label>
-    {oField.label}
+    {input.label()}
     <input
       type={oField.type ?? 'text'}
       disabled={oField.disabled}
@@ -101,11 +101,16 @@ export default createView(FieldController, (input, { field: oField }) => (
 
 <Input
   form="signUp"
-  field={{ name: 'email', label: 'Email', type: 'email', validation: z.email() }}
+  field={{
+    name: 'email',
+    label: 'form.email',
+    type: 'email',
+    validation: z.email('form.invalidEmail'),
+  }}
 />;
 ```
 
-- A field is `{ name, type, validation, format, parse, options }`; its other keys (`label`, `disabled`) pass as is to its view.
+- A field is `{ name, type, label, validation, format, parse, options }`; its other keys (`disabled`) pass as is to its view. `label` is a key of the app's texts: `label()` gives its text, nothing without one.
 - `validation` holds the rules of its value, a [zod](https://zod.dev) schema written by the app (`z.email('Invalid email')`, `z.string().min(3, 'Too short')`, `z.number().optional()`). A rule between fields (a password and its repeat) goes in the `onSubmit` of the form.
 - `change(value)` keeps the value at `/form/<form>/values/<name>` as the view gives it (a text, a boolean, the ISO day of a date input), an empty text as no value (`undefined`), and a `number` field as a number when its text is that number as is (`'12'`, while `'1.'` stays a text). Then it keeps at `/form/<form>/errors/<name>` the message of the first rule of its validation the value breaks. `error()` gives that message.
 - `error()` gives the message as the app's texts have it: every message of a validation is a key (`z.email('form.invalidEmail')`, see [Texts](../frontend/README.md#texts)), and one the texts lack shows as `i18n.<message>`.

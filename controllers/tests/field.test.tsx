@@ -98,6 +98,20 @@ describe('field', () => {
     assert.equal(screen.getByLabelText<HTMLInputElement>('age').value, 'ten');
   });
 
+  test('label gives the text of its key, and nothing without a label', () => {
+    // A field with a label and one without
+    const Label = createView(FieldController, input => <span>{input.label() ?? 'none'}</span>);
+    render(
+      <TestApp>
+        <Label form="up" field={{ name: 'email', label: 'form.email' }} />
+        <Label form="up" field={{ name: 'phone' }} />
+      </TestApp>,
+    );
+
+    assert.ok(screen.getByText('Email'));
+    assert.ok(screen.getByText('none'));
+  });
+
   test('an empty text is no value: only a field whose validation needs one breaks', () => {
     // Renders the sign-up, and types and empties the phone and the optional number
     renderFields('signUp', SIGN_UP);

@@ -1,3 +1,5 @@
+import type { FormField } from '@nano-app/controllers';
+
 /** Social providers of Better Auth the login offers */
 export type LoginProvider = 'google';
 
@@ -9,4 +11,8 @@ export type LoginOptions = {
   providers?: LoginProvider[];
   /** Whether the card offers to sign up (`true` by default); `false` when only an admin creates users */
   signUp?: boolean;
+  /** Fields of the sign-in: `LOGIN_FIELDS` (email and password) by default */
+  fields?: FormField[];
+  /** Fields of the sign-up: `fields` by default; one beyond them (`phone`) needs `user.additionalFields` in the backend */
+  signUpFields?: FormField[];
 };

@@ -10,7 +10,9 @@ import TestApp from './provider';
 import type { NanoObject } from '@nano-app/core/types/objects';
 
 // Fields of the form: an email with its rule
-const FIELDS = [{ name: 'email', label: 'Email', validation: z.email('nano.login.invalidEmail') }];
+const FIELDS = [
+  { name: 'email', label: 'nano.login.email', validation: z.email('nano.login.invalidEmail') },
+];
 
 // Values each submit sent
 const aSent: NanoObject[] = [];
