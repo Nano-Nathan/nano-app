@@ -1,9 +1,8 @@
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
 import { ColorSchemeScript, MantineProvider, mantineHtmlProps } from '@mantine/core';
-import { Notifications } from '@mantine/notifications';
 import { NanoAppProvider } from '@nano-app/frontend';
-import { Errors } from '../components/feedback';
+import { Errors, Notifications } from '../components/feedback';
 import type { ReactNode } from 'react';
 import type { LayoutOptions } from '../types/layout';
 
@@ -11,8 +10,8 @@ import type { LayoutOptions } from '../types/layout';
 export default function createLayout(
   oOptions: LayoutOptions,
 ): (props: { children: ReactNode }) => ReactNode {
-  // The language goes to the html, the rest to MantineProvider
-  const { lang, ...oProvider } = oOptions;
+  // The language goes to the html, the notifications to theirs, the rest to MantineProvider
+  const { lang, notifications, ...oProvider } = oOptions;
   return function RootLayout({ children }: { children: ReactNode }): ReactNode {
     return (
       <html lang={lang} {...mantineHtmlProps}>
@@ -24,8 +23,8 @@ export default function createLayout(
         </head>
         <body>
           <MantineProvider {...oProvider}>
-            <Notifications position="top-center" />
             <NanoAppProvider>
+              <Notifications {...notifications} />
               <Errors />
               {children}
             </NanoAppProvider>

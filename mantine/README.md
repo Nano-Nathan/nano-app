@@ -60,9 +60,29 @@ Views of `@nano-app/components`, with Mantine. Their logic is the component's: s
 </Form>
 ```
 
-## Errors
+## Notifications
 
-Every failed request of an api store (its `/error/list`, see [`ErrorController`](../components/README.md#error)) shows as a red notification at the top of the screen, with the backend's `message`, and leaves its store. It stays until the user closes it: an error is not missed while the user looks elsewhere. `createLayout` mounts it with Mantine's `Notifications`: an app does nothing. `Errors` is exported too, for an app with a layout of its own.
+`createLayout` mounts `Notifications`, which shows the notifications of the app (see [`NotificationController`](../components/README.md#notification)) with Mantine's, one under the other, and `Errors`, which turns every failed request of an api store (its `/error/list`) into a notification of type `error` with the backend's `message`. An app does nothing to show its errors; to notify something else, a controller calls `notify`.
+
+`notifications` of `createLayout` sets them, every key optional:
+
+```tsx
+createLayout({
+  lang: 'es',
+  notifications: {
+    types: ['error', 'success'],
+    position: 'bottom-right',
+    autoClose: 5000,
+    limit: 3,
+  },
+});
+```
+
+- `types`: the kinds shown, every kind by default.
+- `colors`: the Mantine color of a kind, over `success: 'green'`, `error: 'red'`, `info: 'blue'` and `warning: 'yellow'`.
+- Any other key is a prop of Mantine's `Notifications`: `position` (`top-center` by default), `autoClose` (3000 ms by default, `false` to keep them until closed), `limit`…
+
+`Notifications` and `Errors` are exported too, for an app with a layout of its own.
 
 ## Pages
 

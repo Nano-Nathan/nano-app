@@ -4,9 +4,8 @@ import './env';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { Notifications } from '@mantine/notifications';
 import { Controller, createView } from '@nano-app/frontend';
-import { Errors } from '../src';
+import { Errors, Notifications } from '../src';
 import TestApp from './provider';
 
 // Probe that keeps a failed request in the api store and shows how many it has
