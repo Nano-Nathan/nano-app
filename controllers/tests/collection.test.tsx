@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { createView } from '@nano-app/frontend';
-import CollectionController from '../collection';
+import { CollectionController } from '../src';
 import TestApp from './provider';
 import type { ReactNode } from 'react';
 

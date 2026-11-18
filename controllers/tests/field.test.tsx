@@ -7,9 +7,9 @@ import { createServer } from 'node:http';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { z } from 'zod';
 import { createView } from '@nano-app/frontend';
-import FieldController from '../field';
+import { FieldController } from '../src';
 import TestApp from './provider';
-import type { FormField } from '../types/field';
+import type { FormField } from '../src/types/field';
 
 const PORT = 4201;
 

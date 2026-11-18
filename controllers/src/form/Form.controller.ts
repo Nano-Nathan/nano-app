@@ -1,19 +1,19 @@
 import { createElement } from 'react';
 import NanoError from '@nano-app/core/utils/NanoError';
 import AppController from '../utils/AppController';
-import validate from '../field/validate';
+import validate from './validate';
 import type { ReactNode, SubmitEvent } from 'react';
 import type { ComponentProps } from '@nano-app/frontend';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { FormField } from '../types/field';
 
 /** A form from a config of fields: their views, and their submit at `/form/<name>` of `app` */
-export default abstract class FormController extends AppController {
+export default class FormController extends AppController {
   /** Path of its state, from the props when it mounts */
   protected root = `/form/${this.props.name}`;
 
-  /** View of each field type (`{ text: Input, select: Select }`); `text` shows the types without one */
-  protected abstract components: NanoObject<(props: ComponentProps) => ReactNode>;
+  /** View of each field type (`{ text: Input, select: Select }`), the prop `components`; `text` shows the types without one */
+  protected components: NanoObject<(props: ComponentProps) => ReactNode> = this.props.components;
 
   /** The view of each field, with its form and its config */
   public fields(): ReactNode[] {

@@ -1,15 +1,17 @@
-import AuthController from '../auth';
+import NanoError from '@nano-app/core/utils/NanoError';
+import AuthController from './Auth.controller';
+import type { ApiStore } from '@nano-app/frontend';
 import type { ApiResponse } from '@nano-app/core/types/api';
 import type { LoginValues } from '../types/login';
 
-export type { LoginValues } from '../types/login';
-
-/** A login: signs in or signs up by its mode, or with a provider, and goes to `home` */
-export default abstract class LoginController extends AuthController {
+/** A login: signs in or signs up by its mode, or with a provider, and goes to `home`; `store` and `home` come in its props */
+export default class LoginController extends AuthController {
   /** Path of its state */
   protected root = '/login';
-  /** Path the login goes to once signed in or signed up */
-  protected abstract home: string;
+  /** Api store with Better Auth, named by the prop `store` */
+  protected api: ApiStore = this.store();
+  /** Path the login goes to once signed in or signed up, the prop `home` */
+  protected home: string = this.props.home;
 
   /** Whether it signs up instead of signing in */
   public isSignUp(): boolean {
@@ -44,5 +46,16 @@ export default abstract class LoginController extends AuthController {
 
     // Goes to the provider's page, outside the app
     if (success && url) window.location.assign(url);
+  }
+
+  /** The api store named by the prop `store`; fails when the app has none of that name */
+  private store(): ApiStore {
+    const { store } = this.props;
+    const oStore: ApiStore | undefined = Reflect.get(this.stores, store);
+    if (!oStore)
+      throw new NanoError(
+        `The login asks the store "${store}", which the app does not have. Add src/stores/${store}.store.ts with type 'api'.`,
+      );
+    return oStore;
   }
 }

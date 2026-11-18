@@ -44,7 +44,7 @@ export default createTheme({ primaryColor: 'teal' });
 
 ## Components
 
-Views of `@nano-app/controllers`, with Mantine. Their logic is the component's: see [its README](../components/README.md).
+Views of `@nano-app/controllers`, with Mantine. Their logic is the controller's: see [its README](../controllers/README.md).
 
 | Component  | Import                                         | Controller        | Props                                    |
 | ---------- | ---------------------------------------------- | ----------------- | ---------------------------------------- |
@@ -110,14 +110,12 @@ mantine/src/
 ├── components/<type>/               views of @nano-app/controllers, grouped by type
 │   ├── index.ts                     exports each view of the type
 │   ├── <View>.tsx                   a view alone (fields/Input.tsx)
-│   └── <View>/                      a view with its controller (notification/Toasts/)
+│   └── <View>/                      a view with pieces of its own
 │       ├── <View>.tsx
-│       ├── <View>.controller.ts
 │       └── components/              the pieces only that view uses
 ├── pages/<name>/                    a ready page, the same folder as a view
 │   ├── index.tsx                    create<Name>Page, the server page, and its English texts
 │   ├── <Name>.tsx
-│   ├── <Name>.controller.ts
 │   └── components/
 ├── types/                           the options and the types of each piece
 └── const.ts                         the defaults shared by the views

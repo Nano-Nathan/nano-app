@@ -1,4 +1,4 @@
-import AuthController from '@nano-app/controllers/auth';
+import { AuthController } from '@nano-app/controllers';
 
 /** Session of the backend store, shared by the login and the sign-out */
 export default class BackendAuthController extends AuthController {

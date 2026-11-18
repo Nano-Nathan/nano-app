@@ -42,10 +42,3 @@ export type LoginOptions = {
   /** Texts that replace the English ones */
   texts?: Partial<LoginTexts>;
 };
-
-/** Texts of the current mode of the login: its button, and the question and link to the other mode */
-export type ModeTexts = {
-  submit: string;
-  question: string;
-  link: string;
-};

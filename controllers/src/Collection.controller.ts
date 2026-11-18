@@ -1,4 +1,4 @@
-import ApiController from '../utils/ApiController';
+import ApiController from './utils/ApiController';
 import type { ApiResponse, QueryParams } from '@nano-app/core/types/api';
 
 /** A backend path read by pages or page after page; its page and order under `root` */

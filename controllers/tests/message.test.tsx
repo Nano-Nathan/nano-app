@@ -7,7 +7,7 @@ import { createServer } from 'node:http';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { REQUEST_FAILED } from '@nano-app/core/const';
 import { createView } from '@nano-app/frontend';
-import MessageController from '../message';
+import { MessageController } from '../src';
 import TestApp from './provider';
 import type { ApiMessage } from '@nano-app/frontend';
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { createView } from '@nano-app/frontend';
-import MessageController from '@nano-app/controllers/message';
+import { MessageController } from '@nano-app/controllers';
 
 /** Errors with two methods that fail a read and a write */
 class MessagesController extends MessageController {

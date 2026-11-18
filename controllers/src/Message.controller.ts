@@ -40,6 +40,17 @@ export default class MessageController extends Controller {
     }
   }
 
+  /** Gives each message, from the newest, to `fnShow`, and empties the lists */
+  public flush(fnShow: (oMessage: ApiMessage) => void): void {
+    // Nothing to give
+    const aMessages = this.items();
+    if (!aMessages.length) return;
+
+    // Gives each one and empties the lists
+    for (const oMessage of aMessages) fnShow(oMessage);
+    this.clear();
+  }
+
   /** Every store of the app */
   private all(): Store[] {
     return Object.values(this.stores);

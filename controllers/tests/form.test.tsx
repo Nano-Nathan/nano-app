@@ -6,11 +6,11 @@ import assert from 'node:assert/strict';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { z } from 'zod';
 import { createView } from '@nano-app/frontend';
-import FieldController from '../field';
-import FormController from '../form';
+import { FieldController } from '../src';
+import { FormController } from '../src';
 import TestApp from './provider';
 import type { NanoObject } from '@nano-app/core/types/objects';
-import type { FormField } from '../types/field';
+import type { FormField } from '../src/types/field';
 
 // Views of the fields: a text and a checkbox, each with its form and name
 const Input = createView(FieldController, (_oInput, props) => (

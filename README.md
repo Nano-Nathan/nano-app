@@ -55,7 +55,7 @@ The file path is the URL. Full API, database, and plugin contract: [`backend/REA
 | `@nano-app/backend`     | `backend/`     | published | Express server, convention routes, optional PostgreSQL and Better Auth                                     |
 | `@nano-app/plugins`     | `plugins/`     | published | Official backend plugins: `import <name> from '@nano-app/plugins/<name>'`                                  |
 | `@nano-app/frontend`    | `frontend/`    | published | Next.js stores, controllers and the proxy to the backend                                                   |
-| `@nano-app/controllers` | `controllers/` | published | Official frontend controllers: `import <name> from '@nano-app/controllers/<name>'`                         |
+| `@nano-app/controllers` | `controllers/` | published | Official frontend controllers: `import { LoginController } from '@nano-app/controllers'`                   |
 | `@nano-app/mantine`     | `mantine/`     | published | Mantine for the frontend: `createLayout`, views of the controllers and ready pages                         |
 | `@nano-app/core`        | `core/`        | private   | Convention loader, types and constants, inlined into the backend, frontend, controllers and mantine builds |
 

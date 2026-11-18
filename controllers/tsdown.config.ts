@@ -1,13 +1,12 @@
 import { defineConfig } from 'tsdown';
-import { globSync } from 'glob';
 import pkg from './package.json' with { type: 'json' };
 
 export default defineConfig({
-  // One folder per component: `<name>/index.ts` is its import path
-  entry: globSync('*/index.ts'),
+  // One entry: every controller leaves from `@nano-app/controllers`
+  entry: ['src/index.ts'],
   // One output file per source file: Next reads `'use client'` per module
   unbundle: true,
-  root: '.',
+  root: 'src',
   format: ['esm'],
   platform: 'neutral',
   // `.js`, not `.mjs`: package.json exports read `.js`

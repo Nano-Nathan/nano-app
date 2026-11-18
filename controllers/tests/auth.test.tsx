@@ -7,7 +7,7 @@ import { createServer } from 'node:http';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { NanoAppProvider, createView } from '@nano-app/frontend';
-import AuthController from '../auth';
+import { AuthController } from '../src';
 import type { ReactNode } from 'react';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 

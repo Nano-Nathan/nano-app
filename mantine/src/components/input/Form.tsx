@@ -1,18 +1,17 @@
 'use client';
 
 import { Stack } from '@mantine/core';
+import { FormController } from '@nano-app/controllers';
 import { createView } from '@nano-app/frontend';
-
-import FormController from '@nano-app/controllers/form';
 import { Input, Password } from '../fields';
+import type { ComponentProps } from '@nano-app/frontend';
+import type { ReactNode } from 'react';
 
-/** Form whose passwords show with their own input, every other type with the input */
-class InputFormController extends FormController {
-  protected components = { text: Input, password: Password };
-}
+/** View of each field type: passwords with their own input, every other with the input */
+const COMPONENTS = { text: Input, password: Password };
 
-/** A form of a config of fields: its inputs, then its children (the buttons) */
-export default createView(InputFormController, (form, { children }) => (
+/** The form of a config of fields: its inputs, then its children (the buttons) */
+const FormView = createView(FormController, (form, { children }) => (
   <form noValidate onSubmit={form.submit}>
     <Stack>
       {form.fields()}
@@ -20,3 +19,8 @@ export default createView(InputFormController, (form, { children }) => (
     </Stack>
   </form>
 ));
+
+/** A form whose fields show with the inputs of Mantine */
+export default function Form(props: ComponentProps): ReactNode {
+  return <FormView {...props} components={COMPONENTS} />;
+}

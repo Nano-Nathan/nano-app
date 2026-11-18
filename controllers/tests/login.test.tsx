@@ -7,7 +7,7 @@ import { createServer } from 'node:http';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { NanoAppProvider, createView } from '@nano-app/frontend';
-import LoginController from '../login';
+import { LoginController } from '../src';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 
 const PORT = 4201;
