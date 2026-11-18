@@ -12,7 +12,7 @@ import type { LoginProvider } from '../../types/login';
 export default createView(
   AuthController,
   (auth, { providers, signUp, fields = LOGIN_FIELDS, signUpFields = fields }) => {
-    // The keys of the texts and the fields of the current mode
+    // The keys of the texts and the fields of the current mode, a form for each
     const oMode = auth.isToggled()
       ? { ...LOGIN_MODES.signUp, fields: signUpFields }
       : { ...LOGIN_MODES.signIn, fields };
@@ -45,7 +45,7 @@ export default createView(
               <Divider label={auth.text('nano.login.divider')} labelPosition="center" />
             </>
           )}
-          <Form name="login" fields={oMode.fields} onSubmit={auth.send}>
+          <Form key={oMode.submit} name="login" fields={oMode.fields} onSubmit={auth.send}>
             <Button type="submit" radius="xl" size="md" mt="xs" loading={auth.isBusy()}>
               {auth.text(`nano.login.${oMode.submit}`)}
             </Button>

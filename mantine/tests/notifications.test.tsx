@@ -5,7 +5,7 @@ import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Controller, createView } from '@nano-app/frontend';
-import { Toasts } from '../src';
+import { Toasts } from '../src/components/notification';
 import TestApp from './provider';
 
 // Probe that keeps a failed request in the api store and shows how many it has
