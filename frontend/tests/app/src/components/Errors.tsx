@@ -23,10 +23,7 @@ export default createView(ErrorsController, errors => (
   <section>
     <ul>
       {errors.items().map(oItem => (
-        <li key={oItem.id}>
-          {oItem.message}
-          <button onClick={() => errors.remove(oItem.id)}>remove</button>
-        </li>
+        <li key={oItem.id}>{oItem.message}</li>
       ))}
     </ul>
     <button onClick={errors.failRead}>fail read</button>

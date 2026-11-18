@@ -62,9 +62,7 @@ Views of `@nano-app/controllers`, with Mantine. Their logic is the component's: 
 
 ## Notifications
 
-`createLayout` mounts `Toasts`: it moves every failed request of an api store (its `/error/list`) to the history of the app's notifications (see [`NotificationController`](../components/README.md#notification)) as an `error` with the backend's `message`, and shows each new notification once with Mantine's, one under the other. An app does nothing to show its errors; to notify something else, a controller calls `notify`.
-
-`NotificationCenter` is a bell that opens that history, from the newest, to remove one notification or all of them. The app puts it where it wants (a header) and gives its `texts` (`title`, `clear`, `empty`) and `colors`.
+`createLayout` mounts `Toasts`: it moves every failed request of an api store (its `/error/list`) to the app's notifications (see [`NotificationController`](../components/README.md#notification)) as an `error` with the backend's `message`, and shows each notification as a toast with Mantine's, one under the other. An app does nothing to show its errors; to notify something else, a controller calls `notify`.
 
 `notifications` of `createLayout` sets them, every key optional:
 

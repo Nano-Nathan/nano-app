@@ -5,7 +5,7 @@ import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Controller, createView } from '@nano-app/frontend';
-import { NotificationCenter, Toasts } from '../src';
+import { Toasts } from '../src';
 import TestApp from './provider';
 
 // Probe that keeps a failed request in the api store and shows how many it has
@@ -23,12 +23,11 @@ const Probe = createView(Controller, probe => (
 
 afterEach(cleanup);
 
-test('a failed request shows as a notification once, and stays in the history', async () => {
-  // Renders the notifications and the center, and fails a request
+test('a failed request shows as a toast and leaves its store', async () => {
+  // Renders the toasts and fails a request
   render(
     <TestApp>
       <Toasts />
-      <NotificationCenter />
       <Probe />
     </TestApp>,
   );

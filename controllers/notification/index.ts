@@ -4,38 +4,20 @@ import type { Notification, NotificationInput } from '../types/notification';
 
 export type { Notification, NotificationInput, NotificationType } from '../types/notification';
 
-/** History of the app's notifications at `/notification/list` of `app`, the api errors among them */
+/** Notifications of the app at `/notification/list` of `app`, the api errors among them, for a view to show */
 export default class NotificationController extends AppController {
   /** Path of its state */
   protected root = '/notification';
 
-  /** Adds a notification to the history, not shown yet */
+  /** Adds a notification after the ones before */
   public notify(oInput: NotificationInput): void {
-    const oNotification: Notification = {
-      ...oInput,
-      id: crypto.randomUUID(),
-      timestamp: Date.now(),
-      shown: false,
-    };
+    const oNotification: Notification = { ...oInput, id: crypto.randomUUID() };
     this.set('/list', [...this.items(), oNotification]);
   }
 
-  /** The history, from the oldest */
+  /** The notifications kept, from the oldest */
   public items(): Notification[] {
     return this.get('/list') ?? [];
-  }
-
-  /** The notifications no view showed yet */
-  public fresh(): Notification[] {
-    return this.items().filter(oItem => !oItem.shown);
-  }
-
-  /** Marks a notification as shown once */
-  public markShown(sId: string): void {
-    this.set(
-      '/list',
-      this.items().map(oItem => (oItem.id === sId ? { ...oItem, shown: true } : oItem)),
-    );
   }
 
   /** The failed requests every store keeps at `/error/list` */
@@ -43,7 +25,7 @@ export default class NotificationController extends AppController {
     return Object.values(this.stores).flatMap(oStore => oStore.get('/error/list') ?? []);
   }
 
-  /** Moves the failed requests of every store to the history, as errors */
+  /** Moves the failed requests of every store to the notifications, as errors */
   public collect(): void {
     for (const oStore of Object.values(this.stores)) {
       // Skips a store without errors
@@ -56,15 +38,7 @@ export default class NotificationController extends AppController {
     }
   }
 
-  /** Removes a notification of the history */
-  public remove(sId: string): void {
-    this.set(
-      '/list',
-      this.items().filter(oItem => oItem.id !== sId),
-    );
-  }
-
-  /** Empties the history */
+  /** Empties the notifications */
   public clear(): void {
     this.set('/list', []);
   }

@@ -48,13 +48,13 @@ export default createView(UsersController, users => (
 
 ## Controllers
 
-| Component                | Import                                                                    | Fields                                           | Methods                                                                                                  | Props                        | State                                                    |
-| ------------------------ | ------------------------------------------------------------------------- | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------- | ---------------------------- | -------------------------------------------------------- |
-| `AuthController`         | `import AuthController from '@nano-app/controllers/auth'`                 | `api` (abstract), `kind` (`'email'`)             | `signIn(body)`, `signUp(body)`, `signOut()`, `navTo(url)`                                                | —                            | —                                                        |
-| `FieldController`        | `import FieldController from '@nano-app/controllers/field'`               | —                                                | `value()`, `error()`, `change(value)`, `options()`                                                       | `form`, `field`              | `app`: `/form/<form>/values`, `/form/<form>/errors`      |
-| `FormController`         | `import FormController from '@nano-app/controllers/form'`                 | `components` (abstract)                          | `fields()`, `submit(event)`, `reset()`                                                                   | `name`, `fields`, `onSubmit` | `app`: `/form/<name>`                                    |
-| `NotificationController` | `import NotificationController from '@nano-app/controllers/notification'` | —                                                | `notify(input)`, `items()`, `fresh()`, `markShown(id)`, `errors()`, `collect()`, `remove(id)`, `clear()` | —                            | `app`: `/notification/list`; every store's `/error/list` |
-| `CollectionController`   | `import CollectionController from '@nano-app/controllers/collection'`     | `api`, `root`, `path` (abstract), `limit` (`50`) | `load()`, `items()`, `page()`, `goTo(page)`, `next()`, `prev()`, `sort(field)`, `more()`, `pages()`      | —                            | `app`: `<root>/page`, `<root>/orderBy`, `<root>/pages`   |
+| Component                | Import                                                                    | Fields                                           | Methods                                                                                             | Props                        | State                                                    |
+| ------------------------ | ------------------------------------------------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------- | ---------------------------- | -------------------------------------------------------- |
+| `AuthController`         | `import AuthController from '@nano-app/controllers/auth'`                 | `api` (abstract), `kind` (`'email'`)             | `signIn(body)`, `signUp(body)`, `signOut()`, `navTo(url)`                                           | —                            | —                                                        |
+| `FieldController`        | `import FieldController from '@nano-app/controllers/field'`               | —                                                | `value()`, `error()`, `change(value)`, `options()`                                                  | `form`, `field`              | `app`: `/form/<form>/values`, `/form/<form>/errors`      |
+| `FormController`         | `import FormController from '@nano-app/controllers/form'`                 | `components` (abstract)                          | `fields()`, `submit(event)`, `reset()`                                                              | `name`, `fields`, `onSubmit` | `app`: `/form/<name>`                                    |
+| `NotificationController` | `import NotificationController from '@nano-app/controllers/notification'` | —                                                | `notify(input)`, `items()`, `errors()`, `collect()`, `clear()`                                      | —                            | `app`: `/notification/list`; every store's `/error/list` |
+| `CollectionController`   | `import CollectionController from '@nano-app/controllers/collection'`     | `api`, `root`, `path` (abstract), `limit` (`50`) | `load()`, `items()`, `page()`, `goTo(page)`, `next()`, `prev()`, `sort(field)`, `more()`, `pages()` | —                            | `app`: `<root>/page`, `<root>/orderBy`, `<root>/pages`   |
 
 ## Auth
 
@@ -153,10 +153,9 @@ export default createView(LogoutController, auth => (
 
 ## Notification
 
-`NotificationController` keeps the history of the app's notifications at `/notification/list` of `app`. `notify({ type, message, title })` adds one (`type` is `success`, `error`, `info` or `warning`) with its `id`, `timestamp` and `shown: false`, and `items()` gives the history from the oldest.
+`NotificationController` keeps the app's notifications at `/notification/list` of `app`, until a view shows them. `notify({ type, message, title })` adds one (`type` is `success`, `error`, `info` or `warning`) with its `id`, `items()` gives them from the oldest, and `clear()` empties them once shown.
 
-- A toast shows `fresh()` (the ones never shown) and marks each one with `markShown(id)`: it stays in the history, which `remove(id)` and `clear()` empty.
-- The failed requests of the api stores (each store's `/error/list`, see `@nano-app/frontend`) join the history with `collect()`: each one becomes an `error` notification with the backend's `message`, and leaves its store. `errors()` gives the ones still in the stores, for a view to collect them when they change.
+- The failed requests of the api stores (each store's `/error/list`, see `@nano-app/frontend`) join them with `collect()`: each one becomes an `error` notification with the backend's `message`, and leaves its store. `errors()` gives the ones still in the stores, for a view to collect them when they change.
 - A controller that notifies extends it, or keeps one on its own context (`protected notifications = new NotificationController({ props: this.props, stores: this.stores, router: this.router });`).
 
 ## Collection
