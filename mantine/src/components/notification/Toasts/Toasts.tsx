@@ -8,5 +8,5 @@ import ToastsController from './Toasts.controller';
 /** Mantine's notifications, with every failed request of the api stores among them */
 export default createView(ToastsController, (toasts, props) => {
   useEffect(toasts.show, [toasts.items()]);
-  return <Notifications position="top-center" autoClose={3000} {...props} />;
+  return <Notifications position="top-right" autoClose={3000} {...props} />;
 });
