@@ -23,10 +23,10 @@ export default createView(AuthController, (auth, { providers, signUp }) => {
       <Stack gap="lg">
         <Stack gap="xs" align="center">
           <Title order={2} ta="center">
-            {auth.stores.app.text('nano.login.title')}
+            {auth.text('nano.login.title')}
           </Title>
           <Text c="dimmed" ta="center">
-            {auth.stores.app.text('nano.login.subtitle')}
+            {auth.text('nano.login.subtitle')}
           </Text>
         </Stack>
         {providers.length > 0 && (
@@ -41,10 +41,10 @@ export default createView(AuthController, (auth, { providers, signUp }) => {
                 disabled={auth.isBusy()}
                 onClick={() => auth.signIn({ provider: sProvider }, 'social')}
               >
-                {auth.stores.app.text(`nano.login.${sProvider}`)}
+                {auth.text(`nano.login.${sProvider}`)}
               </Button>
             ))}
-            <Divider label={auth.stores.app.text('nano.login.divider')} labelPosition="center" />
+            <Divider label={auth.text('nano.login.divider')} labelPosition="center" />
           </>
         )}
         <Form
@@ -52,13 +52,13 @@ export default createView(AuthController, (auth, { providers, signUp }) => {
           fields={[
             {
               name: 'email',
-              label: auth.stores.app.text('nano.login.email'),
+              label: auth.text('nano.login.email'),
               type: 'email',
               validation: z.email('nano.login.invalidEmail'),
             },
             {
               name: 'password',
-              label: auth.stores.app.text('nano.login.password'),
+              label: auth.text('nano.login.password'),
               type: 'password',
               validation: z.string('nano.login.required'),
             },
@@ -66,14 +66,14 @@ export default createView(AuthController, (auth, { providers, signUp }) => {
           onSubmit={auth.send}
         >
           <Button type="submit" radius="xl" size="md" mt="xs" loading={auth.isBusy()}>
-            {auth.stores.app.text(`nano.login.${oMode.submit}`)}
+            {auth.text(`nano.login.${oMode.submit}`)}
           </Button>
         </Form>
         {signUp && (
           <Text size="sm" c="dimmed" ta="center">
-            {auth.stores.app.text(`nano.login.${oMode.question}`)}{' '}
+            {auth.text(`nano.login.${oMode.question}`)}{' '}
             <Anchor component="button" type="button" size="sm" fw={600} onClick={auth.toggle}>
-              {auth.stores.app.text(`nano.login.${oMode.link}`)}
+              {auth.text(`nano.login.${oMode.link}`)}
             </Anchor>
           </Text>
         )}

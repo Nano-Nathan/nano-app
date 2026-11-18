@@ -29,7 +29,7 @@ export default class FieldController extends AppController {
   public error(): string | undefined {
     // The message of its validation, its text when it is a key of the texts
     const sError: string | undefined = this.get(this.key('errors'));
-    return sError && this.stores.app.text(sError);
+    return sError && this.text(sError);
   }
 
   /** Keeps the value and the message of the first rule it breaks */

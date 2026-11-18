@@ -44,6 +44,7 @@ export default createView(UsersController, users => (
 - A controller reads what it needs when its view mounts (`onMount`): the view only renders. The requests in progress are in the store's `/busy`.
 - A controller keeps its state under `root` in `state`, the `app` store by default: a subclass moves it to another store with `protected state = this.stores.ui;`.
 - Every controller has one on/off flag under its `root`: `isToggled()` reads it and `toggle()` switches it (a mode, a drawer).
+- Every controller reads the app's texts with `text(key)` (`text('nano.login.title')`), from the `app` store whatever its `state`, in the locale at `/locale`.
 - A controller that reads the backend uses the `api` store, which every app has (its URL in `API_API_URL`). A subclass moves it to another api store as a field: `protected api = this.stores.admin;`, typed by the app's `nano-app-env.d.ts`. Any other store is used directly (`this.stores.payments.POST(…)`).
 
 ## Controllers
