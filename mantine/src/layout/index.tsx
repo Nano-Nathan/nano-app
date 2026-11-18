@@ -2,7 +2,7 @@ import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
 import { ColorSchemeScript, MantineProvider, mantineHtmlProps } from '@mantine/core';
 import { NanoAppProvider } from '@nano-app/frontend';
-import { Notifications } from '../components/feedback';
+import { Toasts } from '../components/notification';
 import type { ReactNode } from 'react';
 import type { LayoutOptions } from '../types/layout';
 
@@ -24,7 +24,7 @@ export default function createLayout(
         <body>
           <MantineProvider {...oProvider}>
             <NanoAppProvider>
-              <Notifications {...notifications} />
+              <Toasts {...notifications} />
               {children}
             </NanoAppProvider>
           </MantineProvider>

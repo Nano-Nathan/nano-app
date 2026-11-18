@@ -5,7 +5,7 @@ import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Controller, createView } from '@nano-app/frontend';
-import { NotificationCenter, Notifications } from '../src';
+import { NotificationCenter, Toasts } from '../src';
 import TestApp from './provider';
 
 // Probe that keeps a failed request in the api store and shows how many it has
@@ -27,7 +27,7 @@ test('a failed request shows as a notification once, and stays in the history', 
   // Renders the notifications and the center, and fails a request
   render(
     <TestApp>
-      <Notifications />
+      <Toasts />
       <NotificationCenter />
       <Probe />
     </TestApp>,

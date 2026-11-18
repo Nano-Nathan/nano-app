@@ -1,13 +1,9 @@
-'use client';
-
-import { useEffect } from 'react';
-import { Notifications as MantineNotifications, notifications } from '@mantine/notifications';
-import { createView } from '@nano-app/frontend';
+import { notifications } from '@mantine/notifications';
 import NotificationController from '@nano-app/components/notification';
 import { NOTIFICATION_COLORS } from '../../const';
 
 /** Shows each new notification of the app once, of the kinds of the props */
-class ToastController extends NotificationController {
+export default class ToastsController extends NotificationController {
   /** Moves the api errors to the history and shows what was never shown */
   public show(): void {
     // Takes the failed requests of the stores
@@ -23,12 +19,3 @@ class ToastController extends NotificationController {
     }
   }
 }
-
-/** Mantine's notifications, fed by the history of the app */
-export default createView(
-  ToastController,
-  (toasts, { types: _aTypes, colors: _oColors, ...oProps }) => {
-    useEffect(toasts.show, [toasts.items(), toasts.errors().length]);
-    return <MantineNotifications position="top-center" autoClose={3000} {...oProps} />;
-  },
-);

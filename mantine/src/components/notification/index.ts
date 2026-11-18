@@ -1,2 +1,2 @@
 export { default as NotificationCenter } from './NotificationCenter';
-export { default as Notifications } from './Notifications';
+export { default as Toasts } from './Toasts';
