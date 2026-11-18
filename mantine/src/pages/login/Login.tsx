@@ -2,7 +2,7 @@
 
 import { Anchor, Button, Divider, Paper, Stack, Text, Title } from '@mantine/core';
 import { z } from 'zod';
-import { LoginController } from '@nano-app/controllers';
+import { AuthController } from '@nano-app/controllers';
 import { createView } from '@nano-app/frontend';
 import { Form } from '../../components/input';
 import GoogleIcon from './components/GoogleIcon';
@@ -15,7 +15,7 @@ const MODES = {
 } as const;
 
 /** Login card: the providers, the form of email and password, and the link to the other mode */
-export default createView(LoginController, (auth, { providers, signUp, texts }) => {
+export default createView(AuthController, (auth, { providers, signUp, texts }) => {
   // The keys of the texts of the current mode
   const oMode = auth.isSignUp() ? MODES.signUp : MODES.signIn;
   return (

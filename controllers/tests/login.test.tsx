@@ -7,7 +7,7 @@ import { createServer } from 'node:http';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { NanoAppProvider, createView } from '@nano-app/frontend';
-import { LoginController } from '../src';
+import { AuthController } from '../src';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 
 const PORT = 4201;
@@ -37,14 +37,13 @@ const oRouter: AppRouterInstance = {
   bfcacheId: '',
 };
 
-/** Login of the `api` store that goes to `/home` */
-class ApiLoginController extends LoginController {
-  protected api = this.stores.api;
+/** Auth of the `api` store that goes to `/home` */
+class HomeAuthController extends AuthController {
   protected home = '/home';
 }
 
 // View of the login: its mode and buttons
-const Login = createView(ApiLoginController, login => (
+const Login = createView(HomeAuthController, login => (
   <div>
     <output>{login.isSignUp() ? 'sign up' : 'sign in'}</output>
     <button onClick={login.toggle}>toggle</button>
@@ -63,7 +62,7 @@ function renderLogin(): void {
   );
 }
 
-describe('login', () => {
+describe('auth login', () => {
   before(() => new Promise<void>(fnResolve => oBackend.listen(PORT, fnResolve)));
   after(() => oBackend.close());
   afterEach(cleanup);

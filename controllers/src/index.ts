@@ -1,5 +1,4 @@
 export { default as AuthController } from './auth/Auth.controller';
-export { default as LoginController } from './auth/Login.controller';
 export { default as FieldController } from './form/Field.controller';
 export { default as FormController } from './form/Form.controller';
 export { default as CollectionController } from './Collection.controller';

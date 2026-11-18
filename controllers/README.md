@@ -2,7 +2,7 @@
 
 [![controllers](https://img.shields.io/npm/v/@nano-app/controllers?label=controllers)](https://www.npmjs.com/package/@nano-app/controllers)
 
-Official controllers for [`@nano-app/frontend`](https://www.npmjs.com/package/@nano-app/frontend). Each one is the logic of a piece of UI, ready to use: you write only the view, or take it from [`@nano-app/mantine`](../mantine/README.md). Every controller leaves from one import: `import { LoginController } from '@nano-app/controllers'`. No markup and no styles.
+Official controllers for [`@nano-app/frontend`](https://www.npmjs.com/package/@nano-app/frontend). Each one is the logic of a piece of UI, ready to use: you write only the view, or take it from [`@nano-app/mantine`](../mantine/README.md). Every controller leaves from one import: `import { AuthController } from '@nano-app/controllers'`. No markup and no styles.
 
 - Node.js 22.23.4, 24.22.1 or 26.12.1 and newer. ESM only.
 - `@nano-app/frontend` 0.16, Next 16.3 and React 19 or newer, as peer dependencies.
@@ -47,18 +47,19 @@ export default createView(UsersController, users => (
 
 ## Controllers
 
-| Component              | Import                                                         | Fields                                                   | Methods                                                                                             | Props                        | State                                                  |
-| ---------------------- | -------------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ---------------------------- | ------------------------------------------------------ |
-| `AuthController`       | `import { AuthController } from '@nano-app/controllers'`       | `api` (`api`), `kind` (`'email'`)                        | `signIn(body)`, `signUp(body)`, `signOut()`, `navTo(url)`                                           | —                            | —                                                      |
-| `LoginController`      | `import { LoginController } from '@nano-app/controllers'`      | `api` (`api`), `home` (the prop)                         | `isSignUp()`, `toggle()`, `isBusy()`, `send(values)`, `social(provider)`                            | —                            | `app`: `/login/isSignUp`                               |
-| `FieldController`      | `import { FieldController } from '@nano-app/controllers'`      | —                                                        | `value()`, `error()`, `change(value)`, `options()`                                                  | `form`, `field`              | `app`: `/form/<form>/values`, `/form/<form>/errors`    |
-| `FormController`       | `import { FormController } from '@nano-app/controllers'`       | `components` (the prop)                                  | `fields()`, `submit(event)`, `reset()`                                                              | `name`, `fields`, `onSubmit` | `app`: `/form/<name>`                                  |
-| `MessageController`    | `import { MessageController } from '@nano-app/controllers'`    | —                                                        | `items()`, `remove(index)`, `clear()`, `last()`, `dismiss()`                                        | —                            | every store's `/message/list`                          |
-| `CollectionController` | `import { CollectionController } from '@nano-app/controllers'` | `api` (`api`), `root`, `path` (abstract), `limit` (`50`) | `load()`, `items()`, `page()`, `goTo(page)`, `next()`, `prev()`, `sort(field)`, `more()`, `pages()` | —                            | `app`: `<root>/page`, `<root>/orderBy`, `<root>/pages` |
+| Component              | Import                                                         | Fields                                                    | Methods                                                                                                                 | Props                        | State                                                  |
+| ---------------------- | -------------------------------------------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------- | ------------------------------------------------------ |
+| `AuthController`       | `import { AuthController } from '@nano-app/controllers'`       | `api` (`api`), `kind` (`'email'`), `home` (the prop, `/`) | `signIn(body)`, `signUp(body)`, `signOut()`, `navTo(url)`, `isSignUp()`, `toggle()`, `send(values)`, `social(provider)` | —                            | `app`: `/auth/isSignUp`                                |
+| `FieldController`      | `import { FieldController } from '@nano-app/controllers'`      | —                                                         | `value()`, `error()`, `change(value)`, `options()`                                                                      | `form`, `field`              | `app`: `/form/<form>/values`, `/form/<form>/errors`    |
+| `FormController`       | `import { FormController } from '@nano-app/controllers'`       | `components` (the prop)                                   | `fields()`, `submit(event)`, `reset()`                                                                                  | `name`, `fields`, `onSubmit` | `app`: `/form/<name>`                                  |
+| `MessageController`    | `import { MessageController } from '@nano-app/controllers'`    | —                                                         | `items()`, `remove(index)`, `clear()`, `last()`, `dismiss()`                                                            | —                            | every store's `/message/list`                          |
+| `CollectionController` | `import { CollectionController } from '@nano-app/controllers'` | `api` (`api`), `root`, `path` (abstract), `limit` (`50`)  | `load()`, `items()`, `page()`, `goTo(page)`, `next()`, `prev()`, `sort(field)`, `more()`, `pages()`                     | —                            | `app`: `<root>/page`, `<root>/orderBy`, `<root>/pages` |
 
 ## Auth
 
 `signIn(body)` and `signUp(body)` send `body` to Better Auth's `POST /auth/sign-in/<kind>` and `/auth/sign-up/<kind>` of the store's backend (`{ email, password }` for `email`), and `signOut()` to `/auth/sign-out`. Each one returns the store's `ApiResponse`. Better Auth keeps the session in its cookie; a page that needs it uses `createPage` of `@nano-app/frontend/server`. `navTo(url)` goes to a url of the app with the `router`; the view decides when.
+
+For a login card it also keeps a mode, at `/auth/isSignUp` of `app`: `isSignUp()` says whether it signs up instead of signing in, and `toggle()` switches it. `send({ email, password })` signs in, or signs up with the email as the name, by the mode, and `social(provider)` asks Better Auth the page of a provider (`google`) and goes to it; both come back to `home`, the prop `home` (`/` by default). `isBusy()`, of every controller that reads the backend, says whether a request of `api` is out, for the view to show its loader.
 
 ```tsx
 // src/Logout.controller.ts
@@ -77,15 +78,6 @@ export default createView(LogoutController, logout => (
 ```
 
 - Better Auth checks the `Origin` of every `POST`: add the URL of the frontend to its `trustedOrigins` in the backend.
-
-## Login
-
-`LoginController` extends `AuthController` with what a login card does, for any view of it. Its prop `home` is the path it goes to once in, and it reads Better Auth of the `api` store; a subclass may set `api` and `home` instead.
-
-- `isSignUp()` says whether it signs up instead of signing in, kept at `/login/isSignUp` of `app`; `toggle()` switches it.
-- `send(values)` signs in with `{ email, password }`, or signs up with the email as the name, by the mode, and goes to `home` when the backend answers `success`.
-- `social(provider)` asks Better Auth the page of a provider (`google`), back to `home`, and goes to it.
-- `isBusy()` says whether a request of `api` is out, for the view to show its loader.
 
 ## Field
 

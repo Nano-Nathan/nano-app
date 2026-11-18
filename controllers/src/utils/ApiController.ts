@@ -7,6 +7,11 @@ export default class ApiController extends AppController {
   /** Api store it requests: `api` by default, another one from a subclass (`protected api = this.stores.admin;`) */
   protected api: ApiStore = this.stores.api;
 
+  /** Whether a request of `api` is out */
+  public isBusy(): boolean {
+    return this.api.get('/busy') ?? false;
+  }
+
   /** `api.GET` */
   protected GET(sPath: string): Promise<ApiResponse> {
     return this.api.GET(sPath);
