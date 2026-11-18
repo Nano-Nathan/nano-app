@@ -3,6 +3,7 @@ import { AUTH_PATH } from '@nano-app/core/const';
 import { AUTH_NAME, PRIVATE_NETWORKS } from '../const';
 import DatabaseManager from '../database/DatabaseManager';
 import BetterAuth from '../database/clients/BetterAuth';
+import contract from './contract';
 import type { Request } from 'express';
 import type { IncomingHttpHeaders } from 'node:http';
 import type { Auth as BetterAuthInstance } from 'better-auth';
@@ -29,6 +30,8 @@ export default abstract class Auth {
     const oFullOptions = {
       ...oRest,
       basePath,
+      // Its answers in the ApiResponse of the framework, after the app's plugins
+      plugins: [...(oRest.plugins ?? []), await contract()],
       advanced: {
         ...advanced,
         ipAddress: { trustedProxies: PRIVATE_NETWORKS, ...advanced?.ipAddress },

@@ -88,6 +88,17 @@ describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is no
     });
     assert.equal(oSignIn.status, 200);
     sCookie = oSignIn.headers.get('set-cookie')!.split(';')[0];
+
+    // Better Auth answers in the ApiResponse of the framework, a failure with its status
+    assert.equal(oSignIn.body.success, true);
+    assert.equal(oSignIn.body.result.user.email, oCredentials.email);
+    const oWrong = await request(oApp.url, '/auth/sign-in/email', {
+      ...oInit,
+      body: JSON.stringify({ ...oCredentials, password: 'a-wrong-password' }),
+    });
+    assert.equal(oWrong.status, 401);
+    assert.equal(oWrong.body.success, false);
+    assert.equal(oWrong.body.type, 'error');
   });
 
   test('the routes of the app need a session, and their handlers receive it', async () => {

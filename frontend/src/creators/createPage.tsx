@@ -6,6 +6,7 @@ import NanoError from '@nano-app/core/utils/NanoError';
 import { API_NAME } from '../const';
 import { URLS } from '../defines/server';
 import type { ReactNode } from 'react';
+import type { ApiResponse } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { PageOptions, PageView } from '../types/page';
 
@@ -14,7 +15,10 @@ const getSession = cache(async (sUrl: string): Promise<NanoObject | null> => {
   // Asks the backend with the browser's cookie
   const sCookie = (await headers()).get('cookie') ?? '';
   const oRes = await fetch(`${sUrl}${AUTH_PATH}/get-session`, { headers: { cookie: sCookie } });
-  return oRes.json();
+
+  // The session is the result of the backend's ApiResponse
+  const { result }: ApiResponse<NanoObject | null> = await oRes.json();
+  return result ?? null;
 });
 
 /** Page that needs a session at the store's backend: without one it redirects */

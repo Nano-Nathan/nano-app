@@ -3,7 +3,7 @@ import ApiController from '../utils/ApiController';
 import type { ApiResponse } from '@nano-app/core/types/api';
 import type { LoginValues } from '../types/login';
 
-/** Better Auth of the api store: sign-in, sign-up by a mode, a provider, sign-out, and the navigation after them */
+/** Better Auth of the api store: sign-in, sign-up by a mode, a provider and sign-out, and where they lead */
 export default class AuthController extends ApiController {
   /** Path of its state */
   protected root = '/auth';
@@ -27,11 +27,6 @@ export default class AuthController extends ApiController {
     return this.POST(`${AUTH_PATH}/sign-out`, {});
   }
 
-  /** Goes to a url of the app */
-  public navTo(sUrl: string): void {
-    this.router.push(sUrl);
-  }
-
   /** Whether it signs up instead of signing in */
   public isSignUp(): boolean {
     return this.get('/isSignUp') ?? false;
@@ -47,18 +42,16 @@ export default class AuthController extends ApiController {
     const oResponse = this.isSignUp()
       ? await this.signUp({ ...oValues, name: oValues.email })
       : await this.signIn(oValues);
-    if (oResponse.success) this.navTo(this.home);
+    this.follow(oResponse);
   }
 
   /** Signs in with a provider of Better Auth: its page, then back to `home` */
   public async social(sProvider: string): Promise<void> {
-    // Asks Better Auth the provider's page, back to home
-    const { success, url }: ApiResponse & { url?: string } = await this.signIn(
-      { provider: sProvider, callbackURL: this.home },
-      'social',
-    );
+    this.follow(await this.signIn({ provider: sProvider, callbackURL: this.home }, 'social'));
+  }
 
-    // Goes to the provider's page, outside the app
-    if (success && url) window.location.assign(url);
+  /** Goes where a successful answer of Better Auth leads: its `url` (a provider's page), or `home` */
+  private follow(oResponse: ApiResponse): void {
+    if (oResponse.success) this.router.push(oResponse.result?.url ?? this.home);
   }
 }

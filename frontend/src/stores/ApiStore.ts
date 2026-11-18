@@ -55,7 +55,7 @@ export default class ApiStore extends Store {
     // Sets the store busy while the request is out
     this.set('/busy', ++this.iCount > 0);
 
-    // Reads the answer as an `ApiResponse`, with its HTTP status; without `success`, a 2xx is one
+    // Reads the answer as an `ApiResponse`, with its HTTP status
     let oResponse: ApiResponse = { success: false, message: REQUEST_FAILED };
     let sText: string | undefined;
     try {
@@ -65,7 +65,7 @@ export default class ApiStore extends Store {
         headers: { 'content-type': 'application/json' },
       });
       sText = await oRes.text();
-      oResponse = { success: oRes.ok, ...JSON.parse(sText), status: oRes.status };
+      oResponse = { ...JSON.parse(sText), status: oRes.status };
     } catch {
       // Keeps the text of an answer that is not JSON
       if (sText !== undefined) oResponse = { ...oResponse, result: sText };

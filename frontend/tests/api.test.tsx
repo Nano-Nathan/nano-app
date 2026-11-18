@@ -161,18 +161,18 @@ describe('api store', () => {
     assert.equal(typeof aErrors[0].timestamp, 'number');
   });
 
-  test('an answer without success takes it from its HTTP status', async () => {
-    // Reads a 2xx and a 4xx that bring no success, as Better Auth answers
+  test('an answer without success is a failure, whatever its HTTP status', async () => {
+    // Reads a 2xx and a 4xx that break the ApiResponse contract
     const { backend } = renderStores();
     const oPlain = await backend.POST('/plain', {});
     const oRefused = await backend.POST('/refused', {});
 
-    // The 2xx succeeds, and only the 4xx, which brings a message, is kept
-    assert.deepEqual(oPlain, { success: true, token: 't', status: 200 });
-    assert.deepEqual(oRefused, { success: false, message: 'Refused', status: 401 });
+    // Neither succeeds, and both are kept, the first with the default message
+    assert.deepEqual(oPlain, { token: 't', status: 200 });
+    assert.deepEqual(oRefused, { message: 'Refused', status: 401 });
     assert.deepEqual(
       backend.get('/message/list').map(({ message }: ApiMessage) => message),
-      ['Refused'],
+      [REQUEST_FAILED, 'Refused'],
     );
   });
 

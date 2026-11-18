@@ -55,7 +55,6 @@ function view(auth: AuthController): ReactNode {
         sign up
       </button>
       <button onClick={auth.signOut}>sign out</button>
-      <button onClick={() => auth.navTo('/private')}>go</button>
     </div>
   );
 }
@@ -117,14 +116,5 @@ describe('auth', () => {
     fireEvent.click(screen.getByText('sign out'));
 
     await waitFor(() => assert.deepEqual(aRequests, ['POST /api/admin/auth/sign-out {}']));
-  });
-
-  test('navTo goes to the url with the router of the app', () => {
-    // Renders an auth and goes to the private page
-    const Auth = createView(ApiAuthController, view);
-    renderApp(<Auth />);
-    fireEvent.click(screen.getByText('go'));
-
-    assert.deepEqual(aVisited, ['/private']);
   });
 });

@@ -7,12 +7,12 @@ export default class BackendAuthController extends AuthController {
   /** Signs in with the values of the form and goes to the private page */
   public async login(oValues: unknown): Promise<void> {
     const oResponse = await this.signIn(oValues);
-    if (oResponse.success) this.navTo('/private');
+    if (oResponse.success) this.router.push('/private');
   }
 
   /** Signs out and goes to the login */
   public async logout(): Promise<void> {
     const oResponse = await this.signOut();
-    if (oResponse.success) this.navTo('/login');
+    if (oResponse.success) this.router.push('/login');
   }
 }
