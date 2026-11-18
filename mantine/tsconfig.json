@@ -17,6 +17,6 @@
       "@nano-app/core/*": ["../core/*"]
     }
   },
-  "include": ["src", "tests/*.tsx", "../frontend/src", "../components"],
+  "include": ["src", "tests/*.ts", "tests/*.tsx", "../frontend/src", "../components"],
   "exclude": ["build", "node_modules", "../components/tests", "../components/build"]
 }

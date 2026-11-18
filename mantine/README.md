@@ -5,15 +5,15 @@
 [Mantine](https://mantine.dev) for [`@nano-app/frontend`](https://www.npmjs.com/package/@nano-app/frontend): the root layout, the views of [`@nano-app/components`](https://www.npmjs.com/package/@nano-app/components) and ready pages. Every piece leaves from one import: `import { createLayout, createLoginPage, Input } from '@nano-app/mantine'`. Each client view keeps its `'use client'`, so a server page and a client component import from the same place.
 
 - Node.js 22.23.4, 24.22.1 or 26.12.1 and newer. ESM only.
-- `@mantine/core` and `@mantine/hooks` 9, `@nano-app/frontend` 0.16, `@nano-app/components` 0.13, Next 16.3 and React 19 or newer, as peer dependencies.
+- `@mantine/core`, `@mantine/hooks` and `@mantine/notifications` 9, `@nano-app/frontend` 0.16, `@nano-app/components` 0.13, Next 16.3 and React 19 or newer, as peer dependencies.
 
 ```bash
-pnpm add @nano-app/mantine @nano-app/frontend @nano-app/components @mantine/core @mantine/hooks
+pnpm add @nano-app/mantine @nano-app/frontend @nano-app/components @mantine/core @mantine/hooks @mantine/notifications
 ```
 
 ## Layout
 
-`createLayout` gives the root layout: the `<html>` of its language with Mantine's attributes, the script of the color scheme in `<head>`, Mantine's styles, `MantineProvider` and `NanoAppProvider`.
+`createLayout` gives the root layout: the `<html>` of its language with Mantine's attributes, the script of the color scheme in `<head>`, Mantine's styles, `MantineProvider`, `NanoAppProvider` and the errors (see [Errors](#errors)).
 
 ```tsx
 // app/layout.tsx
@@ -59,6 +59,10 @@ Views of `@nano-app/components`, with Mantine. Their logic is the component's: s
   <Button type="submit">Save</Button>
 </Form>
 ```
+
+## Errors
+
+Every failed request of an api store (its `/error/list`, see [`ErrorController`](../components/README.md#error)) shows as a red notification at the top of the screen, with the backend's `message`, and leaves its store. It stays until the user closes it: an error is not missed while the user looks elsewhere. `createLayout` mounts it with Mantine's `Notifications`: an app does nothing. `Errors` is exported too, for an app with a layout of its own.
 
 ## Pages
 

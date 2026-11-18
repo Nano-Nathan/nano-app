@@ -1,10 +1,13 @@
 import '@mantine/core/styles.css';
+import '@mantine/notifications/styles.css';
 import { ColorSchemeScript, MantineProvider, mantineHtmlProps } from '@mantine/core';
+import { Notifications } from '@mantine/notifications';
 import { NanoAppProvider } from '@nano-app/frontend';
+import { Errors } from '../components/feedback';
 import type { ReactNode } from 'react';
 import type { LayoutOptions } from '../types/layout';
 
-/** Root layout of a Next app with Mantine: its html, the color scheme script and the providers */
+/** Root layout of a Next app with Mantine: its html, the color scheme script, the providers and the errors */
 export default function createLayout(
   oOptions: LayoutOptions,
 ): (props: { children: ReactNode }) => ReactNode {
@@ -21,7 +24,11 @@ export default function createLayout(
         </head>
         <body>
           <MantineProvider {...oProvider}>
-            <NanoAppProvider>{children}</NanoAppProvider>
+            <Notifications position="top-center" />
+            <NanoAppProvider>
+              <Errors />
+              {children}
+            </NanoAppProvider>
           </MantineProvider>
         </body>
       </html>

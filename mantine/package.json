@@ -40,6 +40,7 @@
   "peerDependencies": {
     "@mantine/core": ">=9.0.0",
     "@mantine/hooks": ">=9.0.0",
+    "@mantine/notifications": ">=9.0.0",
     "@nano-app/components": ">=0.13.0",
     "@nano-app/frontend": ">=0.16.0",
     "next": ">=16.3.0",
@@ -52,6 +53,7 @@
     "@happy-dom/global-registrator": "^21.0.3",
     "@mantine/core": "^9.8.1",
     "@mantine/hooks": "^9.8.1",
+    "@mantine/notifications": "^9.8.1",
     "@nano-app/components": "workspace:*",
     "@nano-app/frontend": "workspace:*",
     "@testing-library/dom": "^10.4.2",
