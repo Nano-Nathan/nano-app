@@ -5,12 +5,14 @@ import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { z } from 'zod';
-import Form from '../components/form';
+import { Form } from '../src/components/input';
 import TestApp from './provider';
 import type { NanoObject } from '@nano-app/core/types/objects';
 
 // Fields of the form: an email with its rule
-const FIELDS = [{ name: 'email', label: 'Email', validation: z.email('Invalid email') }];
+const FIELDS = [
+  { name: 'email', label: 'nano.login.email', validation: z.email('nano.login.invalidEmail') },
+];
 
 // Values each submit sent
 const aSent: NanoObject[] = [];

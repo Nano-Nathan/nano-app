@@ -3,7 +3,7 @@ backend/build
 core/build
 plugins/build
 frontend/build
-components/build
+controllers/build
 mantine/build
 .env
 .env.*

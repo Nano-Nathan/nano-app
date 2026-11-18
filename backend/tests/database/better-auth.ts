@@ -88,13 +88,33 @@ describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is no
     });
     assert.equal(oSignIn.status, 200);
     sCookie = oSignIn.headers.get('set-cookie')!.split(';')[0];
+
+    // Better Auth answers in the ApiResponse of the framework, a failure with its status
+    assert.equal(oSignIn.body.success, true);
+    assert.equal(oSignIn.body.result.user.email, oCredentials.email);
+    const oWrong = await request(oApp.url, '/auth/sign-in/email', {
+      ...oInit,
+      body: JSON.stringify({ ...oCredentials, password: 'a-wrong-password' }),
+    });
+    assert.equal(oWrong.status, 401);
+    assert.equal(oWrong.body.success, false);
+    assert.equal(oWrong.body.type, 'error');
+    assert.equal(oWrong.body.message, 'nano.auth.INVALID_EMAIL_OR_PASSWORD');
+
+    // An error of its validation fails too, with its status
+    const oInvalid = await request(oApp.url, '/auth/sign-up/email', {
+      ...oInit,
+      body: JSON.stringify(oCredentials),
+    });
+    assert.equal(oInvalid.status, 400);
+    assert.equal(oInvalid.body.success, false);
   });
 
   test('the routes of the app need a session, and their handlers receive it', async () => {
     // Without a session
     const oDenied = await request(oApp.url, '/me');
     assert.equal(oDenied.status, 401);
-    assert.equal(oDenied.body.message, 'Not authenticated');
+    assert.equal(oDenied.body.message, 'nano.error.notAuthenticated');
 
     // With the session of the sign-in
     const oAllowed = await request(oApp.url, '/me', { headers: { cookie: sCookie } });

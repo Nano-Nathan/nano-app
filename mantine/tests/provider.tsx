@@ -7,8 +7,8 @@ import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.
 /** Urls the router went to */
 export const aVisited: string[] = [];
 
-// Router of the app, keeping the urls it goes to
-const oRouter: AppRouterInstance = {
+/** Router of the app, keeping the urls it goes to */
+export const oRouter: AppRouterInstance = {
   back: () => {},
   forward: () => {},
   refresh: () => {},

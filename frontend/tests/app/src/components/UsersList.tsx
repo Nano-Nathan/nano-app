@@ -1,7 +1,7 @@
 'use client';
 
 import { createView } from '@nano-app/frontend';
-import CollectionController from '@nano-app/components/collection';
+import { CollectionController } from '@nano-app/controllers';
 
 /** Users of the backend store, five per page */
 class UsersPageController extends CollectionController {

@@ -3,6 +3,16 @@ import { API_STORE_TYPE } from '@nano-app/core/const';
 /** Type of a `*.store.ts` of UI state */
 export const APP_STORE_TYPE = 'app';
 
+/** Name of the api store always present, with its backend in `API_API_URL` */
+export const API_NAME = 'api';
+
+/** Locale of the app store's `/locale` when it has none */
+export const DEFAULT_LOCALE = 'en';
+
+/** Cookie of the locale the user chose, kept for a year */
+export const LOCALE_COOKIE = 'nano-locale';
+export const LOCALE_MAX_AGE = 60 * 60 * 24 * 365;
+
 /** Whether the code runs on the server, where Next renders each component once for the HTML */
 export const IS_SERVER = typeof window === 'undefined';
 

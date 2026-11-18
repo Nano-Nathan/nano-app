@@ -4,6 +4,7 @@ import './env/controller';
 import { test, describe, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { PathnameContext } from 'next/dist/shared/lib/hooks-client-context.shared-runtime';
 import Controller from '../src/controllers/Controller';
 import createView from '../src/creators/createView';
 import { MISSING_PROVIDER } from '../src/const';
@@ -132,6 +133,24 @@ describe('createView', () => {
     fireEvent.click(screen.getByText('name'));
 
     assert.ok(screen.getByText('x: new'));
+  });
+
+  test('a view reads the path of the page, also once it changes', () => {
+    // A view that shows the path its controller has
+    const Path = createView(Controller, oController => <output>{oController.pathname}</output>);
+    const fnPage = (sPath: string): ReactNode => (
+      <PathnameContext.Provider value={sPath}>
+        <TestApp>
+          <Path />
+        </TestApp>
+      </PathnameContext.Provider>
+    );
+    const { rerender } = render(fnPage('/accounts'));
+    assert.equal(screen.getByRole('status').textContent, '/accounts');
+
+    // Navigates to another page
+    rerender(fnPage('/settings'));
+    assert.equal(screen.getByRole('status').textContent, '/settings');
   });
 
   test('a method keeps one function for the whole mount', () => {
@@ -283,6 +302,53 @@ describe('createView', () => {
     fireEvent.click(screen.getByText('+'));
 
     assert.equal(screen.getAllByRole('status')[0].textContent, '1');
+  });
+
+  test('text reads a key in the texts of /locale, English by default, and i18n.<key> without one', () => {
+    // A view with a text of the app, one no locale has and a switch to Spanish
+    const Title = createView(Controller, view => (
+      <>
+        <output>
+          {view.text('home.title')} {view.text('home.missing')}
+        </output>
+        <button onClick={() => view.stores.app.set('/locale', 'es')}>es</button>
+      </>
+    ));
+    renderApp(<Title />);
+    assert.equal(screen.getByRole('status').textContent, 'Home i18n.home.missing');
+
+    // Another locale renders it again
+    fireEvent.click(screen.getByText('es'));
+    assert.equal(screen.getByRole('status').textContent, 'Inicio i18n.home.missing');
+  });
+
+  test('setLocale switches the texts, the language of the html and the cookie', () => {
+    // A view with a text of the app and a switch to Spanish
+    const Title = createView(Controller, view => (
+      <>
+        <output>{view.text('home.title')}</output>
+        <button onClick={() => view.setLocale('es')}>es</button>
+      </>
+    ));
+    renderApp(<Title />);
+    fireEvent.click(screen.getByText('es'));
+
+    // Spanish now, and kept for the next visits
+    assert.equal(screen.getByRole('status').textContent, 'Inicio');
+    assert.equal(document.documentElement.lang, 'es');
+    assert.match(document.cookie, /nano-locale=es/);
+  });
+
+  test('the provider starts in the locale it is given', () => {
+    // A tree in the locale of the user's cookie
+    const Title = createView(Controller, view => <output>{view.text('home.title')}</output>);
+    render(
+      <TestApp locale="es">
+        <Title />
+      </TestApp>,
+    );
+
+    assert.equal(screen.getByRole('status').textContent, 'Inicio');
   });
 
   test('a view without NanoAppProvider fails with the fix', () => {

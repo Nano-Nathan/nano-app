@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { readFile, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { reaction } from 'mobx';
+import TEXTS from '@nano-app/core/i18n';
 import { STORES_DEFINE } from '@nano-app/core/const';
 import { withNanoApp } from '../src/app/next';
 import Store from '../src/stores/Store';
@@ -65,7 +66,7 @@ describe('store state', () => {
 });
 
 describe('withNanoApp', () => {
-  test('the app stores reach the bundle as JSON, named with _ for /, and the Next config is kept', async () => {
+  test('the app stores, with app and api always, reach the bundle as JSON, named with _ for /, and the Next config is kept', async () => {
     // Runs from an app with src/stores/app.store.ts and admin/users.store.ts, like Next does
     const sCwd = process.cwd();
     process.chdir(fileURLToPath(new URL('./fixtures/app', import.meta.url)));
@@ -79,14 +80,15 @@ describe('withNanoApp', () => {
         Object.fromEntries(JSON.parse(String(oConfig.compiler?.define?.[STORES_DEFINE]))),
         {
           admin_users: { type: 'app', data: { aUsers: [] } },
-          app: { type: 'app', data: { iCount: 0 } },
+          api: { type: 'api' },
+          app: { type: 'app', data: { iCount: 0, i18n: TEXTS } },
         },
       );
 
       // Writes the type of each store for the app
       const sTypes = await readFile('nano-app-env.d.ts', 'utf8');
       assert.match(sTypes, /"admin_users": import\('@nano-app\/frontend'\)\.Store;/);
-      assert.doesNotMatch(sTypes, /"app"/);
+      assert.doesNotMatch(sTypes, /"app"|"api"/);
     } finally {
       await rm('nano-app-env.d.ts', { force: true });
       process.chdir(sCwd);

@@ -5,7 +5,7 @@
 # - pull request to main or to a feature branch: `test-mantine`, required to merge into main (the
 #   ruleset blocks the merge if it fails).
 #   It runs on every pull request, so the required check always reports; without changes in
-#   mantine/, components/, frontend/ or core/ (its tests run on their sources) it passes without testing.
+#   mantine/, controllers/, frontend/ or core/ (its tests run on their sources) it passes without testing.
 # - push to main (a squash merge) that touches mantine: `test-mantine` again, then `release` only
 #   if it passed. semantic-release publishes only when the commits since the last `mantine-v*` tag ask
 #   for it (fix/feat). It reads every commit since that tag, also the ones that only touched another
@@ -45,11 +45,11 @@ jobs:
         env:
           BASE_REF: ${{ github.base_ref }}
         run: |
-          if [ "${{ github.event_name }}" != "pull_request" ] || git diff --name-only "origin/$BASE_REF...HEAD" | grep -qE '^(mantine|components|frontend|core)/'; then
+          if [ "${{ github.event_name }}" != "pull_request" ] || git diff --name-only "origin/$BASE_REF...HEAD" | grep -qE '^(mantine|controllers|frontend|core)/'; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "No changes in mantine/, components/, frontend/ or core/: nothing to test"
+            echo "No changes in mantine/, controllers/, frontend/ or core/: nothing to test"
           fi
 
       - if: steps.changes.outputs.run == 'true'

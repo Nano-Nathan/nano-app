@@ -6,7 +6,7 @@ import UsersController from '../controllers/users.controller';
 /** Users of the backend store: read, added, renamed and removed */
 export default createView(UsersController, users => (
   <section>
-    <p>{users.stores.backend.get('/busy') ? 'Loading…' : 'Users'}</p>
+    <p>{users.stores.backend.get('/requests') ? 'Loading…' : 'Users'}</p>
     <ul>
       {(users.stores.backend.get('/users')?.result ?? []).map(
         (oUser: { id: number; name: string }) => (

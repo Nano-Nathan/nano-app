@@ -8,7 +8,7 @@ export const API_STORE_TYPE = 'api';
 export const STORES_DEFINE = 'NANO_APP_STORES';
 
 /** Message of a failed request whose answer brings none */
-export const REQUEST_FAILED = 'Request failed';
+export const REQUEST_FAILED = 'nano.error.requestFailed';
 
 /** Base path of Better Auth in the backend */
 export const AUTH_PATH = '/auth';

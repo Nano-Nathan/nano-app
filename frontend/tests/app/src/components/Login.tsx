@@ -12,5 +12,5 @@ const LOGIN = [
 
 /** Sign-in form: goes to the private page once signed in */
 export default createView(BackendAuthController, auth => (
-  <Form name="login" fields={LOGIN} onSubmit={auth.login} />
+  <Form name="login" fields={LOGIN} onSubmit={auth.send} />
 ));

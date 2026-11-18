@@ -1,13 +1,12 @@
 import { defineConfig } from 'tsdown';
-import { globSync } from 'glob';
 import pkg from './package.json' with { type: 'json' };
 
 export default defineConfig({
-  // One folder per piece: `<name>/index.tsx` is its import path
-  entry: globSync(['layout/index.tsx', 'components/*/index.tsx', 'pages/*/index.tsx']),
+  // One entry: every piece leaves from `@nano-app/mantine`
+  entry: ['src/index.ts'],
   // One output file per source file: Next reads `'use client'` per module
   unbundle: true,
-  root: '.',
+  root: 'src',
   format: ['esm'],
   platform: 'neutral',
   // `.js`, not `.mjs`: package.json exports read `.js`
@@ -22,6 +21,7 @@ export default defineConfig({
       ...Object.keys(pkg.peerDependencies),
       /^@mantine\//,
       /^@nano-app\/components\//,
+      /^@nano-app\/frontend\//,
       /^react\//,
       /^next\//,
     ],

@@ -5,8 +5,10 @@ import { test, before, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import createLoginPage from '../pages/login';
+import { LOGIN_FIELDS } from '../src/const';
+import Login from '../src/pages/login/Login';
 import TestApp, { aVisited } from './provider';
+import type { ReactNode } from 'react';
 
 const PORT = 4202;
 
@@ -23,8 +25,10 @@ const oBackend = createServer((oReq, oRes) => {
   });
 });
 
-// Login page of the api store, titled finance, that goes to /home
-const LoginPage = createLoginPage({ store: 'api', home: '/home', texts: { title: 'finance' } });
+/** Login card of the api store that goes to /home, as createLoginPage renders it */
+function LoginPage(): ReactNode {
+  return <Login home="/home" providers={['google']} signUp />;
+}
 
 before(() => new Promise<void>(fnResolve => oBackend.listen(PORT, fnResolve)));
 after(() => oBackend.close());
@@ -46,11 +50,11 @@ function renderLogin(): void {
   fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'secret' } });
 }
 
-test('the login page shows its texts: the given title, English for the rest', () => {
+test('the login page shows its texts from the messages', () => {
   renderLogin();
 
-  // The title given, and the English buttons
-  assert.ok(screen.getByText('finance'));
+  // The title and the buttons of the English messages
+  assert.ok(screen.getByText('Welcome!'));
   assert.ok(screen.getByText('Sign in'));
   assert.ok(screen.getByText('Create account'));
 });
@@ -64,19 +68,70 @@ test('the login page signs in at the store with the values and goes to home', as
   // Better Auth's sign-in got the values, and the router went home
   await waitFor(() => assert.deepEqual(aVisited, ['/home']));
   assert.deepEqual(aRequests, [
-    'POST /api/api/auth/sign-in/email {"email":"ana@nano.app","password":"secret"}',
+    'POST /api/api/auth/sign-in/email {"email":"ana@nano.app","password":"secret","callbackURL":"/home","errorCallbackURL":"/"}',
   ]);
 });
 
 test('the login page signs up with the same values, the email as the name, and goes to home', async () => {
   renderLogin();
 
-  // Creates the account
+  // Switches to sign-up and submits the form
   fireEvent.click(screen.getByText('Create account'));
+  fireEvent.submit(screen.getByRole('button', { name: 'Create account' }));
 
   // Better Auth's sign-up got the values with the name, and the router went home
   await waitFor(() => assert.deepEqual(aVisited, ['/home']));
   assert.deepEqual(aRequests, [
-    'POST /api/api/auth/sign-up/email {"email":"ana@nano.app","password":"secret","name":"ana@nano.app"}',
+    'POST /api/api/auth/sign-up/email {"name":"ana@nano.app","email":"ana@nano.app","password":"secret","callbackURL":"/home","errorCallbackURL":"/"}',
   ]);
+});
+
+test('the login page asks Better Auth the page of Google, back to home', async () => {
+  renderLogin();
+
+  // Clicks the button of Google
+  fireEvent.click(screen.getByText('Continue with Google'));
+
+  // Better Auth's social sign-in got the provider and the home
+  await waitFor(() =>
+    assert.deepEqual(aRequests, [
+      'POST /api/api/auth/sign-in/social {"provider":"google","callbackURL":"/home","errorCallbackURL":"/"}',
+    ]),
+  );
+});
+
+test('the login page without sign-up offers no link to create an account', () => {
+  // Renders a login only for users that exist
+  const ClosedLogin = (): ReactNode => <Login home="/home" providers={[]} signUp={false} />;
+  render(
+    <TestApp>
+      <ClosedLogin />
+    </TestApp>,
+  );
+
+  // Signs in, and offers nothing to sign up
+  assert.ok(screen.getByText('Sign in'));
+  assert.equal(screen.queryByText('Create account'), null);
+});
+
+test('the sign-up shows its own fields', () => {
+  // Renders a login that asks a phone to sign up
+  const PhoneLogin = (): ReactNode => (
+    <Login
+      home="/home"
+      providers={[]}
+      signUp
+      signUpFields={[...LOGIN_FIELDS, { name: 'phone', label: 'nano.login.email' }]}
+    />
+  );
+  render(
+    <TestApp>
+      <PhoneLogin />
+    </TestApp>,
+  );
+
+  // The sign-in has no phone; the sign-up has it
+  assert.equal(screen.queryAllByRole('textbox').length, 1);
+  fireEvent.click(screen.getByText('Create account'));
+  assert.equal(screen.queryAllByRole('textbox').length, 2);
 });

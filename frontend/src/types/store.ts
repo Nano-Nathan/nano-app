@@ -1,18 +1,24 @@
 import type { API_STORE_TYPE, APP_NAME } from '@nano-app/core/const';
-import type { ApiResponse } from '@nano-app/core/types/api';
+import type { ApiResponse, MessageType } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
+import type ApiStore from '../stores/ApiStore';
 import type Store from '../stores/Store';
-import type { APP_STORE_TYPE } from '../const';
+import type { API_NAME, APP_STORE_TYPE } from '../const';
 
-/** A failed request in the `/error/list` of its api store: its `ApiResponse` and when it failed */
-export type ApiError = ApiResponse & {
+/** An answer with a message, or a failed one, in the `/message/list` of its api store, and when it came */
+export type ApiMessage = ApiResponse & {
+  /** How it shows: the backend's, or `success` or `error` by its result */
+  type: MessageType;
+  /** Its message, a key of the texts: the backend's, or `nano.error.requestFailed` */
+  message: string;
   /** Milliseconds since the epoch, from `Date.now()` */
   timestamp: number;
 };
 
-/** Stores of a React tree by name: `app` always, the others from the `nano-app-env.d.ts` of `withNanoApp` */
+/** Stores of a React tree by name: `app` and `api` always, the others from the `nano-app-env.d.ts` of `withNanoApp` */
 export interface Stores {
   [APP_NAME]: Store;
+  [API_NAME]: ApiStore;
 }
 
 /** A store as its file exports it */

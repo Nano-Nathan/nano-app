@@ -1,10 +1,10 @@
 'use client';
 
 import { createView } from '@nano-app/frontend';
-import ErrorController from '@nano-app/components/error';
+import { MessageController } from '@nano-app/controllers';
 
 /** Errors with two methods that fail a read and a write */
-class ErrorsController extends ErrorController {
+class MessagesController extends MessageController {
   /** Reads a path the backend does not have */
   public failRead(): Promise<unknown> {
     return this.stores.backend.GET('/missing');
@@ -17,7 +17,7 @@ class ErrorsController extends ErrorController {
 }
 
 /** Failed requests of the api stores, with buttons that fail a read and a write */
-export default createView(ErrorsController, errors => (
+export default createView(MessagesController, errors => (
   <section>
     <ul>
       {errors.items().map((oError, iIndex) => (

@@ -10,7 +10,5 @@ const BACKENDS: [string, string][] = JSON.parse(NANO_APP_BACKENDS);
 /** Backend URL of each api store, read from the env once */
 export const URLS = new Map(BACKENDS.map(([sName, sEnvName]) => [sName, process.env[sEnvName]]));
 
-/** Env vars of the api stores that are not defined */
-export const MISSING_ENVS = BACKENDS.filter(([, sEnvName]) => !process.env[sEnvName]).map(
-  ([, sEnvName]) => sEnvName,
-);
+/** Env var of the backend URL of each api store */
+export const ENVS = new Map(BACKENDS);

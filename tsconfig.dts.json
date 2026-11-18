@@ -13,11 +13,12 @@
     "paths": {
       "@nano-app/backend": ["./backend/src/index.ts"],
       "@nano-app/frontend": ["./frontend/src/index.ts"],
-      "@nano-app/components/*": ["./components/*/index.ts"],
+      "@nano-app/frontend/server": ["./frontend/src/server.ts"],
+      "@nano-app/controllers": ["./controllers/src/index.ts"],
       "@nano-app/core": ["./core/index.ts"],
       "@nano-app/core/*": ["./core/*"]
     }
   },
-  "include": ["backend/src", "backend/bin", "backend/plugins", "core", "plugins/*/**/*.ts", "frontend/src", "components/*/**/*.ts", "mantine/*/**/*.ts", "mantine/*/**/*.tsx"],
-  "exclude": ["**/node_modules", "**/build", "plugins/tests", "components/tests", "mantine/tests"]
+  "include": ["backend/src", "backend/bin", "backend/plugins", "core", "plugins/*/**/*.ts", "frontend/src", "controllers/src", "mantine/src"],
+  "exclude": ["**/node_modules", "**/build", "plugins/tests", "controllers/tests"]
 }

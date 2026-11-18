@@ -38,7 +38,7 @@ export default function RootLayout({ children }: { children: ReactNode }): React
 
 ## Stores
 
-A `src/stores/**/*.store.ts` is a store of UI state, named after its path (`src/stores/admin/users.store.ts` → `admin_users`). `withNanoApp` loads them at build time; `NanoAppProvider` gives each React tree its own copy. The `app` store is always there, empty when the app has no `app.store.ts`; its file may make it an `api` store too.
+A `src/stores/**/*.store.ts` is a store of UI state, named after its path (`src/stores/admin/users.store.ts` → `admin_users`). `withNanoApp` loads them at build time; `NanoAppProvider` gives each React tree its own copy. The `app` store (UI state) and the `api` store (the backend of `API_API_URL`) are always there, empty when the app has no file for them; `app.store.ts` may make `app` an `api` store too, and `api.store.ts` must keep `api` of type `api`.
 
 ```ts
 // src/stores/ui.store.ts
@@ -47,11 +47,28 @@ export default { type: 'app', data: { isOpen: false } };
 
 Each store reads and writes by path: `app.get('/drawer/isOpen')`, `app.set('/drawer/isOpen', true)`. A missing level reads as `undefined`, and `set` creates it.
 
-`withNanoApp` also writes `nano-app-env.d.ts` next to `next.config.ts`, with the type of each store (`stores.ui` is a `Store`, `stores.api` an `ApiStore`). `stores.app` is always a `Store`, also when `app.store.ts` makes it an api store. Add it to `.gitignore`, as `next-env.d.ts`; the `**/*.ts` of Next's `tsconfig.json` already includes it.
+`withNanoApp` also writes `nano-app-env.d.ts` next to `next.config.ts`, with the type of each store (`stores.ui` is a `Store`, `stores.api` an `ApiStore`). `stores.app` is always a `Store`, also when `app.store.ts` makes it an api store, and `stores.api` always an `ApiStore`. Add it to `.gitignore`, as `next-env.d.ts`; the `**/*.ts` of Next's `tsconfig.json` already includes it.
+
+## Texts
+
+An app writes its texts by locale in `src/i18n/<locale>.i18n.ts` (`es.i18n.ts`), a default-exported object of one level, its keys dotted (`'home.title'`). `withNanoApp` loads them into the `app` store, at `/i18n/<locale>`, over the framework's texts of the same locale (the `nano.*` keys, in `en` and `es`): each key of the app replaces the framework's, and a locale of the framework the app has no file for keeps the framework's:
+
+```ts
+// src/i18n/es.i18n.ts
+export default { 'nano.login.title': 'Bienvenido', 'home.title': 'Inicio' };
+
+// src/stores/app.store.ts: the locale the app starts in
+export default { type: 'app', data: { locale: 'es' } };
+```
+
+- `text(key)` of every controller gives the text of a key (`view.text('home.title')`) in the locale at `/locale` of the `app` store (`en` by default), and `i18n.<key>` when the locale has none.
+- `setLocale(locale)` of every controller switches the locale: the views that read a text render again, `<html lang>` follows, and the cookie `nano-locale` keeps it for a year.
+- `getLocale()` of `@nano-app/frontend/server` reads that cookie in a server component, and `<NanoAppProvider locale={…}>` starts the `app` store in it, over the `/locale` of `app.store.ts`: the server renders the page in the user's locale. Reading the cookie makes the page dynamic.
+- `/i18n` and `/locale` of the `app` store are the framework's: an app reads them, and switches the locale with `setLocale`.
 
 ## Controllers and views
 
-A controller is a class that holds the logic of a view: it extends `Controller` and reaches the view's `props`, the app's `stores` and Next's `router` with `this`. `createView` creates the component: it renders the view with its own instance of the controller.
+A controller is a class that holds the logic of a view: it extends `Controller` and reaches the view's `props`, the app's `stores`, Next's `router` and the page's `pathname` with `this`. `createView` creates the component: it renders the view with its own instance of the controller.
 
 ```ts
 // src/controllers/counter.controller.ts
@@ -83,6 +100,7 @@ export default createView(CounterController, (counter, props) => (
 - Each mount of a view has its own controller; several views can share one controller class, and they share the stores.
 - Every method is bound once per mount: the view can pass one alone (`onClick={counter.increment}`), and it stays the same function while the view is mounted, so a child that gets it does not render again for it. A method with its own arguments goes through an arrow (`onClick={() => counter.update(-5)}`): passed alone, it would get React's event as its first argument.
 - `this.props` are the props of the last render on screen, so a method sees them when it runs from an event or an effect. What the view shows reads the `props` it gets.
+- `this.pathname` is Next's `usePathname()` of this render (`/accounts`, without the query): a method that reads it (`isActive(href)`) gives the view the current page, also after a navigation.
 - A field of the class can read the context: fields are set after the base constructor (`oApi = this.stores.backend;`).
 - A store the app does not have (`this.stores.missing`) is a type error: `withNanoApp` writes the type of each one (see [Stores](#stores)).
 
@@ -115,8 +133,10 @@ The types come from `@nano-app/frontend`: `Controller`, `View` and `ComponentPro
 
 A store of type `api` connects the app to a backend. The browser never talks to the backend: it calls `/api/...` on the Next server, and the proxy sends the request there. The proxy is a [rewrite](https://nextjs.org/docs/app/api-reference/functions/next-response#rewrite) of Next: Next sends the request to the backend and answers with what it answers.
 
+Every app has the `api` store, with its backend in `API_API_URL`: an app with one backend writes no store file. A second backend is one more api store:
+
 ```ts
-// src/stores/api.store.ts
+// src/stores/admin.store.ts
 export default { type: 'api' };
 ```
 
@@ -126,13 +146,13 @@ export { proxy } from '@nano-app/frontend/proxy';
 export const config = { matcher: '/api/:path*' };
 ```
 
-Each api store is served on `/api/<store>`, with its backend URL in `API_<STORE>_URL` (`api.store.ts` → `/api/api/...` and `API_API_URL`, `admin/users.store.ts` → `/api/admin_users/...` and `API_ADMIN_USERS_URL`; `/api/api/users/7?top=1` → `$API_API_URL/users/7?top=1`). The URLs are read at runtime, once, on the server only: they never reach the browser. A backend with a `basePath` puts it in the URL (`API_API_URL=http://backend:3000/api`).
+Each api store is served on `/api/<store>`, with its backend URL in `API_<STORE>_URL` (`api` → `/api/api/...` and `API_API_URL`, `admin/users.store.ts` → `/api/admin_users/...` and `API_ADMIN_USERS_URL`; `/api/api/users/7?top=1` → `$API_API_URL/users/7?top=1`). The URLs are read at runtime, once, on the server only: they never reach the browser. A backend with a `basePath` puts it in the URL (`API_API_URL=http://backend:3000/api`).
 
 - The request keeps its method, headers, cookies and body, and the backend's answer comes back as is, `Set-Cookie` and redirects included.
 - The proxy sends every header of the browser to the backend, cookies included: point a store only at a backend you trust with your users' cookies.
 - The client IP reaches the backend in `X-Forwarded-For`, which Next fills only when the request brings none. Put a proxy in front of Next that appends the client IP (nginx, a load balancer, Tailscale Funnel): with Next exposed directly, a browser that sends its own header chooses the IP it is counted by. See [Client IP](../backend/README.md#client-ip).
 - The `matcher` keeps Next from running the proxy on every other request (pages, `_next/static`, images). Next reads it only when it is written in the app's `proxy.ts`: re-exported from the package, it is ignored. Without it the proxy still works, letting every other request go on. Keep it on `/api`, the path of the proxy.
-- While an api store has no URL, every `/api/` request answers 500 with the variables to define. `/api/<name>` of no api store, and any request outside `/api/`, goes on to the app's own routes.
+- A request to an api store without its URL answers 500 with the variable to define; the other stores keep working, and an app that never asks `/api/` (a static app) needs no URL. `/api/<name>` of no api store, and any request outside `/api/`, goes on to the app's own routes.
 
 ### Reading and writing
 
@@ -167,9 +187,9 @@ export default createView(UsersController, users => (
 
 - `GET(path)` and `QUERY(path, query)` (the query as JSON body) return a promise of the `ApiResponse` and keep it in the store at their path and query, over what the store had there: a field the new answer does not bring stays from the last one. The view gets it with `get(path, query?)`, and renders again when a read keeps a new one.
 - `POST(path, body)`, `PUT(path, body)` and `DELETE(path)` return a promise of the `ApiResponse` and keep nothing: read again after a write.
-- Each answer is an `ApiResponse` with the HTTP `status`. When the backend fails it is the backend's (`success: false`, `message`); an answer that is not JSON becomes `{ success: false, message: 'Request failed', result: <the text> }`, and no answer `{ success: false, message: 'Request failed' }`.
-- Each failed request adds its `ApiResponse` to the store's `/error/list` as an `ApiError`, with `message` set to `'Request failed'` when the backend brings none and `timestamp` (`Date.now()`) of when it failed. The views get it with `get('/error/list')`, or through the `error` component of `@nano-app/components`.
-- `/busy` is `true` while a request of the store is out (`backend.get('/busy') ? 'Loading…' : …`).
+- Each answer is an `ApiResponse` with the HTTP `status`. An answer that breaks the contract, without `success`, is a failure. When the backend fails it is the backend's (`success: false`, `message`); an answer that is not JSON becomes `{ success: false, message: 'nano.error.requestFailed', result: <the text> }`, and no answer `{ success: false, message: 'nano.error.requestFailed' }`.
+- Each answer that brings a `message`, and each failed one, adds its `ApiResponse` to the store's `/message/list` as an `ApiMessage`, with `message` set to `'nano.error.requestFailed'` when a failed answer brings none, `type` set to `success` or `error` by its result when the backend sends none, and `timestamp` (`Date.now()`) of when it came. The views get it with `get('/message/list')`, or through the `message` controller of `@nano-app/controllers`.
+- `/requests` counts the requests of the store that are out (`backend.get('/requests') ? 'Loading…' : …`); a controller of `@nano-app/controllers` gives its own with `isBusy()`.
 - On the server (the first HTML that Next renders) a request asks nothing and resolves with an empty `ApiResponse` (`{}`).
 
 ### Pages with a session
@@ -180,12 +200,13 @@ A page that needs a session wraps itself with `createPage`, from `@nano-app/fron
 // app/dashboard/page.tsx
 import { createPage } from '@nano-app/frontend/server';
 
-export default createPage({ store: 'api', redirect: '/login' }, ({ session }) => (
+export default createPage({ redirect: '/login' }, ({ session }) => (
   <Dashboard user={session.user} />
 ));
 ```
 
-- `store` names the api store whose backend has Better Auth; `redirect` is where the page goes without a session.
+- `store` names the api store whose backend has Better Auth, `api` by default; `redirect` is where the page goes without a session.
+- `auth: false` turns it around, for a page only without a session (a login): with one it goes to `redirect` (`createPage({ auth: false, redirect: '/' }, …)`), and the view gets `session` as `{}`.
 - The view gets Next's props and `session`, Better Auth's answer as is (`{ session, user }`).
 - It is optional: a page without it is a public page of Next.
 - On each render the server asks `GET <API_<STORE>_URL>/auth/get-session` with the browser's cookie, once per render. Turn on Better Auth's cookie cache in the backend (`session: { cookieCache: { enabled: true, maxAge: 300 } }`) so it does not read the database each time.
@@ -223,7 +244,7 @@ pnpm --filter nano-frontend-test-app build
 API_BACKEND_URL=http://localhost:3000 pnpm --filter nano-frontend-test-app start   # http://localhost:3100
 ```
 
-The `Users` component reads and writes `/users` of the `backend` store, and `UsersList` pages and sorts it with `list` of [`@nano-app/components`](../components/README.md): point it at any backend that answers `GET`, `QUERY` (`offset`, `limit`, `orderBy`), `POST`, `PUT` and `DELETE` on `/users` with an `ApiResponse`. `/private` is a page with a session: the backend has Better Auth with `emailAndPassword`, and the URL of the app (`http://localhost:3100`) in its `trustedOrigins`.
+The `Users` component reads and writes `/users` of the `backend` store, and `UsersList` pages and sorts it with `list` of [`@nano-app/controllers`](../controllers/README.md): point it at any backend that answers `GET`, `QUERY` (`offset`, `limit`, `orderBy`), `POST`, `PUT` and `DELETE` on `/users` with an `ApiResponse`. `/private` is a page with a session: the backend has Better Auth with `emailAndPassword`, and the URL of the app (`http://localhost:3100`) in its `trustedOrigins`.
 
 ## Design
 

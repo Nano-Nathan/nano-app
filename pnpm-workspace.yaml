@@ -3,7 +3,7 @@ packages:
   - "core"
   - "plugins"
   - "frontend"
-  - "components"
+  - "controllers"
   - "mantine"
   - "frontend/tests/app"
   - "site"

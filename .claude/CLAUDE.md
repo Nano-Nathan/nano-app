@@ -1,6 +1,6 @@
 # nano-app
 
-pnpm monorepo: `core/` (private, inlined into the backend, frontend, components and mantine), `backend/` (`@nano-app/backend`), `plugins/` (`@nano-app/plugins`), `frontend/` (`@nano-app/frontend`), `components/` (`@nano-app/components`), `mantine/` (`@nano-app/mantine`). Read the README of the package you touch before changing it.
+pnpm monorepo: `core/` (private, inlined into the backend, frontend, controllers and mantine), `backend/` (`@nano-app/backend`), `plugins/` (`@nano-app/plugins`), `frontend/` (`@nano-app/frontend`), `controllers/` (`@nano-app/controllers`), `mantine/` (`@nano-app/mantine`). Read the README of the package you touch before changing it.
 
 This file holds the code guidelines. Branches, pull requests, releases and how a development is planned and approved are in [CONTRIBUTING.md](../CONTRIBUTING.md); planned features in [`features/`](../features/README.md).
 
@@ -10,7 +10,7 @@ Before opening a pull request, read [Pull requests](../CONTRIBUTING.md#pull-requ
 
 - The title is `feat:` (minor) or `fix:` (patch) when a package must be published, another type when not. Never a `!` after the type: the `angular` preset ignores the whole commit.
 - A breaking change ends the description with `BREAKING CHANGE: <what breaks>`.
-- Only a merge that touches a package's paths (`backend/`, `core/`, `plugins/`, `frontend/`, `components/`, `mantine/`) runs its publish workflow.
+- Only a merge that touches a package's paths (`backend/`, `core/`, `plugins/`, `frontend/`, `controllers/`, `mantine/`) runs its publish workflow.
 
 ## Clean core
 
@@ -50,12 +50,25 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 - Declared functions and methods state their return type (`: Promise<void>`); inline callbacks infer it, and so does the factory of a component (`list`), from the controller it returns.
 - Prefer `unknown` and validate over `any`.
 - Types are declared where values are born and inferred from there. Data from outside (JSON, env) gets a typed variable where it enters (`const STORES: [string, StoreFile][] = JSON.parse(…)`).
-- `core/` holds only what two or more packages use; what one package uses lives in it. Module constants go in the `const.ts` of their package (`core/const.ts` for the shared ones). A file exports only what another file uses.
+- `core/` holds only what two or more packages use; what one package uses lives in it. Module constants go in the `const.ts` of the piece that uses them, beside it (`mantine/src/layout/shell/const.ts`); those several pieces of a package share go in the `const.ts` of the package, and those of several packages in `core/const.ts`. A file exports only what another file uses.
 - Types in a `types/` folder of the package, one file per area (`types/app.ts`, `types/plugin.ts`). `type`, not `interface`. `import type` for types.
 - Generic objects are `NanoObject` (`core/types/objects.ts`), with the value type when it is known (`NanoObject<Store>`), never `object` or `Record<string, …>`.
 - Files: PascalCase when they export a class (`FileLoader.ts`), lowercase otherwise (`creators.ts`, `const.ts`).
 - `export default` when a file exports one thing, also the official plugins (`import health from '@nano-app/plugins/health'`). Named exports for files that export several.
 - Imports in groups: Node built-ins with `node:` (`node:fs`), dependencies, `@nano-app/*`, relative files, then every `import type` in the same order. Optional dependencies are imported when needed (`await import('pg')`), never at the top.
+
+### Views
+
+The views of `@nano-app/mantine`, and of any app on it:
+
+- **Responsive by default**: every view works on a phone, a tablet and a desktop with no extra step. Layout comes from Mantine's components (`Container`, `Stack`, `Group` with `wrap`, `SimpleGrid`, `Grid`, `Flex`) and their props.
+- Sizes and spacing are theme tokens (`size="xs"`, `p="md"`, `gap="lg"`, `fz="sm"`), changed per breakpoint with an object (`cols={{ base: 1, sm: 2, lg: 3 }}`, `p={{ base: 'sm', md: 'xl' }}`) or with `visibleFrom` and `hiddenFrom`.
+- A view with columns uses `Grid`, always of 12 columns, with a `span` per breakpoint (`<Grid.Col span={{ base: 12, sm: 6, lg: 4 }}>`): never another `columns` count.
+- No fixed values: no `px`, `rem` or plain numbers for widths, heights, fonts or spacing, and no `style` with sizes. A full width or height is a relative unit (`w="100%"`, `mih="100svh"`).
+- A view that reads data shows `Skeleton` of Mantine in its place while its controller is busy (`<Skeleton visible={users.isBusy()}>…</Skeleton>`), with the shape of what it loads.
+- Logic lives in `@nano-app/controllers`, views in `@nano-app/mantine`: mantine has no controllers. Its views take a controller of `@nano-app/controllers` as it is, and give it what it needs through props (`store`, `home`, `components`); a controller that needs an option a view cannot give takes it as a prop.
+- `@nano-app/mantine` keeps its pieces by kind. `components/<type>/` groups the views of a type, with an `index.ts` that exports them; every piece and its public types leave from `src/index.ts`, the only import path, `@nano-app/mantine`. A view alone is a file (`fields/Input.tsx`); a view with pieces of its own is a folder of its name, with `<View>.tsx` and `components/` (`notification/Toasts/`). A page is the same folder under `pages/<name>/`, with an `index.tsx` that gives `create<Name>Page` and its texts. A piece another view needs moves up to `components/`.
+- `@nano-app/controllers` groups its controllers by theme under `src/` (`auth/Auth.controller.ts`, `auth/Login.controller.ts`, `form/`), a controller alone as a file (`Collection.controller.ts`); every one leaves from `src/index.ts`, the only import path, `@nano-app/controllers`. A controller lives in `<Name>.controller.ts`: the one exception to PascalCase files that export a class.
 
 ### Names
 
@@ -88,10 +101,10 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 
 - Guard clauses and early returns, not nested `if`/`else`.
 - One ternary at most, never nested nor inside an `if` condition: give it a name first (`const isInvalid = isPlugin ? isPluginInvalid : isConsumerInvalid;`).
-- `??` for defaults. `||` only when `0`, `''` or `NaN` must also take the default (`message || 'Internal server error'`).
+- `??` for defaults. `||` only when `0`, `''` or `NaN` must also take the default (`message || 'nano.error.internal'`).
 - `for...of` to iterate when nothing is returned, never `.forEach` (it does not wait for `await`). `.map`, `.filter` and `.some` when they return something.
 - `async`/`await` in general. Express handlers and middlewares chain `.then()` and return the chain: Express 5 sends a rejection to the error handler.
-- Errors: an invalid consumer file throws where it is checked (the zod schemas of `backend/src/router/validations.ts` and `frontend/src/utils/validations.ts`) and stops the startup (or the build). No `try`/`catch` to rename or wrap an error: it reaches `NanoApp.start` as it was thrown, with its stack. The framework throws `new NanoError('…')` (`core`): Node shows it as `[nano-app] [ERROR]: …`; with a status (`new NanoError('Not found', 404)`) a handler answers it. Handlers throw a string (400), `{ status, message, warning }` or a `NanoError`.
+- Errors: an invalid consumer file throws where it is checked (the zod schemas of `backend/src/router/validations.ts` and `frontend/src/utils/validations.ts`) and stops the startup (or the build). No `try`/`catch` to rename or wrap an error: it reaches `NanoApp.start` as it was thrown, with its stack. The framework throws `new NanoError('…')` (`core`): Node shows it as `[nano-app] [ERROR]: …`; with a status (`new NanoError('nano.error.notFound', 404)`) a handler answers it. Handlers throw a string (400), `{ status, message, type }` (`type` `warning` or `error`, `error` by default) or a `NanoError`.
 - Messages: on the console only through `Logger.error`, `Logger.warn` and `Logger.info`, never `console`; in a response through `Logger.message`. The text says the file or thing, what is wrong, and the command that fixes it (``Run `pnpm add drizzle-orm pg`.``).
 
 ### Comments and format
@@ -111,4 +124,5 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 - Never print secrets: no `cat .env`, no `source .env`, no logging `process.env`. Framework messages never include secrets or connection strings.
 - Untrusted input (`req.body`, `req.params`, `req.query`, headers) is validated before the framework uses it. SQL uses parameters (`$1`); identifiers (schema, table) come only from constants.
 - Routes are private when `createNanoApp` has `auth`: only its endpoints and the routes with `public: true` are public. Without it every route is public. A plugin that exposes something public says so in its README.
-- The error handler answers with the message of what was thrown below 500; a 5xx answers `Internal server error` and is logged in full.
+- The error handler answers with the message of what was thrown below 500; a 5xx answers `nano.error.internal` and is logged in full.
+- Every message a response carries is a key of the texts (`nano.error.notFound`), never a sentence: the frontend shows it in the user's locale.

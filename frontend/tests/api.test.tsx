@@ -10,7 +10,7 @@ import Controller from '../src/controllers/Controller';
 import createView from '../src/creators/createView';
 import TestApp, { renderStores } from './provider';
 import type { NanoObject } from '@nano-app/core/types/objects';
-import type { ApiError } from '../src/types/store';
+import type { ApiMessage } from '../src/types/store';
 
 const PORT = 4200;
 
@@ -18,7 +18,7 @@ const PORT = 4200;
 let iDelay = 0;
 let isCounted = false;
 
-/** Answers the backend's routes: `/fail`, `/silent`, `/count` and `/html`, any other echoes */
+/** Answers the backend's routes: `/fail`, `/silent`, `/count`, `/html`, `/plain`, `/refused` and `/saved`, any other echoes */
 function answer(sMethod: string, sUrl: string, sBody: string): [number, string, string] {
   const sPath = sUrl.replace('/api/backend', '');
   const fnJson = (iStatus: number, oValue: NanoObject): [number, string, string] => [
@@ -31,6 +31,9 @@ function answer(sMethod: string, sUrl: string, sBody: string): [number, string, 
   if (sPath === '/html') return [404, 'text/html', '<h1>Not found</h1>'];
   if (sPath === '/fail') return fnJson(400, { success: false, message: 'Failed' });
   if (sPath === '/silent') return fnJson(500, { success: false });
+  if (sPath === '/plain') return fnJson(200, { token: 't' });
+  if (sPath === '/refused') return fnJson(401, { message: 'Refused' });
+  if (sPath === '/saved') return fnJson(200, { success: true, message: 'Saved' });
   if (sPath === '/count') {
     const oAnswer = isCounted ? { success: true } : { success: true, count: 5 };
     isCounted = true;
@@ -129,33 +132,61 @@ describe('api store', () => {
   });
 
   test('busy is true while a request is out', async () => {
-    // Sends a slow request and reads busy before and after its answer
+    // Sends a slow request and reads its count before and after its answer
     iDelay = 50;
     const { backend } = renderStores();
     const oRead = backend.GET('/users');
 
-    assert.equal(backend.get('/busy'), true);
+    assert.equal(backend.get('/requests'), 1);
     await oRead;
-    assert.equal(backend.get('/busy'), false);
+    assert.equal(backend.get('/requests'), 0);
   });
 
-  test('a failed request returns its ApiResponse and adds its error to the store', async () => {
+  test('a failed request returns its ApiResponse and adds its message to the store', async () => {
     // Fails with a message, then without one
     const { backend } = renderStores();
     const oFailed = await backend.POST('/fail', {});
     await backend.GET('/silent');
 
-    // Checks the answer and both errors, the second with the default message
+    // Checks the answer and both messages, the second with the default one
     assert.deepEqual(oFailed, { success: false, message: 'Failed', status: 400 });
-    const aErrors: ApiError[] = backend.get('/error/list');
+    const aErrors: ApiMessage[] = backend.get('/message/list');
     assert.deepEqual(
-      aErrors.map(({ message, status }) => [message, status]),
+      aErrors.map(({ message, status, type }) => [message, status, type]),
       [
-        ['Failed', 400],
-        [REQUEST_FAILED, 500],
+        ['Failed', 400, 'error'],
+        [REQUEST_FAILED, 500, 'error'],
       ],
     );
     assert.equal(typeof aErrors[0].timestamp, 'number');
+  });
+
+  test('an answer without success is a failure, whatever its HTTP status', async () => {
+    // Reads a 2xx and a 4xx that break the ApiResponse contract
+    const { backend } = renderStores();
+    const oPlain = await backend.POST('/plain', {});
+    const oRefused = await backend.POST('/refused', {});
+
+    // Neither succeeds, and both are kept, the first with the default message
+    assert.deepEqual(oPlain, { token: 't', status: 200 });
+    assert.deepEqual(oRefused, { message: 'Refused', status: 401 });
+    assert.deepEqual(
+      backend.get('/message/list').map(({ message }: ApiMessage) => message),
+      [REQUEST_FAILED, 'Refused'],
+    );
+  });
+
+  test('a successful answer with a message is kept, one without a message is not', async () => {
+    // Writes with an answer that brings a message, then reads one without
+    const { backend } = renderStores();
+    await backend.POST('/saved', {});
+    await backend.GET('/users');
+
+    // Only the message of the first one is kept, as a success
+    assert.deepEqual(
+      backend.get('/message/list').map(({ type, message }: ApiMessage) => [type, message]),
+      [['success', 'Saved']],
+    );
   });
 
   test('an answer without JSON, or no answer, is a failed ApiResponse', async () => {
@@ -168,7 +199,7 @@ describe('api store', () => {
       result: '<h1>Not found</h1>',
     });
     assert.deepEqual(await backend.DELETE('/drop'), { success: false, message: REQUEST_FAILED });
-    assert.equal(backend.get('/error/list').length, 2);
-    assert.equal(backend.get('/busy'), false);
+    assert.equal(backend.get('/message/list').length, 2);
+    assert.equal(backend.get('/requests'), 0);
   });
 });

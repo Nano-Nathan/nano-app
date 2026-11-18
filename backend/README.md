@@ -52,9 +52,9 @@ Each `*.route.ts` under `routesDir` default-exports an object with the HTTP meth
 
 ```ts
 export default createRoute({
-  expression: '/:id',                                  // → /users/:id
-  GET:    async req => ({ result: { id: req.params.id } }),
-  DELETE: async req => ({ message: 'Deleted' }),
+  expression: '/:id', // → /users/:id
+  GET: async req => ({ result: { id: req.params.id } }),
+  DELETE: async req => ({ message: 'notes.deleted' }),
 });
 ```
 
@@ -62,11 +62,11 @@ Each handler receives `(req, params)` and returns an `ApiResponse` without `succ
 
 ```ts
 type ApiResponse<T> = {
-  status?: number;     // HTTP status, 200 by default; not sent in the body
-  success?: boolean;   // set by the framework: status < 400
+  status?: number; // HTTP status, 200 by default; not sent in the body
+  success?: boolean; // set by the framework: status < 400
   result?: T;
   message?: string;
-  warning?: boolean;
+  type?: 'success' | 'info' | 'warning' | 'error'; // how its message shows; without it, by success
 };
 ```
 
@@ -78,20 +78,20 @@ type ApiResponse<T> = {
 
 Every option is optional.
 
-| Option | Default | Description |
-|---|---|---|
-| `port` | `3000` | Listening port. |
-| `listener` | `() => {}` | Callback once the server is listening. |
-| `settings` | `{ "trust proxy": <private networks> }` | Values for `app.set()`: see [Client IP](#client-ip). |
-| `packages` | see below | Framework base middlewares. |
-| `routesDir` | `"src/routes"` | Folder of your routes, relative to `cwd`. |
-| `database` | none | Your Drizzle relations and how its tables are applied: see [Database](#database). |
-| `auth` | none | Better Auth options: see [Better Auth](#better-auth). |
-| `plugins` | `{}` | Plugins mounted `before` and `after` your routes, in order: see [Plugins](#plugins). |
+| Option      | Default                                 | Description                                                                          |
+| ----------- | --------------------------------------- | ------------------------------------------------------------------------------------ |
+| `port`      | `3000`                                  | Listening port.                                                                      |
+| `listener`  | `() => {}`                              | Callback once the server is listening.                                               |
+| `settings`  | `{ "trust proxy": <private networks> }` | Values for `app.set()`: see [Client IP](#client-ip).                                 |
+| `packages`  | see below                               | Framework base middlewares.                                                          |
+| `routesDir` | `"src/routes"`                          | Folder of your routes, relative to `cwd`.                                            |
+| `database`  | none                                    | Your Drizzle relations and how its tables are applied: see [Database](#database).    |
+| `auth`      | none                                    | Better Auth options: see [Better Auth](#better-auth).                                |
+| `plugins`   | `{}`                                    | Plugins mounted `before` and `after` your routes, in order: see [Plugins](#plugins). |
 
 `packages` accepts `morgan`, `cors`, `helmet`, `rateLimit`, `compression`, `express` (`express.json` options) and `urlencoded`. Each one you set replaces its default whole and the others keep theirs; pass `false` to disable one. `settings` works the same way, key by key.
 
-`rateLimit` is off by default. With `{ capacity, refillPerSecond, message }` (defaults `100`, `1` and a generic message) it limits every request per client IP, Better Auth's endpoints too: each request spends a token of the client's bucket, which refills over time; without one it answers `429` with `message` and `Retry-After`. The addresses of an IPv6 `/56` are one client, and the buckets live in the memory of each process.
+`rateLimit` is off by default. With `{ capacity, refillPerSecond, message }` (defaults `100`, `1` and `nano.error.tooManyRequests`) it limits every request per client IP, Better Auth's endpoints too: each request spends a token of the client's bucket, which refills over time; without one it answers `429` with `message` and `Retry-After`. The addresses of an IPv6 `/56` are one client, and the buckets live in the memory of each process.
 
 `compression` is off by default: the proxy in front of the app (an ingress, nginx) usually compresses the answers. Turn it on with `packages: { compression: true }` when nothing does.
 
@@ -182,8 +182,9 @@ createNanoApp({ auth: { emailAndPassword: { enabled: true } } });
 - Its tables live in the Postgres schema `nano_auth`, and Better Auth decides them from its options (plugins, `user.additionalFields`).
 - `auth.database` says how they are applied at startup, `{ push: true }` by default: `push` creates them with Better Auth's migrations and adds what new options need, never dropping anything; `migrate` is a folder of Drizzle migrations of them (`npx auth generate --adapter drizzle`, then `drizzle-kit generate`), applied in `nano_auth`.
 - Its endpoints are mounted before your routes, at its `basePath` (default `/auth`), and stay public.
+- Its endpoints answer the `ApiResponse` of the framework, as every route: `{ success: true, result: <Better Auth's answer> }` (`result.user`, `result.url` of a provider), and a failure `{ success: false, type: 'error', message, code }` with its status, its `message` the key `nano.auth.<code>` (`nano.auth.INVALID_EMAIL_OR_PASSWORD`). Its redirects (the callback of a provider) go as they are, and `api.getSession` in your code keeps Better Auth's answer.
 - In production, Better Auth limits sign-in, sign-up and password reset to a few attempts per client IP (its `rateLimit`): see [Client IP](#client-ip).
-- With it on, every route of the app and of every plugin needs a session: without one it answers 401 `Not authenticated`.
+- With it on, every route of the app and of every plugin needs a session: without one it answers 401 `nano.error.notAuthenticated`.
 - `createRoute({ public: true, ... })` answers without a session. An unknown path answers 404.
 - Handlers and `onBefore` receive the session in `params.session` (`{ user, session }`), also on a public route when the request has one.
 - Sign-up works as Better Auth sets it: with `emailAndPassword` anyone can sign up and reach your routes. Close it with `disableSignUp: true`, or check roles in your handlers.
@@ -255,11 +256,11 @@ routes: Object.fromEntries(
 
 Two levels: the plugin's runs once for the whole plugin, the endpoint's for its route.
 
-| Level | Callback | Runs | Receives | Use |
-|---|---|---|---|---|
-| Plugin (`callbacks` in its config) | `onMount` | Once, after its database and before its endpoints | `(params)` | Shared setup (a client, a job) |
-| Endpoint (`callbacks` in `createRoute`) | `onInit` | Once, when the endpoint is mounted | `(params)` | Setup of that route |
-| Endpoint | `onBefore` | Before every request the endpoint handles | `(req, method, params)` | Validate or load; its return value reaches the handler as `params.onBeforeResult` (`{}` without `onBefore`) |
+| Level                                   | Callback   | Runs                                              | Receives                | Use                                                                                                         |
+| --------------------------------------- | ---------- | ------------------------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Plugin (`callbacks` in its config)      | `onMount`  | Once, after its database and before its endpoints | `(params)`              | Shared setup (a client, a job)                                                                              |
+| Endpoint (`callbacks` in `createRoute`) | `onInit`   | Once, when the endpoint is mounted                | `(params)`              | Setup of that route                                                                                         |
+| Endpoint                                | `onBefore` | Before every request the endpoint handles         | `(req, method, params)` | Validate or load; its return value reaches the handler as `params.onBeforeResult` (`{}` without `onBefore`) |
 
 The endpoints of one plugin have no guaranteed order: one route's `onInit` must not depend on another's.
 
@@ -269,23 +270,26 @@ A plugin with a database passes its own `database` (`relations`, `push`, `migrat
 
 ## Errors
 
-The framework mounts the 404 and the error handler: an unmatched request becomes a `404`, and anything a handler throws becomes an `ApiResponse`.
+The framework mounts the 404 and the error handler: an unmatched request becomes a `404`, and anything a handler throws becomes an `ApiResponse`. Every `message` is a key of the app's texts, which the frontend shows in its locale (see [Texts](../frontend/README.md#texts)); the framework's are `nano.error.*` and `nano.auth.*`.
 
 ```ts
-throw { status: 409, message: 'Already exists' };   // → 409 { success: false, warning: false, message: "Already exists" }
-throw 'Field name is required';                     // → 400 { success: false, warning: false, message: "Field name is required" }
-throw new Error('boom');                            // → 500 "Internal server error", logged to stderr
+throw { status: 409, message: 'notes.exists' }; // → 409 { success: false, type: "error", message: "notes.exists" }
+throw 'notes.nameRequired'; // → 400 { success: false, type: "error", message: "notes.nameRequired" }
+throw { status: 422, message: 'notes.check', type: 'warning' }; // → 422 { success: false, type: "warning", … }
+throw new Error('boom'); // → 500 "nano.error.internal", logged to stderr
 // A Postgres error is one more Error: 500. Catch it in your handler to answer a 409
-GET /unknown                                        // → 404 { success: false, warning: false, message: "/unknown not found" }
+GET / unknown; // → 404 { success: false, type: "error", message: "nano.error.notFound" }
 ```
+
+A handler that answers well may say how its message shows too: `return { success: true, message: 'notes.saved', type: 'info' }`. Without `type`, the frontend shows a message as `success` or `error` by `success`.
 
 ## Typed creators
 
-| Function | Purpose |
-|---|---|
-| `createNanoApp(config?)` | Creates and starts the app. |
-| `createRoute(route)` | Types a route file. |
-| `createPlugin(creator)` | Types a plugin factory and its options. |
+| Function                           | Purpose                                                                                                                  |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `createNanoApp(config?)`           | Creates and starts the app.                                                                                              |
+| `createRoute(route)`               | Types a route file.                                                                                                      |
+| `createPlugin(creator)`            | Types a plugin factory and its options.                                                                                  |
 | `createPluginCallbacks(callbacks)` | Types the callbacks of a plugin (`createPluginCallbacks<{ db: MyDb }>` types `db`), e.g. to keep them in their own file. |
 
 Also exported: `NanoError`, the Express `Request` type, the HTTP contract (`ApiResponse`, `ApiPromise`, `RouteEntry`, `HandlerParams`, `NanoObject`) and what the creators return (`PluginConfig`, `PluginOptions`, `PluginCallbacks`).

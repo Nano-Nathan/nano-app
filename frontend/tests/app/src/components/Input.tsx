@@ -1,7 +1,7 @@
 'use client';
 
 import { createView } from '@nano-app/frontend';
-import FieldController from '@nano-app/components/field';
+import { FieldController } from '@nano-app/controllers';
 
 /** An input of the field's type, with its error */
 export default createView(FieldController, (input, { field: oField }) => (

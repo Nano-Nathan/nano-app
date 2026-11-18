@@ -6,7 +6,7 @@ import type { ApiPromise, HandlerParams, NanoObject, Request, RouteEntry } from 
 
 /** The first record of a query or a write: 404 without it */
 function first(aRecords: NanoObject[]): { result: NanoObject } {
-  if (!aRecords[0]) throw new NanoError('Not found', 404);
+  if (!aRecords[0]) throw new NanoError('nano.error.notFound', 404);
   return { result: aRecords[0] };
 }
 

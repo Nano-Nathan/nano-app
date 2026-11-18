@@ -3,6 +3,7 @@ import { AUTH_PATH } from '@nano-app/core/const';
 import { AUTH_NAME, PRIVATE_NETWORKS } from '../const';
 import DatabaseManager from '../database/DatabaseManager';
 import BetterAuth from '../database/clients/BetterAuth';
+import contract from './contract';
 import type { Request } from 'express';
 import type { IncomingHttpHeaders } from 'node:http';
 import type { Auth as BetterAuthInstance } from 'better-auth';
@@ -29,6 +30,8 @@ export default abstract class Auth {
     const oFullOptions = {
       ...oRest,
       basePath,
+      // Its answers in the ApiResponse of the framework, after the app's plugins
+      plugins: [...(oRest.plugins ?? []), await contract()],
       advanced: {
         ...advanced,
         ipAddress: { trustedProxies: PRIVATE_NETWORKS, ...advanced?.ipAddress },
@@ -55,11 +58,12 @@ export default abstract class Auth {
   ): Promise<NanoObject | undefined> {
     // With Better Auth on, a route needs a session unless it is public
     const oSession = await this.session(oReq);
-    if (this.oAuth && !oSession && !isPublic) throw new NanoError('Not authenticated', 401);
+    if (this.oAuth && !oSession && !isPublic)
+      throw new NanoError('nano.error.notAuthenticated', 401);
 
     // Checks the permissions, unless the route is public
     const isAllowed = await this.isGranted(oSession, isPublic ? undefined : oPermissions);
-    if (!isAllowed) throw new NanoError('Forbidden', 403);
+    if (!isAllowed) throw new NanoError('nano.error.forbidden', 403);
     return oSession;
   }
 

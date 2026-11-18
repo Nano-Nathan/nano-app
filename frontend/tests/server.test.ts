@@ -11,6 +11,6 @@ describe('api store on the server', () => {
     const oResult = await oBackend.GET('/users');
 
     assert.deepEqual(oResult, {});
-    assert.equal(oBackend.get('/busy'), undefined);
+    assert.equal(oBackend.get('/requests'), undefined);
   });
 });
