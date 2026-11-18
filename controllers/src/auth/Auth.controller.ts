@@ -38,10 +38,10 @@ export default class AuthController extends ApiController {
     return this.POST(`${AUTH_PATH}/sign-out`, {});
   }
 
-  /** Signs in, or signs up with the email as the name while its flag is on */
+  /** Signs in, or signs up while its flag is on, the email as the name unless the values bring one */
   public send(oValues: LoginValues): Promise<ApiResponse> {
     return this.isToggled()
-      ? this.signUp({ ...oValues, name: oValues.email })
+      ? this.signUp({ name: oValues.email, ...oValues })
       : this.signIn(oValues);
   }
 }
