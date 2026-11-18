@@ -104,15 +104,13 @@ A page is a server component made by its `create` function, for a file of `app/`
 
 ### Login
 
-`createLoginPage` gives a card in the middle of the screen with its title and subtitle, a button per provider, the email and the password, and a link that switches the card between signing in and signing up (the email as the name), at Better Auth of the `api` store. The form validates both, and both go to `home` when the backend answers `success`. While a request of the store is out, the submit button shows its loader and the providers are disabled. The mode is the flag of `AuthController`, at `/auth/isToggled` of `app`.
+`createLoginPage` gives a card in the middle of the screen with its title and subtitle, a button per provider, the email and the password, and a link that switches the card between signing in and signing up (the email as the name), at Better Auth of the `api` store. The form validates both, and both go to `home` (`/` by default) when the backend answers `success`. While a request of the store is out, the submit button shows its loader and the providers are disabled. The mode is the flag of `AuthController`, at `/auth/isToggled` of `app`.
 
 ```tsx
 // app/login/page.tsx
 import { createLoginPage } from '@nano-app/mantine';
 
-export default createLoginPage({
-  home: '/',
-});
+export default createLoginPage({ providers: ['google'] });
 ```
 
 - `providers` adds a button per social provider of Better Auth (`['google']`): it asks `POST /auth/sign-in/social` and goes to the provider's page, which comes back to `home`. Configure the provider in the backend's `auth.socialProviders`, with a `redirectURI` through the proxy of the store (`https://app.example.com/api/api/auth/callback/google`): the provider comes back through it, and the session cookie stays on the app's domain.
