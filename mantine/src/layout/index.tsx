@@ -10,20 +10,15 @@ import type { LayoutOptions } from '../types/layout';
 export default function createLayout(
   oOptions: LayoutOptions,
 ): (props: { children: ReactNode }) => ReactNode {
-  // The language goes to the html, the notifications to theirs, the rest to MantineProvider
-  const { lang, notifications, defaultColorScheme = 'auto', ...oRest } = oOptions;
-  const oProvider = { ...oRest, defaultColorScheme };
+  const { lang, colorScheme = 'auto', provider, notifications } = oOptions;
   return function RootLayout({ children }: { children: ReactNode }): ReactNode {
     return (
       <html lang={lang} {...mantineHtmlProps}>
         <head>
-          <ColorSchemeScript
-            defaultColorScheme={oProvider.defaultColorScheme}
-            forceColorScheme={oProvider.forceColorScheme}
-          />
+          <ColorSchemeScript defaultColorScheme={colorScheme} />
         </head>
         <body>
-          <MantineProvider {...oProvider}>
+          <MantineProvider {...provider} defaultColorScheme={colorScheme}>
             <NanoAppProvider>
               <Toasts {...notifications} />
               {children}

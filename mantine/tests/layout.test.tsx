@@ -10,7 +10,7 @@ const { default: createLayout } = await import('../src/layout');
 
 test('createLayout renders the html of its language, the color scheme script and the children', () => {
   // Layout in Spanish, dark by default
-  const RootLayout = createLayout({ lang: 'es', defaultColorScheme: 'dark' });
+  const RootLayout = createLayout({ lang: 'es', colorScheme: 'dark' });
   const sHtml = renderToStaticMarkup(
     <RootLayout>
       <p>child</p>
