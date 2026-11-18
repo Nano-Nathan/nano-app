@@ -1,7 +1,7 @@
 ---
 status: todo
 owner: null
-depends_on: [drizzle]
+depends_on: []
 updated: 2026-11-13
 ---
 

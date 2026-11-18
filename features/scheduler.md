@@ -2,7 +2,7 @@
 status: todo
 owner: null
 depends_on: []
-updated: 2026-10-29
+updated: 2026-11-18
 ---
 
 # Scheduler
@@ -46,7 +46,7 @@ Not in scope. personal-app runs one replica today but may scale, and then every 
 
 - A `nano_scheduler` schema with a `runs` table: job name and scheduled time, unique together, plus start, end and status. Before running, each replica tries to insert its row (`INSERT ... ON CONFLICT DO NOTHING`); only the one that inserted runs the job. The same table is the history.
 - Alternative without history: a Postgres advisory lock (`pg_try_advisory_lock`) per job name and firing, held while it runs. Cheaper, but it needs a session held for the whole run and leaves no trace.
-- Its table lives in a `nano_*` schema of the plugin, with `migrations/` next to it: the startup applies them like any official plugin's (see `plugins/README.md`), and the plugin needs `database` in its config.
+- Its table lives in the `nano_scheduler` schema, through the plugin's own `database` (`relations`, `push`, `migrate`, see `backend/README.md`). It is the first official plugin with tables: a test must show that an empty database gets them, that a second start changes nothing, and that a change that loses data stops the startup (left here from the drizzle feature).
 - A replica that is down at the firing time still loses the run if none is up (no catch-up), and a job that outlives its next firing needs a decision. Both stay out of scope there too.
 - Until then, the app either runs one replica or runs the scheduler in a single process of its own.
 
@@ -65,3 +65,4 @@ Not in scope. personal-app runs one replica today but may scale, and then every 
 ## Log
 
 - 2026-10-29 · kleo · `migrations` closed without a `migrate` command: the plugin's table is migrated at startup, as an official plugin.
+- 2026-11-18 · claude · From the drizzle feature, closed: the tables of an official plugin by push (`database` of the plugin) are checked with the first plugin that has them, this one when it adds `runs`.
