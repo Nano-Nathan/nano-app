@@ -6,8 +6,9 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { LOGIN_FIELDS } from '../src/const';
-import createLoginPage from '../src/pages/login';
+import Login from '../src/pages/login/Login';
 import TestApp, { aVisited } from './provider';
+import type { ReactNode } from 'react';
 
 const PORT = 4202;
 
@@ -24,11 +25,10 @@ const oBackend = createServer((oReq, oRes) => {
   });
 });
 
-// Login page of the api store that goes to /home
-const LoginPage = createLoginPage({
-  home: '/home',
-  providers: ['google'],
-});
+/** Login card of the api store that goes to /home, as createLoginPage renders it */
+function LoginPage(): ReactNode {
+  return <Login home="/home" providers={['google']} signUp />;
+}
 
 before(() => new Promise<void>(fnResolve => oBackend.listen(PORT, fnResolve)));
 after(() => oBackend.close());
@@ -102,7 +102,7 @@ test('the login page asks Better Auth the page of Google, back to home', async (
 
 test('the login page without sign-up offers no link to create an account', () => {
   // Renders a login only for users that exist
-  const ClosedLogin = createLoginPage({ home: '/home', signUp: false });
+  const ClosedLogin = (): ReactNode => <Login home="/home" providers={[]} signUp={false} />;
   render(
     <TestApp>
       <ClosedLogin />
@@ -116,10 +116,14 @@ test('the login page without sign-up offers no link to create an account', () =>
 
 test('the sign-up shows its own fields', () => {
   // Renders a login that asks a phone to sign up
-  const PhoneLogin = createLoginPage({
-    home: '/home',
-    signUpFields: [...LOGIN_FIELDS, { name: 'phone', label: 'nano.login.email' }],
-  });
+  const PhoneLogin = (): ReactNode => (
+    <Login
+      home="/home"
+      providers={[]}
+      signUp
+      signUpFields={[...LOGIN_FIELDS, { name: 'phone', label: 'nano.login.email' }]}
+    />
+  );
   render(
     <TestApp>
       <PhoneLogin />

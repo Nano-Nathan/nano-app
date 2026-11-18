@@ -206,6 +206,7 @@ export default createPage({ redirect: '/login' }, ({ session }) => (
 ```
 
 - `store` names the api store whose backend has Better Auth, `api` by default; `redirect` is where the page goes without a session.
+- `auth: false` turns it around, for a page only without a session (a login): with one it goes to `redirect` (`createPage({ auth: false, redirect: '/' }, …)`), and the view gets `session` as `{}`.
 - The view gets Next's props and `session`, Better Auth's answer as is (`{ session, user }`).
 - It is optional: a page without it is a public page of Next.
 - On each render the server asks `GET <API_<STORE>_URL>/auth/get-session` with the browser's cookie, once per render. Turn on Better Auth's cookie cache in the backend (`session: { cookieCache: { enabled: true, maxAge: 300 } }`) so it does not read the database each time.

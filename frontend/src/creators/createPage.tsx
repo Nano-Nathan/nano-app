@@ -21,12 +21,12 @@ const getSession = cache(async (sUrl: string): Promise<NanoObject | null> => {
   return result ?? null;
 });
 
-/** Page that needs a session at the store's backend: without one it redirects */
+/** Page whose session at the store's backend is the one of `auth`: otherwise it redirects */
 export default function createPage<P>(
   oOptions: PageOptions,
   fnView: PageView<P>,
 ): (oProps: P) => Promise<ReactNode> {
-  const { store = API_NAME, redirect: sRedirect } = oOptions;
+  const { store = API_NAME, auth = true, redirect: sRedirect } = oOptions;
   return async function Page(oProps: P): Promise<ReactNode> {
     // Fails when the store has no backend URL
     const sUrl = URLS.get(store);
@@ -36,9 +36,9 @@ export default function createPage<P>(
       );
     }
 
-    // Without a session the page redirects; with one the view gets it
+    // Redirects unless the session is the one the page asks; the view gets it, `{}` without one
     const oSession = await getSession(sUrl);
-    if (!oSession) redirect(sRedirect);
-    return fnView({ ...oProps, session: oSession });
+    if (auth !== Boolean(oSession)) redirect(sRedirect);
+    return fnView({ ...oProps, session: oSession ?? {} });
   };
 }
