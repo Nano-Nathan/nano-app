@@ -106,6 +106,19 @@ describe('auth', () => {
     assert.ok(aRequests.includes('POST /api/api/auth/sign-out {}'));
   });
 
+  test('signOut goes to the prop login, /login by default', async () => {
+    // Renders an auth with its default and one with a login of its own
+    const Auth = createView(ApiAuthController, view);
+    renderApp(<Auth />);
+    fireEvent.click(screen.getByText('sign out'));
+    await waitFor(() => assert.deepEqual(aVisited, ['/login']));
+    cleanup();
+    renderApp(<Auth login="/enter" />);
+    fireEvent.click(screen.getByText('sign out'));
+
+    await waitFor(() => assert.deepEqual(aVisited, ['/login', '/enter']));
+  });
+
   test('the error a provider came back with goes to the messages, and the url drops it', async () => {
     // Comes back from a provider with an error, and renders an auth
     history.replaceState(null, '', '/login?error=signup_disabled');

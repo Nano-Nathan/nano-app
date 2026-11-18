@@ -13,6 +13,8 @@ export default class AuthController extends ApiController {
   protected kind = 'email';
   /** Path it goes to once signed in or signed up: the prop `home`, `/` by default */
   protected home: string = this.props.home ?? '/';
+  /** Path it goes to once signed out: the prop `login`, `/login` by default */
+  protected login: string = this.props.login ?? '/login';
 
   /** Shows the error a provider came back with (`?error=signup_disabled`) as a message of `api` */
   public onMount(): void {
@@ -57,9 +59,12 @@ export default class AuthController extends ApiController {
     return oResponse;
   }
 
-  /** Better Auth's sign-out */
-  public signOut(): Promise<ApiResponse> {
-    return this.POST(`${AUTH_PATH}/sign-out`, {});
+  /** Better Auth's sign-out, then `login` */
+  public async signOut(): Promise<ApiResponse> {
+    // Signs out, and goes to the login on a success
+    const oResponse = await this.POST(`${AUTH_PATH}/sign-out`, {});
+    if (oResponse.success) this.router.push(this.login);
+    return oResponse;
   }
 
   /** Signs in, or signs up while its flag is on, the email as the name unless the values bring one */

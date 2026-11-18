@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { observer } from 'mobx-react-lite';
 import { useStores } from '../app/NanoAppProvider';
 import type { ReactNode } from 'react';
@@ -18,7 +18,11 @@ export default function createView<C extends Controller>(
     // Creates the controller once, with the context of the view
     const stores = useStores();
     const router = useRouter();
-    const [oController] = useState(() => new ControllerClass({ props, stores, router }));
+    const pathname = usePathname();
+    const [oController] = useState(() => new ControllerClass({ props, stores, router, pathname }));
+
+    // Gives the methods the path of this render, so the view reads it as it is
+    oController.pathname = pathname;
 
     // Gives the methods the props of the last render on screen
     useLayoutEffect(() => {

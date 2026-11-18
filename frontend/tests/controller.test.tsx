@@ -4,6 +4,7 @@ import './env/controller';
 import { test, describe, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { PathnameContext } from 'next/dist/shared/lib/hooks-client-context.shared-runtime';
 import Controller from '../src/controllers/Controller';
 import createView from '../src/creators/createView';
 import { MISSING_PROVIDER } from '../src/const';
@@ -132,6 +133,24 @@ describe('createView', () => {
     fireEvent.click(screen.getByText('name'));
 
     assert.ok(screen.getByText('x: new'));
+  });
+
+  test('a view reads the path of the page, also once it changes', () => {
+    // A view that shows the path its controller has
+    const Path = createView(Controller, oController => <output>{oController.pathname}</output>);
+    const fnPage = (sPath: string): ReactNode => (
+      <PathnameContext.Provider value={sPath}>
+        <TestApp>
+          <Path />
+        </TestApp>
+      </PathnameContext.Provider>
+    );
+    const { rerender } = render(fnPage('/accounts'));
+    assert.equal(screen.getByRole('status').textContent, '/accounts');
+
+    // Navigates to another page
+    rerender(fnPage('/settings'));
+    assert.equal(screen.getByRole('status').textContent, '/settings');
   });
 
   test('a method keeps one function for the whole mount', () => {

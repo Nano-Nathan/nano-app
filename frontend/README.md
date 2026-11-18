@@ -68,7 +68,7 @@ export default { type: 'app', data: { locale: 'es' } };
 
 ## Controllers and views
 
-A controller is a class that holds the logic of a view: it extends `Controller` and reaches the view's `props`, the app's `stores` and Next's `router` with `this`. `createView` creates the component: it renders the view with its own instance of the controller.
+A controller is a class that holds the logic of a view: it extends `Controller` and reaches the view's `props`, the app's `stores`, Next's `router` and the page's `pathname` with `this`. `createView` creates the component: it renders the view with its own instance of the controller.
 
 ```ts
 // src/controllers/counter.controller.ts
@@ -100,6 +100,7 @@ export default createView(CounterController, (counter, props) => (
 - Each mount of a view has its own controller; several views can share one controller class, and they share the stores.
 - Every method is bound once per mount: the view can pass one alone (`onClick={counter.increment}`), and it stays the same function while the view is mounted, so a child that gets it does not render again for it. A method with its own arguments goes through an arrow (`onClick={() => counter.update(-5)}`): passed alone, it would get React's event as its first argument.
 - `this.props` are the props of the last render on screen, so a method sees them when it runs from an event or an effect. What the view shows reads the `props` it gets.
+- `this.pathname` is Next's `usePathname()` of this render (`/accounts`, without the query): a method that reads it (`isActive(href)`) gives the view the current page, also after a navigation.
 - A field of the class can read the context: fields are set after the base constructor (`oApi = this.stores.backend;`).
 - A store the app does not have (`this.stores.missing`) is a type error: `withNanoApp` writes the type of each one (see [Stores](#stores)).
 

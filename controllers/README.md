@@ -48,13 +48,14 @@ export default createView(UsersController, users => (
 
 ## Controllers
 
-| Component              | Import                                                         | Fields                                                    | Methods                                                                                                         | Props                        | State                                                                               |
-| ---------------------- | -------------------------------------------------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------- |
-| `AuthController`       | `import { AuthController } from '@nano-app/controllers'`       | `api` (`api`), `kind` (`'email'`), `home` (the prop, `/`) | `signIn(body, kind)`, `signUp(body, kind)`, `signOut()`, `send(values)`, `isBusy()`                             | —                            | `app`: `/auth/isToggled`; `api`: `/auth/requests`                                   |
-| `FieldController`      | `import { FieldController } from '@nano-app/controllers'`      | `api` (`api`)                                             | `value()`, `error()`, `change(value)`, `options()`, `isBusy()`                                                  | `form`, `field`              | `app`: `/form/<form>/values`, `/form/<form>/errors`; `api`: `/form/<form>/requests` |
-| `FormController`       | `import { FormController } from '@nano-app/controllers'`       | `components` (the prop)                                   | `fields()`, `submit(event)`, `reset()`                                                                          | `name`, `fields`, `onSubmit` | `app`: `/form/<name>`                                                               |
-| `MessageController`    | `import { MessageController } from '@nano-app/controllers'`    | —                                                         | `items()`, `remove(index)`, `clear()`, `last()`, `dismiss()`                                                    | —                            | every store's `/message/list`                                                       |
-| `CollectionController` | `import { CollectionController } from '@nano-app/controllers'` | `api` (`api`), `root`, `path` (abstract), `limit` (`50`)  | `load()`, `items()`, `page()`, `goTo(page)`, `next()`, `prev()`, `sort(field)`, `more()`, `pages()`, `isBusy()` | —                            | `app`: `<root>/page`, `<root>/orderBy`, `<root>/pages`; `api`: `<root>/requests`    |
+| Component              | Import                                                         | Fields                                                                                  | Methods                                                                                                         | Props                        | State                                                                               |
+| ---------------------- | -------------------------------------------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------- |
+| `AuthController`       | `import { AuthController } from '@nano-app/controllers'`       | `api` (`api`), `kind` (`'email'`), `home` (the prop, `/`), `login` (the prop, `/login`) | `signIn(body, kind)`, `signUp(body, kind)`, `signOut()`, `send(values)`, `isBusy()`                             | —                            | `app`: `/auth/isToggled`; `api`: `/auth/requests`                                   |
+| `FieldController`      | `import { FieldController } from '@nano-app/controllers'`      | `api` (`api`)                                                                           | `value()`, `error()`, `change(value)`, `options()`, `isBusy()`                                                  | `form`, `field`              | `app`: `/form/<form>/values`, `/form/<form>/errors`; `api`: `/form/<form>/requests` |
+| `FormController`       | `import { FormController } from '@nano-app/controllers'`       | `components` (the prop)                                                                 | `fields()`, `submit(event)`, `reset()`                                                                          | `name`, `fields`, `onSubmit` | `app`: `/form/<name>`                                                               |
+| `NavController`        | `import { NavController } from '@nano-app/controllers'`        | —                                                                                       | `isActive(href)`, `close()`                                                                                     | —                            | `app`: `/nav/isToggled`                                                             |
+| `MessageController`    | `import { MessageController } from '@nano-app/controllers'`    | —                                                                                       | `items()`, `remove(index)`, `clear()`, `last()`, `dismiss()`                                                    | —                            | every store's `/message/list`                                                       |
+| `CollectionController` | `import { CollectionController } from '@nano-app/controllers'` | `api` (`api`), `root`, `path` (abstract), `limit` (`50`)                                | `load()`, `items()`, `page()`, `goTo(page)`, `next()`, `prev()`, `sort(field)`, `more()`, `pages()`, `isBusy()` | —                            | `app`: `<root>/page`, `<root>/orderBy`, `<root>/pages`; `api`: `<root>/requests`    |
 
 ## Auth
 
@@ -62,20 +63,11 @@ export default createView(UsersController, users => (
 
 `signIn` and `signUp` send the body with `callbackURL: home`, the page a provider comes back to, and `errorCallbackURL`, the current page, where a provider comes back with an error (`?error=signup_disabled` when the account cannot sign up). When its view mounts, `AuthController` adds that error to the messages of `api` as the key `nano.auth.<error>`, shown as any other, and drops it from the url. On `success`, both go where the answer leads: the `url` of its `result` (a provider's page: `signIn({ provider: 'google' }, 'social')`), or `home`, the prop `home` (`/` by default). For a login card, `send({ email, password })` signs in, or signs up while its flag is on (`isToggled()`, `toggle()` of every controller), with the email as the name unless the values bring one. The values go to Better Auth as they are: a field of the form beyond `email`, `password` and `name` (`phone`) is kept only when the backend declares it in `auth.user.additionalFields`; Better Auth drops the others. `isBusy()`, of every controller that reads the backend, says whether a request of that controller is out, for the view to show its loader: a request of another controller leaves it off. Without `root` it is the whole api store's.
 
-```tsx
-// src/Logout.controller.ts
-export default class LogoutController extends AuthController {
-  public async logout(): Promise<void> {
-    // Signs out and goes to the login
-    const oResponse = await this.signOut();
-    if (oResponse.success) this.router.push('/login');
-  }
-}
+`signOut()` goes to `login`, the prop `login` (`/login` by default), on `success`:
 
+```tsx
 // src/components/Logout.tsx
-export default createView(LogoutController, logout => (
-  <button onClick={logout.logout}>sign out</button>
-));
+export default createView(AuthController, auth => <button onClick={auth.signOut}>sign out</button>);
 ```
 
 - Better Auth checks the `Origin` of every `POST`: add the URL of the frontend to its `trustedOrigins` in the backend.
@@ -157,6 +149,10 @@ export default createView(LogoutController, auth => (
 ));
 ```
 
+## Nav
+
+`NavController` is the navigation of an app: `isActive(href)` says whether a link leads to the current page (`pathname` of the controller), for the view to mark it. Its flag (`isToggled()`, `toggle()`) is the menu open, and `close()` closes it, for a link to call once followed.
+
 ## Message
 
 `MessageController` gathers the `/message/list` of every api store: the answers that brought a `message` and the failed requests, each `ApiResponse` with its `timestamp`. `items()` gives them from the newest, `remove(index)` removes the one at that index of `items()` from its store and `clear()` empties them all: a panel of messages uses them. `last()` gives the newest one and `dismiss()` removes it: an alert uses them. `flush(fnShow)` gives each one to `fnShow` and empties them: toasts use it. Each one has its `type`: `success`, `info`, `warning` or `error`, the backend's or by its result.
@@ -175,7 +171,7 @@ controllers/src/
 ├── auth/                     Auth.controller.ts, Login.controller.ts
 ├── form/                     Form.controller.ts, Field.controller.ts, validate.ts
 ├── Collection.controller.ts
-├── Message.controller.ts
+├── layout/                   Message.controller.ts, Nav.controller.ts
 ├── utils/                    AppController (`state`, `root`, `get`/`set`) and ApiController (its `api`)
 └── types/
 ```

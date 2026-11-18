@@ -38,7 +38,7 @@ createView(ReplacedController, () => null);
 /** Controller whose constructor does not take the view's context */
 class OwnController extends Controller {
   constructor(sName: string) {
-    super({ props: { sName }, stores: {} as never, router: {} as never });
+    super({ props: { sName }, stores: {} as never, router: {} as never, pathname: '/' });
   }
 }
 

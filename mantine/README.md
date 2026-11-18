@@ -2,7 +2,7 @@
 
 [![mantine](https://img.shields.io/npm/v/@nano-app/mantine?label=mantine)](https://www.npmjs.com/package/@nano-app/mantine)
 
-[Mantine](https://mantine.dev) for [`@nano-app/frontend`](https://www.npmjs.com/package/@nano-app/frontend): the root layout, the views of [`@nano-app/controllers`](https://www.npmjs.com/package/@nano-app/controllers) and ready pages. Every piece leaves from one import: `import { createLayout, createLoginPage, Input } from '@nano-app/mantine'`. Each client view keeps its `'use client'`, so a server page and a client component import from the same place.
+[Mantine](https://mantine.dev) for [`@nano-app/frontend`](https://www.npmjs.com/package/@nano-app/frontend): the root layout, the views of [`@nano-app/controllers`](https://www.npmjs.com/package/@nano-app/controllers) and ready pages. Every piece leaves from one import: `import { createLayout, createShell, createLoginPage, Input } from '@nano-app/mantine'`. Each client view keeps its `'use client'`, so a server page and a client component import from the same place.
 
 - Node.js 22.23.4, 24.22.1 or 26.12.1 and newer. ESM only.
 - `@mantine/core`, `@mantine/hooks` and `@mantine/notifications` 9, `@nano-app/frontend` 0.16, `@nano-app/controllers` 0.13, Next 16.3 and React 19 or newer, as peer dependencies.
@@ -41,6 +41,28 @@ export default createTheme({ primaryColor: 'teal' });
   - `notifications`: the props of Mantine's `Notifications` (see [Notifications](#notifications)), as they are.
 - The layout is a server component and `MantineProvider` a client one: a prop that holds a function (a theme with `Button.extend`, `styles` or `vars` as functions, a `colorSchemeManager`) fails on the server. Start `theme.ts` with `'use client'`, as above: then any theme works.
 - The page's `<head>` comes from Next: `metadata` in the layout or in each page, and an app installable on a phone from `app/manifest.ts` and the icons `app/icon.png` and `app/apple-icon.png`, which Next links by itself.
+
+## Shell
+
+`createShell` gives the layout of the pages with a session: a header with the title, a navbar with a link per option, the user and a sign-out, and the page. Put it in the layout of a route group, so `/login` stays out of it:
+
+```tsx
+// app/(private)/layout.tsx
+import { IconHome } from '@tabler/icons-react';
+import { createShell } from '@nano-app/mantine';
+
+export default createShell({
+  title: 'finance',
+  logo: '/icon.png',
+  links: [{ href: '/', label: 'nano.shell.home', icon: <IconHome /> }],
+});
+```
+
+- `links` are the options of the navbar, in order: `href` the path it leads to, `label` the key of its text, `icon` an element before it. The link of the current page is active, and following one closes the navbar on a phone. A link is a `Link` of Next: the layout stays mounted and only the page changes.
+- `login` is where it goes without a session and after signing out, `/login` by default. The layout asks the session with `createPage` (see [Pages with a session](../frontend/README.md#pages-with-a-session)) and shows its user: the photo of its provider (`image`) or the initials of its `name`, and its `name` and `email` beside it, in a tooltip while the navbar is closed; Next does not render a layout again on a navigation, so each page keeps its own `createPage`.
+- `logo` is the path of an image before the title (`/icon.png` of `public/`), optional.
+- The shell is Mantine's `AppShell`, with the sizes of its docs: the header `60`, the navbar `300` open and `80` closed (numbers are rem scaled by the theme). The burger of the header opens and closes the navbar, closed by default: on a phone it hides, and opens over the whole width; on a desktop it keeps only the icons, each text in a tooltip. Its width changes with the transition of `AppShell`, and its texts fade with it. Following a link closes it, so every link needs its `icon`.
+- The state of the navbar is the flag of `NavController`, at `/nav/isToggled` of `app`: on, the navbar is open. The sign-out is `signOut` of `AuthController`; its text is the key `nano.shell.logout`, the burger's `nano.shell.menu`, and `nano.shell.home` gives a link to the home its text.
 
 ## Components
 
@@ -105,6 +127,7 @@ export default createLoginPage({
 mantine/src/
 ├── index.ts                         the import path: exports every piece and its types
 ├── layout/index.tsx                 createLayout: the root layout
+├── layout/shell/                    createShell: the layout of the pages with a session
 ├── components/<type>/               views of @nano-app/controllers, grouped by type
 │   ├── index.ts                     exports each view of the type
 │   ├── <View>.tsx                   a view alone (fields/Input.tsx)
