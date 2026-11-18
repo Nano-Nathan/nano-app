@@ -17,7 +17,5 @@ export const errorHandler: ErrorRequestHandler = (oError, _oReq, oRes, _fnNext) 
   if (iStatus >= 500) Logger.error(sMessage, oError);
 
   // Answers with the status and the body
-  oRes
-    .status(iStatus)
-    .json({ success: false, warning: oThrown.warning ?? false, message: sMessage });
+  oRes.status(iStatus).json({ success: false, type: oThrown.type ?? 'error', message: sMessage });
 };

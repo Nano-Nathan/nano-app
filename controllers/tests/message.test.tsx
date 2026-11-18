@@ -16,7 +16,7 @@ const PORT = 4201;
 // Backend behind the proxy: answers every request as failed, a warning for `/warn`
 const oBackend = createServer((oReq, oRes) => {
   const oAnswer = oReq.url?.endsWith('/warn')
-    ? { success: false, message: 'Careful', warning: true }
+    ? { success: false, message: 'Careful', type: 'warning' }
     : { success: false };
   oRes.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(oAnswer));
 });
@@ -40,7 +40,7 @@ const Errors = createView(MessagesController, errors => (
     <ul>
       {errors.items().map((oError: ApiMessage, iIndex) => (
         <li key={iIndex}>
-          {oError.warning ? `warning ${oError.message}` : oError.message}
+          {`${oError.type} ${oError.message}`}
           <button onClick={() => errors.remove(iIndex)}>remove</button>
         </li>
       ))}
@@ -82,7 +82,10 @@ describe('message', () => {
     await failBoth();
 
     assert.equal(screen.getAllByRole('listitem')[0].firstChild?.textContent, 'warning Careful');
-    assert.equal(screen.getAllByRole('listitem')[1].firstChild?.textContent, REQUEST_FAILED);
+    assert.equal(
+      screen.getAllByRole('listitem')[1].firstChild?.textContent,
+      `error ${REQUEST_FAILED}`,
+    );
     assert.equal(screen.getByRole('status').textContent, 'Careful');
   });
 
@@ -108,6 +111,9 @@ describe('message', () => {
     fireEvent.click(screen.getAllByText('remove')[0]);
     await waitFor(() => assert.equal(screen.getAllByRole('listitem').length, 1));
 
-    assert.equal(screen.getAllByRole('listitem')[0].firstChild?.textContent, REQUEST_FAILED);
+    assert.equal(
+      screen.getAllByRole('listitem')[0].firstChild?.textContent,
+      `error ${REQUEST_FAILED}`,
+    );
   });
 });

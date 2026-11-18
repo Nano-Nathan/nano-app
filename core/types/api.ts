@@ -1,5 +1,8 @@
 import type { NanoObject } from './objects';
 
+/** How a message shows: `success` and `error` by its result, `info` and `warning` when the backend says so */
+export type MessageType = 'success' | 'info' | 'warning' | 'error';
+
 /** API response */
 export type ApiResponse<T = any> = {
   status?: number;
@@ -8,7 +11,8 @@ export type ApiResponse<T = any> = {
   /** Total of a list, for a table to paginate */
   count?: number;
   message?: string;
-  warning?: boolean;
+  /** How its message shows; without it, by `success` */
+  type?: MessageType;
 };
 
 /** Promise of an API response, what a handler returns */

@@ -1,11 +1,13 @@
 import type { API_STORE_TYPE, APP_NAME } from '@nano-app/core/const';
-import type { ApiResponse } from '@nano-app/core/types/api';
+import type { ApiResponse, MessageType } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type Store from '../stores/Store';
 import type { APP_STORE_TYPE } from '../const';
 
 /** An answer with a message, or a failed one, in the `/message/list` of its api store, and when it came */
 export type ApiMessage = ApiResponse & {
+  /** How it shows: the backend's, or `success` or `error` by its result */
+  type: MessageType;
   /** Milliseconds since the epoch, from `Date.now()` */
   timestamp: number;
 };

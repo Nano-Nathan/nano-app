@@ -70,7 +70,7 @@ import { notify } from '@nano-app/mantine';
 notify({ type: 'success', message: 'Saved' });
 ```
 
-`createLayout` mounts `Toasts`, Mantine's `Notifications` with the messages of the backend among them: every new message of an api store (its `/message/list`, see [`MessageController`](../controllers/README.md#message)) shows as a toast of its kind, `error` when the request failed, `warning` when it brings `warning: true`, `success` otherwise, and its list is emptied. An app does nothing to show what the backend answers.
+`createLayout` mounts `Toasts`, Mantine's `Notifications` with the messages of the backend among them: every new message of an api store (its `/message/list`, see [`MessageController`](../controllers/README.md#message)) shows as a toast of its `type` (the backend's, or `success` or `error` by its result), and its list is emptied. An app does nothing to show what the backend answers.
 
 `notifications` of `createLayout` takes the props of Mantine's `Notifications`: `position` (`top-center` by default), `autoClose` (3000 ms by default, `false` to keep them until closed), `limit`…
 

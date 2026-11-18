@@ -76,9 +76,11 @@ export default class ApiStore extends Store {
 
     // Keeps an answer with a message, and every failed one, with the time
     if (oResponse.message || !oResponse.success) {
+      const sType = oResponse.success ? 'success' : 'error';
       const oMessage: ApiMessage = {
         ...oResponse,
         message: oResponse.message || REQUEST_FAILED,
+        type: oResponse.type ?? sType,
         timestamp: Date.now(),
       };
       this.set('/message/list', [...(this.get('/message/list') ?? []), oMessage]);

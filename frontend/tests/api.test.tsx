@@ -152,10 +152,10 @@ describe('api store', () => {
     assert.deepEqual(oFailed, { success: false, message: 'Failed', status: 400 });
     const aErrors: ApiMessage[] = backend.get('/message/list');
     assert.deepEqual(
-      aErrors.map(({ message, status }) => [message, status]),
+      aErrors.map(({ message, status, type }) => [message, status, type]),
       [
-        ['Failed', 400],
-        [REQUEST_FAILED, 500],
+        ['Failed', 400, 'error'],
+        [REQUEST_FAILED, 500, 'error'],
       ],
     );
     assert.equal(typeof aErrors[0].timestamp, 'number');
@@ -184,8 +184,8 @@ describe('api store', () => {
 
     // Only the message of the first one is kept, as a success
     assert.deepEqual(
-      backend.get('/message/list').map(({ success, message }: ApiMessage) => [success, message]),
-      [[true, 'Saved']],
+      backend.get('/message/list').map(({ type, message }: ApiMessage) => [type, message]),
+      [['success', 'Saved']],
     );
   });
 

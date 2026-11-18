@@ -153,7 +153,7 @@ export default createView(LogoutController, auth => (
 
 ## Message
 
-`MessageController` gathers the `/message/list` of every api store: the answers that brought a `message` and the failed requests, each `ApiResponse` with its `timestamp`. `items()` gives them from the newest, `remove(index)` removes the one at that index of `items()` from its store and `clear()` empties them all: a panel of messages uses them. `last()` gives the newest one and `dismiss()` removes it: an alert uses them. A message is a success, an error (`success: false`) or a warning (`warning: true`).
+`MessageController` gathers the `/message/list` of every api store: the answers that brought a `message` and the failed requests, each `ApiResponse` with its `timestamp`. `items()` gives them from the newest, `remove(index)` removes the one at that index of `items()` from its store and `clear()` empties them all: a panel of messages uses them. `last()` gives the newest one and `dismiss()` removes it: an alert uses them. Each one has its `type`: `success`, `info`, `warning` or `error`, the backend's or by its result.
 
 ## Collection
 

@@ -9,11 +9,8 @@ export default class ToastsController extends MessageController {
     const aMessages = this.items();
     if (!aMessages.length) return;
 
-    // Notifies each one by its answer: failed, a warning or a success
-    for (const { success, warning, message = '' } of aMessages) {
-      const sType = warning ? 'warning' : 'success';
-      notify({ type: success ? sType : 'error', message });
-    }
+    // Notifies each one with its type
+    for (const { type, message = '' } of aMessages) notify({ type, message });
     this.clear();
   }
 }
