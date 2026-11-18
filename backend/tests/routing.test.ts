@@ -4,6 +4,7 @@ import { Validator } from '@nano-app/core';
 import Router from '../src/router/Router';
 import { ROUTE } from '../src/router/validations';
 import { startApp, request } from './helpers';
+import { greet } from './fixtures/routes/shared.route';
 
 describe('file path to express path', () => {
   // [routesDir, basePath, a path the route answers]
@@ -110,6 +111,16 @@ describe('routes by file convention', () => {
     // Checks that the handler got it parsed, with its status 201
     assert.equal(status, 201);
     assert.deepEqual(body.result, { name: 'Bruno' });
+  });
+
+  test('a route file exports functions beside its route, for code outside it', async () => {
+    // Requests the route that uses its own export
+    const { status, body } = await request(oServer.url, '/shared');
+
+    // Checks that the route mounted and the export works from outside
+    assert.equal(status, 200);
+    assert.equal(body.result, 'hello route');
+    assert.equal(greet('job'), 'hello job');
   });
 
   test('an invalid route file fails its mount, naming the file', async () => {

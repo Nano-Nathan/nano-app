@@ -48,7 +48,7 @@ export default createRoute({
 
 ## Routes
 
-Each `*.route.ts` under `routesDir` default-exports an object with the HTTP methods it implements (`GET`, `POST`, `PUT`, `DELETE`, `QUERY`). **The file path is the URL** (`index.route.ts` → `/`, `api/users.route.ts` → `/api/users`). A route file holds only those methods and its options (`expression`, `public`, `permissions`, `callbacks`): any other key, or an invalid value, stops the startup with the file and what is wrong. `expression` is appended to that path as is, in Express syntax (`/:id`, `{/:id}` for optional):
+Each `*.route.ts` under `routesDir` default-exports an object with the HTTP methods it implements (`GET`, `POST`, `PUT`, `DELETE`, `QUERY`). **The file path is the URL** (`index.route.ts` → `/`, `api/users.route.ts` → `/api/users`). A route file holds only those methods and its options (`expression`, `public`, `permissions`, `callbacks`): any other key, or an invalid value, stops the startup with the file and what is wrong. Only the default export is read: the file may export functions beside it, for its handlers and for code outside it, such as a job of the scheduler (`export async function sendMails(db) {…}`). `expression` is appended to that path as is, in Express syntax (`/:id`, `{/:id}` for optional):
 
 ```ts
 export default createRoute({

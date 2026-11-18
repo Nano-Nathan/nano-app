@@ -13,7 +13,7 @@ An app runs functions on a cron schedule, declared as options of an official plu
 
 ## Scope
 
-- An official plugin, `import scheduler from '@nano-app/plugins/scheduler'`, with `node-schedule` underneath. `scheduler({ jobs, timezone })`, where each job is `{ name, cron, run }`:
+- An official plugin, `import scheduler from '@nano-app/plugins/scheduler'`, with `croner` underneath. `scheduler({ jobs, timezone })`, where each job is `{ name, cron, run }`:
 
   ```ts
   scheduler({
@@ -30,10 +30,11 @@ An app runs functions on a cron schedule, declared as options of an official plu
   });
   ```
 
-- `run` receives the same `params` as a route callback (the plugin's `options`, `db`). The jobs start in `callbacks.onMount`, once, and are registered in `node-schedule` under their `name`.
-- `timezone` is an IANA name passed to the rule of each job. Without it, the process timezone applies, as in `node-schedule`.
+- `run` receives the same `params` as a route callback (the plugin's `options`, `db`). The jobs start in `callbacks.onMount`, once, and are registered in `croner` under their `name`: two jobs of the same name stop the startup.
+- `timezone` is an IANA name passed to the cron of each job. Without it, the process timezone applies.
 - A job that throws or rejects is logged with its name and does not stop its next firing or the other jobs. Each run logs its start and its end with the job name.
-- A plugin may have no routes: the scheduler runs functions and answers nothing over HTTP. Today `routesDir` is required by the `PluginConfig` type (`backend/src/types/plugin.ts`, no `?`) and only by the type: `plugins/Plugin.ts` passes it to `Router`, which loads routes only when it is a non-empty string (the tests use `routesDir: ''`). So `routesDir` becomes optional: `routesDir?: string` in `PluginConfig` with its doc comment saying a plugin without it mounts no routes (like `MainPluginConfig`), a test in `backend/tests/plugins.test.ts` that a plugin with only `name` and `callbacks.onMount` mounts and its `onMount` runs, and a line in `PLUGINS.md` and `backend/README.md`. It is a minor change for the backend, with no behavior change for plugins that set it. [mail](mail.md) uses it too when its route is off, so it depends on this feature.
+- A plugin may have no routes: the scheduler runs functions and answers nothing over HTTP. `routesDir` is already optional in `PluginConfig`, so the backend does not change for it. [mail](mail.md) relies on the same when its route is off.
+- A job reaches the logic of a route through a function the `*.route.ts` exports beside its default (`export async function sendMails(db)`), which the route's handler uses too. The router reads only the default export; `backend/README.md` says so and `backend/tests/routing.test.ts` covers it.
 - No database and no migrations: the jobs are in code and run in the process. It means a run is lost if the process is down at the firing time, and two instances of the same app run each job twice. A `nano_scheduler` schema with a `runs` table (job and scheduled time, unique) would give one run per firing across instances and a history, at the cost of a migration and a write per run. personal-app runs one replica today, so the scope is one instance; what changes with more is in [Future: multiple replicas](#future-multiple-replicas).
 
 ## Out of scope
@@ -59,7 +60,6 @@ Not in scope. personal-app runs one replica today but may scale, and then every 
 - Where personal-app is today (`/home/node/projects/nano-app/personal-app`, branch `prd`): `backend/src/lib/App.ts` defines `class Scheduler extends SendMailsEndpoint` (the scheduler inherits the mail endpoint to reach `sendMails`), and `backend/src/app.ts` calls `Scheduler.initialize()` at startup.
 - It registers three jobs with the same function: `0 15 25 * *`, `0 15 1 * *` and `0 15 10 * *`. Its comments say 12:00, which holds only when the server runs in UTC (15:00 UTC is 12:00 in Argentina): hence the explicit `timezone`.
 - It passes `this.scheduleFn` to `scheduleJob` unbound, and `node-schedule` calls it with its own `this`, so `this.sendMails` is probably undefined when it fires. Not verified; the plugin passes plain functions, so the problem does not carry over.
-- `backend/package.json` has `node-schedule ^2.1.1`: use the same major in `plugins/`.
 - Moving personal-app onto the plugin is not tracked here (see `features/README.md`).
 
 ## Decisions
@@ -71,3 +71,4 @@ Decided 2026-11-18: 1A `croner` instead of `node-schedule` (no dependencies, nat
 - 2026-10-29 · kleo · `migrations` closed without a `migrate` command: the plugin's table is migrated at startup, as an official plugin.
 - 2026-11-18 · claude · From the drizzle feature, closed: the tables of an official plugin by push (`database` of the plugin) are checked with the first plugin that has them, this one when it adds `runs`.
 - 2026-11-18 · claude · Done on `feat/scheduler`: `scheduler({ jobs, timezone })` on croner, its tests in `plugins/tests/scheduler.test.ts` (runs every second, a failing job beside a working one, a run that skips the next, noon in Mendoza at 15:00 UTC, in an app with no routes) and its section in `plugins/README.md`. `routesDir` was already optional. Tests run only in CI.
+- 2026-11-18 · claude · Spec aligned with croner and `routesDir` already optional; a route file may export functions beside its default, documented in `backend/README.md` and tested, so a job calls a route's logic.
