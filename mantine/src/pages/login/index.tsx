@@ -1,18 +1,11 @@
 import { Container, Stack } from '@mantine/core';
-import { LOGIN_FIELDS } from '../../const';
 import Login from './Login';
 import type { ReactNode } from 'react';
 import type { LoginOptions } from '../../types/login';
 
 /** Login page: signs in or signs up at Better Auth of the `api` store and goes to `home` */
 export default function createLoginPage(oOptions: LoginOptions): () => ReactNode {
-  const {
-    home,
-    providers = [],
-    signUp = true,
-    fields = LOGIN_FIELDS,
-    signUpFields = fields,
-  } = oOptions;
+  const { home, providers = [], signUp = true, fields, signUpFields } = oOptions;
   return function LoginPage(): ReactNode {
     // The login in the middle of the screen
     return (
