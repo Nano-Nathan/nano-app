@@ -1,0 +1,28 @@
+{
+  "name": "frontend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@mantine/core": "^9.8.1",
+    "@mantine/hooks": "^9.8.1",
+    "@mantine/notifications": "^9.8.1",
+    "@nano-app/controllers": "^0.14.0",
+    "@nano-app/frontend": "^0.17.0",
+    "@nano-app/mantine": "^0.2.0",
+    "next": "^16.4.6",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^7.0.2"
+  }
+}

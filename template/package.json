@@ -1,0 +1,9 @@
+{
+  "name": "app",
+  "private": true,
+  "packageManager": "pnpm@12.18.0",
+  "scripts": {
+    "dev": "pnpm --parallel --recursive dev",
+    "build": "pnpm --recursive build"
+  }
+}
