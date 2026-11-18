@@ -6,7 +6,7 @@ import type { Bucket, RateLimitConfig } from '../../types/app';
 export default function rateLimit({
   capacity = 100,
   refillPerSecond = 1,
-  message = 'Too many requests, please try again later.',
+  message = 'nano.error.tooManyRequests',
 }: RateLimitConfig): RequestHandler {
   // Tokens of a bucket at a time, refilled up to the capacity
   const fnRefill = (oBucket: Bucket, iNow: number): number =>

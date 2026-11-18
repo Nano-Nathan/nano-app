@@ -177,7 +177,7 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
     assert.deepEqual([iRead, iUpdate, iDelete, iConflict, iInvalid], [404, 404, 404, 500, 500]);
     assert.deepEqual(
       [oRead.message, oConflict.message, oInvalid.message],
-      ['Not found', 'Internal server error', 'Internal server error'],
+      ['nano.error.notFound', 'nano.error.internal', 'nano.error.internal'],
     );
   });
 });

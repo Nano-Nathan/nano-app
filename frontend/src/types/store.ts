@@ -9,6 +9,8 @@ import type { API_NAME, APP_STORE_TYPE } from '../const';
 export type ApiMessage = ApiResponse & {
   /** How it shows: the backend's, or `success` or `error` by its result */
   type: MessageType;
+  /** Its message, a key of the texts: the backend's, or `nano.error.requestFailed` */
+  message: string;
   /** Milliseconds since the epoch, from `Date.now()` */
   timestamp: number;
 };

@@ -13,7 +13,7 @@ const Probe = createView(Controller, probe => (
   <button
     onClick={() =>
       probe.stores.api.set('/message/list', [
-        { success: false, message: 'Invalid email', timestamp: 1 },
+        { success: false, message: 'nano.auth.INVALID_EMAIL', timestamp: 1 },
       ])
     }
   >
@@ -33,7 +33,7 @@ test('a failed request shows as a toast and leaves its store', async () => {
   );
   fireEvent.click(screen.getByText('errors 0'));
 
-  // The toast shows its message, and the store keeps no error
+  // The toast shows the text of its message, and the store keeps no error
   await waitFor(() => assert.ok(screen.getByText('Invalid email')));
   assert.ok(screen.getByText('errors 0'));
 });

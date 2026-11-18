@@ -101,10 +101,10 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 
 - Guard clauses and early returns, not nested `if`/`else`.
 - One ternary at most, never nested nor inside an `if` condition: give it a name first (`const isInvalid = isPlugin ? isPluginInvalid : isConsumerInvalid;`).
-- `??` for defaults. `||` only when `0`, `''` or `NaN` must also take the default (`message || 'Internal server error'`).
+- `??` for defaults. `||` only when `0`, `''` or `NaN` must also take the default (`message || 'nano.error.internal'`).
 - `for...of` to iterate when nothing is returned, never `.forEach` (it does not wait for `await`). `.map`, `.filter` and `.some` when they return something.
 - `async`/`await` in general. Express handlers and middlewares chain `.then()` and return the chain: Express 5 sends a rejection to the error handler.
-- Errors: an invalid consumer file throws where it is checked (the zod schemas of `backend/src/router/validations.ts` and `frontend/src/utils/validations.ts`) and stops the startup (or the build). No `try`/`catch` to rename or wrap an error: it reaches `NanoApp.start` as it was thrown, with its stack. The framework throws `new NanoError('…')` (`core`): Node shows it as `[nano-app] [ERROR]: …`; with a status (`new NanoError('Not found', 404)`) a handler answers it. Handlers throw a string (400), `{ status, message, type }` (`type` `warning` or `error`, `error` by default) or a `NanoError`.
+- Errors: an invalid consumer file throws where it is checked (the zod schemas of `backend/src/router/validations.ts` and `frontend/src/utils/validations.ts`) and stops the startup (or the build). No `try`/`catch` to rename or wrap an error: it reaches `NanoApp.start` as it was thrown, with its stack. The framework throws `new NanoError('…')` (`core`): Node shows it as `[nano-app] [ERROR]: …`; with a status (`new NanoError('nano.error.notFound', 404)`) a handler answers it. Handlers throw a string (400), `{ status, message, type }` (`type` `warning` or `error`, `error` by default) or a `NanoError`.
 - Messages: on the console only through `Logger.error`, `Logger.warn` and `Logger.info`, never `console`; in a response through `Logger.message`. The text says the file or thing, what is wrong, and the command that fixes it (``Run `pnpm add drizzle-orm pg`.``).
 
 ### Comments and format
@@ -124,4 +124,5 @@ const fnGuard: RequestHandler = (oReq, oRes, fnNext) => fnNext();
 - Never print secrets: no `cat .env`, no `source .env`, no logging `process.env`. Framework messages never include secrets or connection strings.
 - Untrusted input (`req.body`, `req.params`, `req.query`, headers) is validated before the framework uses it. SQL uses parameters (`$1`); identifiers (schema, table) come only from constants.
 - Routes are private when `createNanoApp` has `auth`: only its endpoints and the routes with `public: true` are public. Without it every route is public. A plugin that exposes something public says so in its README.
-- The error handler answers with the message of what was thrown below 500; a 5xx answers `Internal server error` and is logged in full.
+- The error handler answers with the message of what was thrown below 500; a 5xx answers `nano.error.internal` and is logged in full.
+- Every message a response carries is a key of the texts (`nano.error.notFound`), never a sentence: the frontend shows it in the user's locale.

@@ -58,11 +58,12 @@ export default abstract class Auth {
   ): Promise<NanoObject | undefined> {
     // With Better Auth on, a route needs a session unless it is public
     const oSession = await this.session(oReq);
-    if (this.oAuth && !oSession && !isPublic) throw new NanoError('Not authenticated', 401);
+    if (this.oAuth && !oSession && !isPublic)
+      throw new NanoError('nano.error.notAuthenticated', 401);
 
     // Checks the permissions, unless the route is public
     const isAllowed = await this.isGranted(oSession, isPublic ? undefined : oPermissions);
-    if (!isAllowed) throw new NanoError('Forbidden', 403);
+    if (!isAllowed) throw new NanoError('nano.error.forbidden', 403);
     return oSession;
   }
 

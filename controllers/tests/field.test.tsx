@@ -52,9 +52,9 @@ const Input = createView(FieldController, (input, { field: oField }) => (
 
 // Fields of a sign-up, each with its validation: an email, a phone and an optional number
 const SIGN_UP: FormField[] = [
-  { name: 'email', validation: z.email('Invalid email') },
-  { name: 'phone', validation: z.string('Required') },
-  { name: 'age', type: 'number', validation: z.number('Invalid number').optional() },
+  { name: 'email', validation: z.email('form.invalidEmail') },
+  { name: 'phone', validation: z.string('form.required') },
+  { name: 'age', type: 'number', validation: z.number('form.invalidNumber').optional() },
 ];
 
 /** Renders the fields of a form inside the provider */
@@ -114,8 +114,8 @@ describe('field', () => {
     // Renders a field in two forms of the same tree and empties one
     render(
       <TestApp>
-        <Input form="a" field={{ name: 'one', validation: z.string('Required') }} />
-        <Input form="b" field={{ name: 'two', validation: z.string('Required') }} />
+        <Input form="a" field={{ name: 'one', validation: z.string('form.required') }} />
+        <Input form="b" field={{ name: 'two', validation: z.string('form.required') }} />
       </TestApp>,
     );
     type('one', 'x');

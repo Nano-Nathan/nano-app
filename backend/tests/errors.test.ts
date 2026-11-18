@@ -38,7 +38,7 @@ describe('error handling', () => {
     // Checks that it is a 500 that hides the Error's message
     assert.equal(status, 500);
     assert.equal(body.success, false);
-    assert.equal(body.message, 'Internal server error');
+    assert.equal(body.message, 'nano.error.internal');
   });
 
   test('the type of what was thrown goes in the response', async () => {
@@ -56,6 +56,6 @@ describe('error handling', () => {
 
     // Checks the 404 ApiResponse
     assert.equal(status, 404);
-    assert.deepEqual(body, { success: false, type: 'error', message: '/missing not found' });
+    assert.deepEqual(body, { success: false, type: 'error', message: 'nano.error.notFound' });
   });
 });

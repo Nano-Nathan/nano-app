@@ -99,6 +99,7 @@ describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is no
     assert.equal(oWrong.status, 401);
     assert.equal(oWrong.body.success, false);
     assert.equal(oWrong.body.type, 'error');
+    assert.equal(oWrong.body.message, 'nano.auth.INVALID_EMAIL_OR_PASSWORD');
 
     // An error of its validation fails too, with its status
     const oInvalid = await request(oApp.url, '/auth/sign-up/email', {
@@ -113,7 +114,7 @@ describe('Better Auth', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is no
     // Without a session
     const oDenied = await request(oApp.url, '/me');
     assert.equal(oDenied.status, 401);
-    assert.equal(oDenied.body.message, 'Not authenticated');
+    assert.equal(oDenied.body.message, 'nano.error.notAuthenticated');
 
     // With the session of the sign-in
     const oAllowed = await request(oApp.url, '/me', { headers: { cookie: sCookie } });

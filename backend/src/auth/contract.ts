@@ -17,12 +17,13 @@ export default async function contract(): Promise<BetterAuthPlugin> {
             const oReturned = oContext.context.returned;
             if (oReturned instanceof Response) return;
 
-            // A failure keeps its status; anything else is the result of a success
+            // A failure keeps its status, its message the key of its code; anything else is a success
             oContext.context.returned = isAPIError(oReturned)
               ? new APIError(oReturned.status, {
                   ...oReturned.body,
                   success: false,
                   type: 'error',
+                  message: `nano.auth.${oReturned.body?.code}`,
                 })
               : { success: true, result: oReturned };
           }),

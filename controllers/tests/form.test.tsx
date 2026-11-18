@@ -29,7 +29,7 @@ const SIGN_UP: FormField[] = [
 
 // Fields of a login, each with its validation: an email and an optional number
 const LOGIN: FormField[] = [
-  { name: 'email', validation: z.email('Required') },
+  { name: 'email', validation: z.email('form.required') },
   { name: 'age', type: 'number', validation: z.number().optional() },
 ];
 

@@ -12,5 +12,5 @@ export type { PluginCallbacks } from './types/route';
 /** Creators */
 export * from './lib/creators';
 
-/** Error of the framework, also for handlers: `throw new NanoError('Not found', 404)` */
+/** Error of the framework, also for handlers: `throw new NanoError('nano.error.notFound', 404)` */
 export { NanoError } from '@nano-app/core';
