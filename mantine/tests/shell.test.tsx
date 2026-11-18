@@ -56,7 +56,7 @@ function renderShell(): void {
 test('the shell shows the title, a link per option with the current one active, the page and the user', () => {
   renderShell();
 
-  // The header, the page, and the user with its initials
+  // The title in the navbar, the page and the user
   assert.ok(screen.getByText('finance'));
   assert.ok(screen.getByText('page'));
   assert.ok(screen.getByText('AD'));

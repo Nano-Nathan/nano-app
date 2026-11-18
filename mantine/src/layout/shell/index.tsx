@@ -12,7 +12,14 @@ export default function createShell(
     // The user of the session, only what the navbar shows
     const { name, email, image } = session.user;
     return (
-      <Shell title={title} logo={logo} links={links} login={login} user={{ name, email, image }}>
+      <Shell
+        title={title}
+        logo={logo}
+
+        links={links}
+        login={login}
+        user={{ name, email, image }}
+      >
         {children}
       </Shell>
     );

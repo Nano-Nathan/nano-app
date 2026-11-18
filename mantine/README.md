@@ -44,7 +44,7 @@ export default createTheme({ primaryColor: 'teal' });
 
 ## Shell
 
-`createShell` gives the layout of the pages with a session: a header with the title, a navbar with a link per option, the user and a sign-out, and the page. Put it in the layout of a route group, so `/login` stays out of it:
+`createShell` gives the layout of the pages with a session: a navbar the whole height with the logo and the title and a link per option, the user and a sign-out, and the page. Put it in the layout of a route group, so `/login` stays out of it:
 
 ```tsx
 // app/(private)/layout.tsx
@@ -60,9 +60,9 @@ export default createShell({
 
 - `links` are the options of the navbar, in order: `href` the path it leads to, `label` the key of its text, `icon` an element before it. The link of the current page is active, and following one closes the navbar on a phone. A link is a `Link` of Next: the layout stays mounted and only the page changes.
 - `login` is where it goes without a session and after signing out, `/login` by default. The layout asks the session with `createPage` (see [Pages with a session](../frontend/README.md#pages-with-a-session)) and shows its user: the photo of its provider (`image`) or the initials of its `name`, and its `name` and `email` beside it, in a tooltip while the navbar is closed; Next does not render a layout again on a navigation, so each page keeps its own `createPage`.
-- `logo` is the path of an image before the title (`/icon.png` of `public/`), optional.
-- The shell is Mantine's `AppShell`, with the sizes of its docs: the header `60`, the navbar `300` open and `80` closed (numbers are rem scaled by the theme). The burger of the header opens and closes the navbar, closed by default: on a phone it hides, and opens over the whole width; on a desktop it keeps only the icons, each text in a tooltip. Its width changes with the transition of `AppShell`, and its texts fade with it. Following a link closes it, so every link needs its `icon`.
-- The state of the navbar is the flag of `NavController`, at `/nav/isToggled` of `app`: on, the navbar is open. The sign-out is `signOut` of `AuthController`; its text is the key `nano.shell.logout`, the burger's `nano.shell.menu`, and `nano.shell.home` gives a link to the home its text.
+- `logo` is the path of the image of the app (`/icon.png` of `public/`), the initials of `title` without one.
+- The shell is Mantine's `AppShell`, with the sizes of its docs: the navbar `300` open and `74` closed (numbers are rem scaled by the theme). The navbar and the page float on the light tint of the theme's primary color as rounded cards (`Paper`), with no margin; the links have rounded corners. The navbar is closed by default (`layout="alt"` of `AppShell`, with no header), and a button at the top left of the page opens and closes it: on a phone it hides, and opens over the whole width with a close button by the title; on a desktop it keeps only the icons, each text in a tooltip. Its width changes with the transition of `AppShell`, and its texts fade with it. Following a link closes it, so every link needs its `icon`.
+- The state of the navbar is the flag of `NavController`, at `/nav/isToggled` of `app`: on, the navbar is open. The sign-out is `signOut` of `AuthController`; its text is the key `nano.shell.logout`, the button's `nano.shell.menu`, and `nano.shell.home` gives a link to the home its text.
 
 ## Components
 
@@ -127,7 +127,7 @@ export default createLoginPage({
 mantine/src/
 ├── index.ts                         the import path: exports every piece and its types
 ├── layout/index.tsx                 createLayout: the root layout
-├── layout/shell/                    createShell: the layout of the pages with a session
+├── layout/shell/                    createShell: the layout of the pages with a session, its const.ts beside it
 ├── components/<type>/               views of @nano-app/controllers, grouped by type
 │   ├── index.ts                     exports each view of the type
 │   ├── <View>.tsx                   a view alone (fields/Input.tsx)
@@ -139,5 +139,5 @@ mantine/src/
 │   ├── <Name>.tsx
 │   └── components/
 ├── types/                           the options and the types of each piece
-└── const.ts                         the defaults shared by the views
+└── const.ts                         the defaults several views share; a view's own go in a const.ts beside it
 ```

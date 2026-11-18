@@ -50,7 +50,7 @@ Match `core/` and `backend/src/`. The simplest code that works wins.
 - Declared functions and methods state their return type (`: Promise<void>`); inline callbacks infer it, and so does the factory of a component (`list`), from the controller it returns.
 - Prefer `unknown` and validate over `any`.
 - Types are declared where values are born and inferred from there. Data from outside (JSON, env) gets a typed variable where it enters (`const STORES: [string, StoreFile][] = JSON.parse(…)`).
-- `core/` holds only what two or more packages use; what one package uses lives in it. Module constants go in the `const.ts` of their package (`core/const.ts` for the shared ones). A file exports only what another file uses.
+- `core/` holds only what two or more packages use; what one package uses lives in it. Module constants go in the `const.ts` of the piece that uses them, beside it (`mantine/src/layout/shell/const.ts`); those several pieces of a package share go in the `const.ts` of the package, and those of several packages in `core/const.ts`. A file exports only what another file uses.
 - Types in a `types/` folder of the package, one file per area (`types/app.ts`, `types/plugin.ts`). `type`, not `interface`. `import type` for types.
 - Generic objects are `NanoObject` (`core/types/objects.ts`), with the value type when it is known (`NanoObject<Store>`), never `object` or `Record<string, …>`.
 - Files: PascalCase when they export a class (`FileLoader.ts`), lowercase otherwise (`creators.ts`, `const.ts`).
