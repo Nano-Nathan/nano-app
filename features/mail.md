@@ -1,7 +1,7 @@
 ---
 status: todo
 owner: null
-depends_on: [scheduler]
+depends_on: []
 updated: 2026-10-28
 ---
 
@@ -16,7 +16,7 @@ An app sends an email through an official plugin instead of its own `nodemailer`
 - An official plugin, `import mail from '@nano-app/plugins/mail'`, with `nodemailer` underneath. `mail({ transport, from, route })`: `transport` is the SMTP options of nodemailer (`service`, `host`, `auth`), `from` the default sender and `route` the optional route below. The app reads its credentials from the environment and passes them: the plugin reads no environment variable.
 - `sendMail({ to, subject, html, text, from })`, exported from the same path and importable from any route or job (`from` overrides the default one). It resolves when the server accepts the message and rejects with the transport error when it does not. Called before the plugin is mounted, it rejects with a clear error. Whatever sends an email in the app, a job, a route of the app or the route below, goes through it.
 - The plugin creates the transporter once, in `callbacks.onMount`, and keeps it at module level, like the emitter of [sse](sse.md): the function is imported, not injected.
-- A route of the plugin, off by default: `POST <basePath>` with the body `{ to, subject, html, text }` sends one message through `sendMail`. It exists only when the app passes `route: { authorize, basePath }` (`basePath` defaults to `'/mail'`). Without `route` the plugin mounts no route at all: it is the plugin without routes of [scheduler](scheduler.md), which makes `routesDir` optional.
+- A route of the plugin, off by default: `POST <basePath>` with the body `{ to, subject, html, text }` sends one message through `sendMail`. It exists only when the app passes `route: { authorize, basePath }` (`basePath` defaults to `'/mail'`). Without `route` the plugin mounts no route at all: `routesDir` is optional in `PluginConfig`, as the `scheduler` plugin already uses.
 - It is never an open relay:
   - It is never public. The plugin mounts at `stage: 'after'`, behind the guard of Better Auth (the `before` plugins stay public), and its handler also answers `401` itself when `params.session` is missing, so an app with Better Auth off, or one that moves the plugin, still does not relay.
   - `authorize(session)` is required when `route` is set, and answers `403` when it returns false. The session is the one of Better Auth, `{ user, session }`. A session alone is not enough: with `emailAndPassword` anyone can sign up, and every signed-in user would send mail from the app's sender.

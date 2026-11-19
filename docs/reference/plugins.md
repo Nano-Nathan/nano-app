@@ -72,6 +72,37 @@ A body that breaks its validation answers `400` with the field and zod's message
 
 A query runs on the app's client: `with` and `where` reach the tables Drizzle's relations give, also those not in `models`. The `read` validation decides what a query may load. Better Auth's tables live in `nano_auth`, outside the app's relations: `crud` does not reach them.
 
+## scheduler
+
+Runs functions on a cron. It has no endpoints.
+
+```ts
+import scheduler from '@nano-app/plugins/scheduler';
+
+createNanoApp({
+  plugins: {
+    before: [
+      scheduler({
+        timezone: 'America/Argentina/Mendoza',
+        jobs: [
+          { name: 'debt-mails', cron: '0 12 25,1,10 * *', run: async ({ db }) => sendMails(db) },
+        ],
+      }),
+    ],
+  },
+});
+```
+
+| Option     | Description                                                                 |
+| ---------- | --------------------------------------------------------------------------- |
+| `jobs`     | `{ name, cron, run }`: `run` gets the params of a route callback, `db` too. |
+| `timezone` | An IANA name for every cron. Without it, the process's.                     |
+
+- Each job runs on its `cron` once the app starts. A sixth field in front of the cron is the seconds (`30 0 12 * * *`).
+- Each run logs its start and its end with the name of its job. A run that throws is logged, and the next ones and the other jobs go on. A run still going when its next one comes skips that one, with a warning.
+- The name of a job is unique in the app: two jobs of the same name stop the startup.
+- The jobs run in the process, with no database: a run is lost while the process is down, and two replicas of the app run each job twice. Run one replica, or the scheduler in a process of its own.
+
 ## Layout of a plugin
 
 ```

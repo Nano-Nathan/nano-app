@@ -87,6 +87,7 @@ export default createRoute({
 | `GET`, `POST`, `PUT`, `DELETE`, `QUERY` | A handler, or `{ handler, permissions }`.                                                       |
 
 - Any other key, or an invalid value, stops the startup with the file and what is wrong.
+- Only the default export is read: the file may export functions beside it, for its handlers and for code outside it, such as a job of the scheduler (`export async function sendMails(db) {…}`).
 - An undeclared method answers `405`.
 - What `onBefore` returns reaches the handler as `params.onBeforeResult` (`{}` without `onBefore`).
 

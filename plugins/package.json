@@ -64,5 +64,8 @@
     "zod": {
       "optional": true
     }
+  },
+  "dependencies": {
+    "croner": "^11.0.1"
   }
 }

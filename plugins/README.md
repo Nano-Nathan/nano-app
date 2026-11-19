@@ -2,7 +2,7 @@
 
 [![plugins](https://img.shields.io/npm/v/@nano-app/plugins?label=plugins)](https://www.npmjs.com/package/@nano-app/plugins)
 
-Official plugins for [`@nano-app/backend`](https://www.npmjs.com/package/@nano-app/backend): `health` and `crud`. One import path per plugin, and nothing is mounted unless you list it.
+Official plugins for [`@nano-app/backend`](https://www.npmjs.com/package/@nano-app/backend): `health`, `crud` and `scheduler`. One import path per plugin, and nothing is mounted unless you list it.
 
 ```bash
 pnpm add @nano-app/backend @nano-app/plugins

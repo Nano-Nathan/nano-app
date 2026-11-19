@@ -7,7 +7,7 @@ A nano-app app has two halves in one pnpm workspace: a backend that serves JSON,
 | Package                 | Half     | What it gives                                                 |
 | ----------------------- | -------- | ------------------------------------------------------------- |
 | `@nano-app/backend`     | backend  | The Express 5 server, file routes, PostgreSQL and Better Auth |
-| `@nano-app/plugins`     | backend  | Official plugins: `health` and `crud`                         |
+| `@nano-app/plugins`     | backend  | Official plugins: `health`, `crud` and `scheduler`            |
 | `@nano-app/frontend`    | frontend | Stores, controllers, views and the proxy to the backend       |
 | `@nano-app/controllers` | frontend | Ready controllers: auth, forms, lists, navigation, messages   |
 | `@nano-app/mantine`     | frontend | The root layout, the views of the controllers and ready pages |
