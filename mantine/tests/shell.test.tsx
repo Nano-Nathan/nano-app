@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { PathnameContext } from 'next/dist/shared/lib/hooks-client-context.shared-runtime';
+import { SHELL_ITEMS } from '../src/layout/shell/const';
 import Shell from '../src/layout/shell/Shell';
 import TestApp, { aVisited } from './provider';
 
@@ -43,6 +44,7 @@ function renderShell(): void {
         <Shell
           title="finance"
           links={LINKS}
+          items={SHELL_ITEMS}
           login="/login"
           user={{ name: 'Ana Diaz', email: 'ana@nano.app' }}
         >

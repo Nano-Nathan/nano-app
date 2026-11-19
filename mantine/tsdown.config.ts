@@ -2,8 +2,8 @@ import { defineConfig } from 'tsdown';
 import pkg from './package.json' with { type: 'json' };
 
 export default defineConfig({
-  // One entry: every piece leaves from `@nano-app/mantine`
-  entry: ['src/index.ts'],
+  // Two entries: the views from `@nano-app/mantine`, the layouts and pages from `/server`
+  entry: ['src/index.ts', 'src/server.ts'],
   // One output file per source file: Next reads `'use client'` per module
   unbundle: true,
   root: 'src',

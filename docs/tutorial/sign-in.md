@@ -47,7 +47,7 @@ curl http://localhost:3000/note
 Create `frontend/src/app/login/page.tsx`:
 
 ```tsx
-import { createLoginPage } from '@nano-app/mantine';
+import { createLoginPage } from '@nano-app/mantine/server';
 
 export default createLoginPage({});
 ```
@@ -78,13 +78,15 @@ Create `frontend/src/app/(private)/layout.tsx` with the shell:
 
 ```tsx
 import { IconNotes } from '@tabler/icons-react';
-import { createShell } from '@nano-app/mantine';
+import { createShell } from '@nano-app/mantine/server';
 
 export default createShell({
   title: 'notes',
   links: [{ href: '/', label: 'nano.shell.home', icon: <IconNotes /> }],
 });
 ```
+
+The shell shows your links, then the user, the theme switch and the sign-out.
 
 `(private)` is a route group of Next: it does not change the URL, and keeps `/login` out of the shell.
 

@@ -1,6 +1,6 @@
 # Mantine
 
-Layouts, views and pages of `@nano-app/mantine`, on [Mantine](https://mantine.dev). Every piece is imported from `@nano-app/mantine`.
+Layouts, views and pages of `@nano-app/mantine`, on [Mantine](https://mantine.dev). Layouts and pages are imported from `@nano-app/mantine/server`, components from `@nano-app/mantine`.
 
 ## Layouts
 

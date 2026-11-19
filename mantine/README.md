@@ -10,14 +10,14 @@ pnpm add @nano-app/mantine @nano-app/frontend @nano-app/controllers @mantine/cor
 
 ```tsx
 // src/app/layout.tsx
-import { createLayout } from '@nano-app/mantine';
+import { createLayout } from '@nano-app/mantine/server';
 
 export default createLayout({ lang: 'en' });
 ```
 
 ```tsx
 // src/app/login/page.tsx
-import { createLoginPage } from '@nano-app/mantine';
+import { createLoginPage } from '@nano-app/mantine/server';
 
 export default createLoginPage({});
 ```

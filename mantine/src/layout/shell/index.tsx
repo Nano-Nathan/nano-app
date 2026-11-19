@@ -1,4 +1,5 @@
 import { createPage } from '@nano-app/frontend/server';
+import { SHELL_ITEMS } from './const';
 import Shell from './Shell';
 import type { ReactNode } from 'react';
 import type { ShellOptions } from '../../types/shell';
@@ -7,16 +8,20 @@ import type { ShellOptions } from '../../types/shell';
 export default function createShell(
   oOptions: ShellOptions,
 ): (props: { children: ReactNode }) => Promise<ReactNode> {
-  const { title, logo, links, login = '/login' } = oOptions;
+  const { title, logo, links = [], login = '/login' } = oOptions;
+  const oItems = { ...SHELL_ITEMS, ...oOptions.items };
   return createPage<{ children: ReactNode }>({ redirect: login }, ({ children, session }) => {
     // The user of the session, only what the navbar shows
-    const { name, email, image } = session.user;
+    const { name, email, image, role } = session.user;
+
+    // Only the links the role of the user sees
+    const aLinks = links.filter(oLink => !oLink.roles || oLink.roles.includes(role));
     return (
       <Shell
         title={title}
         logo={logo}
-
-        links={links}
+        links={aLinks}
+        items={oItems}
         login={login}
         user={{ name, email, image }}
       >

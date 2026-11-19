@@ -33,7 +33,7 @@ Register that same URL in the Google Cloud console.
 
 ```tsx
 // src/app/login/page.tsx
-import { createLoginPage } from '@nano-app/mantine';
+import { createLoginPage } from '@nano-app/mantine/server';
 
 export default createLoginPage({ providers: ['google'] });
 ```

@@ -7,7 +7,7 @@ pnpm add @nano-app/mantine @nano-app/frontend @nano-app/controllers @mantine/cor
 ```
 
 - `@mantine/*` 9, `@nano-app/frontend` 0.16, `@nano-app/controllers` 0.13, Next 16.3 and React 19 or newer, as peer dependencies.
-- One import: `import { createLayout, createShell, Form } from '@nano-app/mantine'`. Client views keep their `'use client'`.
+- Two imports: the layouts and pages from `@nano-app/mantine/server` (`import { createLayout, createShell } from '@nano-app/mantine/server'`), in server components; the views from `@nano-app/mantine` (`import { Form } from '@nano-app/mantine'`), also in client components.
 
 ## createLayout
 
@@ -32,24 +32,36 @@ export default createLayout({ lang: 'es', provider: { theme } });
 
 ## createShell
 
-The layout of the pages with a session: a navbar with the logo, the links, the user, a theme switch and a sign-out.
+The layout of the pages with a session: a navbar with the logo, the app's links and the framework's items.
 
 ```tsx
 // src/app/(private)/layout.tsx
 export default createShell({
   title: 'finance',
   logo: '/icon.png',
-  links: [{ href: '/', label: 'nano.shell.home', icon: <IconHome /> }],
+  links: [
+    { href: '/', label: 'nano.shell.home', icon: <IconHome /> },
+    { href: '/accounts', label: 'accounts.title', icon: <IconCash /> },
+  ],
+  items: { theme: false },
 });
 ```
 
-| Option  | Description                                                                 |
-| ------- | --------------------------------------------------------------------------- |
-| `title` | The app's name.                                                             |
-| `logo`  | Path of its image; the initials of `title` without one.                     |
-| `links` | `{ href, label, icon }` in order. `label` is a key of the texts.            |
-| `login` | Where it goes without a session and after signing out, `/login` by default. |
+| Option  | Description                                                                              |
+| ------- | ---------------------------------------------------------------------------------------- |
+| `title` | The app's name.                                                                          |
+| `logo`  | Path of its image; the initials of `title` without one.                                  |
+| `links` | The app's links, `{ href, label, icon, roles }` in order. `label` is a key of the texts. |
+| `items` | The framework's items, each on or off (below).                                           |
+| `login` | Where it goes without a session and after signing out, `/login` by default.              |
 
+| Item     | Default | Shows                                                       |
+| -------- | ------- | ----------------------------------------------------------- |
+| `user`   | on      | The user of the session: photo or initials, name and email. |
+| `theme`  | on      | The switch of the color scheme.                             |
+| `logout` | on      | The sign-out.                                               |
+
+- A link with `roles` shows only to a user whose `role` (Better Auth's admin plugin) is one of them.
 - It asks the session with `createPage`. Each page keeps its own `createPage`: Next does not render a layout again on navigation.
 - The navbar is closed by default: icons only on a desktop, hidden on a phone. A button at the top left opens it. Following a link closes it.
 - Its state is the flag of `NavController`, at `/nav/isToggled` of `app`.

@@ -1,4 +1,4 @@
-import { createLayout } from '@nano-app/mantine';
+import { createLayout } from '@nano-app/mantine/server';
 import type { Metadata } from 'next';
 
 /** Title of every page */

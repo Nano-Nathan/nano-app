@@ -38,3 +38,6 @@ export const SHELL_TEXT = {
   open: SHELL_FADE,
   closed: { ...SHELL_FADE, opacity: 0 },
 };
+
+/** Items of the framework in the navbar, all on */
+export const SHELL_ITEMS = { user: true, theme: true, logout: true };
