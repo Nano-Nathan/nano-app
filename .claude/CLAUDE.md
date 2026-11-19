@@ -1,6 +1,6 @@
 # nano-app
 
-pnpm monorepo: `core/` (private, inlined into the backend, frontend, controllers, mantine and create), `backend/` (`@nano-app/backend`), `plugins/` (`@nano-app/plugins`), `frontend/` (`@nano-app/frontend`), `controllers/` (`@nano-app/controllers`), `mantine/` (`@nano-app/mantine`), `create/` (`@nano-app/create`, the command that copies `template/`). Read the README of the package you touch before changing it.
+pnpm monorepo: `core/` (private, inlined into the backend, frontend, controllers, mantine and create), `backend/` (`@nano-app/backend`), `plugins/` (`@nano-app/plugins`), `frontend/` (`@nano-app/frontend`), `controllers/` (`@nano-app/controllers`), `mantine/` (`@nano-app/mantine`), `create/` (`@nano-app/create`, the command that copies `template/`). Read the reference of the package you touch (`docs/reference/<package>.md`) before changing it, and keep `docs/` true to every change (see [Documentation](../CONTRIBUTING.md#documentation)).
 
 This file holds the code guidelines. Branches, pull requests, releases and how a development is planned and approved are in [CONTRIBUTING.md](../CONTRIBUTING.md); planned features in [`features/`](../features/README.md).
 

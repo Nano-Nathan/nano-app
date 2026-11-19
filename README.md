@@ -8,66 +8,37 @@
 [![create](https://img.shields.io/npm/v/@nano-app/create?label=create)](https://www.npmjs.com/package/@nano-app/create)
 [![license](https://img.shields.io/npm/l/@nano-app/backend)](https://github.com/Nano-Nathan/nano-app/blob/main/LICENSE)
 
-File-convention framework for Node.js. In the backend you write `*.route.ts` files: `@nano-app/backend` discovers them, mounts an Express 5 server, and turns every `ApiResponse` into HTTP. In a Next.js frontend you write `*.store.ts` files and controllers: `@nano-app/frontend` keeps the UI state in stores and talks to the backend through its proxy.
+Full-stack apps from files in the right folders. In the backend you write `*.route.ts` files: `@nano-app/backend` discovers them, mounts an Express 5 server, and turns every `ApiResponse` into HTTP. In a Next.js frontend you write `*.store.ts` files and controllers: `@nano-app/frontend` keeps the UI state in stores and talks to the backend through its proxy.
 
-This repository publishes **`@nano-app/backend`**, **`@nano-app/plugins`** (the official backend plugins), **`@nano-app/frontend`**, **`@nano-app/controllers`** (the official frontend controllers), **`@nano-app/mantine`** (their Mantine layout, views and pages) and **`@nano-app/create`** (a new app: `pnpm create @nano-app my-app`). You add your own plugins with `createPlugin`, or publish them as separate packages.
+**Documentation: [nano-app-docs.pages.dev](https://nano-app-docs.pages.dev)** — [tutorial](https://nano-app-docs.pages.dev/tutorial/), [guides](https://nano-app-docs.pages.dev/guides/permissions), [reference](https://nano-app-docs.pages.dev/reference/backend) and [concepts](https://nano-app-docs.pages.dev/concepts/architecture).
 
 While the version is `0.x`, the public API can change.
 
-## Install
+## Start
 
 ```bash
-pnpm add @nano-app/backend
+pnpm create @nano-app my-app
+cd my-app
+pnpm install
+cp .env.example .env
+pnpm dev
 ```
 
 Node.js 22.23.4, 24.22.1 or 26.12.1 and newer. ESM only.
 
-## Quick start
-
-```
-src/
-├── app.ts
-└── routes/
-    └── health.route.ts     →  /health
-```
-
-```ts
-// src/app.ts
-import { createNanoApp } from '@nano-app/backend';
-
-createNanoApp({ port: 3000 });
-```
-
-```ts
-// src/routes/health.route.ts
-import { createRoute } from '@nano-app/backend';
-
-export default createRoute({
-  GET: async () => ({ result: { status: 'ok' } }),
-});
-```
-
-The file path is the URL. Full API, database, and plugin contract: [`backend/README.md`](backend/README.md). The frontend (stores, controllers and the proxy to the backend): [`frontend/README.md`](frontend/README.md).
-
 ## Packages
 
-| Package                 | Directory      | npm       | Role                                                                                                       |
-| ----------------------- | -------------- | --------- | ---------------------------------------------------------------------------------------------------------- |
-| `@nano-app/backend`     | `backend/`     | published | Express server, convention routes, optional PostgreSQL and Better Auth                                     |
-| `@nano-app/plugins`     | `plugins/`     | published | Official backend plugins: `import <name> from '@nano-app/plugins/<name>'`                                  |
-| `@nano-app/frontend`    | `frontend/`    | published | Next.js stores, controllers and the proxy to the backend                                                   |
-| `@nano-app/controllers` | `controllers/` | published | Official frontend controllers: `import { AuthController } from '@nano-app/controllers'`                    |
-| `@nano-app/mantine`     | `mantine/`     | published | Mantine for the frontend: `createLayout`, views of the controllers and ready pages                         |
-| `@nano-app/create`      | `create/`      | published | A new app from `template/`: `pnpm create @nano-app my-app`                                                 |
-| `@nano-app/core`        | `core/`        | private   | Convention loader, types and constants, inlined into the backend, frontend, controllers, mantine and create builds |
+| Package                 | Directory      | Role                                                                     | Reference                                                            |
+| ----------------------- | -------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------- |
+| `@nano-app/backend`     | `backend/`     | Express server, file routes, optional PostgreSQL and Better Auth         | [backend](https://nano-app-docs.pages.dev/reference/backend)         |
+| `@nano-app/plugins`     | `plugins/`     | Official backend plugins: `health` and `crud`                            | [plugins](https://nano-app-docs.pages.dev/reference/plugins)         |
+| `@nano-app/frontend`    | `frontend/`    | Next.js stores, controllers and the proxy to the backend                 | [frontend](https://nano-app-docs.pages.dev/reference/frontend)       |
+| `@nano-app/controllers` | `controllers/` | Official frontend controllers                                            | [controllers](https://nano-app-docs.pages.dev/reference/controllers) |
+| `@nano-app/mantine`     | `mantine/`     | Mantine for the frontend: layout, views of the controllers, ready pages  | [mantine](https://nano-app-docs.pages.dev/reference/mantine)         |
+| `@nano-app/create`      | `create/`      | A new app from `template/`: `pnpm create @nano-app my-app`               | [create](https://nano-app-docs.pages.dev/reference/create)           |
+| `@nano-app/core`        | `core/`        | Private: convention loader, types and constants, inlined into the builds | —                                                                    |
 
-Each package has its tests in its `tests/` folder (`frontend/tests/app` is a Next app that uses the frontend and the controllers). Each published package has its own version.
-
-## Plugins
-
-A plugin is a directory of `*.route.ts` files plus a `createPlugin` factory. List it in `createNanoApp({ plugins })`. Nothing is mounted by default.
-
-The official ones, how to write one, and how to publish it for other people: [`plugins/`](plugins/README.md).
+Each published package has its own version, and its tests in its `tests/` folder.
 
 ## Develop
 
@@ -75,6 +46,7 @@ The official ones, how to write one, and how to publish it for other people: [`p
 pnpm install
 pnpm test
 pnpm build
+pnpm --filter nano-app-site dev   # the documentation, from docs/
 ```
 
 PostgreSQL tests run only when `DATABASE_URL` is set. See [CONTRIBUTING.md](CONTRIBUTING.md).
