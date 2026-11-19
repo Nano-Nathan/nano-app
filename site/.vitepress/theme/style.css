@@ -1,0 +1,63 @@
+/* Colors of the logo: its greens and its black */
+:root {
+  --nano-green-light: #8cc63f;
+  --nano-green: #3fa31f;
+  --nano-green-dark: #1f7a0f;
+  --nano-black: #1c1c1c;
+
+  --vp-c-brand-1: #2a7f12;
+  --vp-c-brand-2: #3fa31f;
+  --vp-c-brand-3: #1f7a0f;
+  --vp-c-brand-soft: rgba(63, 163, 31, 0.14);
+
+  --vp-button-brand-bg: var(--nano-green-dark);
+  --vp-button-brand-hover-bg: var(--nano-green);
+  --vp-button-brand-active-bg: var(--nano-green-dark);
+
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(
+    120deg,
+    var(--nano-green-light) 10%,
+    var(--nano-green-dark) 45%,
+    var(--nano-black) 90%
+  );
+  --vp-home-hero-image-background-image: linear-gradient(
+    135deg,
+    rgba(140, 198, 63, 0.45) 30%,
+    rgba(28, 28, 28, 0.35) 70%
+  );
+  --vp-home-hero-image-filter: blur(56px);
+}
+
+.dark {
+  --vp-c-bg: #141414;
+  --vp-c-bg-alt: #101010;
+  --vp-c-bg-soft: #1c1c1c;
+
+  --vp-c-brand-1: #8cc63f;
+  --vp-c-brand-2: #6fb62e;
+  --vp-c-brand-3: #3fa31f;
+  --vp-c-brand-soft: rgba(140, 198, 63, 0.16);
+
+  --vp-home-hero-name-background: linear-gradient(
+    120deg,
+    var(--nano-green-light) 10%,
+    var(--nano-green) 50%,
+    #e8e8e8 95%
+  );
+  --vp-home-hero-image-background-image: linear-gradient(
+    135deg,
+    rgba(140, 198, 63, 0.35) 30%,
+    rgba(63, 163, 31, 0.2) 70%
+  );
+}
+
+/* Feature cards: a green edge on hover */
+.VPFeature {
+  border-top: 3px solid var(--vp-c-brand-soft);
+  transition: border-color 0.25s;
+}
+
+.VPFeature:hover {
+  border-top-color: var(--vp-c-brand-2);
+}

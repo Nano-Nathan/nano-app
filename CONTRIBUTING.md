@@ -19,9 +19,26 @@ Set `DATABASE_URL` in a `.env` at the repository root, pointing at a disposable 
 ## What to send
 
 - Bug fixes in `backend/`, `core/`, `plugins/`, `frontend/`, `controllers/`, `mantine/`, `create/` and `template/`: a pull request here.
-- A plugin: your own repository and npm package. See [`plugins/README.md`](plugins/README.md#write-a-plugin). Do not add `plugins/<name>` unless a maintainer asked for that plugin in an issue.
+- A plugin: your own repository and npm package. See [Write a plugin](docs/guides/write-a-plugin.md). Do not add `plugins/<name>` unless a maintainer asked for that plugin in an issue.
 
-Public API, comments, and these files are English: `README.md` and the README of each package.
+Public API, comments, the documentation in [`docs/`](docs/) and the README of each package are English.
+
+## Documentation
+
+`docs/` is the documentation site ([VitePress](https://vitepress.dev), config in `site/`), organized by [Diátaxis](https://diataxis.fr):
+
+| Folder            | Kind        | Holds                                                                           |
+| ----------------- | ----------- | ------------------------------------------------------------------------------- |
+| `docs/tutorial/`  | Tutorial    | One app built step by step, for a newcomer                                      |
+| `docs/guides/`    | How-to      | One task per page, for a user who knows the basics                              |
+| `docs/catalog/`   | Catalog     | One row per ready plugin, controller and Mantine piece, linked to its reference |
+| `docs/reference/` | Reference   | One page per package: every option, method and type, without narrative          |
+| `docs/concepts/`  | Explanation | How the pieces fit and why                                                      |
+
+- Each fact lives in one place: the reference. A guide or the tutorial links to it instead of repeating it.
+- A new plugin, controller or Mantine piece adds its row to `docs/catalog/` and its section to the reference.
+- The README of a package is its npm page: what it is, how to install it, a short example and a link to its reference.
+- `pnpm --filter nano-app-site dev` serves the site; `pnpm --filter nano-app-site build` fails on a dead link.
 
 ## Pull requests
 
@@ -50,7 +67,7 @@ How the framework behaves is the maintainer's decision, so a development is plan
 2. When a point hides a decision (a default, an edge case, an error, where the code lives), give two or three options with their cost and mark one as the recommendation.
 3. The maintainer answers point by point. Adjust the points and list again only what changed.
 4. Implement only when every point has the maintainer's OK. A change of behavior that shows up while implementing goes back to the maintainer before it is written.
-5. The tests, the README of the package and the feature file in [`features/`](https://github.com/Nano-Nathan/nano-app/blob/main/features/README.md) follow the final decisions, not the first proposal.
+5. The tests, the documentation in `docs/` (the reference of the package, and the guides and tutorial it changes) and the feature file in [`features/`](https://github.com/Nano-Nathan/nano-app/blob/main/features/README.md) follow the final decisions, not the first proposal.
 
 A feature split into modules is planned and reviewed module by module. A large idea is first broken into tasks: see [Breaking down a feature](https://github.com/Nano-Nathan/nano-app/blob/main/features/README.md#breaking-down-a-feature).
 
@@ -69,14 +86,14 @@ A feature split into modules is planned and reviewed module by module. A large i
 
 Each published package has its own version, its own tags and its own publish workflow, which runs on a merge to `main` that touches the package:
 
-| Package                 | Touched paths           | Tags                 | Workflow                  |
-| ----------------------- | ----------------------- | -------------------- | ------------------------- |
-| `@nano-app/backend`     | `backend/`, `core/`     | `backend-vX.Y.Z`     | `publish-backend.yml`     |
-| `@nano-app/plugins`     | `plugins/`              | `plugins-vX.Y.Z`     | `publish-plugins.yml`     |
-| `@nano-app/frontend`    | `frontend/`, `core/`    | `frontend-vX.Y.Z`    | `publish-frontend.yml`    |
-| `@nano-app/controllers` | `controllers/`, `core/` | `controllers-vX.Y.Z` | `publish-controllers.yml` |
-| `@nano-app/mantine`     | `mantine/`, `core/`     | `mantine-vX.Y.Z`     | `publish-mantine.yml`     |
-| `@nano-app/create`      | `create/`, `template/`, `core/` | `create-vX.Y.Z` | `publish-create.yml` |
+| Package                 | Touched paths                   | Tags                 | Workflow                  |
+| ----------------------- | ------------------------------- | -------------------- | ------------------------- |
+| `@nano-app/backend`     | `backend/`, `core/`             | `backend-vX.Y.Z`     | `publish-backend.yml`     |
+| `@nano-app/plugins`     | `plugins/`                      | `plugins-vX.Y.Z`     | `publish-plugins.yml`     |
+| `@nano-app/frontend`    | `frontend/`, `core/`            | `frontend-vX.Y.Z`    | `publish-frontend.yml`    |
+| `@nano-app/controllers` | `controllers/`, `core/`         | `controllers-vX.Y.Z` | `publish-controllers.yml` |
+| `@nano-app/mantine`     | `mantine/`, `core/`             | `mantine-vX.Y.Z`     | `publish-mantine.yml`     |
+| `@nano-app/create`      | `create/`, `template/`, `core/` | `create-vX.Y.Z`      | `publish-create.yml`      |
 
 [semantic-release](https://github.com/semantic-release/semantic-release) reads the commits since the package's last tag, with the `angular` preset of each `.releaserc.json`, and publishes it only when one of them asks for it. It reads every commit since that tag, also the ones that touched only another package:
 
