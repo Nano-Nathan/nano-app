@@ -1,3 +1,4 @@
+export { DataTable } from './components/collection';
 export { Input, Password } from './components/fields';
 export { Form } from './components/input';
 export { Toasts } from './components/notification';

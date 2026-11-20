@@ -69,14 +69,16 @@ export default createShell({
 
 ## Components
 
-| Component  | Controller          | Props                                    |
-| ---------- | ------------------- | ---------------------------------------- |
-| `Input`    | `FieldController`   | `form`, `field` (`label`, `type`)        |
-| `Password` | `FieldController`   | `form`, `field` (`label`)                |
-| `Form`     | `FormController`    | `name`, `fields`, `onSubmit`, `children` |
-| `Toasts`   | `MessageController` | Props of Mantine's `Notifications`       |
+| Component   | Controller          | Props                                    |
+| ----------- | ------------------- | ---------------------------------------- |
+| `Input`     | `FieldController`   | `form`, `field` (`label`, `type`)        |
+| `Password`  | `FieldController`   | `form`, `field` (`label`)                |
+| `Form`      | `FormController`    | `name`, `fields`, `onSubmit`, `children` |
+| `Toasts`    | `MessageController` | Props of Mantine's `Notifications`       |
+| `DataTable` | `TableController`   | `path`, `columns` (`Field[]`, optional)  |
 
 - `Form` shows `password` fields with `Password`, every other one with `Input`, then its `children` (the buttons).
+- `DataTable` shows a column per field of `columns` (`label`, `format`), or per column of the table without it, and a row per item of `path`, read when it mounts. Without items it shows a row with `nano.table.empty`. A column of the table, without `columns`, shows `nano.label.<name>`: the core texts have `id`, `name`, `email`, `title`, `description`, `createdAt` and `updatedAt`; define the others in the app's texts, or give the column its `label`. It scrolls inside itself past `70svh` high, and sideways when the screen is narrower than its content.
 - `Toasts` shows every new message of an api store in the color of its `type` (`success` green, `error` red, `info` blue, `warning` yellow). `createLayout` mounts it.
 
 ## createLoginPage
