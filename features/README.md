@@ -2,13 +2,14 @@
 
 Planned work on this repository, one file per feature. A file says what the feature has to do, what it leaves out, when it is done and where it stands, so any agent can pick it up from here. Read [`CONTRIBUTING.md`](../CONTRIBUTING.md) first: it defines the branch of each development, the modules when the maintainer splits a feature, and the approval point by point. The code follows [`.claude/CLAUDE.md`](../.claude/CLAUDE.md).
 
-| Feature | Done when | Depends on |
-|---|---|---|
-| [mail](mail.md) | A route sends an email through the `mail` plugin | — |
-| [plugins-rebuild](plugins-rebuild.md) | `crud` and `health` run on the refactored backend, with the app's schema passed once | The responsibilities refactor |
-| [prisma](prisma.md) | An app mounts its database with Prisma through the same `DatabaseManager` | — |
-| [sse](sse.md) | The backend pushes an event and a component updates | Only when the maintainer asks |
-| [scheduler-replicas](scheduler-replicas.md) | Each firing of a job runs once across the replicas of an app | Only when an app asks |
+| Feature                                     | Done when                                                                            | Depends on                    |
+| ------------------------------------------- | ------------------------------------------------------------------------------------ | ----------------------------- |
+| [mail](mail.md)                             | A route sends an email through the `mail` plugin                                     | —                             |
+| [plugins-rebuild](plugins-rebuild.md)       | `crud` and `health` run on the refactored backend, with the app's schema passed once | The responsibilities refactor |
+| [prisma](prisma.md)                         | An app mounts its database with Prisma through the same `DatabaseManager`            | —                             |
+| [sse](sse.md)                               | The backend pushes an event and a component updates                                  | Only when the maintainer asks |
+| [scheduler-replicas](scheduler-replicas.md) | Each firing of a job runs once across the replicas of an app                         | Only when an app asks         |
+| [crud-models](crud-models.md)               | The admin page manages users through crud's `/users`, with no change in the frontend | The entity maintainer         |
 
 The order of the table is the order of work. Work outside this repository (cluster, deploys, apps) is not tracked here.
 
@@ -17,9 +18,9 @@ The order of the table is the order of work. Work outside this repository (clust
 Each file starts with a frontmatter:
 
 ```yaml
-status: todo        # todo → in-progress → review → done; blocked when something external is missing
-owner: null         # the session working on it
-depends_on: []      # features that must be done first
+status: todo # todo → in-progress → review → done; blocked when something external is missing
+owner: null # the session working on it
+depends_on: [] # features that must be done first
 updated: 2026-10-23
 ```
 
