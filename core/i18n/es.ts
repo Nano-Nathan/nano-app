@@ -16,6 +16,8 @@ export default {
   'nano.shell.menu': 'Menú',
   'nano.shell.theme': 'Cambiar tema',
   'nano.shell.logout': 'Cerrar sesión',
+  'nano.admin.title': 'Administración',
+  'nano.admin.users': 'Usuarios',
   'nano.label.id': 'ID',
   'nano.label.name': 'Nombre',
   'nano.label.email': 'Correo',

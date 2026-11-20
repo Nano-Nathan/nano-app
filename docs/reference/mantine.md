@@ -47,13 +47,13 @@ export default createShell({
 });
 ```
 
-| Option  | Description                                                                              |
-| ------- | ---------------------------------------------------------------------------------------- |
-| `title` | The app's name.                                                                          |
-| `logo`  | Path of its image; the initials of `title` without one.                                  |
-| `links` | The app's links, `{ href, label, icon, roles }` in order. `label` is a key of the texts. |
-| `items` | The framework's items, each on or off (below).                                           |
-| `login` | Where it goes without a session and after signing out, `/login` by default.              |
+| Option  | Description                                                                                                                         |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `title` | The app's name.                                                                                                                     |
+| `logo`  | Path of its image; the initials of `title` without one.                                                                             |
+| `links` | The app's links, `{ href, label, icon, roles }` in order, or groups `{ label, icon, roles, links }`. `label` is a key of the texts. |
+| `items` | The framework's items, each on or off (below).                                                                                      |
+| `login` | Where it goes without a session and after signing out, `/login` by default.                                                         |
 
 | Item     | Default | Shows                                                       |
 | -------- | ------- | ----------------------------------------------------------- |
@@ -61,11 +61,12 @@ export default createShell({
 | `theme`  | on      | The switch of the color scheme.                             |
 | `logout` | on      | The sign-out.                                               |
 
+- A group shows its links under it when clicked; closed, clicking it opens the navbar with them.
 - A link with `roles` shows only to a user whose `role` (Better Auth's admin plugin) is one of them.
 - It asks the session with `createPage`. Each page keeps its own `createPage`: Next does not render a layout again on navigation.
 - The navbar is closed by default: icons only on a desktop, hidden on a phone. A button at the top left opens it. Following a link closes it.
 - Its state is the flag of `NavController`, at `/nav/isToggled` of `app`.
-- Texts: `nano.shell.home`, `nano.shell.theme`, `nano.shell.logout`, `nano.shell.menu`.
+- Texts: `nano.shell.home`, `nano.shell.theme`, `nano.shell.logout`, `nano.shell.menu`; for the admin group, `nano.admin.title` and `nano.admin.users`.
 
 ## Components
 

@@ -1,21 +1,12 @@
 'use client';
 
-import {
-  ActionIcon,
-  AppShell,
-  Avatar,
-  CloseButton,
-  NavLink,
-  Paper,
-  Stack,
-  Tooltip,
-} from '@mantine/core';
-import Link from 'next/link';
+import { ActionIcon, AppShell, Avatar, CloseButton, NavLink, Paper, Stack } from '@mantine/core';
 import { IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand } from '@tabler/icons-react';
 import { NavController } from '@nano-app/controllers';
 import { createView } from '@nano-app/frontend';
 import {
   SHELL_BRAND,
+  SHELL_GAP,
   SHELL_LABEL,
   SHELL_LINK,
   SHELL_SIZES,
@@ -24,6 +15,7 @@ import {
   SHELL_TEXT,
 } from './const';
 import Account from './components/Account';
+import NavItem from './components/NavItem';
 import Slot from './components/Slot';
 import type { ShellLink } from '../../types/shell';
 
@@ -73,26 +65,11 @@ export default createView(
                 />
               </AppShell.Section>
               <AppShell.Section grow>
-                {links.map((oLink: ShellLink) => (
-                  <Tooltip
-                    key={oLink.href}
-                    label={nav.text(oLink.label)}
-                    position="right"
-                    disabled={isOpen}
-                  >
-                    <NavLink
-                      component={Link}
-                      href={oLink.href}
-                      aria-label={nav.text(oLink.label)}
-                      label={nav.text(oLink.label)}
-                      noWrap
-                      leftSection={<Slot isActive={nav.isActive(oLink.href)}>{oLink.icon}</Slot>}
-                      styles={oLinkStyles}
-                      active={nav.isActive(oLink.href)}
-                      onClick={nav.close}
-                    />
-                  </Tooltip>
-                ))}
+                <Stack gap={SHELL_GAP}>
+                  {links.map((oLink: ShellLink) => (
+                    <NavItem key={oLink.label} link={oLink} styles={oLinkStyles} />
+                  ))}
+                </Stack>
               </AppShell.Section>
               <AppShell.Section>
                 <Account

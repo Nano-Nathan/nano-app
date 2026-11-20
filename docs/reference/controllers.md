@@ -105,12 +105,14 @@ The rows of a backend path, read with `GET` when its view mounts, for `DataTable
 
 ## NavController
 
-| Method           | Description                         |
-| ---------------- | ----------------------------------- |
-| `isActive(href)` | Whether `href` is the current page. |
-| `close()`        | Closes the menu.                    |
+| Method               | Description                                                            |
+| -------------------- | ---------------------------------------------------------------------- |
+| `isActive(href)`     | Whether `href` is the current page.                                    |
+| `isGroupOpen(label)` | Whether the group of `label` shows its links, only with the menu open. |
+| `toggleGroup(label)` | Opens the menu with the group of `label` shown, or hides it.           |
+| `close()`            | Closes the menu.                                                       |
 
-Its flag is the menu open, at `/nav/isToggled` of `app`.
+Its flag is the menu open, at `/nav/isToggled` of `app`; the group shown, at `/nav/group`.
 
 ## MessageController
 

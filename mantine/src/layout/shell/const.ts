@@ -41,3 +41,6 @@ export const SHELL_TEXT = {
 
 /** Items of the framework in the navbar, all on */
 export const SHELL_ITEMS = { user: true, theme: true, logout: true };
+
+/** Space between the links of the navbar: half the theme's smallest spacing */
+export const SHELL_GAP = 'calc(var(--mantine-spacing-xs) / 2)';

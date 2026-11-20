@@ -1,16 +1,25 @@
 import type { ReactNode } from 'react';
 
-/** A link of the navbar: where it leads, its text and its icon */
+/** A link of the navbar: where it leads, its text and its icon; or a group of links */
 export type ShellLink = {
-  /** Path it leads to (`/accounts`) */
-  href: string;
   /** Key of its text (`home.title`) */
   label: string;
   /** Icon before the text, alone while the navbar is closed (`<IconHome />`) */
   icon: ReactNode;
   /** Roles of the session's user that see it (`['admin']`); every user without them */
   roles?: string[];
-};
+} & (
+  | {
+      /** Path it leads to (`/accounts`) */
+      href: string;
+      links?: undefined;
+    }
+  | {
+      /** Links of a group, shown under it when it is clicked */
+      links: ShellLink[];
+      href?: undefined;
+    }
+);
 
 /** The user of the session the navbar shows */
 export type ShellUser = {
