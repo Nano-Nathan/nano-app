@@ -55,10 +55,7 @@ describe(
       // Mounts the app's database and the plugin under /api, with no route of the app
       const oAppDB = new Drizzle('app', { relations: schema.relations });
       oDb = await DatabaseManager.mount(oAppDB);
-      oBackend = await startApp(
-        [crud({ models: { note: schema.note }, basePath: '/api' })],
-        oAppDB,
-      );
+      oBackend = await startApp([crud({ models: ['note'], basePath: '/api' })], oAppDB);
 
       // Points the store `api` to it: the proxy reads its URL when it loads
       Object.assign(globalThis, { [BACKENDS_DEFINE]: JSON.stringify([['api', 'API_API_URL']]) });

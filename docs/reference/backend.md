@@ -99,6 +99,7 @@ export default createRoute({
 | ---------------- | ----------------------------------------------------------------------------------- |
 | `options`        | The plugin's `options`.                                                             |
 | `db`             | The Drizzle client of the app or the plugin; `undefined` without a database.        |
+| `relations`      | The `relations` of that database: each table by its name (`relations.note.table`).  |
 | `session`        | Better Auth's `{ user, session }`, also on a public route when the request has one. |
 | `onBeforeResult` | What `onBefore` returned.                                                           |
 

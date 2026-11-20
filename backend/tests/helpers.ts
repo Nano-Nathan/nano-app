@@ -7,7 +7,7 @@ import { errorHandler, notFoundHandler } from '../src/app/handlers/errors';
 import type { ChildProcess } from 'node:child_process';
 import type { Server } from 'node:http';
 import type { NanoObject } from '@nano-app/core';
-import type DatabaseClient from '../src/database/clients/DatabaseClient';
+import type Drizzle from '../src/database/clients/Drizzle';
 import type { PluginConfig } from '../src/types/plugin';
 
 const FIXTURES_ROUTES = 'tests/fixtures/routes';
@@ -33,7 +33,7 @@ export async function findFreePort(): Promise<number> {
  */
 export async function startApp(
   aPlugins: Partial<PluginConfig>[] = [{ routesDir: FIXTURES_ROUTES }],
-  oAppDB?: DatabaseClient,
+  oAppDB?: Drizzle,
 ): Promise<{
   url: string;
   close: () => Promise<void>;

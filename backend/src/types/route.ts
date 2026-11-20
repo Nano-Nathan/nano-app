@@ -1,7 +1,7 @@
 import type { Request } from 'express';
 import type { ApiPromise, NanoObject } from '@nano-app/core';
 
-/** Extra params of handlers and callbacks: what the app injects (options, `db`) and the framework adds */
+/** Params of handlers and callbacks: options, `db`, `relations` and what the framework adds */
 export type Params<Deps = NanoObject<any>> = Deps & {
   /** `{ user, session }` of Better Auth, when the request has one */
   session?: NanoObject;

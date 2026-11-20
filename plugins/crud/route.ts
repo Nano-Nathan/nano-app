@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { createRoute, NanoError } from '@nano-app/backend';
 import { ACTIONS, DEFAULT_LIMIT } from '../const';
+import { SCHEMAS } from './const';
 import type { ZodType } from 'zod';
 import type { ApiPromise, HandlerParams, NanoObject, Request, RouteEntry } from '@nano-app/backend';
 
@@ -10,75 +11,66 @@ function first(aRecords: NanoObject[]): { result: NanoObject } {
   return { result: aRecords[0] };
 }
 
-/** Every record of a query */
-function list(aRecords: NanoObject[]): { result: NanoObject[] } {
-  return { result: aRecords };
-}
-
-/** A list of the table, or one record by its id, with Drizzle's relational query of the body */
-async function read(_oReq: Request, { db, onBeforeResult }: HandlerParams): ApiPromise {
-  const { model, page, answer, body } = onBeforeResult;
-
-  // Reads with the default limit, the body and the id over them
-  return answer(await db.query[model].findMany({ limit: DEFAULT_LIMIT, ...body, ...page }));
-}
-
-/** Inserts the body as a record */
-async function create(_oReq: Request, { db, onBeforeResult }: HandlerParams): ApiPromise {
-  const { table, body } = onBeforeResult;
-  return first(await db.insert(table).values(body).returning());
-}
-
-/** Updates the record of the id with the body */
-async function update(_oReq: Request, { db, onBeforeResult }: HandlerParams): ApiPromise {
-  const { table, id, body } = onBeforeResult;
-  return first(await db.update(table).set(body).where(eq(table.id, id)).returning());
-}
-
-/** Deletes the record of the id */
-async function remove(_oReq: Request, { db, onBeforeResult }: HandlerParams): ApiPromise {
-  const { table, id } = onBeforeResult;
-  return first(await db.delete(table).where(eq(table.id, id)).returning());
-}
-
-/** The route of a table: `GET` and `QUERY` read, each method asks its permission on the table */
+/** The route of a model: `GET` and `QUERY` read, each method asks its permission on its table */
 export default function route(
   sModel: string,
-  oTable: unknown,
   oValidations: NanoObject<ZodType | undefined> = {},
 ): RouteEntry {
-  // Each method with its handler and the permission of its action
-  const oHandlers = { GET: read, QUERY: read, POST: create, PUT: update, DELETE: remove };
-  const oMethods = Object.fromEntries(
-    Object.entries(oHandlers).map(([sMethod, handler]) => [
-      sMethod,
-      { handler, permissions: { [sModel]: [ACTIONS[sMethod]] } },
-    ]),
-  );
+  // A list of the model, or the record of the id, with Drizzle's relational query of the body
+  const fnRead = async (oReq: Request, { db, onBeforeResult }: HandlerParams): ApiPromise => {
+    const { id } = oReq.params;
+
+    // An id reads its record; without it, the list
+    const oRead = id
+      ? { page: { where: { id }, limit: 1 }, answer: first }
+      : { page: {}, answer: (aRecords: NanoObject[]) => ({ result: aRecords }) };
+    const oQuery = { limit: DEFAULT_LIMIT, ...onBeforeResult.body, ...oRead.page };
+    return oRead.answer(await db.query[sModel].findMany(oQuery));
+  };
 
   return createRoute({
     expression: '{/:id}',
     callbacks: {
-      // The id and the validated body of the request
-      onBefore: async (oReq, sMethod) => {
-        const { id } = oReq.params;
+      // Fails at startup when the app's relations have no such model
+      onInit: async ({ relations }) => {
+        if (relations?.[sModel]) return;
+        throw new NanoError(
+          `crud: the model "${sModel}" is not in the relations of the app's database. Add its table to \`defineRelations\`.`,
+        );
+      },
 
-        // The body as its validation gives it, or as it came
+      // The table and the body as the app's validation or the table's schema gives it
+      onBefore: async (oReq, sMethod, { relations }) => {
+        const { table } = relations[sModel];
+        const sAction = ACTIONS[sMethod];
+        const oSchema = oValidations[sAction] ?? SCHEMAS[sAction]?.(table);
+
+        // Without a schema, the body as it came
         const oBody = oReq.body ?? {};
-        const oResult = oValidations[ACTIONS[sMethod]]?.safeParse(oBody) ?? {
-          success: true as const,
-          data: oBody,
-        };
+        const oResult = oSchema?.safeParse(oBody) ?? { success: true as const, data: oBody };
         if (!oResult.success) {
           const { path, message } = oResult.error.issues[0];
           throw new NanoError([...path, message].join(': '), 400);
         }
-
-        // A read of an id answers its record; without it, the list
-        const oRead = id ? { page: { where: { id }, limit: 1 }, answer: first } : { answer: list };
-        return { model: sModel, table: oTable, id, body: oResult.data, ...oRead };
+        return { table, body: oResult.data };
       },
     },
-    ...oMethods,
+    GET: { handler: fnRead, permissions: { [sModel]: ['read'] } },
+    QUERY: { handler: fnRead, permissions: { [sModel]: ['read'] } },
+    POST: {
+      handler: async (_oReq, { db, onBeforeResult: { table, body } }) =>
+        first(await db.insert(table).values(body).returning()),
+      permissions: { [sModel]: ['create'] },
+    },
+    PUT: {
+      handler: async (oReq, { db, onBeforeResult: { table, body } }) =>
+        first(await db.update(table).set(body).where(eq(table.id, oReq.params.id)).returning()),
+      permissions: { [sModel]: ['update'] },
+    },
+    DELETE: {
+      handler: async (oReq, { db, onBeforeResult: { table } }) =>
+        first(await db.delete(table).where(eq(table.id, oReq.params.id)).returning()),
+      permissions: { [sModel]: ['delete'] },
+    },
   });
 }

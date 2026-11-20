@@ -27,16 +27,16 @@ Public: it answers without a session. `basePath` defaults to `/health`.
 ```ts
 import crud from '@nano-app/plugins/crud';
 
-createNanoApp({ plugins: { after: [crud({ models: { note: schema.note } })] } });
+createNanoApp({ plugins: { after: [crud({ models: ['note'] })] } });
 ```
 
 ### Options
 
-| Option        | Description                                                                            |
-| ------------- | -------------------------------------------------------------------------------------- |
-| `models`      | The published tables, keyed by their name in the app's relations: `{ note, comment }`. |
-| `validations` | zod schemas of the bodies, per model and action. See [validations](#validations).      |
-| `basePath`    | None by default: `/<model>`. `'/api'` gives `/api/<model>`.                            |
+| Option        | Description                                                                        |
+| ------------- | ---------------------------------------------------------------------------------- |
+| `models`      | The published tables, by their name in the app's relations: `['note', 'comment']`. |
+| `validations` | zod schemas of the bodies, per model and action. See [validations](#validations).  |
+| `basePath`    | None by default: `/<model>`. `'/api'` gives `/api/<model>`.                        |
 
 ### Endpoints
 
@@ -51,7 +51,7 @@ createNanoApp({ plugins: { after: [crud({ models: { note: schema.note } })] } })
 
 - `QueryParams` is Drizzle's relational query: `where`, `columns`, `orderBy`, `limit`, `offset`, `with`. Without `limit`, `100`.
 - Postgres casts `<id>` to the type of the `id` column.
-- A model not in `models` answers `404`.
+- A model not in `models` answers `404`. One in `models` but not in the app's relations stops the startup.
 - Permissions are asked only with Better Auth on, and only on the table of the URL. `403` without them.
 - A Postgres error of a write (a duplicate, a missing reference) answers `500`.
 - Mounted `before`, it takes its URLs from your routes. Mounted `after`, a route of yours on one of its URLs takes every method of it.
@@ -60,13 +60,13 @@ createNanoApp({ plugins: { after: [crud({ models: { note: schema.note } })] } })
 
 Per model, a zod schema per action:
 
-| Action   | Checks                                  |
-| -------- | --------------------------------------- |
-| `read`   | The body of `QUERY`, and `{}` for `GET` |
-| `create` | The body of `POST`                      |
-| `update` | The body of `PUT`                       |
+| Action   | Checks                                                                      |
+| -------- | --------------------------------------------------------------------------- |
+| `read`   | The body of `QUERY`, and `{}` for `GET`                                     |
+| `create` | The body of `POST`; by default, Drizzle's `createInsertSchema` of the table |
+| `update` | The body of `PUT`; by default, Drizzle's `createUpdateSchema` of the table  |
 
-A body that breaks its validation answers `400` with the field and zod's message. One that passes goes on as zod gives it: keys it does not name are dropped and defaults are set. Without a validation, the body goes to Drizzle as it came.
+A body that breaks its validation answers `400` with the field and zod's message. One that passes goes on as zod gives it: keys it does not name are dropped and defaults are set. A `QUERY` without a `read` validation goes to Drizzle as it came.
 
 ### Related tables
 

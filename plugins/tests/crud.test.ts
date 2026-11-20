@@ -46,7 +46,7 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
     oServer = await startApp(
       [
         crud({
-          models: { note: schema.note, comment: schema.comment },
+          models: ['note', 'comment'],
           validations: { comment: oValidation },
         }),
       ],
@@ -157,7 +157,7 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
     assert.equal(body.result[0].note.title, `${sTag}-a`);
   });
 
-  test('Postgres errors answer 500 without their message', async () => {
+  test('Postgres errors answer 500 without their message, and a body off the table 400', async () => {
     // A comment nobody created: read, updated and deleted
     const sPath = '/comment/00000000-0000-0000-0000-000000000000';
     const { status: iRead, body: oRead } = await request(oServer.url, sPath);
@@ -174,10 +174,14 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
     });
 
     // Checks each status, and that the messages name no table or column
-    assert.deepEqual([iRead, iUpdate, iDelete, iConflict, iInvalid], [404, 404, 404, 500, 500]);
+    assert.deepEqual([iRead, iUpdate, iDelete, iConflict], [404, 404, 404, 500]);
     assert.deepEqual(
-      [oRead.message, oConflict.message, oInvalid.message],
-      ['nano.error.notFound', 'nano.error.internal', 'nano.error.internal'],
+      [oRead.message, oConflict.message],
+      ['nano.error.notFound', 'nano.error.internal'],
     );
+
+    // The schema of the table stops the note without its title before Postgres
+    assert.equal(iInvalid, 400);
+    assert.match(oInvalid.message, /^title: /);
   });
 });

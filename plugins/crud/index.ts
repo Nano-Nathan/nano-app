@@ -5,13 +5,13 @@ import type { CrudValidations } from '../types/crud';
 
 /** Automatic CRUD: the tables of `models` of the app's database on `/<model>{/<id>}` */
 export default createPlugin(
-  (options?: { models: NanoObject; validations?: NanoObject<CrudValidations> }) => ({
+  (options?: { models: string[]; validations?: NanoObject<CrudValidations> }) => ({
     name: 'crud',
     // One route per table, by its name in the app's relations
     routes: Object.fromEntries(
-      Object.entries(options?.models ?? {}).map(([sModel, oTable]) => [
+      (options?.models ?? []).map(sModel => [
         `/${sModel}`,
-        route(sModel, oTable, options?.validations?.[sModel]),
+        route(sModel, options?.validations?.[sModel]),
       ]),
     ),
   }),
