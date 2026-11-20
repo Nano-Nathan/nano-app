@@ -89,13 +89,13 @@ describe(
       const { result: oRead } = await oStore.GET(`/note/${oFirst.id}`);
 
       // Filters them, updates the first and filters again
-      const { result: aCreated } = await oStore.QUERY('/note', oQuery);
+      const { values: aCreated } = (await oStore.QUERY('/note', oQuery)).result;
       await oStore.PUT(`/note/${oFirst.id}`, { title: `${sTag}-c` });
-      const { result: aUpdated } = await oStore.QUERY('/note', oQuery);
+      const { values: aUpdated } = (await oStore.QUERY('/note', oQuery)).result;
 
       // Deletes the first and filters again
       await oStore.DELETE(`/note/${oFirst.id}`);
-      const { result: aDeleted } = await oStore.QUERY('/note', oQuery);
+      const { values: aDeleted } = (await oStore.QUERY('/note', oQuery)).result;
 
       // Checks each step, and the last answer kept in the store
       const fnTitles = (aNotes: { title: string }[]) => aNotes.map(oNote => oNote.title);
@@ -103,7 +103,7 @@ describe(
       assert.deepEqual(fnTitles(aCreated), [`${sTag}-a`, `${sTag}-b`]);
       assert.deepEqual(fnTitles(aUpdated), [`${sTag}-b`, `${sTag}-c`]);
       assert.deepEqual(fnTitles(aDeleted), [`${sTag}-b`]);
-      assert.deepEqual(oStore.get('/note', oQuery).result, aDeleted);
+      assert.deepEqual(oStore.get('/note', oQuery).result.values, aDeleted);
     });
   },
 );

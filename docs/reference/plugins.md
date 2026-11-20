@@ -42,7 +42,7 @@ createNanoApp({ plugins: { after: [crud({ models: ['note'] })] } });
 
 | Request                 | Answer                                                 | Permission |
 | ----------------------- | ------------------------------------------------------ | ---------- |
-| `GET /<model>`          | The list in `result`                                   | `read`     |
+| `GET /<model>`          | The list in `result`: `{ values, count }`              | `read`     |
 | `GET /<model>/<id>`     | One record                                             | `read`     |
 | `QUERY /<model>{/<id>}` | The list or one record, with `QueryParams` as the body | `read`     |
 | `POST /<model>`         | The created record                                     | `create`   |
@@ -50,6 +50,7 @@ createNanoApp({ plugins: { after: [crud({ models: ['note'] })] } });
 | `DELETE /<model>/<id>`  | The deleted record                                     | `delete`   |
 
 - `QueryParams` is Drizzle's relational query: `where`, `columns`, `orderBy`, `limit`, `offset`, `with`. Without `limit`, `100`.
+- `count` is how many records the answer brings.
 - Postgres casts `<id>` to the type of the `id` column.
 - A model not in `models` answers `404`. One in `models` but not in the app's relations stops the startup.
 - Permissions are asked only with Better Auth on, and only on the table of the URL. `403` without them.

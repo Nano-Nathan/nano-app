@@ -83,9 +83,10 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
     // Reads the notes without parameters
     const { status, body } = await request(oServer.url, '/note');
 
-    // Checks the list
+    // Checks the list and its count
     assert.equal(status, 200);
-    assert.ok(body.result.length >= 2);
+    assert.ok(body.result.values.length >= 2);
+    assert.equal(body.result.count, body.result.values.length);
   });
 
   test('QUERY filters, orders, pages and picks columns', async () => {
@@ -98,8 +99,8 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
       columns: { title: true },
     });
 
-    // Checks the page and the fields
-    assert.deepEqual(body.result, [{ title: `${sTag}-a` }]);
+    // Checks the page, its fields and its count
+    assert.deepEqual(body.result, { values: [{ title: `${sTag}-a` }], count: 1 });
   });
 
   test('QUERY reads one record by its string id', async () => {
@@ -151,10 +152,11 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
       with: { note: true },
     });
 
-    // Checks the comment and the note it brings
+    // Checks the comment, the note it brings and the count
     assert.equal(status, 200);
-    assert.equal(body.result[0].text, 'first');
-    assert.equal(body.result[0].note.title, `${sTag}-a`);
+    assert.equal(body.result.values[0].text, 'first');
+    assert.equal(body.result.values[0].note.title, `${sTag}-a`);
+    assert.equal(body.result.count, 1);
   });
 
   test('Postgres errors answer 500 without their message, and a body off the table 400', async () => {

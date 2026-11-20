@@ -16,14 +16,17 @@ export default function route(
   sModel: string,
   oValidations: NanoObject<ZodType | undefined> = {},
 ): RouteEntry {
-  // A list of the model, or the record of the id, with Drizzle's relational query of the body
+  // A list of the model with its count, or the record of the id, with Drizzle's relational query
   const fnRead = async (oReq: Request, { db, onBeforeResult }: HandlerParams): ApiPromise => {
     const { id } = oReq.params;
 
-    // An id reads its record; without it, the list
+    // An id reads its record; without it, the list and how many records it brings
     const oRead = id
       ? { page: { where: { id }, limit: 1 }, answer: first }
-      : { page: {}, answer: (aRecords: NanoObject[]) => ({ result: aRecords }) };
+      : {
+          page: {},
+          answer: (values: NanoObject[]) => ({ result: { values, count: values.length } }),
+        };
     const oQuery = { limit: DEFAULT_LIMIT, ...onBeforeResult.body, ...oRead.page };
     return oRead.answer(await db.query[sModel].findMany(oQuery));
   };
