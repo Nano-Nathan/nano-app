@@ -1,26 +1,18 @@
 'use client';
 
 import { createView } from '@nano-app/frontend';
-import { CollectionController } from '@nano-app/controllers';
+import { TableController } from '@nano-app/controllers';
 
-/** Users of the backend store, five per page */
-class UsersPageController extends CollectionController {
-  protected root = '/collection/users';
-  protected path = '/users';
-  protected limit = 5;
+/** Users of the backend store */
+class UsersListController extends TableController {
   protected api = this.stores.backend;
 }
 
-/** Users of the backend store, a page at a time, sortable by name */
-export default createView(UsersPageController, users => (
-  <section>
-    <button onClick={() => users.sort('name')}>name</button>
-    <ul>
-      {(users.items()?.result ?? []).map((oUser: { id: number; name: string }) => (
-        <li key={oUser.id}>{oUser.name}</li>
-      ))}
-    </ul>
-    <button onClick={users.prev}>←</button> {users.page() + 1}{' '}
-    <button onClick={users.next}>→</button>
-  </section>
+/** Users of the backend store, one per item */
+export default createView(UsersListController, users => (
+  <ul>
+    {users.rows().map(oUser => (
+      <li key={oUser.id}>{oUser.name}</li>
+    ))}
+  </ul>
 ));

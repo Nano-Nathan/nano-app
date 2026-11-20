@@ -11,7 +11,7 @@ export default function Page(): ReactNode {
       <h1>nano-app</h1>
       <Counter />
       <Users />
-      <UsersList />
+      <UsersList path="/users" />
       <Errors />
     </main>
   );
