@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, getTableColumns } from 'drizzle-orm';
 import { createRoute, NanoError } from '@nano-app/backend';
 import { ACTIONS, DEFAULT_LIMIT } from '../const';
 import { SCHEMAS } from './const';
@@ -19,15 +19,22 @@ export default function route(
   // A list of the model with its count, or the record of the id, with Drizzle's relational query
   const fnRead = async (oReq: Request, { db, onBeforeResult }: HandlerParams): ApiPromise => {
     const { id } = oReq.params;
+    const { table, body } = onBeforeResult;
+    const { fields, ...oBody } = body;
 
-    // An id reads its record; without it, the list and how many records it brings
+    // The names of the table's columns, when the body asks for them
+    const oFields = fields ? { fields: Object.keys(getTableColumns(table)) } : {};
+
+    // An id reads its record; without it, the list, how many records it brings and its columns
     const oRead = id
       ? { page: { where: { id }, limit: 1 }, answer: first }
       : {
           page: {},
-          answer: (values: NanoObject[]) => ({ result: { values, count: values.length } }),
+          answer: (values: NanoObject[]) => ({
+            result: { values, count: values.length, ...oFields },
+          }),
         };
-    const oQuery = { limit: DEFAULT_LIMIT, ...onBeforeResult.body, ...oRead.page };
+    const oQuery = { limit: DEFAULT_LIMIT, ...oBody, ...oRead.page };
     return oRead.answer(await db.query[sModel].findMany(oQuery));
   };
 

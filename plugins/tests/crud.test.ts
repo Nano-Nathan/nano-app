@@ -103,6 +103,14 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
     assert.deepEqual(body.result, { values: [{ title: `${sTag}-a` }], count: 1 });
   });
 
+  test('QUERY with fields answers the names of the columns of the table', async () => {
+    // Asks the columns of the comments, with no rows
+    const { body } = await send('QUERY', oServer.url, '/comment', { fields: true, limit: 0 });
+
+    // Checks the names, without rows
+    assert.deepEqual(body.result, { values: [], count: 0, fields: ['id', 'text', 'noteId'] });
+  });
+
   test('QUERY reads one record by its string id', async () => {
     // Reads the comment
     const { status, body } = await send('QUERY', oServer.url, `/comment/${sCommentId}`, {});

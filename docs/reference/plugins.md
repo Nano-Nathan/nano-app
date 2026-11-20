@@ -51,6 +51,7 @@ createNanoApp({ plugins: { after: [crud({ models: ['note'] })] } });
 
 - `QueryParams` is Drizzle's relational query: `where`, `columns`, `orderBy`, `limit`, `offset`, `with`. Without `limit`, `100`.
 - `count` is how many records the answer brings.
+- `fields: true` in a `QUERY` body adds `fields` to the list: the names of the table's columns. With `limit: 0`, only them.
 - Postgres casts `<id>` to the type of the `id` column.
 - A model not in `models` answers `404`. One in `models` but not in the app's relations stops the startup.
 - Permissions are asked only with Better Auth on, and only on the table of the URL. `403` without them.
