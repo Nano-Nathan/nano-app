@@ -9,7 +9,7 @@ pnpm add @nano-app/frontend @nano-app/controllers
 - `@nano-app/frontend` 0.16, Next 16.3 and React 19 or newer, as peer dependencies.
 
 ```ts
-import { AuthController, CollectionController } from '@nano-app/controllers';
+import { AuthController, TableController } from '@nano-app/controllers';
 ```
 
 ## Common to every controller
@@ -93,28 +93,15 @@ A form from a list of fields. Props: `name`, `fields`, `onSubmit`, and `componen
 
 A rule between fields (a password and its repeat) goes in `onSubmit`. `name` and `fields` are set once per form.
 
-## CollectionController
+## TableController
 
-A list of a backend path, paged and sorted with `QUERY` (`offset`, `limit`, `orderBy`).
+The rows of a backend path, read with `GET` when its view mounts, for `DataTable` of `@nano-app/mantine`. Props: `path`, the backend path it reads, and `columns` (`Field[]`), optional; its state goes to `/table<path>` of `app`. It reads lists as crud answers them: `result: { values }`. Without `columns` it also reads, once, the names of the table's columns with crud's `fields`.
 
-| Field   | Default  |
-| ------- | -------- |
-| `root`  | abstract |
-| `path`  | abstract |
-| `limit` | `50`     |
-
-| Method             | Description                                                          |
-| ------------------ | -------------------------------------------------------------------- |
-| `load()`           | Reads the current page.                                              |
-| `items()`          | The `ApiResponse` of the current page.                               |
-| `page()`           | The current page, from 0.                                            |
-| `goTo(page)`       | Moves to a page and reads it.                                        |
-| `next()`, `prev()` | Moves one page. `prev` stays on the first.                           |
-| `sort(field)`      | Orders by one field, ascending then descending, from the first page. |
-| `more()`           | Reads the next page and keeps every item read in one answer.         |
-| `pages()`          | The `ApiResponse` of every page `more()` read.                       |
-
-It reads its page when its view mounts. State: `<root>/page`, `<root>/orderBy`, `<root>/pages` of `app`.
+| Method             | Description                                                                             |
+| ------------------ | --------------------------------------------------------------------------------------- |
+| `rows()`           | The rows read: `result.values` of the answer.                                           |
+| `fields()`         | Its columns: `columns`, or every column of the table, each labeled `nano.label.<name>`. |
+| `cell(row, field)` | The text of a cell: the value of the field, as its `format` shows it.                   |
 
 ## NavController
 

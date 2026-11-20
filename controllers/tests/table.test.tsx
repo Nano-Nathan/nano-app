@@ -18,15 +18,26 @@ const PORT = 4201;
 const USERS = ['Ana', 'Beto', 'Ciro'].map((sName, iId) => ({ id: iId, name: sName }));
 const aRequests: string[] = [];
 
-// Backend behind the proxy: answers `GET /api/<store>/users` with every user
+// Backend behind the proxy: answers the users as crud does, or their columns when asked
 const oBackend = createServer((oReq, oRes) => {
-  // Keeps the request, with its store
-  aRequests.push(`${oReq.method} ${oReq.url}`);
+  let sBody = '';
+  oReq.on('data', oChunk => (sBody += oChunk));
+  oReq.on('end', () => {
+    // Keeps the request, with its store and its body
+    aRequests.push(`${oReq.method} ${oReq.url} ${sBody}`.trim());
 
-  // Answers the list as crud does
-  const sAnswer = JSON.stringify({ success: true, result: { values: USERS, hasMore: false } });
-  oRes.writeHead(200, { 'content-type': 'application/json' }).end(sAnswer);
+    // The columns without rows when asked, or every user
+    const isFields = JSON.parse(sBody || '{}').fields;
+    const oResult = isFields
+      ? { values: [], count: 0, fields: ['id', 'name'] }
+      : { values: USERS, count: USERS.length };
+    const sAnswer = JSON.stringify({ success: true, result: oResult });
+    oRes.writeHead(200, { 'content-type': 'application/json' }).end(sAnswer);
+  });
 });
+
+// Columns a view gives: the name only
+const COLUMNS = [{ name: 'name' }];
 
 /** View of a table: the names of its rows, the name of a field shown by `cell` */
 function view(users: TableController): ReactNode {
@@ -61,26 +72,47 @@ describe('table', () => {
   });
 
   test('reads the rows of its path when the view mounts, each cell as its format shows it', async () => {
-    // Renders the users
+    // Renders the users with the columns of the view
     const Users = createView(TableController, view);
-    renderApp(<Users path="/users" />);
+    renderApp(<Users path="/users" columns={COLUMNS} />);
 
+    // Reads only the rows: the view gave its columns
     await expectNames('@Ana,@Beto,@Ciro');
     assert.deepEqual(aRequests, ['GET /api/api/users']);
+  });
+
+  test('without columns it reads the names of the table once, beside the rows', async () => {
+    // Renders the names of its fields
+    const Users = createView(TableController, users => (
+      <output>
+        {users
+          .fields()
+          .map(oField => oField.name)
+          .join(',')}
+      </output>
+    ));
+    renderApp(<Users path="/users" />);
+
+    // The columns of the table, read once with no rows
+    await expectNames('id,name');
+    assert.deepEqual([...aRequests].sort(), [
+      'GET /api/api/users',
+      'QUERY /api/api/users {"fields":true,"limit":0}',
+    ]);
   });
 
   test('isBusy is on only while a request of its own controller is out', async () => {
     // Renders the users and a table of another path that requests nothing
     class IdleController extends TableController {
-      public onMount(): Promise<ApiResponse> {
-        return Promise.resolve({});
+      public onMount(): Promise<ApiResponse[]> {
+        return Promise.resolve([]);
       }
     }
     const Users = createView(TableController, users => <span>{`users ${users.isBusy()}`}</span>);
     const Idle = createView(IdleController, idle => <span>{`idle ${idle.isBusy()}`}</span>);
     renderApp(
       <>
-        <Users path="/users" />
+        <Users path="/users" columns={COLUMNS} />
         <Idle path="/idle" />
       </>,
     );
@@ -97,7 +129,7 @@ describe('table', () => {
       protected api = this.stores.admin;
     }
     const Users = createView(AdminUsersController, view);
-    renderApp(<Users path="/users" />);
+    renderApp(<Users path="/users" columns={COLUMNS} />);
     await expectNames('@Ana,@Beto,@Ciro');
 
     assert.deepEqual(aRequests, ['GET /api/admin/users']);
