@@ -52,13 +52,13 @@ Sign-up, sign-in and sign-out with Better Auth of the `api` store's backend.
 
 The controller of a field view. Props: `form` (the form's name) and `field` (its config).
 
-| Method          | Description                                                    |
-| --------------- | -------------------------------------------------------------- |
-| `value()`       | The value kept, through `format`.                              |
-| `change(value)` | Keeps the value, through `parse`, and validates it.            |
-| `error()`       | The text of the first rule the value breaks.                   |
-| `label()`       | The text of the field's `label` key.                           |
-| `options()`     | The `result` of `GET options.path`, read when the view mounts. |
+| Method          | Description                                                           |
+| --------------- | --------------------------------------------------------------------- |
+| `value()`       | The value kept, through `format`.                                     |
+| `change(value)` | Keeps the value, through `parse`, and validates it.                   |
+| `error()`       | The text of the first rule the value breaks.                          |
+| `label()`       | The text of the field's `label` key.                                  |
+| `options()`     | The `result.values` of `GET options.path`, read when the view mounts. |
 
 ### FormField
 

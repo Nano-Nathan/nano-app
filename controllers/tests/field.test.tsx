@@ -19,7 +19,10 @@ const oBackend = createServer((_oReq, oRes) => {
     { id: 1, name: 'Admin' },
     { id: 2, name: 'User' },
   ];
-  const sAnswer = JSON.stringify({ success: true, result: aRoles });
+  const sAnswer = JSON.stringify({
+    success: true,
+    result: { values: aRoles, count: 2 },
+  });
   oRes.writeHead(200, { 'content-type': 'application/json' }).end(sAnswer);
 });
 

@@ -57,10 +57,10 @@ export default class FieldController extends ApiController {
     return validate(this.field(), oValue);
   }
 
-  /** The items read for its options, as the backend gave them */
+  /** The items read for its options, from the list the backend gave */
   public options(): NanoObject[] {
     const { path } = this.field().options ?? {};
-    return path ? (this.api.get(path)?.result ?? []) : [];
+    return path ? (this.api.get(path)?.result?.values ?? []) : [];
   }
 
   /** Its config, from the props */
