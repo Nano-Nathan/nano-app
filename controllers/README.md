@@ -12,16 +12,11 @@ pnpm add @nano-app/frontend @nano-app/controllers
 'use client';
 
 import { createView } from '@nano-app/frontend';
-import { CollectionController } from '@nano-app/controllers';
+import { TableController } from '@nano-app/controllers';
 
-class UsersController extends CollectionController {
-  protected root = '/collection/users';
-  protected path = '/users';
-}
-
-export default createView(UsersController, users => (
+export default createView(TableController, users => (
   <ul>
-    {users.items()?.result?.map(oUser => (
+    {users.rows().map(oUser => (
       <li key={oUser.id}>{oUser.name}</li>
     ))}
   </ul>

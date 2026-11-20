@@ -22,10 +22,8 @@ class AuditedAuthController extends AuthController {
 A controller's options are `protected` fields. Set them in the subclass:
 
 ```ts
-class UsersController extends CollectionController {
-  protected root = '/collection/users';
-  protected path = '/users';
-  protected limit = 20;
+class UsersController extends TableController {
+  protected api = this.stores.admin;
 }
 ```
 

@@ -40,12 +40,12 @@ import * as schema from './db/schema.ts';
 
 createNanoApp({
   database: { relations: defineRelations(schema), push: true },
-  plugins: { before: [health()], after: [crud({ models: { note: schema.note } })] },
+  plugins: { before: [health()], after: [crud({ models: ['note'] })] },
 });
 ```
 
 - `database` turns on the database. `push: true` creates the `note` table when the backend starts.
-- `crud` is the official plugin that gives a REST API for each table in `models`.
+- `crud` is the official plugin that gives a REST API for each table in `models`, by its name in `defineRelations`.
 
 Save the file. The backend restarts, creates the table and logs the paths it mounted.
 
@@ -68,7 +68,7 @@ curl http://localhost:3000/note
 ```
 
 ```json
-{ "success": true, "result": [{ "id": 1, "title": "First note" }] }
+{ "success": true, "result": { "values": [{ "id": 1, "title": "First note" }], "count": 1 } }
 ```
 
 You did not write a route: `crud` answers `GET`, `QUERY`, `POST`, `PUT` and `DELETE` on `/note`.

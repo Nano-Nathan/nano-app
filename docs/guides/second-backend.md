@@ -28,10 +28,8 @@ await this.stores.payments.POST('/charges', { amount: 100 });
 A ready controller reads `api` by default. Move it to the other store with a field:
 
 ```ts
-class ChargesController extends CollectionController {
+class ChargesController extends TableController {
   protected api = this.stores.payments;
-  protected root = '/collection/charges';
-  protected path = '/charges';
 }
 ```
 

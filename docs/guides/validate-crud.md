@@ -1,10 +1,10 @@
 # Validate crud bodies
 
-By default `crud` sends each body to Drizzle as it came: a `POST` can write any column, and a `QUERY` can ask for any `limit`. Use this guide to decide what a body may bring.
+By default `crud` checks the body of `POST` and `PUT` against the columns of the table, with `createInsertSchema` and `createUpdateSchema` of `drizzle-orm/zod`: a `POST` can still write any column, `id` included. A `QUERY` goes to Drizzle as it came, with any `limit` and any `with`. Use this guide to give a model rules of its own.
 
-## Build the schemas from the table
+## Set the rules of a model
 
-`drizzle-orm/zod` builds zod schemas from a table:
+A validation of an action replaces the default one. Build it from the table:
 
 ```bash
 pnpm --filter backend add zod
@@ -16,7 +16,7 @@ import { z } from 'zod';
 import * as schema from './db/schema.ts';
 
 crud({
-  models: { note: schema.note },
+  models: ['note'],
   validations: {
     note: {
       create: createInsertSchema(schema.note).omit({ id: true }),
@@ -27,7 +27,7 @@ crud({
 });
 ```
 
-- `create` checks the body of `POST`, `update` the body of `PUT`, `read` the body of `QUERY` (and `{}` for `GET`).
+- `create` checks the body of `POST`, `update` the body of `PUT`, `read` the body of `QUERY` (and `{}` for `GET`). Without `create` or `update`, the table's schema checks them.
 - A body that fails answers `400` with the field and zod's message.
 - A body that passes goes on as zod returns it: keys the schema does not name are dropped, and defaults are set.
 

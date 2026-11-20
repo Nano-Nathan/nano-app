@@ -31,17 +31,14 @@ Create `frontend/src/components/Notes.tsx`:
 
 import { Button, Card, Stack, Text } from '@mantine/core';
 import { createView } from '@nano-app/frontend';
-import { CollectionController } from '@nano-app/controllers';
+import { TableController } from '@nano-app/controllers';
 import { Form } from '@nano-app/mantine';
 import { z } from 'zod';
 
-class NotesController extends CollectionController {
-  protected root = '/collection/notes';
-  protected path = '/note';
-
+class NotesController extends TableController {
   async add(oValues: { title: string }): Promise<unknown> {
     await this.api.POST('/note', oValues);
-    return this.load();
+    return this.GET(this.props.path);
   }
 }
 
@@ -60,7 +57,7 @@ export default createView(NotesController, notes => (
     >
       <Button type="submit">{notes.text('notes.add')}</Button>
     </Form>
-    {notes.items()?.result?.map(oNote => (
+    {notes.rows().map(oNote => (
       <Card key={oNote.id}>
         <Text>{oNote.title}</Text>
       </Card>
@@ -71,7 +68,7 @@ export default createView(NotesController, notes => (
 
 What each piece does:
 
-- `CollectionController` reads a page of `path` from the backend when the view mounts. `items()` gives the answer it kept.
+- `TableController` reads the rows of its `path` prop from the backend when the view mounts. `rows()` gives the notes it read.
 - `add` is a method you add: it posts the values and reads the list again.
 - `Form` renders a field per item of `fields`, checks each `validation`, and calls `onSubmit` with the values only when they pass.
 - `notes.text('notes.add')` turns a key into the text of the current locale.
@@ -88,7 +85,7 @@ import Notes from '@/components/Notes';
 export default function Home(): ReactNode {
   return (
     <Container py="xl">
-      <Notes />
+      <Notes path="/note" />
     </Container>
   );
 }

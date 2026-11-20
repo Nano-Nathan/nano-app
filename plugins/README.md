@@ -13,7 +13,7 @@ import { createNanoApp } from '@nano-app/backend';
 import crud from '@nano-app/plugins/crud';
 import health from '@nano-app/plugins/health';
 
-createNanoApp({ plugins: { before: [health()], after: [crud({ models: { note } })] } });
+createNanoApp({ plugins: { before: [health()], after: [crud({ models: ['note'] })] } });
 ```
 
 A plugin of your own is a `createPlugin` factory: see [Write a plugin](https://nano-app-docs.pages.dev/guides/write-a-plugin). A pull request that adds `plugins/<name>` is welcome only when a maintainer asked for that plugin in an issue.

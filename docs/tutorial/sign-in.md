@@ -23,7 +23,7 @@ Add `auth` to `backend/src/app.ts`:
 createNanoApp({
   database: { relations: defineRelations(schema), push: true },
   auth: { emailAndPassword: { enabled: true }, trustedOrigins: ['http://localhost:3001'] },
-  plugins: { before: [health()], after: [crud({ models: { note: schema.note } })] },
+  plugins: { before: [health()], after: [crud({ models: ['note'] })] },
 });
 ```
 
