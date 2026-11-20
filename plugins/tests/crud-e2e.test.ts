@@ -84,18 +84,18 @@ describe(
       };
 
       // Creates two notes and reads the first
-      const { result: oFirst } = await oStore.POST('/note', { title: `${sTag}-a` });
+      const oFirst = (await oStore.POST('/note', { title: `${sTag}-a` })).result;
       await oStore.POST('/note', { title: `${sTag}-b` });
-      const { result: oRead } = await oStore.GET(`/note/${oFirst.id}`);
+      const oRead = (await oStore.GET(`/note/${oFirst.id}`)).result;
 
       // Filters them, updates the first and filters again
-      const { values: aCreated } = (await oStore.QUERY('/note', oQuery)).result;
+      const aCreated = (await oStore.QUERY('/note', oQuery)).result.values;
       await oStore.PUT(`/note/${oFirst.id}`, { title: `${sTag}-c` });
-      const { values: aUpdated } = (await oStore.QUERY('/note', oQuery)).result;
+      const aUpdated = (await oStore.QUERY('/note', oQuery)).result.values;
 
       // Deletes the first and filters again
       await oStore.DELETE(`/note/${oFirst.id}`);
-      const { values: aDeleted } = (await oStore.QUERY('/note', oQuery)).result;
+      const aDeleted = (await oStore.QUERY('/note', oQuery)).result.values;
 
       // Checks each step, and the last answer kept in the store
       const fnTitles = (aNotes: { title: string }[]) => aNotes.map(oNote => oNote.title);

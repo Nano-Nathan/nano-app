@@ -26,7 +26,7 @@ export default function createPage<P>(
   oOptions: PageOptions,
   fnView: PageView<P>,
 ): (oProps: P) => Promise<ReactNode> {
-  const { store = API_NAME, auth = true, redirect: sRedirect } = oOptions;
+  const { store = API_NAME, auth = true } = oOptions;
   return async function Page(oProps: P): Promise<ReactNode> {
     // Fails when the store has no backend URL
     const sUrl = URLS.get(store);
@@ -38,7 +38,7 @@ export default function createPage<P>(
 
     // Redirects unless the session is the one the page asks; the view gets it, `{}` without one
     const oSession = await getSession(sUrl);
-    if (auth !== Boolean(oSession)) redirect(sRedirect);
+    if (auth !== Boolean(oSession)) redirect(oOptions.redirect);
     return fnView({ ...oProps, session: oSession ?? {} });
   };
 }

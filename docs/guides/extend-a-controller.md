@@ -41,7 +41,7 @@ Every controller works with any view. Write one with `createView`:
 import { createView } from '@nano-app/frontend';
 import { FieldController } from '@nano-app/controllers';
 
-export default createView(FieldController, (input, { field: oField }) => (
+export default createView(FieldController, (input, { field }) => (
   <label>
     {input.label()}
     <input value={input.value() ?? ''} onChange={oEvent => input.change(oEvent.target.value)} />

@@ -72,7 +72,9 @@ The views of `@nano-app/mantine`, and of any app on it:
 
 ### Names
 
-Prefix by type on every internal name: local variables, parameters, class fields, loop and callback variables, `catch`, and Express's `oReq`, `oRes`, `fnNext`. No prefix on: public API (exported types and their fields, plugin options, responses), names destructured from it (`const { name, routesDir } = oConfig`), declared functions and methods, module constants (`PRIVATE_NETWORKS`), type parameters (`T`, `DB`) and tool configs (`tsdown.config.ts`).
+Prefix by type on every internal name: local variables, parameters, class fields, loop and callback variables, `catch`, and Express's `oReq`, `oRes`, `fnNext`. No prefix on: public API (exported types and their fields, plugin options, responses), names destructured from any object (`const { name, routesDir } = oConfig`), declared functions and methods, module constants (`PRIVATE_NETWORKS`), type parameters (`T`, `DB`) and tool configs (`tsdown.config.ts`).
+
+A destructuring never renames: each name keeps its key. When two would clash, read them from their object (`oRead.status`); a reserved word is the one exception (`public: isPublic`).
 
 | Prefix | Type | Example |
 |---|---|---|

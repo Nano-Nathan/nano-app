@@ -34,14 +34,14 @@ const LOGIN: FormField[] = [
 ];
 
 // View of a field with an input and its error
-const Field = createView(FieldController, (input, { field: oField }) => (
+const Field = createView(FieldController, (input, { field }) => (
   <label>
     <input
-      aria-label={oField.name}
+      aria-label={field.name}
       value={input.value() ?? ''}
       onChange={oEvent => input.change(oEvent.target.value)}
     />
-    <output>{`${oField.name}: ${input.error() ?? 'ok'}`}</output>
+    <output>{`${field.name}: ${input.error() ?? 'ok'}`}</output>
   </label>
 ));
 

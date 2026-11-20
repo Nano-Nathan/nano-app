@@ -114,23 +114,23 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
 
   test('POST creates, PUT updates the fields sent and DELETE deletes', async () => {
     // Creates a comment on the first note
-    const { body: oCreated } = await send('POST', oServer.url, '/comment', {
+    const oCreated = await send('POST', oServer.url, '/comment', {
       text: 'second',
       noteId: iNoteId,
     });
-    const sPath = `/comment/${oCreated.result.id}`;
+    const sPath = `/comment/${oCreated.body.result.id}`;
 
     // Updates only its text
-    const { body: oUpdated } = await send('PUT', oServer.url, sPath, { text: 'edited' });
+    const oUpdated = await send('PUT', oServer.url, sPath, { text: 'edited' });
 
     // Deletes it, then reads it
-    const { body: oDeleted } = await request(oServer.url, sPath, { method: 'DELETE' });
+    const oDeleted = await request(oServer.url, sPath, { method: 'DELETE' });
     const { status } = await request(oServer.url, sPath);
 
     // Checks each change
-    assert.equal(oCreated.result.text, 'second');
-    assert.deepEqual(oUpdated.result, { ...oCreated.result, text: 'edited' });
-    assert.equal(oDeleted.result.text, 'edited');
+    assert.equal(oCreated.body.result.text, 'second');
+    assert.deepEqual(oUpdated.body.result, { ...oCreated.body.result, text: 'edited' });
+    assert.equal(oDeleted.body.result.text, 'edited');
     assert.equal(status, 404);
   });
 
@@ -162,28 +162,24 @@ describe('crud', { skip: !process.env.DATABASE_URL && 'DATABASE_URL is not set' 
   test('Postgres errors answer 500 without their message, and a body off the table 400', async () => {
     // A comment nobody created: read, updated and deleted
     const sPath = '/comment/00000000-0000-0000-0000-000000000000';
-    const { status: iRead, body: oRead } = await request(oServer.url, sPath);
-    const { status: iUpdate } = await send('PUT', oServer.url, sPath, { text: 'edited' });
-    const { status: iDelete } = await request(oServer.url, sPath, { method: 'DELETE' });
+    const oRead = await request(oServer.url, sPath);
+    const oUpdate = await send('PUT', oServer.url, sPath, { text: 'edited' });
+    const oDelete = await request(oServer.url, sPath, { method: 'DELETE' });
 
     // A comment of a note that does not exist, and a note without its title
-    const { status: iConflict, body: oConflict } = await send('POST', oServer.url, '/comment', {
-      text: 'orphan',
-      noteId: 0,
-    });
-    const { status: iInvalid, body: oInvalid } = await send('POST', oServer.url, '/note', {
-      name: 'unknown field',
-    });
+    const oConflict = await send('POST', oServer.url, '/comment', { text: 'orphan', noteId: 0 });
+    const oInvalid = await send('POST', oServer.url, '/note', { name: 'unknown field' });
 
     // Checks each status, and that the messages name no table or column
-    assert.deepEqual([iRead, iUpdate, iDelete, iConflict], [404, 404, 404, 500]);
+    const aStatuses = [oRead, oUpdate, oDelete, oConflict].map(oAnswer => oAnswer.status);
+    assert.deepEqual(aStatuses, [404, 404, 404, 500]);
     assert.deepEqual(
-      [oRead.message, oConflict.message],
+      [oRead.body.message, oConflict.body.message],
       ['nano.error.notFound', 'nano.error.internal'],
     );
 
     // The schema of the table stops the note without its title before Postgres
-    assert.equal(iInvalid, 400);
-    assert.match(oInvalid.message, /^title: /);
+    assert.equal(oInvalid.status, 400);
+    assert.match(oInvalid.body.message, /^title: /);
   });
 });
