@@ -61,6 +61,7 @@ export default createShell({
 | `theme`  | on      | The switch of the color scheme.                             |
 | `logout` | on      | The sign-out.                                               |
 
+- A header card above the page shows the button that opens the navbar and, in the middle, the text of the current page's link.
 - A group shows its links under it when clicked; closed, clicking it opens the navbar with them.
 - A link with `roles` shows only to a user whose `role` (Better Auth's admin plugin) is one of them.
 - It asks the session with `createPage`. Each page keeps its own `createPage`: Next does not render a layout again on navigation.

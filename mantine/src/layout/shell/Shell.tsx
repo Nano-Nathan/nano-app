@@ -1,6 +1,16 @@
 'use client';
 
-import { ActionIcon, AppShell, Avatar, CloseButton, NavLink, Paper, Stack } from '@mantine/core';
+import {
+  ActionIcon,
+  AppShell,
+  Avatar,
+  CloseButton,
+  Grid,
+  NavLink,
+  Paper,
+  Stack,
+  Title,
+} from '@mantine/core';
 import { IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand } from '@tabler/icons-react';
 import { NavController } from '@nano-app/controllers';
 import { createView } from '@nano-app/frontend';
@@ -86,19 +96,31 @@ export default createView(
           </Paper>
         </AppShell.Navbar>
         <AppShell.Main display="flex">
-          <Paper withBorder shadow="xs" radius="md" p="md" flex={1}>
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              size="lg"
-              mb="xs"
-              aria-label={sMenu}
-              onClick={nav.toggle}
-            >
-              {oShell.icon}
-            </ActionIcon>
-            {children}
-          </Paper>
+          <Stack gap={0} flex={1} miw={0}>
+            <Paper withBorder shadow="xs" radius="md" p="xs">
+              <Grid align="center">
+                <Grid.Col span={2}>
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
+                    size="lg"
+                    aria-label={sMenu}
+                    onClick={nav.toggle}
+                  >
+                    {oShell.icon}
+                  </ActionIcon>
+                </Grid.Col>
+                <Grid.Col span={8}>
+                  <Title order={3} ta="center">
+                    {nav.title(links)}
+                  </Title>
+                </Grid.Col>
+              </Grid>
+            </Paper>
+            <Paper withBorder shadow="xs" radius="md" p="md" flex={1}>
+              {children}
+            </Paper>
+          </Stack>
         </AppShell.Main>
       </AppShell>
     );
