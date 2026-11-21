@@ -82,7 +82,7 @@ import { createShell } from '@nano-app/mantine/server';
 
 export default createShell({
   title: 'notes',
-  links: [{ href: '/', label: 'nano.shell.home', icon: <IconNotes /> }],
+  links: [{ href: '/', label: 'nano.page.', icon: <IconNotes /> }],
 });
 ```
 

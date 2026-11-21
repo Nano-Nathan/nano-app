@@ -108,7 +108,7 @@ The rows of a backend path, read with `GET` when its view mounts, for `DataTable
 | Method               | Description                                                            |
 | -------------------- | ---------------------------------------------------------------------- |
 | `isActive(href)`     | Whether `href` is the current page.                                    |
-| `title(links)`       | Text of the link of the current page, also inside a group.             |
+| `title()`            | Text of the current page: the key `nano.page<path with dots>`.         |
 | `isGroupOpen(label)` | Whether the group of `label` shows its links, only with the menu open. |
 | `toggleGroup(label)` | Opens the menu with the group of `label` shown, or hides it.           |
 | `close()`            | Closes the menu.                                                       |

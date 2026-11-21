@@ -40,7 +40,7 @@ export default createShell({
   title: 'finance',
   logo: '/icon.png',
   links: [
-    { href: '/', label: 'nano.shell.home', icon: <IconHome /> },
+    { href: '/', label: 'nano.page.', icon: <IconHome /> },
     { href: '/accounts', label: 'accounts.title', icon: <IconCash /> },
   ],
   items: { theme: false },
@@ -61,13 +61,13 @@ export default createShell({
 | `theme`  | on      | The switch of the color scheme.                             |
 | `logout` | on      | The sign-out.                                               |
 
-- A header card above the page shows the button that opens the navbar and, in the middle, the text of the current page's link.
+- A header card above the page shows the button that opens the navbar and, in the middle, the title of the page: the text of `nano.page` and its path with dots (`/admin/users` → `nano.page.admin.users`, `/` → `nano.page.`).
 - A group shows its links under it when clicked; closed, clicking it opens the navbar with them.
 - A link with `roles` shows only to a user whose `role` (Better Auth's admin plugin) is one of them.
 - It asks the session with `createPage`. Each page keeps its own `createPage`: Next does not render a layout again on navigation.
 - The navbar is closed by default: icons only on a desktop, hidden on a phone. A button at the top left opens it. Following a link closes it.
 - Its state is the flag of `NavController`, at `/nav/isToggled` of `app`.
-- Texts: `nano.shell.home`, `nano.shell.theme`, `nano.shell.logout`, `nano.shell.menu`; for the admin group, `nano.admin.title` and `nano.admin.users`.
+- Texts: `nano.shell.theme`, `nano.shell.logout`, `nano.shell.menu`, and `nano.admin.title` for the admin group. The core texts have the titles `nano.page.` (`/`) and `nano.page.admin.users`; the app adds those of its pages, and its texts go over the core's.
 
 ## Components
 

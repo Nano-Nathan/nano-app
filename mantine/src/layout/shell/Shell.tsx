@@ -112,7 +112,7 @@ export default createView(
                 </Grid.Col>
                 <Grid.Col span={8}>
                   <Title order={3} ta="center">
-                    {nav.title(links)}
+                    {nav.title()}
                   </Title>
                 </Grid.Col>
               </Grid>

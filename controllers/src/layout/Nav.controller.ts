@@ -1,5 +1,4 @@
 import AppController from '../utils/AppController';
-import type { NanoObject } from '@nano-app/core/types/objects';
 
 /** Navigation of the app: the link of the current page, the menu opened with its flag and its group shown */
 export default class NavController extends AppController {
@@ -11,14 +10,9 @@ export default class NavController extends AppController {
     return this.pathname === sHref;
   }
 
-  /** Text of the link of the current page, also inside a group; empty when no link leads to it */
-  public title(aLinks: NanoObject[]): string {
-    for (const { href, label, links = [] } of aLinks) {
-      // The link of the page, or the one inside its group
-      const sTitle = href && this.isActive(href) ? this.text(label) : this.title(links);
-      if (sTitle) return sTitle;
-    }
-    return '';
+  /** Text of the current page: its key of the texts, `nano.page` and its path with dots (`nano.page.admin.users`) */
+  public title(): string {
+    return this.text(`nano.page${this.pathname.replaceAll('/', '.')}`);
   }
 
   /** Whether a group of links shows them: its label is the open one, and the menu is open */
