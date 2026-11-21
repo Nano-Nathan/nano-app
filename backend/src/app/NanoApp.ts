@@ -1,6 +1,7 @@
 import express, { type Express } from 'express';
 import 'dotenv/config';
 import { Logger } from '@nano-app/core';
+import Plugin from '../plugins/Plugin';
 import PluginManager from '../plugins/PluginManager';
 import Auth from '../auth/Auth';
 import { PACKAGES, PORT, SETTINGS } from '../const';
@@ -51,12 +52,15 @@ export default class NanoApp {
       this.oApp.use(fnPackage);
     }
 
-    // Better Auth's endpoints, when it is on, then the plugins: before, the app's and after
+    // Better Auth's endpoints, when it is on, after nano-app's routes over it
     const aAuth = await Auth.init(this.oConfig.auth);
+    const aAuthRoutes = await new Plugin(Auth.plugin()).build();
+
+    // Then the plugins: before, the app's and after
     const aPlugins = await PluginManager.build(this.oConfig);
 
     // Registers them in order: a route on its path, a middleware on every request
-    for (const { path, handler } of [...aAuth, ...aPlugins]) {
+    for (const { path, handler } of [...aAuthRoutes, ...aAuth, ...aPlugins]) {
       if (path) {
         Logger.info(path);
         this.oApp.all(path, handler);

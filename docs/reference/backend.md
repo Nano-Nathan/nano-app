@@ -175,6 +175,20 @@ A route asks for permissions of Better Auth's [admin plugin](https://www.better-
 - Without any, a session is enough.
 - A public route checks none. Without Better Auth nothing checks them.
 
+### Users
+
+With the admin plugin in `auth.plugins`, `<basePath>/users` manages its users with the contract of crud, for `DataTable` of `@nano-app/mantine`:
+
+| Request                   | Answer                                    | Permission     |
+| ------------------------- | ----------------------------------------- | -------------- |
+| `GET /auth/users`         | The list in `result`: `{ values, count }` | `user: list`   |
+| `POST /auth/users`        | The created user                          | `user: create` |
+| `PUT /auth/users/<id>`    | The updated user                          | `user: update` |
+| `DELETE /auth/users/<id>` | `{ success }`                             | `user: delete` |
+
+- Each one calls the admin plugin with the session of the request: Better Auth checks it too.
+- `POST` takes `email`, `name`, `role` and, optionally, `password`; `PUT` the fields to change.
+
 ## createPlugin
 
 ```ts

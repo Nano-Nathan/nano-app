@@ -32,3 +32,4 @@ An app passes a users model to crud, and the admin page lists, creates, updates 
 
 - 2026-11-19 · claude · Written from the design of the entity maintainer (table, form and admin page), which leaves auth out for now.
 - 2026-11-20 · claude · Updated to crud's models by name and lists as `{ values, count }`.
+- 2026-11-21 · claude · Users no longer go through crud: the backend mounts `<auth basePath>/users` with crud's contract when the admin plugin is on (`backend/src/auth/users.ts`). This feature stays for other sources.
