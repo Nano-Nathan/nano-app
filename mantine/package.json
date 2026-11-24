@@ -52,9 +52,9 @@
   },
   "devDependencies": {
     "@happy-dom/global-registrator": "^21.0.3",
-    "@mantine/core": "^9.8.1",
-    "@mantine/hooks": "^9.8.1",
-    "@mantine/notifications": "^9.8.1",
+    "@mantine/core": "^9.8.2",
+    "@mantine/hooks": "^9.8.2",
+    "@mantine/notifications": "^9.8.2",
     "@nano-app/controllers": "workspace:*",
     "@nano-app/frontend": "workspace:*",
     "@testing-library/dom": "^10.4.2",
