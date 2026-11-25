@@ -52,26 +52,28 @@ Sign-up, sign-in and sign-out with Better Auth of the `api` store's backend.
 
 The controller of a field view. Props: `form` (the form's name) and `field` (its config).
 
-| Method          | Description                                                                                               |
-| --------------- | --------------------------------------------------------------------------------------------------------- |
-| `value()`       | The value kept, through `format`.                                                                         |
-| `change(value)` | Keeps the value, through `parse`, and validates it.                                                       |
-| `error()`       | The text of the first rule the value breaks.                                                              |
-| `label()`       | The text of the field's `label` key.                                                                      |
-| `options()`     | The items of `GET options.path` (`result.values`, read when the view mounts) as `{ value, label }` texts. |
+| Method          | Description                                                                                                                                               |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `value()`       | The value kept, through `format`.                                                                                                                         |
+| `change(value)` | Keeps the value, through `parse`, and validates it.                                                                                                       |
+| `error()`       | The text of the first rule the value breaks.                                                                                                              |
+| `label()`       | The text of the field's `label` key.                                                                                                                      |
+| `placeholder()` | The text of `placeholder`, else of `nano.form.placeholder.<type>` (`text`, `email`, `password`, `number`, `select`, `date`; any other type takes `text`). |
+| `options()`     | The items of `GET options.path` (`result.values`, read when the view mounts) as `{ value, label }` texts.                                                 |
 
 ### FormField
 
-| Key          | Description                                                                                                                                     |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`       | Key of its value.                                                                                                                               |
-| `type`       | Type of its view, `text` by default. `number` keeps a numeric text as a number.                                                                 |
-| `label`      | Key of the text of its label.                                                                                                                   |
-| `validation` | A zod schema. Its messages are keys of the texts.                                                                                               |
-| `format`     | What the view shows of the value kept.                                                                                                          |
-| `parse`      | What to keep of what the view gives.                                                                                                            |
-| `options`    | `{ path, value, label }`: the items of a select, from the `api` store; `value` and `label` are the keys of an item, `id` and `name` by default. |
-| any other    | Passed as is to its view (`disabled`).                                                                                                          |
+| Key           | Description                                                                                                                                     |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`        | Key of its value.                                                                                                                               |
+| `type`        | Type of its view, `text` by default. `number` keeps a numeric text as a number.                                                                 |
+| `label`       | Key of the text of its label.                                                                                                                   |
+| `placeholder` | Key of the text of its placeholder; by default the one of its type.                                                                             |
+| `validation`  | A zod schema. Its messages are keys of the texts.                                                                                               |
+| `format`      | What the view shows of the value kept.                                                                                                          |
+| `parse`       | What to keep of what the view gives.                                                                                                            |
+| `options`     | `{ path, value, label }`: the items of a select, from the `api` store; `value` and `label` are the keys of an item, `id` and `name` by default. |
+| any other     | Passed as is to its view (`disabled`).                                                                                                          |
 
 - An empty text or `null` is kept as `undefined`.
 - A `select` keeps the value of the item it chose, of its own type (a numeric `id` as a number).
@@ -88,6 +90,7 @@ A form from a list of fields. Props: `name`, `fields`, `onSubmit`, and `componen
 
 | Method          | Description                                                                                              |
 | --------------- | -------------------------------------------------------------------------------------------------------- |
+| `isLoading()`   | Whether its rows are still to come: a request is out, or none has answered yet.                          |
 | `fields()`      | The view of each field, in order: the view of its `type`, or of `text`. Neither stops the render.        |
 | `submit(event)` | Stops the browser's submit, validates every field, and calls `onSubmit(values)` when none breaks a rule. |
 | `reset()`       | Empties the values and the errors.                                                                       |
@@ -96,7 +99,7 @@ A rule between fields (a password and its repeat) goes in `onSubmit`. `name` and
 
 ## TableController
 
-The rows of a backend path, read with `GET` when its view mounts, and their form to create, edit and delete them, for `DataTable` of `@nano-app/mantine`. Props: `path`, the backend path it reads, and `columns` (`Field[]`), optional; its state goes to `/table<path>` of `app`. It reads lists as crud answers them: `result: { values }`. Without `columns` it also reads, once, the names of the table's columns with crud's `fields`.
+The rows of a backend path, read with `GET` when its view mounts, and their form to create, edit and delete them, for `DataTable` of `@nano-app/mantine`. Props: `path`, the backend path it reads, and `columns` (`FormField[]`: the columns, and the fields of its form with their `type` and `validation`), optional; its state goes to `/table<path>` of `app`. It reads lists as crud answers them: `result: { values }`. Without `columns` it also reads, once, the names of the table's columns with crud's `fields`.
 
 | Method               | Description                                                                                                           |
 | -------------------- | --------------------------------------------------------------------------------------------------------------------- |
@@ -104,12 +107,24 @@ The rows of a backend path, read with `GET` when its view mounts, and their form
 | `fields()`           | Its columns: `columns`, or every column of the table, each labeled `nano.label.<name>`.                               |
 | `cell(row, field)`   | The text of a cell: the value of the field, as its `format` shows it.                                                 |
 | `open(action, row?)` | Opens over `row` the form (`edit`, with its values; empty without it) or the confirmation of its deletion (`delete`). |
-| `opened(action)`     | The row of `action` while it is open: `{}` for a new one, `undefined` while closed.                                   |
-| `save(values)`       | `PUT <path>/<id>` of the row of the form, or `POST <path>` for a new one.                                             |
-| `remove()`           | `DELETE <path>/<id>` of the row of the confirmation.                                                                  |
+| `opened(action)`     | Whether the form (`edit`) or the confirmation (`delete`) is open.                                                     |
+| `row()`              | The row last opened, `{}` for a new one. It stays after `close()`, so a view keeps its title while it fades out.      |
+| `save(values)`       | `PUT <path>/<id>` of `row()`, or `POST <path>` for a new one.                                                         |
+| `remove()`           | `DELETE <path>/<id>` of `row()`.                                                                                      |
 | `close()`            | Closes the form or the confirmation.                                                                                  |
 
 After a write that succeeds it closes the form and reads the rows again. The form's state is `/form/table<path>` of `app`.
+
+## ProgressController
+
+Whether the app waits, for `Progress` of `@nano-app/mantine`: a request of any api store is out (the `/requests` each one counts), or a plain click on a link of the app to another path was followed and its page has not arrived. Its state goes to `/progress` of `app`; it listens to the document's clicks while mounted.
+
+| Method           | Description                                                                          |
+| ---------------- | ------------------------------------------------------------------------------------ |
+| `isActive()`     | Whether a request of any store is out or a page is on its way.                       |
+| `leave(event)`   | Marks a page on its way: a plain click on a link of the app to another path.         |
+| `arrive()`       | Marks the page arrived; its view calls it when the path changes.                     |
+| `sync(progress)` | Calls `progress.start()` while a request is out, `progress.complete()` once none is. |
 
 ## NavController
 

@@ -1,4 +1,5 @@
 import ApiController from '../utils/ApiController';
+import { PLACEHOLDER_TYPES } from './const';
 import validate from './validate';
 import type { ApiResponse } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
@@ -26,6 +27,13 @@ export default class FieldController extends ApiController {
   public label(): string | undefined {
     const { label } = this.field();
     return label && this.text(label);
+  }
+
+  /** The text of its placeholder: its own key, else the one of its type */
+  public placeholder(): string {
+    const { placeholder, type = 'text' } = this.field();
+    const sType = PLACEHOLDER_TYPES.includes(type) ? type : 'text';
+    return this.text(placeholder ?? `nano.form.placeholder.${sType}`);
   }
 
   /** The text of the message of the first rule the value kept breaks, a key of the texts */

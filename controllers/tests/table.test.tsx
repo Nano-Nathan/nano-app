@@ -123,6 +123,80 @@ describe('table', () => {
     await waitFor(() => assert.ok(screen.getByText('users false')));
   });
 
+  test('isLoading is on until its rows answer, so a view waits instead of showing none', async () => {
+    // Renders whether it is loading, on the first render too
+    const Users = createView(TableController, users => (
+      <span>{`loading ${users.isLoading()}`}</span>
+    ));
+    renderApp(<Users path="/users" columns={COLUMNS} />);
+
+    // Loading before the request goes out, done once it answers
+    assert.ok(screen.getByText('loading true'));
+    await waitFor(() => assert.ok(screen.getByText('loading false')));
+  });
+
+  test('open shows the form of a row with its values, and the row stays while it closes', async () => {
+    // Renders whether the form is open, the row's name and the value of its form
+    const Users = createView(TableController, users => (
+      <>
+        <button onClick={() => users.open('edit', USERS[1])}>edit</button>
+        <button onClick={users.close}>close</button>
+        <output>
+          {`${users.opened('edit')} ${users.row().name} ${users.stores.app.get('/form/table/users/values/name')}`}
+        </output>
+      </>
+    ));
+    renderApp(<Users path="/users" columns={COLUMNS} />);
+
+    // Opens the form of Beto with its value
+    screen.getByText('edit').click();
+    await expectNames('true Beto Beto');
+
+    // Closed, the row is still Beto, so a view that fades out keeps its title
+    screen.getByText('close').click();
+    await expectNames('false Beto Beto');
+  });
+
+  test('save updates the open row or creates one, remove deletes it, then the rows are read again', async () => {
+    // Renders buttons that open a row, a new one or its deletion, and save or remove
+    const Users = createView(TableController, users => (
+      <>
+        <button onClick={() => users.open('edit', USERS[1])}>edit</button>
+        <button onClick={() => users.open('edit')}>new</button>
+        <button onClick={() => users.open('delete', USERS[2])}>delete</button>
+        <button onClick={() => users.save({ name: 'Bea' })}>save</button>
+        <button onClick={users.remove}>remove</button>
+        <output>{`${users.opened('edit')} ${users.opened('delete')}`}</output>
+      </>
+    ));
+    renderApp(<Users path="/users" columns={COLUMNS} />);
+    await waitFor(() => assert.equal(aRequests.length, 1));
+
+    // Updates the open row, closes the form and reads the rows again
+    screen.getByText('edit').click();
+    screen.getByText('save').click();
+    await expectNames('false false');
+    await waitFor(() => assert.equal(aRequests.length, 3));
+
+    // Creates a new one
+    screen.getByText('new').click();
+    screen.getByText('save').click();
+    await waitFor(() => assert.equal(aRequests.length, 5));
+
+    // Deletes the row of the confirmation
+    screen.getByText('delete').click();
+    screen.getByText('remove').click();
+    await waitFor(() => assert.equal(aRequests.length, 7));
+    assert.deepEqual(
+      aRequests.slice(1).filter(sRequest => !sRequest.startsWith('GET')),
+      [
+        'PUT /api/api/users/1 {"name":"Bea"}',
+        'POST /api/api/users {"name":"Bea"}',
+        'DELETE /api/api/users/2',
+      ],
+    );
+  });
+
   test('a subclass reads the api store it gives', async () => {
     // Renders the users of another api store
     class AdminUsersController extends TableController {

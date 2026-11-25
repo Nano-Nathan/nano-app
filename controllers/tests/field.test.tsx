@@ -115,6 +115,30 @@ describe('field', () => {
     assert.ok(screen.getByText('none'));
   });
 
+  test('placeholder gives the text of its key, else the one of its type, else the one of text', () => {
+    // Renders the placeholder of fields with a key, of a type with one, and of a type without one
+    const Placeholder = createView(FieldController, (input, { field }) => (
+      <span>{`${field.name}: ${input.placeholder()}`}</span>
+    ));
+    const aFields: FormField[] = [
+      { name: 'code', placeholder: 'form.required' },
+      { name: 'mail', type: 'email' },
+      { name: 'phone', type: 'tel' },
+    ];
+    render(
+      <TestApp>
+        {aFields.map(oField => (
+          <Placeholder key={oField.name} form="placeholders" field={oField} />
+        ))}
+      </TestApp>,
+    );
+
+    // Its own key, the one of email, and the one of text for tel
+    assert.ok(screen.getByText('code: Required'));
+    assert.ok(screen.getByText('mail: name@example.com'));
+    assert.ok(screen.getByText('phone: Write here'));
+  });
+
   test('an empty text is no value: only a field whose validation needs one breaks', () => {
     // Renders the sign-up, and types and empties the phone and the optional number
     renderFields('signUp', SIGN_UP);

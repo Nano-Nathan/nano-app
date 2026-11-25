@@ -13,6 +13,8 @@ Object.assign(globalThis, {
               'form.invalidEmail': 'Invalid email',
               'form.required': 'Required',
               'form.invalidNumber': 'Invalid number',
+              'nano.form.placeholder.text': 'Write here',
+              'nano.form.placeholder.email': 'name@example.com',
             },
           },
         },

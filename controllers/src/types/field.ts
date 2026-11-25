@@ -20,6 +20,8 @@ export type FormField = NanoObject &
     validation?: ZodType;
     /** What to keep of what the view gives `change` (`$1.234` → `1234`), instead of the default */
     parse?(input: any): unknown;
+    /** Key of the text of its placeholder; by default the one of its type (`nano.form.placeholder.email`) */
+    placeholder?: string;
     /** Items of a select, read from its api store */
     options?: FieldOptions;
   };

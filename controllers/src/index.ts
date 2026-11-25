@@ -4,5 +4,6 @@ export { default as FormController } from './form/Form.controller';
 export { default as TableController } from './display/Table.controller';
 export { default as MessageController } from './layout/Message.controller';
 export { default as NavController } from './layout/Nav.controller';
+export { default as ProgressController } from './layout/Progress.controller';
 export type { Field, FormField, FieldOptions } from './types/field';
 export type { LoginValues } from './types/login';
