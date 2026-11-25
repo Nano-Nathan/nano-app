@@ -17,9 +17,9 @@ const COMPONENTS = {
   date: Calendar,
 };
 
-/** The form of a config of fields: its inputs, then its children (the buttons) */
-const FormView = createView(FormController, (form, { children }) => (
-  <form noValidate onSubmit={form.submit}>
+/** The form of a config of fields: its inputs, then its children (the buttons); its id is its name */
+const FormView = createView(FormController, (form, { name, children }) => (
+  <form id={name} noValidate onSubmit={form.submit}>
     <Stack>
       {form.fields()}
       {children}

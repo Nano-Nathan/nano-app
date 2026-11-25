@@ -5,8 +5,9 @@ import type { FormField } from '@nano-app/controllers';
 export const PRIMARY_TINT =
   'color-mix(in srgb, var(--mantine-primary-color-filled) 20%, transparent)';
 
-/** The theme's primary color for texts and icons, in each color scheme */
-export const PRIMARY_TEXT = 'var(--mantine-primary-color-light-color)';
+/** The theme's primary color for texts and icons: its light color on light, its shade 4 on dark, where Mantine's is almost white */
+export const PRIMARY_TEXT =
+  'light-dark(var(--mantine-primary-color-light-color), var(--mantine-primary-color-4))';
 
 /** Mantine color of each kind of notification */
 export const NOTIFICATION_COLORS = {
@@ -28,12 +29,12 @@ export const LOGIN_FIELDS: FormField[] = [
     name: 'email',
     label: 'nano.login.email',
     type: 'email',
-    validation: z.email('nano.login.invalidEmail'),
+    validation: z.email('nano.form.invalidEmail'),
   },
   {
     name: 'password',
     label: 'nano.login.password',
     type: 'password',
-    validation: z.string('nano.login.required'),
+    validation: z.string('nano.form.required'),
   },
 ];

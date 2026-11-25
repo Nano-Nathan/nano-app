@@ -5,7 +5,7 @@ import {
   AppShell,
   Avatar,
   CloseButton,
-  Grid,
+  Group,
   NavLink,
   Paper,
   Stack,
@@ -14,9 +14,11 @@ import {
 import { IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand } from '@tabler/icons-react';
 import { NavController } from '@nano-app/controllers';
 import { createView } from '@nano-app/frontend';
+import { PRIMARY_TEXT } from '../../const';
 import {
   SHELL_BRAND,
   SHELL_GAP,
+  SHELL_SEAM,
   SHELL_LABEL,
   SHELL_LINK,
   SHELL_SIZES,
@@ -59,17 +61,21 @@ export default createView(
         styles={SHELL_STYLES}
       >
         <AppShell.Navbar>
-          <Paper withBorder shadow="xs" radius="md" h="100%" p="xs">
+          <Paper withBorder shadow="xs" h="100%" p="xs">
             <Stack h="100%" gap={0}>
               <AppShell.Section mt="xs" mb="xl">
                 <NavLink
                   component="div"
                   label={title}
-                  fw={700}
                   noWrap
                   leftSection={<Slot>{oLogo}</Slot>}
                   rightSection={
-                    <CloseButton onClick={nav.toggle} aria-label={sMenu} hiddenFrom="sm" />
+                    <CloseButton
+                      onClick={nav.toggle}
+                      aria-label={sMenu}
+                      c={PRIMARY_TEXT}
+                      hiddenFrom="sm"
+                    />
                   }
                   styles={oBrandStyles}
                 />
@@ -95,29 +101,31 @@ export default createView(
             </Stack>
           </Paper>
         </AppShell.Navbar>
-        <AppShell.Main display="flex">
-          <Stack gap={0} flex={1} miw={0}>
-            <Paper withBorder shadow="xs" radius="md" p="xs">
-              <Grid align="center">
-                <Grid.Col span={2}>
-                  <ActionIcon
-                    variant="subtle"
-                    color="gray"
-                    size="lg"
-                    aria-label={sMenu}
-                    onClick={nav.toggle}
-                  >
-                    {oShell.icon}
-                  </ActionIcon>
-                </Grid.Col>
-                <Grid.Col span={8}>
-                  <Title order={3} ta="center">
-                    {nav.title()}
-                  </Title>
-                </Grid.Col>
-              </Grid>
+        <AppShell.Main display="flex" h="100dvh">
+          <Stack gap={0} flex={1} miw={0} mih={0} ms={SHELL_SEAM}>
+            <Paper withBorder shadow="xs" px="md" py="sm">
+              <Group gap="sm" wrap="nowrap">
+                <ActionIcon
+                  variant="subtle"
+                  c={PRIMARY_TEXT}
+                  size="lg"
+                  aria-label={sMenu}
+                  onClick={nav.toggle}
+                >
+                  {oShell.icon}
+                </ActionIcon>
+                <Title order={2}>{nav.title()}</Title>
+              </Group>
             </Paper>
-            <Paper withBorder shadow="xs" radius="md" p="md" flex={1}>
+            <Paper
+              withBorder
+              shadow="xs"
+              p="md"
+              flex={1}
+              mih={0}
+              mt={SHELL_SEAM}
+              style={{ overflow: 'auto' }}
+            >
               {children}
             </Paper>
           </Stack>

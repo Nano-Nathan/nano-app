@@ -14,14 +14,10 @@ export default createView(Controller, (view, { home }) => (
       <Illustration />
     </Box>
     <Stack gap="xl" ta="center" pos="relative" style={{ gridArea: '1 / 1' }}>
-      <Title order={1} fw={500}>
-        {view.text('nano.notFound.title')}
-      </Title>
-      <Text c="dimmed" size="lg">
-        {view.text('nano.notFound.description')}
-      </Text>
+      <Title order={2}>{view.text('nano.notFound.title')}</Title>
+      <Text c="dimmed">{view.text('nano.notFound.description')}</Text>
       <Group justify="center">
-        <Button component={Link} href={home} size="md">
+        <Button component={Link} href={home}>
           {view.text('nano.notFound.home')}
         </Button>
       </Group>

@@ -4,7 +4,7 @@ import './env';
 import { test, before, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { DataTable } from '../src/components/collection';
 import TestApp from './provider';
 
@@ -69,7 +69,7 @@ test('DataTable shows a column per field and a row per item, each cell as its fo
   assert.equal(aRequests[0], 'GET /api/api/users ');
 });
 
-test('DataTable without columns shows those of the table, and a row that says it has no data', async () => {
+test('DataTable without columns shows those of the table, and a row that invites to create the first one', async () => {
   render(
     <TestApp>
       <DataTable path="/empty" />
@@ -77,7 +77,23 @@ test('DataTable without columns shows those of the table, and a row that says it
   );
 
   // The columns of the table with their default labels, and the empty row
-  await waitFor(() => assert.ok(screen.getByText('No data')));
+  await waitFor(() => assert.ok(screen.getByText('Nothing here yet. Create the first one.')));
   assert.ok(screen.getByText('Name'));
   assert.ok(screen.getByText('i18n.nano.label.age'));
+});
+
+test('DataTable opens the form of a row on a click, and an empty one to create', async () => {
+  await renderTable();
+
+  // A click on a row opens its form with its values and the button to delete it
+  fireEvent.click(screen.getByText('Beto'));
+  await waitFor(() => assert.ok(screen.getByText('Edit')));
+  assert.ok(screen.getByDisplayValue('Beto'));
+  assert.ok(screen.getByText('Delete'));
+
+  // Cancel closes it, and Create opens an empty form without the button to delete
+  fireEvent.click(screen.getByText('Cancel'));
+  fireEvent.click(screen.getByText('Create'));
+  await waitFor(() => assert.equal(screen.getAllByText('Create').length, 2));
+  assert.equal(screen.queryByDisplayValue('Beto'), null);
 });

@@ -3,7 +3,7 @@
 [Mantine](https://mantine.dev) for `@nano-app/frontend`: the root layout, the views of `@nano-app/controllers` and ready pages.
 
 ```bash
-pnpm add @nano-app/mantine @nano-app/frontend @nano-app/controllers @mantine/core @mantine/dates @mantine/hooks @mantine/notifications dayjs
+pnpm add @nano-app/mantine @nano-app/frontend @nano-app/controllers @mantine/core @mantine/dates @mantine/hooks @mantine/notifications @mantine/nprogress dayjs
 ```
 
 - `@mantine/*` 9, `@nano-app/frontend` 0.16, `@nano-app/controllers` 0.13, Next 16.3 and React 19 or newer, as peer dependencies.
@@ -18,16 +18,17 @@ The root layout: `<html>` in the user's locale, the color scheme script, Mantine
 export default createLayout({ lang: 'es', provider: { theme } });
 ```
 
-| Option          | Description                                                                                  |
-| --------------- | -------------------------------------------------------------------------------------------- |
-| `lang`          | The language until the user picks one with `setLocale`.                                      |
-| `colorScheme`   | `light`, `dark` or `auto` (default), until the user picks one.                               |
-| `provider`      | Props of `MantineProvider` (`theme`…).                                                       |
-| `notifications` | Props of Mantine's `Notifications`: `position` (`top-right`), `autoClose` (`3000`), `limit`… |
+| Option          | Description                                                                                                                                        |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lang`          | The language until the user picks one with `setLocale`.                                                                                            |
+| `className`     | Classes of the html: the `variable` of each `next/font`, so the fonts load with the page; the theme reads them (`fontFamily: 'var(--font-text)'`). |
+| `colorScheme`   | `light`, `dark` or `auto` (default), until the user picks one.                                                                                     |
+| `provider`      | Props of `MantineProvider` (`theme`…).                                                                                                             |
+| `notifications` | Props of Mantine's `Notifications`: `position` (`top-right`), `autoClose` (`3000`), `limit`…                                                       |
 
 - The layout reads the locale cookie, so every page is dynamic.
 - Start `theme.ts` with `'use client'`: a theme with functions fails on the server otherwise.
-- nano-app's theme sits under the app's: glass `Paper` and `Card`, `Title` and `Avatar` in the primary color, `NavLink` `filled`. Every accent comes from `primaryColor`.
+- nano-app's theme sits under the app's. Every text is in the text's color; titles of any kind (`Title`, modals, table headers, the brand of the shell) take the headings' font and weight, and the sizes of its scale: the page `h2`, modals, drawers and the brand `h3`, table headers and notifications `h5`. Every other text is `sm` (`Text` and `Anchor`), and the views give no size, radius or weight of their own: corners, sizes and weights come from the theme. The primary color is only on what acts (buttons, icons, active links, hover, focus) and on borders and lines. Corners are `md` everywhere, cards included, as the browser's window; `Paper` and `Card` are glass, with a border of the primary color; `Modal` fades in centered over a light overlay that blurs the page, as one solid card on the ground of the app under the same veil as the glass cards, fixed to the screen so it shows the part of the ground behind it as strong as they do (a fade, since a transform would undo the fixed ground), its title centered and apart by a line; it has no close button. Tables scroll without bars and fill the height they are given; they are a grid whose header, body and rows share the columns (`subgrid`, widths from the content), so only the body scrolls, from the line below the header, and every card stays glass; and their rows are rounded bands of one neutral tint that take the primary color on hover and focus (the rules of `NANO_CSS`, in the layout's `<head>`, for the class `nano-table`). Dimmed texts and red buttons reach a 4.5:1 contrast; on light, so do the placeholders of inputs, and their borders 3:1 (dark, focus and error keep Mantine's), and motion runs only when the system allows it. `NavLink` is `filled`.
 - Icons and manifest come from Next: `app/icon.png`, `app/apple-icon.png`, `app/manifest.ts`.
 
 ## createShell
@@ -61,7 +62,9 @@ export default createShell({
 | `theme`  | on      | The switch of the color scheme.                             |
 | `logout` | on      | The sign-out.                                               |
 
-- A header card above the page shows the button that opens the navbar and, in the middle, the title of the page: the text of `nano.page` and its path with dots (`/admin/users` → `nano.page.admin.users`, `/` → `nano.page.`).
+- A header card above the page shows the button that opens the navbar and, beside it, the title of the page: the text of `nano.page` and its path with dots (`/admin/users` → `nano.page.admin.users`, `/` → `nano.page.`).
+- The cards of the shell overlap by the width of a border where they meet, so each joint shows one line.
+- The shell is as high as the screen: the page scrolls inside its card, so a view that fills its height (`DataTable`) scrolls inside itself.
 - A group shows its links under it when clicked; closed, clicking it opens the navbar with them.
 - A link with `roles` shows only to a user whose `role` (Better Auth's admin plugin) is one of them.
 - It asks the session with `createPage`. Each page keeps its own `createPage`: Next does not render a layout again on navigation.
@@ -71,21 +74,26 @@ export default createShell({
 
 ## Components
 
-| Component   | Controller          | Props                                    |
-| ----------- | ------------------- | ---------------------------------------- |
-| `Input`     | `FieldController`   | `form`, `field` (`label`, `type`)        |
-| `Password`  | `FieldController`   | `form`, `field` (`label`)                |
-| `Numeric`   | `FieldController`   | `form`, `field` (`label`)                |
-| `Select`    | `FieldController`   | `form`, `field` (`label`, `options`)     |
-| `Switch`    | `FieldController`   | `form`, `field` (`label`)                |
-| `Calendar`  | `FieldController`   | `form`, `field` (`label`)                |
-| `Form`      | `FormController`    | `name`, `fields`, `onSubmit`, `children` |
-| `Toasts`    | `MessageController` | Props of Mantine's `Notifications`       |
-| `DataTable` | `TableController`   | `path`, `columns` (`Field[]`, optional)  |
+| Component   | Controller           | Props                                               |
+| ----------- | -------------------- | --------------------------------------------------- |
+| `Input`     | `FieldController`    | `form`, `field` (`label`, `type`)                   |
+| `Password`  | `FieldController`    | `form`, `field` (`label`)                           |
+| `Numeric`   | `FieldController`    | `form`, `field` (`label`)                           |
+| `Select`    | `FieldController`    | `form`, `field` (`label`, `options`)                |
+| `Switch`    | `FieldController`    | `form`, `field` (`label`)                           |
+| `Calendar`  | `FieldController`    | `form`, `field` (`label`)                           |
+| `Form`      | `FormController`     | `name`, `fields`, `onSubmit`, `children`            |
+| `Dialog`    | none                 | `opened`, `onClose`, `title`, `actions`, `children` |
+| `Toasts`    | `MessageController`  | Props of Mantine's `Notifications`                  |
+| `Progress`  | `ProgressController` | Props of Mantine's `NavigationProgress`             |
+| `DataTable` | `TableController`    | `path`, `columns` (`FormField[]`, optional)         |
 
-- `Form` shows each field by its `type`: `password` with `Password`, `number` with `Numeric` (`NumberInput`), `select` with `Select`, `switch` with `Switch`, `date` with `Calendar` (`DatePickerInput` of `@mantine/dates`, it keeps `YYYY-MM-DD`), every other one with `Input`; then its `children` (the buttons).
+- Each field shows its placeholder (`placeholder()` of `FieldController`), and `Switch` none.
+- `Form` shows each field by its `type`: `password` with `Password`, `number` with `Numeric` (`NumberInput`), `select` with `Select`, `switch` with `Switch`, `date` with `Calendar` (`DatePickerInput` of `@mantine/dates`, it keeps `YYYY-MM-DD`), every other one with `Input`; then its `children` (the buttons). Its `id` is its `name`: a button outside it sends it with `form={name}`.
 - The dates show in the user's locale, else the layout's `lang`: `en` and `es`.
-- `DataTable` shows a column per field of `columns` (`label`, `format`), or per column of the table without it, and a row per item of `path`, read when it mounts. Without items it shows a row with `nano.table.empty`. A column of the table, without `columns`, shows `nano.label.<name>`: the core texts have `id`, `name`, `email`, `title`, `description`, `createdAt` and `updatedAt`; define the others in the app's texts, or give the column its `label`. It scrolls inside itself past `70svh` high, and sideways when the screen is narrower than its content.
+- `DataTable` shows a column per field of `columns` (`label`, `format`), or per column of the table without it, and a row per item of `path`, read when it mounts. Without items it shows, under its header and in all the space left, an icon and `nano.table.empty`. Above it, `nano.table.create` opens the form of a new row in a modal; a click on a row, or Enter on it, opens its form in the same modal, whose `nano.table.delete` deletes it after a confirmation. The form shows the same fields as the columns, validated as they are typed and on submit; its submit says `nano.table.create` for a new row and `nano.table.save` for one that exists. While its rows are still to come it shows `Skeleton`. Texts: `nano.table.*`: `empty`, `create`, `edit`, `delete`, `save`, `cancel`, `confirm`. A column of the table, without `columns`, shows `nano.label.<name>`: the core texts have `id`, `name`, `email`, `title`, `description`, `createdAt` and `updatedAt`; define the others in the app's texts, or give the column its `label`. It fills the height of its parent and scrolls inside it, also sideways when the screen is narrower than its content, without showing the bars.
+- `Dialog` is the modal of nano-app: `title`; its content as `children` with `xl` room above and half more below; and `actions` (the buttons) under a line; it closes with `onClose`.
+- `Progress` shows a thin bar of the primary color at the top of the screen while a request of any api store is out (a page that loads its data, a create, a delete), and from a click on a link of the app to another path until that page arrives. `createLayout` mounts it.
 - `Toasts` shows every new message of an api store in the color of its `type` (`success` green, `error` red, `info` blue, `warning` yellow). `createLayout` mounts it.
 
 ## createLoginPage
@@ -105,7 +113,7 @@ export default createLoginPage({ providers: ['google'] });
 
 - A page with its own `fields` starts with `'use client'`: a zod schema cannot go from a server component.
 - State: `/form/login` and `/auth/isToggled` of `app`.
-- Texts: `nano.login.*`: `title`, `subtitle`, `divider`, `noAccount`, `haveAccount`, `email`, `password`, `submit`, `register`, `invalidEmail`, `required`, `google`.
+- Texts: `nano.login.*`: `title`, `subtitle`, `divider`, `noAccount`, `haveAccount`, `email`, `password`, `submit`, `register`, `google`; and `nano.form.invalidEmail` and `nano.form.required`, the messages of its fields, for any form.
 
 ## createNotFoundPage
 

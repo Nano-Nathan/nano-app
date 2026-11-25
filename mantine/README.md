@@ -5,7 +5,7 @@
 [Mantine](https://mantine.dev) for [`@nano-app/frontend`](https://www.npmjs.com/package/@nano-app/frontend): the root layout, the views of [`@nano-app/controllers`](https://www.npmjs.com/package/@nano-app/controllers), a shell for signed-in pages, and ready login and 404 pages.
 
 ```bash
-pnpm add @nano-app/mantine @nano-app/frontend @nano-app/controllers @mantine/core @mantine/dates @mantine/hooks @mantine/notifications dayjs
+pnpm add @nano-app/mantine @nano-app/frontend @nano-app/controllers @mantine/core @mantine/dates @mantine/hooks @mantine/notifications @mantine/nprogress dayjs
 ```
 
 ```tsx

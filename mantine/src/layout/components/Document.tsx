@@ -1,12 +1,12 @@
 import { ColorSchemeScript, mantineHtmlProps } from '@mantine/core';
 import { NanoAppProvider } from '@nano-app/frontend';
-import { Toasts } from '../../components/notification';
-import { GROUND } from './const';
+import { Progress, Toasts } from '../../components/notification';
+import { CONTRAST, GROUND, NANO_CSS } from './const';
 import Provider from './Provider';
 import type { ReactNode } from 'react';
 import type { LayoutOptions } from '../../types/layout';
 
-/** The html of the app: its language, the color scheme script, its ground, the providers and the notifications */
+/** The html of the app: its language, the color scheme script, its ground, the providers, the progress bar and the notifications */
 export default function Document({
   options,
   locale,
@@ -16,17 +16,19 @@ export default function Document({
   locale?: string;
   children: ReactNode;
 }): ReactNode {
-  const { lang, colorScheme = 'auto', provider, notifications } = options;
+  const { lang, className, colorScheme = 'auto', provider, notifications } = options;
   // The locale the user chose, else the app's language
   const sLocale = locale ?? lang;
   return (
-    <html lang={sLocale} {...mantineHtmlProps}>
+    <html lang={sLocale} className={className} {...mantineHtmlProps}>
       <head>
         <ColorSchemeScript defaultColorScheme={colorScheme} />
+        <style>{NANO_CSS}</style>
       </head>
-      <body style={GROUND}>
+      <body style={{ ...GROUND, ...CONTRAST }}>
         <Provider provider={provider} colorScheme={colorScheme} locale={sLocale}>
           <NanoAppProvider locale={locale}>
+            <Progress />
             <Toasts {...notifications} />
             {children}
           </NanoAppProvider>

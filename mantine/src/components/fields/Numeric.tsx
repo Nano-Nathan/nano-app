@@ -8,7 +8,7 @@ import { FieldController } from '@nano-app/controllers';
 export default createView(FieldController, input => (
   <NumberInput
     label={input.label()}
-    radius="md"
+    placeholder={input.placeholder()}
     value={input.value() ?? ''}
     error={input.error()}
     onChange={oValue => input.change(oValue)}

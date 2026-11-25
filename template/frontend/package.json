@@ -13,6 +13,7 @@
     "@mantine/dates": "^9.8.2",
     "@mantine/hooks": "^9.8.1",
     "@mantine/notifications": "^9.8.1",
+    "@mantine/nprogress": "^9.8.2",
     "@nano-app/controllers": "^0.14.0",
     "@nano-app/frontend": "^0.17.0",
     "@nano-app/mantine": "^0.2.0",

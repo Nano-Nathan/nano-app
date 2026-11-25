@@ -17,7 +17,7 @@ export default createView(
       ? { ...LOGIN_MODES.signUp, fields: signUpFields }
       : { ...LOGIN_MODES.signIn, fields };
     return (
-      <Paper withBorder shadow="md" radius="lg" p={{ base: 'lg', sm: 'xl' }}>
+      <Paper withBorder shadow="md" p={{ base: 'lg', sm: 'xl' }}>
         <Stack gap="lg">
           <Stack gap="xs" align="center">
             <Title order={2} ta="center">
@@ -33,8 +33,6 @@ export default createView(
                 <Button
                   key={sProvider}
                   variant="default"
-                  radius="xl"
-                  size="md"
                   leftSection={<GoogleIcon />}
                   disabled={auth.isBusy()}
                   onClick={() => auth.signIn({ provider: sProvider }, 'social')}
@@ -46,14 +44,14 @@ export default createView(
             </>
           )}
           <Form key={oMode.submit} name="login" fields={oMode.fields} onSubmit={auth.send}>
-            <Button type="submit" radius="xl" size="md" mt="xs" loading={auth.isBusy()}>
+            <Button type="submit" mt="xs" loading={auth.isBusy()}>
               {auth.text(`nano.login.${oMode.submit}`)}
             </Button>
           </Form>
           {signUp && (
-            <Text size="sm" c="dimmed" ta="center">
+            <Text c="dimmed" ta="center">
               {auth.text(`nano.login.${oMode.question}`)}{' '}
-              <Anchor component="button" type="button" size="sm" fw={600} onClick={auth.toggle}>
+              <Anchor component="button" type="button" fw={600} onClick={auth.toggle}>
                 {auth.text(`nano.login.${oMode.link}`)}
               </Anchor>
             </Text>

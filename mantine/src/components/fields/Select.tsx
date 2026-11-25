@@ -8,7 +8,7 @@ import { FieldController } from '@nano-app/controllers';
 export default createView(FieldController, input => (
   <Select
     label={input.label()}
-    radius="md"
+    placeholder={input.placeholder()}
     data={input.options()}
     value={input.value()?.toString() ?? null}
     error={input.error()}

@@ -8,7 +8,7 @@ import { FieldController } from '@nano-app/controllers';
 export default createView(FieldController, input => (
   <DatePickerInput
     label={input.label()}
-    radius="md"
+    placeholder={input.placeholder()}
     value={input.value() ?? null}
     error={input.error()}
     onChange={sValue => input.change(sValue)}

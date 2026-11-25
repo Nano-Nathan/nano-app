@@ -11,7 +11,7 @@ import type { NanoObject } from '@nano-app/core/types/objects';
 
 // Fields of the form: an email with its rule
 const FIELDS = [
-  { name: 'email', label: 'nano.login.email', validation: z.email('nano.login.invalidEmail') },
+  { name: 'email', label: 'nano.login.email', validation: z.email('nano.form.invalidEmail') },
 ];
 
 // Values each submit sent
