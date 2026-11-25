@@ -16,15 +16,11 @@ export default function DeleteModal({
       opened={opened}
       onClose={table.close}
       title={table.text('nano.table.delete')}
-      actions={
-        <>
-          <Button variant="default" onClick={table.close}>
-            {table.text('nano.table.cancel')}
-          </Button>
-          <Button color="red" onClick={table.remove} loading={table.isBusy()}>
-            {table.text('nano.table.delete')}
-          </Button>
-        </>
+      cancel={table.text('nano.table.cancel')}
+      submit={
+        <Button color="red" onClick={table.remove} loading={table.isBusy()}>
+          {table.text('nano.table.delete')}
+        </Button>
       }
     >
       <Text>{table.text('nano.table.confirm')}</Text>

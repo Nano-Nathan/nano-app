@@ -1,19 +1,23 @@
-import { Box, Divider, Group, Modal } from '@mantine/core';
+import { Box, Button, Divider, Group, Modal } from '@mantine/core';
 import { token } from '../../const';
 import type { ReactNode } from 'react';
 
-/** The modal of nano-app: its title, then its content with room above and more below, where its last field has no label under it, then its actions under a line */
+/** The modal of nano-app: its title, its content with room above and below, then under a line an action apart at the start, the cancel that closes it and its submit */
 export default function Dialog({
   opened,
   onClose,
   title,
-  actions,
+  cancel,
+  submit,
+  start,
   children,
 }: {
   opened: boolean;
   onClose(): void;
   title: string;
-  actions: ReactNode;
+  cancel: string;
+  submit: ReactNode;
+  start?: ReactNode;
   children: ReactNode;
 }): ReactNode {
   return (
@@ -23,7 +27,11 @@ export default function Dialog({
       </Box>
       <Divider mx="-md" />
       <Group justify="flex-end" pt="md">
-        {actions}
+        {start && <Box mr="auto">{start}</Box>}
+        <Button variant="default" onClick={onClose}>
+          {cancel}
+        </Button>
+        {submit}
       </Group>
     </Modal>
   );

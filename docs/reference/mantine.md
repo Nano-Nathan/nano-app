@@ -75,25 +75,25 @@ export default createShell({
 
 ## Components
 
-| Component   | Controller           | Props                                               |
-| ----------- | -------------------- | --------------------------------------------------- |
-| `Input`     | `FieldController`    | `form`, `field` (`label`, `type`)                   |
-| `Password`  | `FieldController`    | `form`, `field` (`label`)                           |
-| `Numeric`   | `FieldController`    | `form`, `field` (`label`)                           |
-| `Select`    | `FieldController`    | `form`, `field` (`label`, `options`)                |
-| `Switch`    | `FieldController`    | `form`, `field` (`label`)                           |
-| `Calendar`  | `FieldController`    | `form`, `field` (`label`)                           |
-| `Form`      | `FormController`     | `name`, `fields`, `onSubmit`, `children`            |
-| `Dialog`    | none                 | `opened`, `onClose`, `title`, `actions`, `children` |
-| `Toasts`    | `MessageController`  | Props of Mantine's `Notifications`                  |
-| `Progress`  | `ProgressController` | Props of Mantine's `NavigationProgress`             |
-| `DataTable` | `TableController`    | `path`, `columns` (`FormField[]`, optional)         |
+| Component   | Controller           | Props                                                                 |
+| ----------- | -------------------- | --------------------------------------------------------------------- |
+| `Input`     | `FieldController`    | `form`, `field` (`label`, `type`)                                     |
+| `Password`  | `FieldController`    | `form`, `field` (`label`)                                             |
+| `Numeric`   | `FieldController`    | `form`, `field` (`label`)                                             |
+| `Select`    | `FieldController`    | `form`, `field` (`label`, `options`)                                  |
+| `Switch`    | `FieldController`    | `form`, `field` (`label`)                                             |
+| `Calendar`  | `FieldController`    | `form`, `field` (`label`)                                             |
+| `Form`      | `FormController`     | `name`, `fields`, `onSubmit`, `children`                              |
+| `Dialog`    | none                 | `opened`, `onClose`, `title`, `cancel`, `submit`, `start`, `children` |
+| `Toasts`    | `MessageController`  | Props of Mantine's `Notifications`                                    |
+| `Progress`  | `ProgressController` | Props of Mantine's `NavigationProgress`                               |
+| `DataTable` | `TableController`    | `path`, `columns` (`FormField[]`, optional)                           |
 
 - Each field shows its placeholder (`placeholder()` of `FieldController`), and `Switch` none.
 - `Form` shows each field by its `type`: `password` with `Password`, `number` with `Numeric` (`NumberInput`), `select` with `Select`, `switch` with `Switch`, `date` with `Calendar` (`DatePickerInput` of `@mantine/dates`, it keeps `YYYY-MM-DD`), every other one with `Input`; then its `children` (the buttons). Its `id` is its `name`: a button outside it sends it with `form={name}`.
 - The dates show in the user's locale, else the layout's `lang`: `en` and `es`.
 - `DataTable` shows a column per field of `columns` (`label`, `format`), or per column of the table without it, and a row per item of `path`, read when it mounts. Without items it shows, under its header and in all the space left, an icon and `nano.table.empty`. Above it, `nano.table.create` opens the form of a new row in a modal; a click on a row, or Enter on it, opens its form in the same modal, whose `nano.table.delete` deletes it after a confirmation. The form shows the same fields as the columns, validated as they are typed and on submit; its submit says `nano.table.create` for a new row and `nano.table.save` for one that exists. While its rows are still to come it shows `Skeleton`. Texts: `nano.table.*`: `empty`, `create`, `edit`, `delete`, `save`, `cancel`, `confirm`. A column of the table, without `columns`, shows `nano.label.<name>`: the core texts have `id`, `name`, `email`, `title`, `description`, `createdAt` and `updatedAt`; define the others in the app's texts, or give the column its `label`. It fills the height of its parent and scrolls inside it, also sideways when the screen is narrower than its content, without showing the bars.
-- `Dialog` is the modal of nano-app: `title`; its content as `children` with `xl` room above and half more below; and `actions` (the buttons) under a line; it closes with `onClose`.
+- `Dialog` is the modal of nano-app: `title`; its content as `children` with `xl` room above and half more below; and under a line `start` (an action apart, at the left), a cancel button with the text `cancel` and `submit`; the cancel and the overlay close it with `onClose`.
 - `Progress` shows a thin bar of the primary color at the top of the screen while a request of any api store is out (a page that loads its data, a create, a delete), and from a click on a link of the app to another path until that page arrives. `createLayout` mounts it.
 - `Toasts` shows every new message of an api store in the color of its `type` (`success` green, `error` red, `info` blue, `warning` yellow). `createLayout` mounts it.
 

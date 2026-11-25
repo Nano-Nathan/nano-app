@@ -25,20 +25,18 @@ export default function EditModal({
       opened={opened}
       onClose={table.close}
       title={table.text(oText.title)}
-      actions={
-        <>
-          {Boolean(row.id) && (
-            <Button color="red" mr="auto" onClick={() => table.open('delete', row)}>
-              {table.text('nano.table.delete')}
-            </Button>
-          )}
-          <Button variant="default" onClick={table.close}>
-            {table.text('nano.table.cancel')}
+      cancel={table.text('nano.table.cancel')}
+      start={
+        Boolean(row.id) && (
+          <Button color="red" onClick={() => table.open('delete', row)}>
+            {table.text('nano.table.delete')}
           </Button>
-          <Button type="submit" form={sForm} loading={table.isBusy()}>
-            {table.text(oText.submit)}
-          </Button>
-        </>
+        )
+      }
+      submit={
+        <Button type="submit" form={sForm} loading={table.isBusy()}>
+          {table.text(oText.submit)}
+        </Button>
       }
     >
       <Form name={sForm} fields={table.fields()} onSubmit={table.save} />

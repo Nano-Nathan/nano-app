@@ -39,9 +39,11 @@ export const NANO_THEME: MantineThemeOverride = {
     },
     TableScrollContainer: {
       defaultProps: { type: 'native' },
-      // Scrolls sideways only, without bars; it and its inner box pass their height down to the table, whose body scrolls
+      // Scrolls sideways only, without bars, at most as high as the space left; it and its inner box pass their height down to the table, whose body scrolls
       styles: {
         scrollContainer: {
+          flex: '0 1 auto',
+          minHeight: 0,
           scrollbarWidth: 'none',
           overflowY: 'hidden',
           display: 'flex',
