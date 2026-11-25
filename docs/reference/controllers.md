@@ -95,13 +95,20 @@ A rule between fields (a password and its repeat) goes in `onSubmit`. `name` and
 
 ## TableController
 
-The rows of a backend path, read with `GET` when its view mounts, for `DataTable` of `@nano-app/mantine`. Props: `path`, the backend path it reads, and `columns` (`Field[]`), optional; its state goes to `/table<path>` of `app`. It reads lists as crud answers them: `result: { values }`. Without `columns` it also reads, once, the names of the table's columns with crud's `fields`.
+The rows of a backend path, read with `GET` when its view mounts, and their form to create, edit and delete them, for `DataTable` of `@nano-app/mantine`. Props: `path`, the backend path it reads, and `columns` (`Field[]`), optional; its state goes to `/table<path>` of `app`. It reads lists as crud answers them: `result: { values }`. Without `columns` it also reads, once, the names of the table's columns with crud's `fields`.
 
-| Method             | Description                                                                             |
-| ------------------ | --------------------------------------------------------------------------------------- |
-| `rows()`           | The rows read: `result.values` of the answer.                                           |
-| `fields()`         | Its columns: `columns`, or every column of the table, each labeled `nano.label.<name>`. |
-| `cell(row, field)` | The text of a cell: the value of the field, as its `format` shows it.                   |
+| Method               | Description                                                                                                           |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `rows()`             | The rows read: `result.values` of the answer.                                                                         |
+| `fields()`           | Its columns: `columns`, or every column of the table, each labeled `nano.label.<name>`.                               |
+| `cell(row, field)`   | The text of a cell: the value of the field, as its `format` shows it.                                                 |
+| `open(action, row?)` | Opens over `row` the form (`edit`, with its values; empty without it) or the confirmation of its deletion (`delete`). |
+| `opened(action)`     | The row of `action` while it is open: `{}` for a new one, `undefined` while closed.                                   |
+| `save(values)`       | `PUT <path>/<id>` of the row of the form, or `POST <path>` for a new one.                                             |
+| `remove()`           | `DELETE <path>/<id>` of the row of the confirmation.                                                                  |
+| `close()`            | Closes the form or the confirmation.                                                                                  |
+
+After a write that succeeds it closes the form and reads the rows again. The form's state is `/form/table<path>` of `app`.
 
 ## NavController
 
