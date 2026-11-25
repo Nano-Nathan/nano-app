@@ -21,12 +21,18 @@ const GLASS = {
   },
 };
 
-/** Theme of nano-app under the app's: cards of glass, and the primary color on titles, avatars and active links */
+/** Theme of nano-app under the app's: cards of glass, solid modals centered over their overlay, and the primary color on titles, table headers, input labels, avatars and active links */
 export const NANO_THEME: MantineThemeOverride = {
   components: {
     Paper: { styles: GLASS },
     Card: { styles: GLASS },
+    Modal: {
+      defaultProps: { centered: true },
+      styles: { content: { background: 'var(--mantine-color-body)' } },
+    },
     Title: { styles: { root: { color: PRIMARY_TEXT } } },
+    Table: { styles: { th: { color: PRIMARY_TEXT } } },
+    InputWrapper: { styles: { label: { color: PRIMARY_TEXT } } },
     Avatar: { defaultProps: (oTheme: MantineTheme) => ({ color: oTheme.primaryColor }) },
     NavLink: { defaultProps: { variant: 'filled' } },
   },
