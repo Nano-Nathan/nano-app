@@ -1,5 +1,5 @@
 import ApiController from '../utils/ApiController';
-import { FIELDS_QUERY } from './const';
+import { FIELDS_QUERY, OPEN_KEY } from './const';
 import type { ApiResponse } from '@nano-app/core/types/api';
 import type { NanoObject } from '@nano-app/core/types/objects';
 import type { Field, FormField } from '../types/field';
@@ -22,9 +22,16 @@ export default class TableController extends ApiController {
     return this.api.get(this.props.path)?.result?.values ?? [];
   }
 
-  /** Whether its rows are still to come: a request is out, or none has answered yet */
+  /** Whether its rows, or its columns when the view gives none, are still to come: a request is out, or one has not answered yet */
   public isLoading(): boolean {
-    return this.isBusy() || !this.api.get(this.props.path);
+    const { path, columns } = this.props;
+    const isRead = Boolean(this.api.get(path) && (columns ?? this.api.get(path, FIELDS_QUERY)));
+    return this.isBusy() || !isRead;
+  }
+
+  /** Whether it has read its rows and there are none */
+  public isEmpty(): boolean {
+    return !this.isLoading() && !this.rows().length;
   }
 
   /** Its columns, from `columns` or the table, also the fields of its form; each label `nano.label.<name>` by default */
@@ -47,6 +54,11 @@ export default class TableController extends ApiController {
     // The form takes only the values of its fields, so a write sends nothing else
     const aValues = this.fields().map(({ name }) => [name, oRow[name]]);
     this.state.set(`/form${this.root}`, { values: Object.fromEntries(aValues) });
+  }
+
+  /** Opens the form of a row when the key pressed on it is the one that opens it */
+  public press(sKey: string, oRow: NanoObject): void {
+    if (sKey === OPEN_KEY) this.open('edit', oRow);
   }
 
   /** Whether the form or the confirmation of `action` is open */

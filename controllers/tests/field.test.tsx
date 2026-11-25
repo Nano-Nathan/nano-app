@@ -201,6 +201,34 @@ describe('field', () => {
     assert.equal(errorOf('count'), 'count: ok');
   });
 
+  test('a select keeps the value of the item it chose, of its own type, and no value when cleared', async () => {
+    // Renders a select of roles that chooses the text of the second one, or clears it
+    const Choice = createView(SelectController, choice => (
+      <>
+        <button onClick={() => choice.change('2')}>choose</button>
+        <button onClick={() => choice.change(null)}>clear</button>
+        <output>{`${typeof choice.value()} ${choice.value()} ${choice.options().length}`}</output>
+      </>
+    ));
+    const oRole: FormField = { name: 'role', type: 'select', options: { path: '/roles' } };
+    render(
+      <TestApp>
+        <Choice form="pick" field={oRole} />
+      </TestApp>,
+    );
+    await waitFor(() =>
+      assert.equal(screen.getByRole('status').textContent, 'undefined undefined 2'),
+    );
+
+    // The text '2' keeps the id 2, a number; clearing keeps no value
+    screen.getByText('choose').click();
+    await waitFor(() => assert.equal(screen.getByRole('status').textContent, 'number 2 2'));
+    screen.getByText('clear').click();
+    await waitFor(() =>
+      assert.equal(screen.getByRole('status').textContent, 'undefined undefined 2'),
+    );
+  });
+
   test('options are the items of their path, read when the view mounts', async () => {
     // Renders a select of roles
     const oRole: FormField = { name: 'role', options: { path: '/roles' } };

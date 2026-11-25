@@ -88,12 +88,13 @@ A form from a list of fields. Props: `name`, `fields`, `onSubmit`, and `componen
 | ------------ | ----------------------------------------------- |
 | `components` | The view of each field type: `{ text: Input }`. |
 
-| Method          | Description                                                                                              |
-| --------------- | -------------------------------------------------------------------------------------------------------- |
-| `isLoading()`   | Whether its rows are still to come: a request is out, or none has answered yet.                          |
-| `fields()`      | The view of each field, in order: the view of its `type`, or of `text`. Neither stops the render.        |
-| `submit(event)` | Stops the browser's submit, validates every field, and calls `onSubmit(values)` when none breaks a rule. |
-| `reset()`       | Empties the values and the errors.                                                                       |
+| Method          | Description                                                                                                                     |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `isLoading()`   | Whether its rows, or its columns when `columns` is not given, are still to come: a request is out, or one has not answered yet. |
+| `isEmpty()`     | Whether it has read its rows and there are none.                                                                                |
+| `fields()`      | The view of each field, in order: the view of its `type`, or of `text`. Neither stops the render.                               |
+| `submit(event)` | Stops the browser's submit, validates every field, and calls `onSubmit(values)` when none breaks a rule.                        |
+| `reset()`       | Empties the values and the errors.                                                                                              |
 
 A rule between fields (a password and its repeat) goes in `onSubmit`. `name` and `fields` are set once per form.
 
@@ -108,6 +109,7 @@ The rows of a backend path, read with `GET` when its view mounts, and their form
 | `cell(row, field)`   | The text of a cell: the value of the field, as its `format` shows it.                                                 |
 | `open(action, row?)` | Opens over `row` the form (`edit`, with its values; empty without it) or the confirmation of its deletion (`delete`). |
 | `opened(action)`     | Whether the form (`edit`) or the confirmation (`delete`) is open.                                                     |
+| `press(key, row)`    | Opens the form of `row` when `key` is `Enter` (`OPEN_KEY`), as a click does.                                          |
 | `row()`              | The row last opened, `{}` for a new one. It stays after `close()`, so a view keeps its title while it fades out.      |
 | `save(values)`       | `PUT <path>/<id>` of `row()`, or `POST <path>` for a new one.                                                         |
 | `remove()`           | `DELETE <path>/<id>` of `row()`.                                                                                      |

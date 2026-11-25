@@ -135,6 +135,17 @@ describe('table', () => {
     await waitFor(() => assert.ok(screen.getByText('loading false')));
   });
 
+  test('isEmpty is off while its rows load and once they came', async () => {
+    // Renders whether it is empty for the users and for a path without rows
+    const Table = createView(TableController, users => <span>{`empty ${users.isEmpty()}`}</span>);
+    renderApp(<Table path="/users" columns={COLUMNS} />);
+
+    // Not empty while loading, nor once its users came
+    assert.ok(screen.getByText('empty false'));
+    await waitFor(() => assert.equal(aRequests.length, 1));
+    assert.ok(screen.getByText('empty false'));
+  });
+
   test('open shows the form of a row with its values, and the row stays while it closes', async () => {
     // Renders whether the form is open, the row's name and the value of its form
     const Users = createView(TableController, users => (
@@ -147,6 +158,8 @@ describe('table', () => {
       </>
     ));
     renderApp(<Users path="/users" columns={COLUMNS} />);
+    // Waits for its rows, so their request does not reach the next test
+    await waitFor(() => assert.equal(aRequests.length, 1));
 
     // Opens the form of Beto with its value
     screen.getByText('edit').click();
@@ -155,6 +168,26 @@ describe('table', () => {
     // Closed, the row is still Beto, so a view that fades out keeps its title
     screen.getByText('close').click();
     await expectNames('false Beto Beto');
+  });
+
+  test('press opens the form of a row only with the key that opens it', async () => {
+    // Renders buttons that press Enter and another key on Beto, and whether the form is open
+    const Users = createView(TableController, users => (
+      <>
+        <button onClick={() => users.press('Escape', USERS[1])}>escape</button>
+        <button onClick={() => users.press('Enter', USERS[1])}>enter</button>
+        <output>{`${users.opened('edit')} ${users.row().name}`}</output>
+      </>
+    ));
+    renderApp(<Users path="/users" columns={COLUMNS} />);
+    // Waits for its rows, so their request does not reach the next test
+    await waitFor(() => assert.equal(aRequests.length, 1));
+
+    // Another key leaves it closed; Enter opens Beto's
+    screen.getByText('escape').click();
+    await expectNames('false undefined');
+    screen.getByText('enter').click();
+    await expectNames('true Beto');
   });
 
   test('save updates the open row or creates one, remove deletes it, then the rows are read again', async () => {

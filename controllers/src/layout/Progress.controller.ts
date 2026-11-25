@@ -30,15 +30,17 @@ export default class ProgressController extends AppController {
     oProgress.complete();
   }
 
-  /** Marks a page on its way when a click follows a link of the app to another path in the same tab */
+  /** Marks a page on its way when a click follows a link of the app to another path */
   public leave(oEvent: MouseEvent): void {
-    // Only a plain click on a link of this app that opens in this tab; Next's Link prevents the browser's, so that is no sign
     const oLink = (oEvent.target as Element | null)?.closest?.('a');
-    const isPlain = oEvent.button === 0 && !oEvent.metaKey && !oEvent.ctrlKey && !oEvent.shiftKey;
-    if (!oLink || !isPlain || oLink.target === '_blank' || oLink.origin !== location.origin) return;
+    if (oLink && this.isLeaving(oEvent, oLink)) this.set('/navigating', true);
+  }
 
-    // Another path than this one
-    if (oLink.pathname !== this.pathname) this.set('/navigating', true);
+  /** Whether a click on a link leaves the page in this tab: a plain one, to another path of the app; Next's Link prevents the browser's, so that is no sign */
+  private isLeaving(oEvent: MouseEvent, oLink: HTMLAnchorElement): boolean {
+    const isPlain = oEvent.button === 0 && !oEvent.metaKey && !oEvent.ctrlKey && !oEvent.shiftKey;
+    const isHere = oLink.target !== '_blank' && oLink.origin === location.origin;
+    return isPlain && isHere && oLink.pathname !== this.pathname;
   }
 
   /** Marks the page arrived: its view calls it when the path changes */
