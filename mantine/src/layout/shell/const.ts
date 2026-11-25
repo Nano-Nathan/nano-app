@@ -1,4 +1,5 @@
 import { rem } from '@mantine/core';
+import { heading } from '../../const';
 
 /** Sizes of the shell, as in Mantine's docs (AppShell): a number is rem scaled by the theme; the rail centers the box of a row (ThemeIcon `md`) behind the border and padding of the card and the padding of the link */
 export const SHELL_SIZES = {
@@ -17,13 +18,8 @@ export const SHELL_LINK = { borderRadius: 'var(--mantine-radius-md)' };
 /** Label of a row of the navbar: a block, so its line height alone sets the height of its text */
 export const SHELL_LABEL = { display: 'block' };
 
-/** Label of the brand of the navbar: the title of the app, a size above the links, in the headings' font and weight */
-export const SHELL_BRAND = {
-  ...SHELL_LABEL,
-  fontSize: 'var(--mantine-h3-font-size)',
-  fontFamily: 'var(--mantine-font-family-headings)',
-  fontWeight: 'var(--mantine-heading-font-weight)',
-};
+/** Label of the brand of the navbar: the title of the app, at the level of a brand in the headings' scale */
+export const SHELL_BRAND = { ...SHELL_LABEL, ...heading('brand') };
 
 /** A row of the navbar that is not a link: no hover nor pointer */
 export const SHELL_STATIC = { background: 'transparent', cursor: 'default' };
@@ -48,3 +44,6 @@ export const SHELL_GAP = 'calc(var(--mantine-spacing-xs) / 2)';
 
 /** Pull of a card of the shell over its neighbor by the width of a border, so where two cards meet one line shows */
 export const SHELL_SEAM = `calc(-1 * ${rem(1)})`;
+
+/** The card of the page: it scrolls what does not fit in it */
+export const SHELL_CONTENT = { overflow: 'auto' };

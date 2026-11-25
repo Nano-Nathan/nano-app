@@ -3,7 +3,7 @@
 import 'dayjs/locale/es';
 import { MantineProvider, mergeThemeOverrides } from '@mantine/core';
 import { DatesProvider } from '@mantine/dates';
-import { NANO_THEME } from './const';
+import { NANO_THEME } from './theme';
 import type { MantineColorScheme } from '@mantine/core';
 import type { ReactNode } from 'react';
 import type { LayoutOptions } from '../../types/layout';

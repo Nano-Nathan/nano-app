@@ -1,7 +1,8 @@
 import { ColorSchemeScript, mantineHtmlProps } from '@mantine/core';
 import { NanoAppProvider } from '@nano-app/frontend';
 import { Progress, Toasts } from '../../components/notification';
-import { CONTRAST, GROUND, NANO_CSS } from './const';
+import { CONTRAST, GROUND } from './const';
+import { NANO_CSS } from './css';
 import Provider from './Provider';
 import type { ReactNode } from 'react';
 import type { LayoutOptions } from '../../types/layout';

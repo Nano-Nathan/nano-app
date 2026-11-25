@@ -4,7 +4,7 @@ import { Anchor, Button, Divider, Paper, Stack, Text, Title } from '@mantine/cor
 import { AuthController } from '@nano-app/controllers';
 import { createView } from '@nano-app/frontend';
 import { Form } from '../../components/input';
-import { LOGIN_FIELDS, LOGIN_MODES } from '../../const';
+import { HEADINGS, LOGIN_FIELDS, LOGIN_MODES } from '../../const';
 import GoogleIcon from './components/GoogleIcon';
 import type { LoginProvider } from '../../types/login';
 
@@ -20,7 +20,7 @@ export default createView(
       <Paper withBorder shadow="md" p={{ base: 'lg', sm: 'xl' }}>
         <Stack gap="lg">
           <Stack gap="xs" align="center">
-            <Title order={2} ta="center">
+            <Title order={HEADINGS.page} ta="center">
               {auth.text('nano.login.title')}
             </Title>
             <Text c="dimmed" ta="center">

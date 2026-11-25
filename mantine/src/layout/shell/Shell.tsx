@@ -14,9 +14,10 @@ import {
 import { IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand } from '@tabler/icons-react';
 import { NavController } from '@nano-app/controllers';
 import { createView } from '@nano-app/frontend';
-import { PRIMARY_TEXT } from '../../const';
+import { HEADINGS, PRIMARY_TEXT } from '../../const';
 import {
   SHELL_BRAND,
+  SHELL_CONTENT,
   SHELL_GAP,
   SHELL_SEAM,
   SHELL_LABEL,
@@ -114,7 +115,7 @@ export default createView(
                 >
                   {oShell.icon}
                 </ActionIcon>
-                <Title order={2}>{nav.title()}</Title>
+                <Title order={HEADINGS.page}>{nav.title()}</Title>
               </Group>
             </Paper>
             <Paper
@@ -124,7 +125,7 @@ export default createView(
               flex={1}
               mih={0}
               mt={SHELL_SEAM}
-              style={{ overflow: 'auto' }}
+              style={SHELL_CONTENT}
             >
               {children}
             </Paper>

@@ -3,7 +3,7 @@
 import { Box, Button, Group, Stack, Text, Title } from '@mantine/core';
 import Link from 'next/link';
 import { Controller, createView } from '@nano-app/frontend';
-import { PRIMARY_TINT } from '../../const';
+import { HEADINGS, PRIMARY_TINT } from '../../const';
 import Illustration from './components/Illustration';
 
 /** A faint 404 behind the title, the description and the button back to the home */
@@ -14,7 +14,7 @@ export default createView(Controller, (view, { home }) => (
       <Illustration />
     </Box>
     <Stack gap="xl" ta="center" pos="relative" style={{ gridArea: '1 / 1' }}>
-      <Title order={2}>{view.text('nano.notFound.title')}</Title>
+      <Title order={HEADINGS.page}>{view.text('nano.notFound.title')}</Title>
       <Text c="dimmed">{view.text('nano.notFound.description')}</Text>
       <Group justify="center">
         <Button component={Link} href={home}>

@@ -62,9 +62,9 @@ async function renderTable(): Promise<void> {
 test('DataTable shows a column per field and a row per item, each cell as its format shows it', async () => {
   await renderTable();
 
-  // The label of the first column, its key without one, and the formatted age
+  // The label of the first column, the text of its key without one, and the formatted age
   assert.ok(screen.getByText('Email'));
-  assert.ok(screen.getByText('age'));
+  assert.ok(screen.getByText('i18n.age'));
   assert.ok(screen.getByText('41 years'));
   assert.equal(aRequests[0], 'GET /api/api/users ');
 });
@@ -91,9 +91,9 @@ test('DataTable opens the form of a row on a click, and an empty one to create',
   assert.ok(screen.getByDisplayValue('Beto'));
   assert.ok(screen.getByText('Delete'));
 
-  // Cancel closes it, and Create opens an empty form without the button to delete
+  // Cancel closes it, and Create opens an empty form, titled and sent with Create, without the button to delete
   fireEvent.click(screen.getByText('Cancel'));
   fireEvent.click(screen.getByText('Create'));
-  await waitFor(() => assert.equal(screen.getAllByText('Create').length, 2));
+  await waitFor(() => assert.equal(screen.getAllByText('Create').length, 3));
   assert.equal(screen.queryByDisplayValue('Beto'), null);
 });
