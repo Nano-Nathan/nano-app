@@ -36,7 +36,7 @@ const Select = createView(SelectController, select => (
   <output>
     {select
       .options()
-      .map(oRole => `${oRole.id}:${oRole.name}`)
+      .map(oRole => `${oRole.value}:${oRole.label}`)
       .join(',')}
   </output>
 ));

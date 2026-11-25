@@ -17,13 +17,15 @@ export default function Document({
   children: ReactNode;
 }): ReactNode {
   const { lang, colorScheme = 'auto', provider, notifications } = options;
+  // The locale the user chose, else the app's language
+  const sLocale = locale ?? lang;
   return (
-    <html lang={locale ?? lang} {...mantineHtmlProps}>
+    <html lang={sLocale} {...mantineHtmlProps}>
       <head>
         <ColorSchemeScript defaultColorScheme={colorScheme} />
       </head>
       <body style={GROUND}>
-        <Provider provider={provider} colorScheme={colorScheme}>
+        <Provider provider={provider} colorScheme={colorScheme} locale={sLocale}>
           <NanoAppProvider locale={locale}>
             <Toasts {...notifications} />
             {children}

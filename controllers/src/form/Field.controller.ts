@@ -11,7 +11,7 @@ export default class FieldController extends ApiController {
 
   /** Reads the items of its options from the backend when the view mounts */
   public onMount(): Promise<ApiResponse> | undefined {
-    const { path } = this.field().options ?? {};
+    const { path } = this.source();
     return path ? this.GET(path) : undefined;
   }
 
@@ -42,11 +42,12 @@ export default class FieldController extends ApiController {
     this.set(this.key('errors'), this.validate(oValue));
   }
 
-  /** Its own parse; else no value for `''`, a number for one */
+  /** Its own parse; else no value for `''` or `null`, its item's value for a select, a number for one */
   protected parse(oInput: unknown): unknown {
     const oField = this.field();
     if (oField.parse) return oField.parse(oInput);
-    if (oInput === '') return undefined;
+    if (oInput === '' || oInput === null) return undefined;
+    if (oField.type === 'select') return this.choose(oInput);
     const iNumber = Number(oInput);
     const isNumber = oField.type === 'number' && String(iNumber) === oInput;
     return isNumber ? iNumber : oInput;
@@ -57,10 +58,31 @@ export default class FieldController extends ApiController {
     return validate(this.field(), oValue);
   }
 
+  /** The items of its options as a select shows them: the text of their value and their label */
+  public options(): { value: string; label: string }[] {
+    const { value, label } = this.source();
+    return this.items().map(oItem => ({
+      value: String(oItem[value]),
+      label: String(oItem[label]),
+    }));
+  }
+
+  /** The value of the item whose value reads as the text a select gave, of its own type */
+  private choose(oInput: unknown): unknown {
+    const { value } = this.source();
+    return this.items().find(oItem => String(oItem[value]) === oInput)?.[value];
+  }
+
   /** The items read for its options, from the list the backend gave */
-  public options(): NanoObject[] {
-    const { path } = this.field().options ?? {};
+  private items(): NanoObject[] {
+    const { path } = this.source();
     return path ? (this.api.get(path)?.result?.values ?? []) : [];
+  }
+
+  /** Where its options come from: their path, and the keys of an item's value and label */
+  private source(): { path?: string; value: string; label: string } {
+    const { path, value = 'id', label = 'name' } = this.field().options ?? {};
+    return { path, value, label };
   }
 
   /** Its config, from the props */

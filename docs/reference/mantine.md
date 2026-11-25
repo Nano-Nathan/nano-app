@@ -3,7 +3,7 @@
 [Mantine](https://mantine.dev) for `@nano-app/frontend`: the root layout, the views of `@nano-app/controllers` and ready pages.
 
 ```bash
-pnpm add @nano-app/mantine @nano-app/frontend @nano-app/controllers @mantine/core @mantine/hooks @mantine/notifications
+pnpm add @nano-app/mantine @nano-app/frontend @nano-app/controllers @mantine/core @mantine/dates @mantine/hooks @mantine/notifications dayjs
 ```
 
 - `@mantine/*` 9, `@nano-app/frontend` 0.16, `@nano-app/controllers` 0.13, Next 16.3 and React 19 or newer, as peer dependencies.
@@ -75,11 +75,16 @@ export default createShell({
 | ----------- | ------------------- | ---------------------------------------- |
 | `Input`     | `FieldController`   | `form`, `field` (`label`, `type`)        |
 | `Password`  | `FieldController`   | `form`, `field` (`label`)                |
+| `Numeric`   | `FieldController`   | `form`, `field` (`label`)                |
+| `Select`    | `FieldController`   | `form`, `field` (`label`, `options`)     |
+| `Switch`    | `FieldController`   | `form`, `field` (`label`)                |
+| `Calendar`  | `FieldController`   | `form`, `field` (`label`)                |
 | `Form`      | `FormController`    | `name`, `fields`, `onSubmit`, `children` |
 | `Toasts`    | `MessageController` | Props of Mantine's `Notifications`       |
 | `DataTable` | `TableController`   | `path`, `columns` (`Field[]`, optional)  |
 
-- `Form` shows `password` fields with `Password`, every other one with `Input`, then its `children` (the buttons).
+- `Form` shows each field by its `type`: `password` with `Password`, `number` with `Numeric` (`NumberInput`), `select` with `Select`, `switch` with `Switch`, `date` with `Calendar` (`DatePickerInput` of `@mantine/dates`, it keeps `YYYY-MM-DD`), every other one with `Input`; then its `children` (the buttons).
+- The dates show in the user's locale, else the layout's `lang`: `en` and `es`.
 - `DataTable` shows a column per field of `columns` (`label`, `format`), or per column of the table without it, and a row per item of `path`, read when it mounts. Without items it shows a row with `nano.table.empty`. A column of the table, without `columns`, shows `nano.label.<name>`: the core texts have `id`, `name`, `email`, `title`, `description`, `createdAt` and `updatedAt`; define the others in the app's texts, or give the column its `label`. It scrolls inside itself past `70svh` high, and sideways when the screen is narrower than its content.
 - `Toasts` shows every new message of an api store in the color of its `type` (`success` green, `error` red, `info` blue, `warning` yellow). `createLayout` mounts it.
 

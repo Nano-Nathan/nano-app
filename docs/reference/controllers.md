@@ -52,28 +52,29 @@ Sign-up, sign-in and sign-out with Better Auth of the `api` store's backend.
 
 The controller of a field view. Props: `form` (the form's name) and `field` (its config).
 
-| Method          | Description                                                           |
-| --------------- | --------------------------------------------------------------------- |
-| `value()`       | The value kept, through `format`.                                     |
-| `change(value)` | Keeps the value, through `parse`, and validates it.                   |
-| `error()`       | The text of the first rule the value breaks.                          |
-| `label()`       | The text of the field's `label` key.                                  |
-| `options()`     | The `result.values` of `GET options.path`, read when the view mounts. |
+| Method          | Description                                                                                               |
+| --------------- | --------------------------------------------------------------------------------------------------------- |
+| `value()`       | The value kept, through `format`.                                                                         |
+| `change(value)` | Keeps the value, through `parse`, and validates it.                                                       |
+| `error()`       | The text of the first rule the value breaks.                                                              |
+| `label()`       | The text of the field's `label` key.                                                                      |
+| `options()`     | The items of `GET options.path` (`result.values`, read when the view mounts) as `{ value, label }` texts. |
 
 ### FormField
 
-| Key          | Description                                                                     |
-| ------------ | ------------------------------------------------------------------------------- |
-| `name`       | Key of its value.                                                               |
-| `type`       | Type of its view, `text` by default. `number` keeps a numeric text as a number. |
-| `label`      | Key of the text of its label.                                                   |
-| `validation` | A zod schema. Its messages are keys of the texts.                               |
-| `format`     | What the view shows of the value kept.                                          |
-| `parse`      | What to keep of what the view gives.                                            |
-| `options`    | `{ path }`: the items of a select, from the `api` store.                        |
-| any other    | Passed as is to its view (`disabled`).                                          |
+| Key          | Description                                                                                                                                     |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`       | Key of its value.                                                                                                                               |
+| `type`       | Type of its view, `text` by default. `number` keeps a numeric text as a number.                                                                 |
+| `label`      | Key of the text of its label.                                                                                                                   |
+| `validation` | A zod schema. Its messages are keys of the texts.                                                                                               |
+| `format`     | What the view shows of the value kept.                                                                                                          |
+| `parse`      | What to keep of what the view gives.                                                                                                            |
+| `options`    | `{ path, value, label }`: the items of a select, from the `api` store; `value` and `label` are the keys of an item, `id` and `name` by default. |
+| any other    | Passed as is to its view (`disabled`).                                                                                                          |
 
-- An empty text is kept as `undefined`.
+- An empty text or `null` is kept as `undefined`.
+- A `select` keeps the value of the item it chose, of its own type (a numeric `id` as a number).
 - State: `/form/<form>/values/<name>` and `/form/<form>/errors/<name>` of `app`.
 - To show only the field's messages, put `noValidate` on the `<form>`.
 

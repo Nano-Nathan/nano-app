@@ -43,10 +43,12 @@
   },
   "peerDependencies": {
     "@mantine/core": ">=9.0.0",
+    "@mantine/dates": ">=9.0.0",
     "@mantine/hooks": ">=9.0.0",
     "@mantine/notifications": ">=9.0.0",
     "@nano-app/controllers": ">=0.13.0",
     "@nano-app/frontend": ">=0.16.0",
+    "dayjs": ">=1.11.0",
     "next": ">=16.3.0",
     "react": ">=19.0.0"
   },
@@ -57,6 +59,7 @@
   "devDependencies": {
     "@happy-dom/global-registrator": "^21.0.3",
     "@mantine/core": "^9.8.1",
+    "@mantine/dates": "^9.8.2",
     "@mantine/hooks": "^9.8.1",
     "@mantine/notifications": "^9.8.1",
     "@nano-app/controllers": "workspace:*",
@@ -66,6 +69,7 @@
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "dayjs": "^1.11.23",
     "happy-dom": "^21.0.3",
     "next": "^16.4.6",
     "react": "^19.3.1",

@@ -3,12 +3,19 @@
 import { Stack } from '@mantine/core';
 import { FormController } from '@nano-app/controllers';
 import { createView } from '@nano-app/frontend';
-import { Input, Password } from '../fields';
+import { Calendar, Input, Numeric, Password, Select, Switch } from '../fields';
 import type { ComponentProps } from '@nano-app/frontend';
 import type { ReactNode } from 'react';
 
-/** View of each field type: passwords with their own input, every other with the input */
-const COMPONENTS = { text: Input, password: Password };
+/** View of each field type; the types without one show with the input */
+const COMPONENTS = {
+  text: Input,
+  password: Password,
+  number: Numeric,
+  select: Select,
+  switch: Switch,
+  date: Calendar,
+};
 
 /** The form of a config of fields: its inputs, then its children (the buttons) */
 const FormView = createView(FormController, (form, { children }) => (
