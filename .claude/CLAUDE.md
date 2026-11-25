@@ -72,7 +72,7 @@ The views of `@nano-app/mantine`, and of any app on it:
 
 ### UX standards
 
-The look of `@nano-app/mantine` lives in its theme (`NANO_THEME`, `NANO_CSS`, `GROUND` in `mantine/src/layout/components/const.ts`); views give no size, radius, weight or color of their own.
+The look of `@nano-app/mantine` lives in its theme: `NANO_THEME` (`layout/components/theme.ts`), `NANO_CSS` (`css.ts`) and the colors, ground and modal values (`const.ts`) of `mantine/src/layout/components/`; views give no size, radius, weight or color of their own. Every value an app may change is a token of `TOKENS` (`mantine/src/const.ts`), read with `token(name)` as `var(--nano-<name>, default)`; every title takes the size of its kind from `HEADINGS` through `heading(kind)`. No value is written twice nor out of these.
 
 - **Color**: every text in the text's color (`--mantine-color-text`). The primary color only on what acts (buttons, icons, active links, hover, focus) and on borders and lines; never on titles or labels. The light scheme's body is plain white.
 - **Contrast** (WCAG): text 4.5:1, borders of controls 3:1, measured against the real background. On light, dimmed texts, red buttons, and the borders and placeholders of inputs are raised to reach it; on dark, Mantine's stay. A shade of the primary color on dark takes shade 4 (`light-dark()`), as Mantine's light color is almost white there.
