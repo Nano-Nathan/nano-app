@@ -4,6 +4,7 @@ import { AUTH_NAME, PRIVATE_NETWORKS } from '../const';
 import DatabaseManager from '../database/DatabaseManager';
 import BetterAuth from '../database/clients/BetterAuth';
 import contract from './contract';
+import roles from './roles';
 import users from './users';
 import type { Request } from 'express';
 import type { IncomingHttpHeaders } from 'node:http';
@@ -52,10 +53,10 @@ export default abstract class Auth {
     this.oAuth = oAuth;
     this.fnHeaders = fromNodeHeaders;
 
-    // Its users with crud's contract, when its admin plugin is on
-    const isAdmin = oRest.plugins?.some(oPlugin => oPlugin.id === 'admin');
-    const oRoutes: NanoObject<RouteEntry> = isAdmin
-      ? { '/users': users(oAuth, fromNodeHeaders) }
+    // Its users and roles with crud's contract, when its admin plugin is on
+    const oAdmin = oRest.plugins?.find(oPlugin => oPlugin.id === 'admin');
+    const oRoutes: NanoObject<RouteEntry> = oAdmin
+      ? { '/users': users(oAuth, fromNodeHeaders), '/roles': await roles(oAdmin) }
       : {};
     this.oPlugin = { name: AUTH_NAME, basePath, routes: oRoutes };
     return [{ path: `${basePath}/{*path}`, handler: toNodeHandler(oAuth) }];

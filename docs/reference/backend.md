@@ -189,6 +189,14 @@ With the admin plugin in `auth.plugins`, `<basePath>/users` manages its users wi
 - Each one calls the admin plugin with the session of the request: Better Auth checks it too.
 - `POST` takes `email`, `name`, `role` and, optionally, `password`; `PUT` the fields to change.
 
+### Roles
+
+With the admin plugin, `<basePath>/roles` lists its roles with the contract of crud, for a `select` with `options: { path: '/auth/roles' }`. They are the `roles` of its options, or its default ones (`admin`, `user`): they live in code, so the list is read-only.
+
+| Request           | Answer                                                                       | Permission   |
+| ----------------- | ---------------------------------------------------------------------------- | ------------ |
+| `GET /auth/roles` | The list in `result`: `{ values, count }`, each `{ id, name }` with its name | `user: list` |
+
 ## createPlugin
 
 ```ts
